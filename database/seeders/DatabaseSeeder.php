@@ -14,6 +14,7 @@ class DatabaseSeeder extends Seeder
             AccountsSeeder::class,
             ExpenseHeadsSeeder::class,
             AdminUserSeeder::class,
+            TestDataSeeder::class,
         ]);
     }
 }

@@ -1,0 +1,110 @@
+@extends('index')
+
+@section('title', 'Bank: {{ $bank->bank_name }} - TradeSyncERP')
+
+@section('content')
+<div class="nxl-content">
+    <div class="page-header">
+        <div class="page-header-left d-flex align-items-center">
+            <div class="page-header-title"><h5 class="m-b-10">Banks</h5></div>
+            <ul class="breadcrumb">
+                <li class="breadcrumb-item"><a href="{{ route('dashboard') }}">Home</a></li>
+                <li class="breadcrumb-item"><a href="{{ route('masters.banks.index') }}">Banks</a></li>
+                <li class="breadcrumb-item">{{ $bank->bank_name }}</li>
+            </ul>
+        </div>
+        <div class="page-header-right ms-auto">
+            <div class="page-header-right-items">
+                <div class="d-flex align-items-center gap-2 page-header-right-items-wrapper">
+                    <a href="{{ route('masters.banks.index') }}" class="btn btn-icon btn-light-brand">
+                        <i class="feather-arrow-left"></i>
+                    </a>
+                    @can('banks.edit')
+                    <a href="{{ route('masters.banks.edit', $bank) }}" class="btn btn-light-brand">
+                        <i class="feather-edit me-2"></i>Edit
+                    </a>
+                    @endcan
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="main-content">
+        @include('partials.flash-messages')
+
+        <div class="row">
+            <div class="col-xl-5">
+                <div class="card stretch stretch-full">
+                    <div class="card-header">
+                        <h5 class="card-title">Bank Details</h5>
+                        @if($bank->status)
+                            <span class="badge bg-soft-success text-success">Active</span>
+                        @else
+                            <span class="badge bg-soft-danger text-danger">Inactive</span>
+                        @endif
+                    </div>
+                    <div class="card-body">
+                        <div class="row g-0 mb-3">
+                            <div class="col-sm-5 text-muted">Bank Name</div>
+                            <div class="col-sm-7 fw-semibold text-dark">{{ $bank->bank_name }}</div>
+                        </div>
+                        <div class="row g-0 mb-3">
+                            <div class="col-sm-5 text-muted">Branch</div>
+                            <div class="col-sm-7">{{ $bank->branch_name ?? '—' }}</div>
+                        </div>
+                        <div class="row g-0 mb-3">
+                            <div class="col-sm-5 text-muted">Account Number</div>
+                            <div class="col-sm-7">{{ $bank->account_number ?? '—' }}</div>
+                        </div>
+                        <div class="row g-0 mb-3">
+                            <div class="col-sm-5 text-muted">SWIFT Code</div>
+                            <div class="col-sm-7">{{ $bank->swift_code ?? '—' }}</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-xl-7">
+                <div class="card stretch stretch-full">
+                    <div class="card-header">
+                        <h5 class="card-title">Linked Accounts</h5>
+                    </div>
+                    <div class="card-body p-0">
+                        <div class="table-responsive">
+                            <table class="table table-hover mb-0">
+                                <thead>
+                                    <tr>
+                                        <th>Account Name</th>
+                                        <th>Type</th>
+                                        <th>Currency</th>
+                                        <th>Status</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    @forelse($bank->accounts as $acct)
+                                    <tr>
+                                        <td class="fw-semibold text-dark">{{ $acct->account_name }}</td>
+                                        <td>{{ $acct->account_type }}</td>
+                                        <td>{{ $acct->currency ?? '—' }}</td>
+                                        <td>
+                                            @if($acct->status)
+                                                <span class="badge bg-soft-success text-success">Active</span>
+                                            @else
+                                                <span class="badge bg-soft-danger text-danger">Inactive</span>
+                                            @endif
+                                        </td>
+                                    </tr>
+                                    @empty
+                                    <tr>
+                                        <td colspan="4" class="text-center py-4 text-muted">No accounts linked.</td>
+                                    </tr>
+                                    @endforelse
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+@endsection
