@@ -1,4 +1,4 @@
-﻿    <header class="nxl-header">
+    <header class="nxl-header">
         <div class="header-wrapper">
             <!--! [Start] Header Left !-->
             <div class="header-left d-flex align-items-center gap-4">

@@ -1,4 +1,4 @@
-﻿    <nav class="nxl-navigation">
+    <nav class="nxl-navigation">
         <div class="navbar-wrapper">
             <div class="m-header">
                 <a href="index.html" class="b-brand">
