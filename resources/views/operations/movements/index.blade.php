@@ -1,6 +1,6 @@
 @extends('index')
 
-@section('title', 'Movements – {{ $sample->sample_code }} - TradeSyncERP')
+@section('title', 'Movements – ' . $sample->sample_code . ' - TradeSyncERP')
 
 @section('content')
 <div class="nxl-content">
@@ -102,7 +102,7 @@
                                         <td>
                                             <div class="hstack gap-2 justify-content-end">
                                                 @can('sample-movements.index')
-                                                <a href="{{ route('samples.movements.show', $m) }}" class="avatar-text avatar-md" data-bs-toggle="tooltip" title="View">
+                                                <a href="{{ route('movements.show', $m) }}" class="avatar-text avatar-md" data-bs-toggle="tooltip" title="View">
                                                     <i class="feather feather-eye"></i>
                                                 </a>
                                                 @endcan
@@ -113,7 +113,7 @@
                                                     <ul class="dropdown-menu">
                                                         @can('sample-movements.edit')
                                                         <li>
-                                                            <a class="dropdown-item" href="{{ route('samples.movements.edit', $m) }}">
+                                                            <a class="dropdown-item" href="{{ route('movements.edit', $m) }}">
                                                                 <i class="feather feather-edit-3 me-3"></i><span>Update Return</span>
                                                             </a>
                                                         </li>
@@ -121,7 +121,7 @@
                                                         @can('sample-movements.delete')
                                                         <li class="dropdown-divider"></li>
                                                         <li>
-                                                            <form action="{{ route('samples.movements.destroy', $m) }}" method="POST"
+                                                            <form action="{{ route('movements.destroy', $m) }}" method="POST"
                                                                   onsubmit="return confirm('Delete this movement record?')">
                                                                 @csrf @method('DELETE')
                                                                 <button class="dropdown-item text-danger" type="submit">

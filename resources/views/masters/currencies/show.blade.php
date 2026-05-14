@@ -1,6 +1,6 @@
 @extends('index')
 
-@section('title', 'Currency: {{ $currency->currency_code }} - TradeSyncERP')
+@section('title', 'Currency: ' . $currency->currency_code . ' - TradeSyncERP')
 
 @section('content')
 <div class="nxl-content">

@@ -61,10 +61,8 @@ Route::middleware(['auth', 'verified'])->group(function () {
 
     Route::resource('samples', SampleController::class);
 
-    Route::prefix('samples/{sample}')->name('samples.')->group(function () {
-        Route::resource('movements',   SampleMovementController::class)->shallow();
-        Route::resource('inspections', InspectionController::class)->shallow();
-    });
+    Route::resource('samples.movements',   SampleMovementController::class)->shallow();
+    Route::resource('samples.inspections', InspectionController::class)->shallow();
 
     // ─── Finance ─────────────────────────────────────────────────────────────────
     Route::resource('customer-invoices', CustomerInvoiceController::class)->parameters(['customer-invoices' => 'customerInvoice']);

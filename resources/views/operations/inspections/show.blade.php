@@ -1,6 +1,6 @@
 @extends('index')
 
-@section('title', '{{ $inspection->report_number }} - TradeSyncERP')
+@section('title', $inspection->report_number . ' - TradeSyncERP')
 
 @section('content')
 <div class="nxl-content">

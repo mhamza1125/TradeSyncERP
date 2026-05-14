@@ -1,6 +1,6 @@
 @extends('index')
 
-@section('title', 'Employee: {{ $employee->employee_name }} - TradeSyncERP')
+@section('title', 'Employee: ' . $employee->employee_name . ' - TradeSyncERP')
 
 @section('content')
 <div class="nxl-content">

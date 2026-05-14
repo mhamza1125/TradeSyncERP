@@ -1,6 +1,6 @@
 @extends('index')
 
-@section('title', 'Parameter: {{ $parameter->parameter_name }} - TradeSyncERP')
+@section('title', 'Parameter: ' . $parameter->parameter_name . ' - TradeSyncERP')
 
 @section('content')
 <div class="nxl-content">

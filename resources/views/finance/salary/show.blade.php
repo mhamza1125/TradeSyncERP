@@ -196,18 +196,20 @@
         </div>
     </div>
 </div>
+@endsection
 
-{{-- Pay Modal --}}
+{{-- Pay Modal — rendered outside <main> via @stack('modals') to avoid overflow/z-index issues --}}
 @can('salary.pay')
 @if(!$salaryRun->isPaid())
-<div class="modal fade" id="payModal" tabindex="-1">
-    <div class="modal-dialog">
+@push('modals')
+<div class="modal fade" id="payModal" tabindex="-1" role="dialog" aria-labelledby="payModalLabel" aria-modal="true">
+    <div class="modal-dialog" role="document">
         <div class="modal-content">
             <form action="{{ route('salary.pay', $salaryRun) }}" method="POST">
                 @csrf
                 <div class="modal-header">
-                    <h5 class="modal-title">Confirm Payment — {{ $salaryRun->month }}</h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                    <h5 class="modal-title" id="payModalLabel">Confirm Payment — {{ $salaryRun->month }}</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                 </div>
                 <div class="modal-body">
                     <div class="mb-3">
@@ -229,6 +231,7 @@
         </div>
     </div>
 </div>
+@endpush
 @endif
 @endcan
 
@@ -237,10 +240,10 @@
 document.querySelectorAll('.line-field').forEach(function(input) {
     input.addEventListener('input', function() {
         var row = this.closest('tr');
-        var basic = parseFloat(row.querySelector('[data-field="basic_salary"]').value) || 0;
-        var bonus = parseFloat(row.querySelector('[data-field="bonus"]').value) || 0;
-        var deduction = parseFloat(row.querySelector('[data-field="deduction"]').value) || 0;
-        var advance = parseFloat(row.querySelector('[data-field="advance"]').value) || 0;
+        var basic     = parseFloat(row.querySelector('[data-field="basic_salary"]').value) || 0;
+        var bonus     = parseFloat(row.querySelector('[data-field="bonus"]').value)        || 0;
+        var deduction = parseFloat(row.querySelector('[data-field="deduction"]').value)    || 0;
+        var advance   = parseFloat(row.querySelector('[data-field="advance"]').value)      || 0;
         row.querySelector('.net-pay').textContent = (basic + bonus - deduction - advance).toFixed(2);
 
         var total = 0;
@@ -252,4 +255,3 @@ document.querySelectorAll('.line-field').forEach(function(input) {
 });
 </script>
 @endpush
-@endsection

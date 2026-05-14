@@ -22,7 +22,7 @@ class SalaryRunController extends Controller
         $this->middleware('permission:salary.pay')->only('pay');
     }
 
-    public function index(Request $request)
+    public function index()
     {
         $runs = SalaryRun::with(['account', 'processedBy'])
             ->latest()
@@ -107,7 +107,6 @@ class SalaryRunController extends Controller
     public function pay(Request $request, SalaryRun $salaryRun)
     {
         abort_if($salaryRun->isPaid(), 403, 'Already paid.');
-        $this->middleware('permission:salary.pay');
 
         return DB::transaction(function () use ($request, $salaryRun) {
             $request->validate([

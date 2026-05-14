@@ -22,7 +22,7 @@
                         <i class="feather-arrow-left me-2"></i><span>Back</span>
                     </a>
                     @can('sample-movements.edit')
-                    <a href="{{ route('samples.movements.edit', $movement) }}" class="btn btn-primary">
+                    <a href="{{ route('movements.edit', $movement) }}" class="btn btn-primary">
                         <i class="feather-edit me-2"></i><span>Update Return</span>
                     </a>
                     @endcan
@@ -120,7 +120,7 @@
                     </div>
                     <div class="card-body">
                         @can('sample-movements.edit')
-                        <a href="{{ route('samples.movements.edit', $movement) }}" class="btn btn-light-brand w-100 mb-3">
+                        <a href="{{ route('movements.edit', $movement) }}" class="btn btn-light-brand w-100 mb-3">
                             <i class="feather-edit-3 me-2"></i> Update Return
                         </a>
                         @endcan
@@ -130,7 +130,7 @@
                         </a>
                         @endcan
                         @can('sample-movements.delete')
-                        <form action="{{ route('samples.movements.destroy', $movement) }}" method="POST"
+                        <form action="{{ route('movements.destroy', $movement) }}" method="POST"
                               onsubmit="return confirm('Delete this movement record?')">
                             @csrf @method('DELETE')
                             <button class="btn btn-light-danger w-100" type="submit">

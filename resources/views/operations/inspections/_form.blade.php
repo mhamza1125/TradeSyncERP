@@ -74,7 +74,7 @@
             </div>
             <div class="col-12 mb-4">
                 <label class="form-label">
-                    @isset($inspection)Inspectors@else Inspectors (our employees visiting factory)@endisset
+                    {{ isset($inspection) ? 'Inspectors' : 'Inspectors (our employees visiting factory)' }}
                 </label>
                 <div class="row g-2">
                     @foreach($employees as $e)
@@ -101,7 +101,7 @@
                         $currentStatus = old('overall_status', $inspection->overall_status ?? 'Pending');
                     @endphp
                     <option value="Pending" @selected($currentStatus === 'Pending')>
-                        Pending@unless(isset($inspection)) (auto-calculated)@endunless
+                        Pending{{ isset($inspection) ? '' : ' (auto-calculated)' }}
                     </option>
                     <option value="Pass" @selected($currentStatus === 'Pass')>Pass</option>
                     <option value="Fail" @selected($currentStatus === 'Fail')>Fail</option>

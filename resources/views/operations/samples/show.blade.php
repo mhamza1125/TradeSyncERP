@@ -1,6 +1,6 @@
 @extends('index')
 
-@section('title', 'Sample: {{ $sample->sample_code }} - TradeSyncERP')
+@section('title', 'Sample: ' . $sample->sample_code . ' - TradeSyncERP')
 
 @section('content')
 <div class="nxl-content">
@@ -198,7 +198,7 @@
                                             <td class="text-muted">{{ Str::limit($m->remarks, 40) ?? '—' }}</td>
                                             <td>
                                                 @can('sample-movements.index')
-                                                <a href="{{ route('samples.movements.show', $m) }}" class="text-primary" title="View"><i class="feather-eye"></i></a>
+                                                <a href="{{ route('movements.show', $m) }}" class="text-primary" title="View"><i class="feather-eye"></i></a>
                                                 @endcan
                                             </td>
                                         </tr>

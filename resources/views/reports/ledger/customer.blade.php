@@ -1,6 +1,6 @@
 @extends('index')
 
-@section('title', 'Customer Ledger — {{ $customer->customer_name }} - TradeSyncERP')
+@section('title', 'Customer Ledger — ' . $customer->customer_name . ' - TradeSyncERP')
 
 @section('content')
 <div class="nxl-content">

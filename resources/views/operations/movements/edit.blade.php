@@ -18,7 +18,7 @@
         <div class="page-header-right ms-auto">
             <div class="page-header-right-items">
                 <div class="d-flex align-items-center gap-2 page-header-right-items-wrapper">
-                    <a href="{{ route('samples.movements.show', $movement) }}" class="btn btn-light-brand">
+                    <a href="{{ route('movements.show', $movement) }}" class="btn btn-light-brand">
                         <i class="feather-arrow-left me-2"></i><span>Back</span>
                     </a>
                     <button type="submit" form="editMovementForm" class="btn btn-primary">
@@ -32,7 +32,7 @@
     <div class="main-content">
         @include('partials.flash-messages')
 
-        <form id="editMovementForm" action="{{ route('samples.movements.update', $movement) }}" method="POST">
+        <form id="editMovementForm" action="{{ route('movements.update', $movement) }}" method="POST">
             @csrf @method('PUT')
             @include('operations.movements._form')
         </form>
