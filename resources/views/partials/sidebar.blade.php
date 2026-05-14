@@ -7,7 +7,7 @@
     <div class="navbar-wrapper">
         <div class="m-header">
             <a href="{{ route('dashboard') }}" class="b-brand">
-                <img src="{{ asset('assets/images/logo-full.png') }}" alt="TradeSyncERP" class="logo logo-lg" />
+                <img src="{{ asset('assets/images/logo-trade.png') }}" alt="TradeSyncERP" class="logo logo-lg" style="height: 40px;" />
                 <img src="{{ asset('assets/images/logo-abbr.png') }}" alt="TradeSyncERP" class="logo logo-sm" />
             </a>
         </div>
