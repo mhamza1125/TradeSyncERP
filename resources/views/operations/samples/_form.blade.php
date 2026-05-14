@@ -1,7 +1,7 @@
 {{-- Reusable sample form partial --}}
 <div class="row">
     <div class="col-xl-8">
-        <div class="card stretch stretch-full">
+        <div class="card">
             <div class="card-header">
                 <h5 class="card-title">Sample Information</h5>
             </div>
@@ -18,6 +18,18 @@
                             @endforeach
                         </select>
                         @error('customer_id')<div class="invalid-feedback">{{ $message }}</div>@enderror
+                    </div>
+                    <div class="col-lg-6 mb-4">
+                        <label class="form-label">Supplier / Factory</label>
+                        <select name="supplier_id" id="supplierSelect" class="form-select @error('supplier_id') is-invalid @enderror">
+                            <option value="">— Select Supplier —</option>
+                            @foreach($suppliers ?? [] as $supplier)
+                                <option value="{{ $supplier->id }}" @selected(old('supplier_id', $sample->supplier_id ?? '') == $supplier->id)>
+                                    {{ $supplier->name }}
+                                </option>
+                            @endforeach
+                        </select>
+                        @error('supplier_id')<div class="invalid-feedback">{{ $message }}</div>@enderror
                     </div>
                     <div class="col-lg-6 mb-4">
                         <label class="form-label">Brand <span class="text-danger">*</span></label>
@@ -52,10 +64,17 @@
                         @error('product_name')<div class="invalid-feedback">{{ $message }}</div>@enderror
                     </div>
                     <div class="col-lg-6 mb-4">
-                        <label class="form-label">Shipment Reference</label>
-                        <input type="text" name="shipment_reference" class="form-control @error('shipment_reference') is-invalid @enderror"
-                               placeholder="AWB / BL / Reference no." value="{{ old('shipment_reference', $sample->shipment_reference ?? '') }}">
-                        @error('shipment_reference')<div class="invalid-feedback">{{ $message }}</div>@enderror
+                        <label class="form-label">Sample Reference</label>
+                        <input type="text" name="sample_reference" class="form-control @error('sample_reference') is-invalid @enderror"
+                               placeholder="AWB / BL / Reference no." value="{{ old('sample_reference', $sample->sample_reference ?? '') }}">
+                        @error('sample_reference')<div class="invalid-feedback">{{ $message }}</div>@enderror
+                    </div>
+                    <div class="col-lg-6 mb-4">
+                        <label class="form-label">Physical Location</label>
+                        <input type="text" name="physical_location" class="form-control @error('physical_location') is-invalid @enderror"
+                               placeholder="e.g. Rack A-3, Lab Shelf 2" value="{{ old('physical_location', $sample->physical_location ?? '') }}">
+                        <small class="text-muted">Where the physical sample is stored.</small>
+                        @error('physical_location')<div class="invalid-feedback">{{ $message }}</div>@enderror
                     </div>
                     <div class="col-lg-6 mb-4">
                         <label class="form-label">Receive Date <span class="text-danger">*</span></label>
@@ -78,10 +97,101 @@
                 </div>
             </div>
         </div>
+
+        {{-- Images Card --}}
+        <div class="card mt-4">
+            <div class="card-header">
+                <h5 class="card-title">Images</h5>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-lg-6 mb-4">
+                        <label class="form-label">Main / Cover Image</label>
+                        @if(isset($sample) && $sample->main_image)
+                            <div class="mb-2">
+                                <img src="{{ Storage::url($sample->main_image) }}" alt="Main Image"
+                                     class="img-thumbnail" style="max-height:120px;">
+                            </div>
+                        @endif
+                        <input type="file" name="main_image_file" class="form-control @error('main_image_file') is-invalid @enderror"
+                               accept="image/*">
+                        <small class="text-muted">Featured image for this sample (JPEG, PNG, WebP).</small>
+                        @error('main_image_file')<div class="invalid-feedback">{{ $message }}</div>@enderror
+                    </div>
+                    <div class="col-lg-6 mb-4">
+                        <label class="form-label">Gallery Images</label>
+                        <input type="file" name="gallery_images[]" class="form-control @error('gallery_images') is-invalid @enderror"
+                               accept="image/*" multiple>
+                        <small class="text-muted">Select multiple images for the product gallery.</small>
+                        @error('gallery_images')<div class="invalid-feedback">{{ $message }}</div>@enderror
+                        @if(isset($sample))
+                            @php $gallery = $sample->attachments->where('attachment_type','gallery'); @endphp
+                            @if($gallery->count())
+                            <div class="d-flex flex-wrap gap-2 mt-2">
+                                @foreach($gallery as $img)
+                                <div class="position-relative">
+                                    <img src="{{ Storage::url($img->file_path) }}" alt="{{ $img->title }}"
+                                         class="img-thumbnail" style="max-height:80px;">
+                                    <a href="{{ route('attachments.destroy', $img->id) }}"
+                                       class="position-absolute top-0 end-0 btn btn-xs btn-danger"
+                                       data-confirm="Remove this image?"
+                                       style="font-size:10px;padding:2px 5px;">&times;</a>
+                                </div>
+                                @endforeach
+                            </div>
+                            @endif
+                        @endif
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        {{-- Documents / Attachments Card --}}
+        <div class="card mt-4">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h5 class="card-title mb-0">Attachments / Documents</h5>
+                <button type="button" id="addAttachmentRow" class="btn btn-sm btn-primary">
+                    <i class="feather-plus me-1"></i> Add File
+                </button>
+            </div>
+            <div class="card-body">
+                <div id="attachmentRows">
+                    <div class="row attachment-row mb-3">
+                        <div class="col-lg-5">
+                            <input type="text" name="attachment_titles[0]" class="form-control"
+                                   placeholder="Document title / name">
+                        </div>
+                        <div class="col-lg-6">
+                            <input type="file" name="attachments[0]" class="form-control">
+                        </div>
+                        <div class="col-lg-1 d-flex align-items-center">
+                            <button type="button" class="btn btn-sm btn-light remove-attachment-row" style="display:none;">
+                                <i class="feather-trash-2"></i>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+                @if(isset($sample))
+                    @php $docs = $sample->attachments->where('attachment_type','document'); @endphp
+                    @if($docs->count())
+                    <div class="mt-3">
+                        <h6 class="text-muted mb-2">Existing Attachments</h6>
+                        @foreach($docs as $doc)
+                        <div class="d-flex align-items-center gap-2 mb-2">
+                            <i class="feather-file text-muted"></i>
+                            <a href="{{ Storage::url($doc->file_path) }}" target="_blank">{{ $doc->title }}</a>
+                            <small class="text-muted">{{ $doc->humanFileSize() }}</small>
+                        </div>
+                        @endforeach
+                    </div>
+                    @endif
+                @endif
+            </div>
+        </div>
     </div>
 
     <div class="col-xl-4">
-        <div class="card stretch stretch-full">
+        <div class="card">
             <div class="card-header">
                 <h5 class="card-title">Priority & Status</h5>
             </div>
@@ -129,6 +239,34 @@
                 brandSelect.innerHTML = '<option value="">— Select Brand —</option>';
                 brands.forEach(b => brandSelect.add(new Option(b.brand_name, b.id)));
             });
+    });
+
+    let attachIdx = 1;
+    document.getElementById('addAttachmentRow')?.addEventListener('click', function () {
+        const container = document.getElementById('attachmentRows');
+        const row = document.createElement('div');
+        row.className = 'row attachment-row mb-3';
+        row.innerHTML = `
+            <div class="col-lg-5">
+                <input type="text" name="attachment_titles[${attachIdx}]" class="form-control" placeholder="Document title / name">
+            </div>
+            <div class="col-lg-6">
+                <input type="file" name="attachments[${attachIdx}]" class="form-control">
+            </div>
+            <div class="col-lg-1 d-flex align-items-center">
+                <button type="button" class="btn btn-sm btn-light remove-attachment-row">
+                    <i class="feather-trash-2"></i>
+                </button>
+            </div>
+        `;
+        container.appendChild(row);
+        attachIdx++;
+    });
+
+    document.getElementById('attachmentRows')?.addEventListener('click', function (e) {
+        if (e.target.closest('.remove-attachment-row')) {
+            e.target.closest('.attachment-row').remove();
+        }
     });
 </script>
 @endpush

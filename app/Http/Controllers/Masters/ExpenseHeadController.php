@@ -23,6 +23,7 @@ class ExpenseHeadController extends Controller
         $expenseHeads = ExpenseHead::query()
             ->when($request->search, fn ($q, $s) => $q->where('expense_name', 'like', "%{$s}%"))
             ->when($request->status !== null && $request->status !== '', fn ($q) => $q->where('status', $request->status))
+            ->with('parent', 'children')
             ->withCount('expenses')
             ->latest()
             ->paginate(20)
@@ -33,7 +34,8 @@ class ExpenseHeadController extends Controller
 
     public function create()
     {
-        return view('masters.expense-heads.create');
+        $categories = ExpenseHead::whereNull('parent_id')->where('status', true)->orderBy('expense_name')->get();
+        return view('masters.expense-heads.create', compact('categories'));
     }
 
     public function store(StoreExpenseHeadRequest $request)
@@ -50,12 +52,18 @@ class ExpenseHeadController extends Controller
 
     public function show(ExpenseHead $expenseHead)
     {
+        $expenseHead->load('parent', 'children', 'expenses');
         return view('masters.expense-heads.show', compact('expenseHead'));
     }
 
     public function edit(ExpenseHead $expenseHead)
     {
-        return view('masters.expense-heads.edit', compact('expenseHead'));
+        $categories = ExpenseHead::whereNull('parent_id')
+            ->where('status', true)
+            ->where('id', '!=', $expenseHead->id)
+            ->orderBy('expense_name')
+            ->get();
+        return view('masters.expense-heads.edit', compact('expenseHead', 'categories'));
     }
 
     public function update(UpdateExpenseHeadRequest $request, ExpenseHead $expenseHead)

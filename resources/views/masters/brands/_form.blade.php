@@ -1,6 +1,6 @@
 <div class="row">
     <div class="col-xl-8">
-        <div class="card stretch stretch-full">
+        <div class="card">
             <div class="card-header">
                 <h5 class="card-title">Brand Details</h5>
             </div>
@@ -15,7 +15,7 @@
                     </div>
                     <div class="col-lg-6 mb-4">
                         <label class="form-label">Customer <span class="text-danger">*</span></label>
-                        <select name="customer_id" class="form-select @error('customer_id') is-invalid @enderror">
+                        <select name="customer_id" class="form-select @error('customer_id') is-invalid @enderror" required>
                             <option value="">— Select Customer —</option>
                             @foreach($customers as $c)
                             <option value="{{ $c->id }}" @selected(old('customer_id', $brand->customer_id ?? '') == $c->id)>
@@ -37,7 +37,7 @@
         </div>
     </div>
     <div class="col-xl-4">
-        <div class="card stretch stretch-full">
+        <div class="card">
             <div class="card-header">
                 <h5 class="card-title">Settings</h5>
             </div>

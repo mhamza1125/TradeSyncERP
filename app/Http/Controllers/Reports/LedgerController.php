@@ -6,7 +6,6 @@ use App\Http\Controllers\Controller;
 use App\Models\Account;
 use App\Models\Customer;
 use App\Models\Transaction;
-use App\Models\Vendor;
 use Illuminate\Http\Request;
 
 class LedgerController extends Controller
@@ -65,18 +64,5 @@ class LedgerController extends Controller
             ->withQueryString();
 
         return view('reports.ledger.customer', compact('customer', 'payments'));
-    }
-
-    public function vendor(Request $request, Vendor $vendor)
-    {
-        $bills = $vendor->bills()
-            ->with(['items', 'transaction'])
-            ->when($request->from_date, fn ($q) => $q->where('bill_date', '>=', $request->from_date))
-            ->when($request->to_date, fn ($q) => $q->where('bill_date', '<=', $request->to_date))
-            ->latest('bill_date')
-            ->paginate(50)
-            ->withQueryString();
-
-        return view('reports.ledger.vendor', compact('vendor', 'bills'));
     }
 }

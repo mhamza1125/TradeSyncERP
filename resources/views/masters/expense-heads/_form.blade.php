@@ -1,10 +1,23 @@
 <div class="row justify-content-center">
     <div class="col-xl-6">
-        <div class="card stretch stretch-full">
+        <div class="card">
             <div class="card-header">
                 <h5 class="card-title">Expense Head Details</h5>
             </div>
             <div class="card-body">
+                <div class="mb-4">
+                    <label class="form-label">Parent Category</label>
+                    <select name="parent_id" class="form-select @error('parent_id') is-invalid @enderror">
+                        <option value="">— None (this is a top-level category) —</option>
+                        @foreach($categories as $cat)
+                        <option value="{{ $cat->id }}" @selected(old('parent_id', $expenseHead->parent_id ?? '') == $cat->id)>
+                            {{ $cat->expense_name }}
+                        </option>
+                        @endforeach
+                    </select>
+                    <div class="form-text">Leave blank to create a <strong>Category</strong>. Select a parent to create a <strong>Subcategory</strong>.</div>
+                    @error('parent_id')<div class="invalid-feedback">{{ $message }}</div>@enderror
+                </div>
                 <div class="mb-4">
                     <label class="form-label">Expense Head Name <span class="text-danger">*</span></label>
                     <input type="text" name="expense_name"

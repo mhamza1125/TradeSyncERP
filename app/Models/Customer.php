@@ -18,9 +18,7 @@ class Customer extends Model
         'email',
         'address',
         'currency_id',
-        'default_currency',
         'opening_balance',
-        'opening_balance_currency',
         'status',
     ];
 
@@ -55,5 +53,20 @@ class Customer extends Model
     public function payments()
     {
         return $this->hasMany(CustomerPayment::class);
+    }
+
+    public function invoices()
+    {
+        return $this->hasMany(CustomerInvoice::class);
+    }
+
+    public function suppliers()
+    {
+        return $this->belongsToMany(Supplier::class, 'customer_supplier');
+    }
+
+    public function attachments()
+    {
+        return $this->morphMany(Attachment::class, 'attachable');
     }
 }

@@ -34,7 +34,7 @@
 
     <div class="main-content">
         @include('partials.flash-messages')
-        <form id="sampleForm" action="{{ route('samples.update', $sample) }}" method="POST">
+        <form id="sampleForm" action="{{ route('samples.update', $sample) }}" method="POST" enctype="multipart/form-data">
             @csrf @method('PUT')
             @include('operations.samples._form')
         </form>

@@ -13,6 +13,7 @@ class DatabaseSeeder extends Seeder
             CurrenciesSeeder::class,
             AccountsSeeder::class,
             ExpenseHeadsSeeder::class,
+            InspectionTypeSeeder::class,
             AdminUserSeeder::class,
             TestDataSeeder::class,
         ]);

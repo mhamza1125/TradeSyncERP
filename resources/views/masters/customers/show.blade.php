@@ -81,11 +81,11 @@
                             @endif
                             <li class="hstack justify-content-between mb-3">
                                 <span class="text-muted fw-medium hstack gap-3"><i class="feather-dollar-sign"></i>Currency</span>
-                                <span>{{ $customer->default_currency }}</span>
+                                <span>{{ $customer->currency?->currency_code ?? '—' }}</span>
                             </li>
                             <li class="hstack justify-content-between mb-3">
                                 <span class="text-muted fw-medium hstack gap-3"><i class="feather-credit-card"></i>Opening Bal.</span>
-                                <span class="fw-semibold">{{ number_format($customer->opening_balance, 2) }} {{ $customer->opening_balance_currency }}</span>
+                                <span class="fw-semibold">{{ number_format($customer->opening_balance, 2) }} {{ $customer->currency?->currency_code ?? '' }}</span>
                             </li>
                             @if($customer->address)
                             <li class="hstack justify-content-between mb-0">
@@ -162,13 +162,13 @@
                                     <div class="col-sm-7 fw-semibold">{{ $customer->address ?? '—' }}</div>
                                 </div>
                                 <div class="row g-0 mb-3">
-                                    <div class="col-sm-5 text-muted">Default Currency:</div>
-                                    <div class="col-sm-7 fw-semibold">{{ $customer->default_currency }}</div>
+                                    <div class="col-sm-5 text-muted">Currency:</div>
+                                    <div class="col-sm-7 fw-semibold">{{ $customer->currency?->currency_code ?? '—' }}</div>
                                 </div>
                                 <div class="row g-0 mb-3">
                                     <div class="col-sm-5 text-muted">Opening Balance:</div>
                                     <div class="col-sm-7 fw-semibold">
-                                        {{ number_format($customer->opening_balance, 2) }} {{ $customer->opening_balance_currency }}
+                                        {{ number_format($customer->opening_balance, 2) }} {{ $customer->currency?->currency_code ?? '' }}
                                     </div>
                                 </div>
                                 <div class="row g-0 mb-3">
@@ -257,6 +257,13 @@
                 </div>
             </div>
         </div>
+
+        {{-- Attachment Panel --}}
+        @include('partials.attachment-panel', [
+            'attachEntity'     => $customer,
+            'attachEntityType' => 'customers',
+            'attachLabel'      => 'Customer Attachments',
+        ])
     </div>
     <!-- [ Main Content ] end -->
 </div>

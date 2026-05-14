@@ -12,10 +12,9 @@ class Inspection extends Model
 
     protected $fillable = [
         'sample_id',
+        'inspection_type_id',
         'report_number',
         'inspection_date',
-        'inspector_type',
-        'inspector_id',
         'overall_status',
         'remarks',
     ];
@@ -37,21 +36,18 @@ class Inspection extends Model
         return $this->belongsTo(Sample::class);
     }
 
+    public function inspectionType()
+    {
+        return $this->belongsTo(InspectionType::class);
+    }
+
+    public function inspectors()
+    {
+        return $this->belongsToMany(Employee::class, 'employee_inspection');
+    }
+
     public function results()
     {
         return $this->hasMany(InspectionResult::class);
-    }
-
-    public function vendorBills()
-    {
-        return $this->belongsToMany(VendorBill::class, 'vendor_bill_inspections');
-    }
-
-    public function inspector()
-    {
-        if ($this->inspector_type === 'Employee') {
-            return $this->belongsTo(Employee::class, 'inspector_id');
-        }
-        return $this->belongsTo(Vendor::class, 'inspector_id');
     }
 }

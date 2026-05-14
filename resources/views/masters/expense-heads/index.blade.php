@@ -75,6 +75,8 @@
                                 <thead>
                                     <tr>
                                         <th>Expense Head</th>
+                                        <th>Type</th>
+                                        <th>Parent Category</th>
                                         <th>Total Expenses</th>
                                         <th>Status</th>
                                         <th class="text-end">Actions</th>
@@ -83,9 +85,22 @@
                                 <tbody>
                                     @forelse($expenseHeads as $head)
                                     <tr class="single-item">
-                                        <td class="fw-semibold text-dark">{{ $head->expense_name }}</td>
+                                        <td class="fw-semibold text-dark">
+                                            @if($head->isSubcategory())
+                                            <span class="ms-3">↳ </span>
+                                            @endif
+                                            {{ $head->expense_name }}
+                                        </td>
                                         <td>
-                                            <span class="badge bg-soft-primary text-primary">{{ $head->expenses_count }} expenses</span>
+                                            @if($head->isCategory())
+                                            <span class="badge bg-soft-primary text-primary">Category</span>
+                                            @else
+                                            <span class="badge bg-soft-info text-info">Subcategory</span>
+                                            @endif
+                                        </td>
+                                        <td class="text-muted">{{ $head->parent?->expense_name ?? '—' }}</td>
+                                        <td>
+                                            <span class="badge bg-soft-secondary text-secondary">{{ $head->expenses_count }} expenses</span>
                                         </td>
                                         <td>
                                             @if($head->status)
@@ -124,7 +139,7 @@
                                     </tr>
                                     @empty
                                     <tr>
-                                        <td colspan="4" class="text-center py-5 text-muted">
+                                        <td colspan="6" class="text-center py-5 text-muted">
                                             <i class="feather-list fs-1 d-block mb-2"></i>
                                             No expense heads found.
                                         </td>

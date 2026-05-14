@@ -15,9 +15,20 @@ class Sample extends Model
         'sample_code',
         'category_id',
         'customer_id',
+        'supplier_id',
+        'received_by',
         'brand_id',
         'product_name',
-        'shipment_reference',
+        'article',
+        'color',
+        'size',
+        'unit',
+        'sample_reference',
+        'physical_location',
+        'source',
+        'rack',
+        'position',
+        'main_image',
         'receive_date',
         'quantity',
         'priority_level',
@@ -39,13 +50,6 @@ class Sample extends Model
             ->dontSubmitEmptyLogs();
     }
 
-    protected static function booted(): void
-    {
-        static::creating(function (Sample $sample) {
-            // sample_code is generated in the controller before save
-        });
-    }
-
     public function category()
     {
         return $this->belongsTo(ProductCategory::class, 'category_id');
@@ -54,6 +58,16 @@ class Sample extends Model
     public function customer()
     {
         return $this->belongsTo(Customer::class);
+    }
+
+    public function supplier()
+    {
+        return $this->belongsTo(Supplier::class);
+    }
+
+    public function receivedBy()
+    {
+        return $this->belongsTo(Employee::class, 'received_by');
     }
 
     public function brand()
@@ -74,6 +88,21 @@ class Sample extends Model
     public function inspections()
     {
         return $this->hasMany(Inspection::class);
+    }
+
+    public function attachments()
+    {
+        return $this->morphMany(Attachment::class, 'attachable');
+    }
+
+    public function mainImage(): ?Attachment
+    {
+        return $this->attachments()->where('attachment_type', 'main_image')->latest()->first();
+    }
+
+    public function galleryImages()
+    {
+        return $this->attachments()->where('attachment_type', 'gallery');
     }
 
     public function isOverdue(): bool

@@ -15,7 +15,9 @@ return new class extends Migration
             $table->foreignId('customer_id')->constrained('customers');
             $table->foreignId('brand_id')->constrained('brands');
             $table->string('product_name');
-            $table->string('shipment_reference')->nullable();
+            $table->string('sample_reference')->nullable();
+            $table->string('physical_location')->nullable();
+            $table->string('main_image')->nullable();
             $table->date('receive_date');
             $table->unsignedInteger('quantity');
             $table->enum('priority_level', ['Low', 'Medium', 'High', 'Urgent'])->default('Medium');

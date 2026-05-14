@@ -1,373 +1,407 @@
-{{-- Dashboard Page - Extends the master layout --}}
 @extends('index')
 
 @section('title', 'Dashboard - TradeSyncERP')
 
 @section('content')
-    <div class="nxl-content">
-        <!-- [ page-header ] start -->
-        <div class="page-header">
-            <div class="page-header-left d-flex align-items-center">
-                <div class="page-header-title">
-                    <h5 class="m-b-10">Dashboard</h5>
-                </div>
-                <ul class="breadcrumb">
-                    <li class="breadcrumb-item"><a href="{{ route('dashboard') }}">Home</a></li>
-                    <li class="breadcrumb-item">Dashboard</li>
-                </ul>
+<div class="nxl-content">
+    <div class="page-header">
+        <div class="page-header-left d-flex align-items-center">
+            <div class="page-header-title">
+                <h5 class="m-b-10">Dashboard</h5>
             </div>
-            <div class="page-header-right ms-auto">
-                <div class="page-header-right-items">
-                    <div class="d-flex d-md-none">
-                        <a href="javascript:void(0)" class="pin-content" data-bs-toggle="dropdown">
-                            <i class="feather-more-vertical"></i>
-                        </a>
-                    </div>
-                    <div class="d-flex align-items-center gap-2 page-header-right-items-wrapper">
-                        <div class="dropdown">
-                            <a class="btn btn-icon btn-light-brand" data-bs-toggle="dropdown" data-bs-offset="0, 10" data-bs-auto-close="outside">
-                                <i class="feather-paperclip"></i>
-                            </a>
-                            <div class="dropdown-menu dropdown-menu-end">
-                                <a href="javascript:void(0);" class="dropdown-item">
-                                    <i class="feather-copy me-3"></i>
-                                    <span>Copy Link</span>
-                                </a>
-                                <a href="javascript:void(0);" class="dropdown-item">
-                                    <i class="feather-file me-3"></i>
-                                    <span>Export as CSV</span>
-                                </a>
-                                <a href="javascript:void(0);" class="dropdown-item">
-                                    <i class="feather-file-text me-3"></i>
-                                    <span>Export as PDF</span>
-                                </a>
-                                <div class="dropdown-divider"></div>
-                                <a href="javascript:void(0);" class="dropdown-item">
-                                    <i class="feather-printer me-3"></i>
-                                    <span>Print</span>
-                                </a>
-                            </div>
-                        </div>
-                    </div>
+            <ul class="breadcrumb">
+                <li class="breadcrumb-item"><a href="{{ route('dashboard') }}">Home</a></li>
+                <li class="breadcrumb-item">Dashboard</li>
+            </ul>
+        </div>
+        <div class="page-header-right ms-auto">
+            <div class="page-header-right-items">
+                <div class="d-flex align-items-center gap-2 page-header-right-items-wrapper">
+                    <span class="text-muted fs-12">{{ now()->format('l, d M Y') }}</span>
                 </div>
             </div>
         </div>
-        <!-- [ page-header ] end -->
-
-        <!-- [ Main Content ] start -->
-        <div class="main-content">
-            <div class="row">
-                <!-- [ Statistics Cards ] start -->
-                <div class="col-xxl-3 col-md-6">
-                    <div class="card stretch stretch-full">
-                        <div class="card-body">
-                            <div class="d-flex align-items-center justify-content-between">
-                                <div class="d-flex align-items-center gap-3">
-                                    <div class="avatar-text avatar-lg bg-soft-primary text-primary border-soft-primary rounded">
-                                        <i class="feather-users"></i>
-                                    </div>
-                                    <div>
-                                        <div class="fw-semibold text-dark">Total Customers</div>
-                                        <div class="fs-12 text-muted">Active accounts</div>
-                                    </div>
-                                </div>
-                                <div class="badge bg-soft-primary text-primary">
-                                    <i class="feather-trending-up fs-11 me-1"></i>
-                                    <span>12.5%</span>
-                                </div>
-                            </div>
-                            <div class="pt-4">
-                                <h2 class="fs-4 fw-bold text-dark mb-1">2,456</h2>
-                                <div class="fs-12 text-muted">
-                                    <span class="text-success fw-semibold">+124</span> new this month
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-                <div class="col-xxl-3 col-md-6">
-                    <div class="card stretch stretch-full">
-                        <div class="card-body">
-                            <div class="d-flex align-items-center justify-content-between">
-                                <div class="d-flex align-items-center gap-3">
-                                    <div class="avatar-text avatar-lg bg-soft-success text-success border-soft-success rounded">
-                                        <i class="feather-dollar-sign"></i>
-                                    </div>
-                                    <div>
-                                        <div class="fw-semibold text-dark">Total Revenue</div>
-                                        <div class="fs-12 text-muted">Monthly income</div>
-                                    </div>
-                                </div>
-                                <div class="badge bg-soft-success text-success">
-                                    <i class="feather-trending-up fs-11 me-1"></i>
-                                    <span>8.3%</span>
-                                </div>
-                            </div>
-                            <div class="pt-4">
-                                <h2 class="fs-4 fw-bold text-dark mb-1">$48,250</h2>
-                                <div class="fs-12 text-muted">
-                                    <span class="text-success fw-semibold">+$5,200</span> from last month
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-                <div class="col-xxl-3 col-md-6">
-                    <div class="card stretch stretch-full">
-                        <div class="card-body">
-                            <div class="d-flex align-items-center justify-content-between">
-                                <div class="d-flex align-items-center gap-3">
-                                    <div class="avatar-text avatar-lg bg-soft-warning text-warning border-soft-warning rounded">
-                                        <i class="feather-shopping-cart"></i>
-                                    </div>
-                                    <div>
-                                        <div class="fw-semibold text-dark">Total Orders</div>
-                                        <div class="fs-12 text-muted">Completed orders</div>
-                                    </div>
-                                </div>
-                                <div class="badge bg-soft-warning text-warning">
-                                    <i class="feather-trending-down fs-11 me-1"></i>
-                                    <span>3.2%</span>
-                                </div>
-                            </div>
-                            <div class="pt-4">
-                                <h2 class="fs-4 fw-bold text-dark mb-1">1,890</h2>
-                                <div class="fs-12 text-muted">
-                                    <span class="text-danger fw-semibold">-32</span> from last month
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-                <div class="col-xxl-3 col-md-6">
-                    <div class="card stretch stretch-full">
-                        <div class="card-body">
-                            <div class="d-flex align-items-center justify-content-between">
-                                <div class="d-flex align-items-center gap-3">
-                                    <div class="avatar-text avatar-lg bg-soft-danger text-danger border-soft-danger rounded">
-                                        <i class="feather-briefcase"></i>
-                                    </div>
-                                    <div>
-                                        <div class="fw-semibold text-dark">Active Projects</div>
-                                        <div class="fs-12 text-muted">In progress</div>
-                                    </div>
-                                </div>
-                                <div class="badge bg-soft-danger text-danger">
-                                    <i class="feather-trending-up fs-11 me-1"></i>
-                                    <span>5.7%</span>
-                                </div>
-                            </div>
-                            <div class="pt-4">
-                                <h2 class="fs-4 fw-bold text-dark mb-1">64</h2>
-                                <div class="fs-12 text-muted">
-                                    <span class="text-success fw-semibold">+8</span> new this month
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-                <!-- [ Statistics Cards ] end -->
-
-                <!-- [ Recent Activity ] start -->
-                <div class="col-xxl-8">
-                    <div class="card stretch stretch-full">
-                        <div class="card-header">
-                            <h5 class="card-title">Recent Activity</h5>
-                            <div class="card-header-action">
-                                <div class="dropdown">
-                                    <a href="javascript:void(0);" class="btn btn-icon btn-light-brand" data-bs-toggle="dropdown" data-bs-offset="0, 10">
-                                        <i class="feather-more-vertical"></i>
-                                    </a>
-                                    <div class="dropdown-menu dropdown-menu-end">
-                                        <a href="javascript:void(0);" class="dropdown-item"><i class="feather-eye me-3"></i><span>View Details</span></a>
-                                        <a href="javascript:void(0);" class="dropdown-item"><i class="feather-download me-3"></i><span>Download Report</span></a>
-                                        <div class="dropdown-divider"></div>
-                                        <a href="javascript:void(0);" class="dropdown-item"><i class="feather-refresh-cw me-3"></i><span>Refresh</span></a>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                        <div class="card-body custom-card-action">
-                            <div class="table-responsive">
-                                <table class="table table-hover mb-0" id="dashboard-recent-activity">
-                                    <thead>
-                                        <tr>
-                                            <th>Customer</th>
-                                            <th>Order ID</th>
-                                            <th>Date</th>
-                                            <th>Amount</th>
-                                            <th>Status</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody>
-                                        <tr>
-                                            <td>
-                                                <div class="d-flex align-items-center gap-3">
-                                                    <div class="avatar-image avatar-md">
-                                                        <img src="{{ asset('assets/images/avatar/1.png') }}" alt="" class="img-fluid">
-                                                    </div>
-                                                    <a href="javascript:void(0);">
-                                                        <span class="d-block">Alexandra Della</span>
-                                                        <span class="fs-12 d-block fw-normal text-muted">alex@example.com</span>
-                                                    </a>
-                                                </div>
-                                            </td>
-                                            <td>#ORD-1234</td>
-                                            <td>May 10, 2026</td>
-                                            <td class="fw-semibold text-dark">$1,250.00</td>
-                                            <td><span class="badge bg-soft-success text-success">Completed</span></td>
-                                        </tr>
-                                        <tr>
-                                            <td>
-                                                <div class="d-flex align-items-center gap-3">
-                                                    <div class="avatar-image avatar-md">
-                                                        <img src="{{ asset('assets/images/avatar/2.png') }}" alt="" class="img-fluid">
-                                                    </div>
-                                                    <a href="javascript:void(0);">
-                                                        <span class="d-block">Green Cute</span>
-                                                        <span class="fs-12 d-block fw-normal text-muted">green@example.com</span>
-                                                    </a>
-                                                </div>
-                                            </td>
-                                            <td>#ORD-1235</td>
-                                            <td>May 09, 2026</td>
-                                            <td class="fw-semibold text-dark">$890.00</td>
-                                            <td><span class="badge bg-soft-warning text-warning">Pending</span></td>
-                                        </tr>
-                                        <tr>
-                                            <td>
-                                                <div class="d-flex align-items-center gap-3">
-                                                    <div class="avatar-image avatar-md">
-                                                        <img src="{{ asset('assets/images/avatar/3.png') }}" alt="" class="img-fluid">
-                                                    </div>
-                                                    <a href="javascript:void(0);">
-                                                        <span class="d-block">Malanie Hanvey</span>
-                                                        <span class="fs-12 d-block fw-normal text-muted">malanie@example.com</span>
-                                                    </a>
-                                                </div>
-                                            </td>
-                                            <td>#ORD-1236</td>
-                                            <td>May 08, 2026</td>
-                                            <td class="fw-semibold text-dark">$2,340.00</td>
-                                            <td><span class="badge bg-soft-success text-success">Completed</span></td>
-                                        </tr>
-                                        <tr>
-                                            <td>
-                                                <div class="d-flex align-items-center gap-3">
-                                                    <div class="avatar-image avatar-md">
-                                                        <img src="{{ asset('assets/images/avatar/4.png') }}" alt="" class="img-fluid">
-                                                    </div>
-                                                    <a href="javascript:void(0);">
-                                                        <span class="d-block">Kenneth Hune</span>
-                                                        <span class="fs-12 d-block fw-normal text-muted">kenneth@example.com</span>
-                                                    </a>
-                                                </div>
-                                            </td>
-                                            <td>#ORD-1237</td>
-                                            <td>May 07, 2026</td>
-                                            <td class="fw-semibold text-dark">$560.00</td>
-                                            <td><span class="badge bg-soft-danger text-danger">Cancelled</span></td>
-                                        </tr>
-                                        <tr>
-                                            <td>
-                                                <div class="d-flex align-items-center gap-3">
-                                                    <div class="avatar-image avatar-md">
-                                                        <img src="{{ asset('assets/images/avatar/5.png') }}" alt="" class="img-fluid">
-                                                    </div>
-                                                    <a href="javascript:void(0);">
-                                                        <span class="d-block">Archie Cantones</span>
-                                                        <span class="fs-12 d-block fw-normal text-muted">archie@example.com</span>
-                                                    </a>
-                                                </div>
-                                            </td>
-                                            <td>#ORD-1238</td>
-                                            <td>May 06, 2026</td>
-                                            <td class="fw-semibold text-dark">$3,100.00</td>
-                                            <td><span class="badge bg-soft-primary text-primary">Processing</span></td>
-                                        </tr>
-                                    </tbody>
-                                </table>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-                <!-- [ Recent Activity ] end -->
-
-                <!-- [ Quick Stats Sidebar ] start -->
-                <div class="col-xxl-4">
-                    <div class="card stretch stretch-full">
-                        <div class="card-header">
-                            <h5 class="card-title">Quick Overview</h5>
-                        </div>
-                        <div class="card-body">
-                            <div class="d-flex align-items-center justify-content-between mb-4">
-                                <div class="d-flex align-items-center gap-3">
-                                    <div class="avatar-text rounded bg-soft-primary text-primary">
-                                        <i class="feather-check-circle"></i>
-                                    </div>
-                                    <div>
-                                        <div class="fw-semibold text-dark">Completed Tasks</div>
-                                        <div class="fs-12 text-muted">Last 30 days</div>
-                                    </div>
-                                </div>
-                                <div class="fs-4 fw-bold text-dark">245</div>
-                            </div>
-                            <div class="d-flex align-items-center justify-content-between mb-4">
-                                <div class="d-flex align-items-center gap-3">
-                                    <div class="avatar-text rounded bg-soft-warning text-warning">
-                                        <i class="feather-clock"></i>
-                                    </div>
-                                    <div>
-                                        <div class="fw-semibold text-dark">Pending Tasks</div>
-                                        <div class="fs-12 text-muted">Needs attention</div>
-                                    </div>
-                                </div>
-                                <div class="fs-4 fw-bold text-dark">32</div>
-                            </div>
-                            <div class="d-flex align-items-center justify-content-between mb-4">
-                                <div class="d-flex align-items-center gap-3">
-                                    <div class="avatar-text rounded bg-soft-success text-success">
-                                        <i class="feather-file-text"></i>
-                                    </div>
-                                    <div>
-                                        <div class="fw-semibold text-dark">Invoices Sent</div>
-                                        <div class="fs-12 text-muted">This month</div>
-                                    </div>
-                                </div>
-                                <div class="fs-4 fw-bold text-dark">89</div>
-                            </div>
-                            <div class="d-flex align-items-center justify-content-between mb-4">
-                                <div class="d-flex align-items-center gap-3">
-                                    <div class="avatar-text rounded bg-soft-danger text-danger">
-                                        <i class="feather-alert-triangle"></i>
-                                    </div>
-                                    <div>
-                                        <div class="fw-semibold text-dark">Overdue Items</div>
-                                        <div class="fs-12 text-muted">Requires action</div>
-                                    </div>
-                                </div>
-                                <div class="fs-4 fw-bold text-dark">12</div>
-                            </div>
-                            <div class="d-flex align-items-center justify-content-between">
-                                <div class="d-flex align-items-center gap-3">
-                                    <div class="avatar-text rounded bg-soft-teal text-teal">
-                                        <i class="feather-message-square"></i>
-                                    </div>
-                                    <div>
-                                        <div class="fw-semibold text-dark">Support Tickets</div>
-                                        <div class="fs-12 text-muted">Open tickets</div>
-                                    </div>
-                                </div>
-                                <div class="fs-4 fw-bold text-dark">18</div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-                <!-- [ Quick Stats Sidebar ] end -->
-            </div>
-        </div>
-        <!-- [ Main Content ] end -->
     </div>
+
+    <div class="main-content">
+
+        {{-- ── Row 1: Key KPI cards ─────────────────────────────────────────── --}}
+        <div class="row">
+
+            {{-- Customers --}}
+            <div class="col-xxl-3 col-md-6">
+                <div class="card stretch stretch-full">
+                    <div class="card-body">
+                        <div class="d-flex align-items-center justify-content-between">
+                            <div class="d-flex align-items-center gap-3">
+                                <div class="avatar-text avatar-lg bg-soft-primary text-primary border-soft-primary rounded">
+                                    <i class="feather-user-check"></i>
+                                </div>
+                                <div>
+                                    <div class="fw-semibold text-dark">Active Customers</div>
+                                    <div class="fs-12 text-muted">All active accounts</div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="pt-4">
+                            <h2 class="fs-4 fw-bold text-dark mb-1">{{ number_format($totalCustomers) }}</h2>
+                            @can('customers.index')
+                            <a href="{{ route('masters.customers.index') }}" class="fs-12 text-primary">View all →</a>
+                            @endcan
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            {{-- Receivables --}}
+            <div class="col-xxl-3 col-md-6">
+                <div class="card stretch stretch-full">
+                    <div class="card-body">
+                        <div class="d-flex align-items-center justify-content-between">
+                            <div class="d-flex align-items-center gap-3">
+                                <div class="avatar-text avatar-lg bg-soft-success text-success border-soft-success rounded">
+                                    <i class="feather-dollar-sign"></i>
+                                </div>
+                                <div>
+                                    <div class="fw-semibold text-dark">Outstanding Receivables</div>
+                                    <div class="fs-12 text-muted">Total unpaid invoices</div>
+                                </div>
+                            </div>
+                            @if($overdueInvoices > 0)
+                            <div class="badge bg-soft-danger text-danger">
+                                {{ $overdueInvoices }} overdue
+                            </div>
+                            @endif
+                        </div>
+                        <div class="pt-4">
+                            <h2 class="fs-4 fw-bold text-dark mb-1">PKR {{ number_format($totalReceivable, 0) }}</h2>
+                            <div class="fs-12 text-muted">{{ $invoicesThisMonth }} invoices this month</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            {{-- Active Samples --}}
+            <div class="col-xxl-3 col-md-6">
+                <div class="card stretch stretch-full">
+                    <div class="card-body">
+                        <div class="d-flex align-items-center justify-content-between">
+                            <div class="d-flex align-items-center gap-3">
+                                <div class="avatar-text avatar-lg bg-soft-warning text-warning border-soft-warning rounded">
+                                    <i class="feather-package"></i>
+                                </div>
+                                <div>
+                                    <div class="fw-semibold text-dark">Active Samples</div>
+                                    <div class="fs-12 text-muted">In lab / awaiting testing</div>
+                                </div>
+                            </div>
+                            @if($overdueSamples > 0)
+                            <div class="badge bg-soft-danger text-danger">
+                                {{ $overdueSamples }} overdue
+                            </div>
+                            @endif
+                        </div>
+                        <div class="pt-4">
+                            <h2 class="fs-4 fw-bold text-dark mb-1">{{ number_format($activeSamples) }}</h2>
+                            @can('samples.index')
+                            <a href="{{ route('samples.index') }}" class="fs-12 text-primary">View samples →</a>
+                            @endcan
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            {{-- Expenses this month --}}
+            <div class="col-xxl-3 col-md-6">
+                <div class="card stretch stretch-full">
+                    <div class="card-body">
+                        <div class="d-flex align-items-center justify-content-between">
+                            <div class="d-flex align-items-center gap-3">
+                                <div class="avatar-text avatar-lg bg-soft-warning text-warning border-soft-warning rounded">
+                                    <i class="feather-trending-down"></i>
+                                </div>
+                                <div>
+                                    <div class="fw-semibold text-dark">Expenses This Month</div>
+                                    <div class="fs-12 text-muted">Total spent</div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="pt-4">
+                            <h2 class="fs-4 fw-bold text-dark mb-1">PKR {{ number_format($expensesThisMonth, 0) }}</h2>
+                            @can('expenses.index')
+                            <a href="{{ route('expenses.index') }}" class="fs-12 text-primary">View expenses →</a>
+                            @endcan
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        {{-- ── Row 2: Finance + Operations summary ─────────────────────────── --}}
+        <div class="row mt-2">
+
+            {{-- Finance summary panel --}}
+            <div class="col-xl-4">
+                <div class="card stretch stretch-full">
+                    <div class="card-header">
+                        <h5 class="card-title">Finance Overview</h5>
+                        <span class="text-muted fs-12">This month</span>
+                    </div>
+                    <div class="card-body">
+                        <div class="d-flex align-items-center justify-content-between mb-4">
+                            <div class="d-flex align-items-center gap-3">
+                                <div class="avatar-text rounded bg-soft-success text-success">
+                                    <i class="feather-arrow-down-circle"></i>
+                                </div>
+                                <div>
+                                    <div class="fw-semibold text-dark">Payments Received</div>
+                                    <div class="fs-12 text-muted">This month (PKR)</div>
+                                </div>
+                            </div>
+                            <div class="fw-bold text-success">{{ number_format($paymentsThisMonth, 0) }}</div>
+                        </div>
+                        <div class="d-flex align-items-center justify-content-between mb-4">
+                            <div class="d-flex align-items-center gap-3">
+                                <div class="avatar-text rounded bg-soft-primary text-primary">
+                                    <i class="feather-file-text"></i>
+                                </div>
+                                <div>
+                                    <div class="fw-semibold text-dark">Total Invoiced</div>
+                                    <div class="fs-12 text-muted">All time (PKR)</div>
+                                </div>
+                            </div>
+                            <div class="fw-bold text-dark">{{ number_format($totalInvoiced, 0) }}</div>
+                        </div>
+                        <div class="d-flex align-items-center justify-content-between mb-4">
+                            <div class="d-flex align-items-center gap-3">
+                                <div class="avatar-text rounded bg-soft-warning text-warning">
+                                    <i class="feather-clock"></i>
+                                </div>
+                                <div>
+                                    <div class="fw-semibold text-dark">Outstanding</div>
+                                    <div class="fs-12 text-muted">Unpaid invoices (PKR)</div>
+                                </div>
+                            </div>
+                            <div class="fw-bold text-warning">{{ number_format($totalReceivable, 0) }}</div>
+                        </div>
+                        <div class="d-flex align-items-center justify-content-between">
+                            <div class="d-flex align-items-center gap-3">
+                                <div class="avatar-text rounded bg-soft-danger text-danger">
+                                    <i class="feather-trending-down"></i>
+                                </div>
+                                <div>
+                                    <div class="fw-semibold text-dark">Expenses</div>
+                                    <div class="fs-12 text-muted">This month (PKR)</div>
+                                </div>
+                            </div>
+                            <div class="fw-bold text-danger">{{ number_format($expensesThisMonth, 0) }}</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            {{-- Operations alerts panel --}}
+            <div class="col-xl-4">
+                <div class="card stretch stretch-full">
+                    <div class="card-header">
+                        <h5 class="card-title">Operations Alerts</h5>
+                        <span class="text-muted fs-12">Requires attention</span>
+                    </div>
+                    <div class="card-body">
+                        <div class="d-flex align-items-center justify-content-between mb-4">
+                            <div class="d-flex align-items-center gap-3">
+                                <div class="avatar-text rounded bg-soft-danger text-danger">
+                                    <i class="feather-alert-triangle"></i>
+                                </div>
+                                <div>
+                                    <div class="fw-semibold text-dark">Overdue Samples</div>
+                                    <div class="fs-12 text-muted">Past alert date</div>
+                                </div>
+                            </div>
+                            <div class="fs-4 fw-bold {{ $overdueSamples > 0 ? 'text-danger' : 'text-success' }}">
+                                {{ $overdueSamples }}
+                            </div>
+                        </div>
+                        <div class="d-flex align-items-center justify-content-between mb-4">
+                            <div class="d-flex align-items-center gap-3">
+                                <div class="avatar-text rounded bg-soft-warning text-warning">
+                                    <i class="feather-search"></i>
+                                </div>
+                                <div>
+                                    <div class="fw-semibold text-dark">Pending Inspections</div>
+                                    <div class="fs-12 text-muted">Awaiting results</div>
+                                </div>
+                            </div>
+                            <div class="fs-4 fw-bold {{ $pendingInspections > 0 ? 'text-warning' : 'text-success' }}">
+                                {{ $pendingInspections }}
+                            </div>
+                        </div>
+                        <div class="d-flex align-items-center justify-content-between mb-4">
+                            <div class="d-flex align-items-center gap-3">
+                                <div class="avatar-text rounded bg-soft-warning text-warning">
+                                    <i class="feather-repeat"></i>
+                                </div>
+                                <div>
+                                    <div class="fw-semibold text-dark">Overdue Movements</div>
+                                    <div class="fs-12 text-muted">Not returned</div>
+                                </div>
+                            </div>
+                            <div class="fs-4 fw-bold {{ $overdueMovements > 0 ? 'text-warning' : 'text-success' }}">
+                                {{ $overdueMovements }}
+                            </div>
+                        </div>
+                        <div class="d-flex align-items-center justify-content-between">
+                            <div class="d-flex align-items-center gap-3">
+                                <div class="avatar-text rounded bg-soft-primary text-primary">
+                                    <i class="feather-clipboard"></i>
+                                </div>
+                                <div>
+                                    <div class="fw-semibold text-dark">Open Customer Orders</div>
+                                    <div class="fs-12 text-muted">Draft / Confirmed / Processing</div>
+                                </div>
+                            </div>
+                            <div class="fs-4 fw-bold text-primary">{{ $pendingOrders }}</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            {{-- Sample status breakdown --}}
+            <div class="col-xl-4">
+                <div class="card stretch stretch-full">
+                    <div class="card-header">
+                        <h5 class="card-title">Samples by Status</h5>
+                    </div>
+                    <div class="card-body">
+                        @php
+                            $statusMap = [
+                                'Received'   => ['color' => 'primary',   'icon' => 'feather-inbox'],
+                                'In Testing' => ['color' => 'warning',   'icon' => 'feather-activity'],
+                                'Completed'  => ['color' => 'success',   'icon' => 'feather-check-circle'],
+                                'Returned'   => ['color' => 'secondary', 'icon' => 'feather-corner-up-left'],
+                            ];
+                            $totalAllSamples = max($samplesByStatus->sum(), 1);
+                        @endphp
+                        @foreach($statusMap as $status => $cfg)
+                        @php $count = $samplesByStatus[$status] ?? 0; @endphp
+                        <div class="mb-3">
+                            <div class="d-flex justify-content-between mb-1">
+                                <span class="fs-12 fw-semibold text-dark">
+                                    <i class="{{ $cfg['icon'] }} me-1 text-{{ $cfg['color'] }}"></i>{{ $status }}
+                                </span>
+                                <span class="fs-12 text-muted">{{ $count }}</span>
+                            </div>
+                            <div class="progress" style="height:6px;">
+                                <div class="progress-bar bg-{{ $cfg['color'] }}"
+                                     style="width: {{ round(($count / $totalAllSamples) * 100) }}%"></div>
+                            </div>
+                        </div>
+                        @endforeach
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        {{-- ── Row 3: Recent orders + recent activity ───────────────────────── --}}
+        <div class="row mt-2">
+
+            {{-- Recent customer orders --}}
+            @can('customer-orders.index')
+            <div class="col-xl-6">
+                <div class="card">
+                    <div class="card-header d-flex justify-content-between align-items-center">
+                        <h5 class="card-title mb-0">Recent Customer Orders</h5>
+                        <a href="{{ route('customer-orders.index') }}" class="btn btn-sm btn-light-brand">View All</a>
+                    </div>
+                    <div class="card-body p-0">
+                        <div class="table-responsive">
+                            <table class="table table-hover mb-0">
+                                <thead>
+                                    <tr>
+                                        <th>Order</th>
+                                        <th>Customer</th>
+                                        <th>Date</th>
+                                        <th>Status</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    @forelse($recentOrders as $order)
+                                    @php
+                                        $sc = ['Draft'=>'secondary','Confirmed'=>'primary','Processing'=>'warning','Dispatched'=>'success','Cancelled'=>'danger'];
+                                    @endphp
+                                    <tr>
+                                        <td>
+                                            <a href="{{ route('customer-orders.show', $order) }}" class="fw-semibold text-primary">
+                                                {{ $order->order_code }}
+                                            </a>
+                                        </td>
+                                        <td class="text-muted">{{ $order->customer->customer_name }}</td>
+                                        <td class="text-muted fs-12">{{ $order->order_date->format('d M Y') }}</td>
+                                        <td>
+                                            <span class="badge bg-soft-{{ $sc[$order->status] ?? 'secondary' }} text-{{ $sc[$order->status] ?? 'secondary' }}">
+                                                {{ $order->status }}
+                                            </span>
+                                        </td>
+                                    </tr>
+                                    @empty
+                                    <tr>
+                                        <td colspan="4" class="text-center py-4 text-muted">No customer orders yet.</td>
+                                    </tr>
+                                    @endforelse
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            @endcan
+
+            {{-- Recent Activity --}}
+            <div class="{{ auth()->user()->can('customer-orders.index') ? 'col-xl-6' : 'col-xl-12' }}">
+                <div class="card stretch stretch-full">
+                    <div class="card-header">
+                        <h5 class="card-title mb-0">Recent Activity</h5>
+                    </div>
+                    <div class="card-body p-0">
+                        <div class="table-responsive">
+                            <table class="table table-hover mb-0">
+                                <thead>
+                                    <tr>
+                                        <th>Action</th>
+                                        <th>Subject</th>
+                                        <th>By</th>
+                                        <th>When</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    @forelse($recentActivity as $activity)
+                                    <tr>
+                                        <td>
+                                            <span class="badge bg-soft-primary text-primary text-capitalize">
+                                                {{ $activity->description }}
+                                            </span>
+                                        </td>
+                                        <td class="text-muted fs-12">
+                                            {{ class_basename($activity->subject_type ?? '') }}
+                                        </td>
+                                        <td class="text-muted fs-12">{{ $activity->causer?->name ?? 'System' }}</td>
+                                        <td class="text-muted fs-12">{{ $activity->created_at->diffForHumans() }}</td>
+                                    </tr>
+                                    @empty
+                                    <tr>
+                                        <td colspan="4" class="text-center py-4 text-muted">No recent activity.</td>
+                                    </tr>
+                                    @endforelse
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+    </div>
+</div>
 @endsection
 
 @push('scripts')

@@ -141,6 +141,13 @@
                 </div>
             </div>
         </div>
+
+        {{-- Attachment Panel --}}
+        @include('partials.attachment-panel', [
+            'attachEntity'     => $employee,
+            'attachEntityType' => 'employees',
+            'attachLabel'      => 'Employee Documents',
+        ])
     </div>
 </div>
 @endsection

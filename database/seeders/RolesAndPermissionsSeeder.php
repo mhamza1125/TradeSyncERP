@@ -18,7 +18,8 @@ class RolesAndPermissionsSeeder extends Seeder
             'brands.index', 'brands.create', 'brands.edit', 'brands.delete',
             'categories.index', 'categories.create', 'categories.edit', 'categories.delete',
             'employees.index', 'employees.create', 'employees.edit', 'employees.delete',
-            'vendors.index', 'vendors.create', 'vendors.edit', 'vendors.delete',
+            'suppliers.index', 'suppliers.create', 'suppliers.edit', 'suppliers.delete',
+            'inspection-types.index', 'inspection-types.create', 'inspection-types.edit', 'inspection-types.delete',
             'parameters.index', 'parameters.create', 'parameters.edit', 'parameters.delete',
             'accounts.index', 'accounts.create', 'accounts.edit', 'accounts.delete',
             'expense-heads.index', 'expense-heads.create', 'expense-heads.edit', 'expense-heads.delete',
@@ -30,11 +31,14 @@ class RolesAndPermissionsSeeder extends Seeder
             'sample-movements.index', 'sample-movements.create', 'sample-movements.edit', 'sample-movements.delete',
             'inspections.index', 'inspections.create', 'inspections.edit', 'inspections.delete',
 
+            // Operations – customer orders
+            'customer-orders.index', 'customer-orders.create', 'customer-orders.edit', 'customer-orders.delete',
+
             // Finance
-            'vendor-bills.index', 'vendor-bills.create', 'vendor-bills.edit', 'vendor-bills.delete', 'vendor-bills.pay',
             'expenses.index', 'expenses.create', 'expenses.delete',
             'salary.index', 'salary.create', 'salary.edit', 'salary.pay',
             'customer-payments.index', 'customer-payments.create', 'customer-payments.delete',
+            'customer-invoices.index', 'customer-invoices.create', 'customer-invoices.edit', 'customer-invoices.delete',
 
             // Reports
             'reports.view',
@@ -55,15 +59,17 @@ class RolesAndPermissionsSeeder extends Seeder
             'brands.index', 'brands.create', 'brands.edit',
             'categories.index', 'categories.create', 'categories.edit',
             'employees.index', 'employees.create', 'employees.edit',
-            'vendors.index', 'vendors.create', 'vendors.edit',
+            'suppliers.index', 'suppliers.create', 'suppliers.edit',
+            'inspection-types.index', 'inspection-types.create', 'inspection-types.edit',
             'parameters.index', 'parameters.create', 'parameters.edit', 'parameters.delete',
+            'customer-orders.index', 'customer-orders.create', 'customer-orders.edit', 'customer-orders.delete',
             'samples.index', 'samples.create', 'samples.edit', 'samples.delete',
             'sample-movements.index', 'sample-movements.create', 'sample-movements.edit', 'sample-movements.delete',
             'inspections.index', 'inspections.create', 'inspections.edit', 'inspections.delete',
-            'vendor-bills.index', 'vendor-bills.create', 'vendor-bills.edit',
             'expenses.index',
             'salary.index',
             'customer-payments.index',
+            'customer-invoices.index',
             'reports.view',
         ]);
 
@@ -71,17 +77,18 @@ class RolesAndPermissionsSeeder extends Seeder
         $accountant = Role::firstOrCreate(['name' => 'Accountant']);
         $accountant->syncPermissions([
             'customers.index', 'customers.create', 'customers.edit',
-            'vendors.index', 'vendors.create', 'vendors.edit',
+            'suppliers.index', 'suppliers.create', 'suppliers.edit',
             'accounts.index', 'accounts.create', 'accounts.edit',
             'expense-heads.index', 'expense-heads.create', 'expense-heads.edit',
             'currencies.index', 'currencies.create', 'currencies.edit',
             'banks.index', 'banks.create', 'banks.edit',
+            'customer-orders.index',
             'samples.index',
             'inspections.index',
-            'vendor-bills.index', 'vendor-bills.create', 'vendor-bills.edit', 'vendor-bills.delete', 'vendor-bills.pay',
             'expenses.index', 'expenses.create', 'expenses.delete',
             'salary.index', 'salary.create', 'salary.edit', 'salary.pay',
             'customer-payments.index', 'customer-payments.create', 'customer-payments.delete',
+            'customer-invoices.index', 'customer-invoices.create', 'customer-invoices.edit', 'customer-invoices.delete',
             'reports.view',
         ]);
 

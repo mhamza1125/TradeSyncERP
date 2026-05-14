@@ -15,11 +15,12 @@ class UpdateInspectionRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'inspection_date' => ['required', 'date'],
-            'inspector_type'  => ['required', Rule::in(['Employee', 'Vendor'])],
-            'inspector_id'    => ['required', 'integer'],
-            'overall_status'  => ['required', Rule::in(['Pass', 'Fail', 'Pending'])],
-            'remarks'         => ['nullable', 'string'],
+            'inspection_type_id' => ['nullable', 'exists:inspection_types,id'],
+            'inspection_date'    => ['required', 'date'],
+            'inspector_ids'      => ['nullable', 'array'],
+            'inspector_ids.*'    => ['exists:employees,id'],
+            'overall_status'     => ['nullable', Rule::in(['Pass', 'Fail', 'Pending'])],
+            'remarks'            => ['nullable', 'string'],
         ];
     }
 }

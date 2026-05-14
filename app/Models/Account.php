@@ -14,6 +14,7 @@ class Account extends Model
         'account_name',
         'account_type',
         'bank_id',
+        'account_number',
         'currency',
         'opening_balance',
         'status',
@@ -60,5 +61,15 @@ class Account extends Model
     public function customerPayments()
     {
         return $this->hasMany(CustomerPayment::class);
+    }
+
+    public function isBankAccount(): bool
+    {
+        return $this->bank_id !== null;
+    }
+
+    public function attachments()
+    {
+        return $this->morphMany(Attachment::class, 'attachable');
     }
 }

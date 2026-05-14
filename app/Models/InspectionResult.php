@@ -15,6 +15,7 @@ class InspectionResult extends Model
         'sample_testing_parameter_id',
         'actual_result',
         'pass_fail',
+        'status',
         'remarks',
         'attachment',
     ];

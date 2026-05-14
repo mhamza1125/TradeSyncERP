@@ -11,8 +11,9 @@ return new class extends Migration
         Schema::create('accounts', function (Blueprint $table) {
             $table->id();
             $table->string('account_name');
-            $table->enum('account_type', ['Cash', 'Bank', 'Ledger']);
+            $table->enum('account_type', ['Cash', 'Bank'])->default('Cash');
             $table->foreignId('bank_id')->nullable()->constrained('banks')->nullOnDelete();
+            $table->string('account_number')->nullable();
             $table->string('currency', 10)->default('PKR');
             $table->decimal('opening_balance', 15, 2)->default(0);
             $table->boolean('status')->default(true);

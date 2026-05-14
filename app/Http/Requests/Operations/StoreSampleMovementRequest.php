@@ -18,7 +18,7 @@ class StoreSampleMovementRequest extends FormRequest
             'sample_id'            => ['required', 'exists:samples,id'],
             'moved_by_type'        => ['required', 'in:Employee,User'],
             'moved_by_id'          => ['required', 'integer'],
-            'assigned_to_type'     => ['required', Rule::in(['Employee', 'Vendor', 'Storage', 'Customer'])],
+            'assigned_to_type'     => ['required', Rule::in(['Employee', 'Supplier', 'Storage', 'Customer'])],
             'assigned_to_id'       => ['required', 'integer'],
             'issue_date'           => ['required', 'date'],
             'expected_return_date' => ['nullable', 'date', 'after_or_equal:issue_date'],

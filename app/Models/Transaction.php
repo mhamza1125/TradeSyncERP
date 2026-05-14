@@ -56,11 +56,6 @@ class Transaction extends Model
         return $this->hasOne(Expense::class);
     }
 
-    public function vendorBill()
-    {
-        return $this->hasOne(VendorBill::class);
-    }
-
     public function salaryRun()
     {
         return $this->hasOne(SalaryRun::class);
@@ -69,5 +64,10 @@ class Transaction extends Model
     public function customerPayment()
     {
         return $this->hasOne(CustomerPayment::class);
+    }
+
+    public function attachments()
+    {
+        return $this->morphMany(Attachment::class, 'attachable');
     }
 }

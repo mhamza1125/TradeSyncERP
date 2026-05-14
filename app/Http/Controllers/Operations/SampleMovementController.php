@@ -5,10 +5,11 @@ namespace App\Http\Controllers\Operations;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Operations\StoreSampleMovementRequest;
 use App\Http\Requests\Operations\UpdateSampleMovementRequest;
+use App\Models\Customer;
 use App\Models\Employee;
 use App\Models\Sample;
 use App\Models\SampleMovement;
-use App\Models\Vendor;
+use App\Models\Supplier;
 use Illuminate\Http\Request;
 
 class SampleMovementController extends Controller
@@ -30,8 +31,9 @@ class SampleMovementController extends Controller
     public function create(Sample $sample)
     {
         $employees = Employee::where('status', true)->orderBy('employee_name')->get();
-        $vendors   = Vendor::where('status', true)->orderBy('vendor_name')->get();
-        return view('operations.movements.create', compact('sample', 'employees', 'vendors'));
+        $suppliers = Supplier::where('status', true)->orderBy('name')->get();
+        $customers = Customer::where('status', true)->orderBy('customer_name')->get();
+        return view('operations.movements.create', compact('sample', 'employees', 'suppliers', 'customers'));
     }
 
     public function store(StoreSampleMovementRequest $request, Sample $sample)
@@ -49,18 +51,26 @@ class SampleMovementController extends Controller
             ->with('success', 'Movement recorded successfully.');
     }
 
-    public function show(Sample $sample, SampleMovement $movement)
+    // Shallow routes: no {sample} in URL — load sample from relationship
+    public function show(SampleMovement $movement)
     {
+        $movement->load('sample.customer');
+        $sample = $movement->sample;
         return view('operations.movements.show', compact('sample', 'movement'));
     }
 
-    public function edit(Sample $sample, SampleMovement $movement)
+    public function edit(SampleMovement $movement)
     {
-        return view('operations.movements.edit', compact('sample', 'movement'));
+        $sample = $movement->load('sample.customer')->sample;
+        $employees = Employee::where('status', true)->orderBy('employee_name')->get();
+        $suppliers = Supplier::where('status', true)->orderBy('name')->get();
+        $customers = Customer::where('status', true)->orderBy('customer_name')->get();
+        return view('operations.movements.edit', compact('sample', 'movement', 'employees', 'suppliers', 'customers'));
     }
 
-    public function update(UpdateSampleMovementRequest $request, Sample $sample, SampleMovement $movement)
+    public function update(UpdateSampleMovementRequest $request, SampleMovement $movement)
     {
+        $sample = $movement->sample;
         $movement->update($request->validated());
 
         if ($request->wantsJson()) {
@@ -71,8 +81,9 @@ class SampleMovementController extends Controller
             ->with('success', 'Movement updated successfully.');
     }
 
-    public function destroy(Sample $sample, SampleMovement $movement)
+    public function destroy(SampleMovement $movement)
     {
+        $sample = $movement->sample;
         $movement->delete();
 
         if (request()->wantsJson()) {

@@ -87,4 +87,38 @@ class TestingParameterController extends Controller
         return redirect()->route('masters.parameters.index')
             ->with('success', 'Parameter deactivated successfully.');
     }
+
+    public function bulkCreate()
+    {
+        $categories = ProductCategory::where('status', true)->orderBy('category_name')->get();
+        return view('masters.parameters.bulk-create', compact('categories'));
+    }
+
+    public function bulkStore(Request $request)
+    {
+        $request->validate([
+            'category_id'              => ['required', 'exists:product_categories,id'],
+            'parameters'               => ['required', 'array', 'min:1'],
+            'parameters.*.parameter_name' => ['required', 'string', 'max:255'],
+            'parameters.*.description'    => ['nullable', 'string'],
+        ]);
+
+        $category_id = $request->category_id;
+        $created     = 0;
+
+        foreach ($request->parameters as $row) {
+            if (empty(trim($row['parameter_name'] ?? ''))) continue;
+
+            TestingParameter::create([
+                'category_id'    => $category_id,
+                'parameter_name' => trim($row['parameter_name']),
+                'description'    => $row['description'] ?? null,
+                'status'         => true,
+            ]);
+            $created++;
+        }
+
+        return redirect()->route('masters.parameters.index')
+            ->with('success', "{$created} parameter(s) created successfully.");
+    }
 }

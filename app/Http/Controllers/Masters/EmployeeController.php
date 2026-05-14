@@ -6,7 +6,9 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\Masters\StoreEmployeeRequest;
 use App\Http\Requests\Masters\UpdateEmployeeRequest;
 use App\Models\Employee;
+use App\Models\EmployeeExperience;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 
 class EmployeeController extends Controller
 {
@@ -22,7 +24,8 @@ class EmployeeController extends Controller
     {
         $employees = Employee::query()
             ->when($request->search, fn ($q, $s) => $q->where('employee_name', 'like', "%{$s}%")
-                ->orWhere('department', 'like', "%{$s}%"))
+                ->orWhere('department', 'like', "%{$s}%")
+                ->orWhere('job_title', 'like', "%{$s}%"))
             ->when($request->status !== null && $request->status !== '', fn ($q) => $q->where('status', $request->status))
             ->latest()
             ->paginate(20)
@@ -38,36 +41,64 @@ class EmployeeController extends Controller
 
     public function store(StoreEmployeeRequest $request)
     {
-        $employee = Employee::create($request->validated());
+        return DB::transaction(function () use ($request) {
+            $data        = $request->validated();
+            $experiences = $data['experiences'] ?? [];
+            unset($data['experiences']);
 
-        if ($request->wantsJson()) {
-            return response()->json(['success' => true, 'employee' => $employee]);
-        }
+            $employee = Employee::create($data);
 
-        return redirect()->route('masters.employees.index')
-            ->with('success', 'Employee created successfully.');
+            foreach ($experiences as $exp) {
+                if (!empty($exp['company_name'])) {
+                    $employee->experiences()->create($exp);
+                }
+            }
+
+            if ($request->wantsJson()) {
+                return response()->json(['success' => true, 'employee' => $employee]);
+            }
+
+            return redirect()->route('masters.employees.index')
+                ->with('success', 'Employee created successfully.');
+        });
     }
 
     public function show(Employee $employee)
     {
+        $employee->load('attachments', 'experiences');
         return view('masters.employees.show', compact('employee'));
     }
 
     public function edit(Employee $employee)
     {
+        $employee->load('experiences');
         return view('masters.employees.edit', compact('employee'));
     }
 
     public function update(UpdateEmployeeRequest $request, Employee $employee)
     {
-        $employee->update($request->validated());
+        return DB::transaction(function () use ($request, $employee) {
+            $data        = $request->validated();
+            $experiences = $data['experiences'] ?? [];
+            unset($data['experiences']);
 
-        if ($request->wantsJson()) {
-            return response()->json(['success' => true, 'employee' => $employee]);
-        }
+            $employee->update($data);
 
-        return redirect()->route('masters.employees.index')
-            ->with('success', 'Employee updated successfully.');
+            // Replace experience records
+            $employee->experiences()->delete();
+            foreach ($experiences as $exp) {
+                if (!empty($exp['company_name'])) {
+                    $employee->experiences()->create($exp);
+                }
+            }
+
+            if ($request->wantsJson()) {
+                return response()->json(['success' => true, 'employee' => $employee]);
+            }
+
+            return redirect()->route('masters.employees.index')
+                ->with('success', 'Employee updated successfully.');
+        });
     }
 
     public function destroy(Employee $employee)

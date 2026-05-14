@@ -27,13 +27,33 @@
                 </li>
 
                 {{-- ─── Operations ─────────────────────────────────────────────── --}}
-                @canany(['samples.index','sample-movements.index','inspections.index'])
+                @canany(['customer-orders.index','samples.index','sample-movements.index','inspections.index'])
                 <li class="nxl-item nxl-caption">
                     <label>Operations</label>
                 </li>
 
+                @can('customer-orders.index')
+                <li class="nxl-item nxl-hasmenu {{ $is('customer-orders.*') ? 'active' : '' }}">
+                    <a href="javascript:void(0);" class="nxl-link">
+                        <span class="nxl-micon"><i class="feather-clipboard"></i></span>
+                        <span class="nxl-mtext">Customer Orders</span>
+                        <span class="nxl-arrow"><i class="feather-chevron-right"></i></span>
+                    </a>
+                    <ul class="nxl-submenu">
+                        <li class="nxl-item {{ $is('customer-orders.index') ? 'active' : '' }}">
+                            <a class="nxl-link" href="{{ route('customer-orders.index') }}">All Orders</a>
+                        </li>
+                        @can('customer-orders.create')
+                        <li class="nxl-item {{ $is('customer-orders.create') ? 'active' : '' }}">
+                            <a class="nxl-link" href="{{ route('customer-orders.create') }}">New Order</a>
+                        </li>
+                        @endcan
+                    </ul>
+                </li>
+                @endcan
+
                 @can('samples.index')
-                <li class="nxl-item nxl-hasmenu {{ $is('samples.*') ? 'active' : '' }}">
+                <li class="nxl-item nxl-hasmenu {{ $is(['samples.*','movements.*','inspections.*']) ? 'active' : '' }}">
                     <a href="javascript:void(0);" class="nxl-link">
                         <span class="nxl-micon"><i class="feather-package"></i></span>
                         <span class="nxl-mtext">Samples</span>
@@ -48,31 +68,45 @@
                             <a class="nxl-link" href="{{ route('samples.create') }}">New Sample</a>
                         </li>
                         @endcan
+                        @can('sample-movements.index')
+                        <li class="nxl-item {{ $is(['samples.movements.*','movements.*']) ? 'active' : '' }}">
+                            <a class="nxl-link" href="{{ route('samples.index') }}?tab=movements">
+                                <i class="feather-send me-2 text-muted" style="font-size:12px"></i>Movements
+                            </a>
+                        </li>
+                        @endcan
+                        @can('inspections.index')
+                        <li class="nxl-item {{ $is(['samples.inspections.*','inspections.*']) ? 'active' : '' }}">
+                            <a class="nxl-link" href="{{ route('samples.index') }}?tab=inspections">
+                                <i class="feather-clipboard me-2 text-muted" style="font-size:12px"></i>Inspections
+                            </a>
+                        </li>
+                        @endcan
                     </ul>
                 </li>
                 @endcan
                 @endcanany
 
                 {{-- ─── Finance ─────────────────────────────────────────────────── --}}
-                @canany(['customer-payments.index','vendor-bills.index','expenses.index','salary.index'])
+                @canany(['customer-invoices.index','customer-payments.index','expenses.index','salary.index'])
                 <li class="nxl-item nxl-caption">
                     <label>Finance</label>
                 </li>
+
+                @can('customer-invoices.index')
+                <li class="nxl-item {{ $is('customer-invoices.*') ? 'active' : '' }}">
+                    <a href="{{ route('customer-invoices.index') }}" class="nxl-link">
+                        <span class="nxl-micon"><i class="feather-file-text"></i></span>
+                        <span class="nxl-mtext">Customer Invoices</span>
+                    </a>
+                </li>
+                @endcan
 
                 @can('customer-payments.index')
                 <li class="nxl-item {{ $is('customer-payments.*') ? 'active' : '' }}">
                     <a href="{{ route('customer-payments.index') }}" class="nxl-link">
                         <span class="nxl-micon"><i class="feather-credit-card"></i></span>
                         <span class="nxl-mtext">Customer Payments</span>
-                    </a>
-                </li>
-                @endcan
-
-                @can('vendor-bills.index')
-                <li class="nxl-item {{ $is('vendor-bills.*') ? 'active' : '' }}">
-                    <a href="{{ route('vendor-bills.index') }}" class="nxl-link">
-                        <span class="nxl-micon"><i class="feather-file-text"></i></span>
-                        <span class="nxl-mtext">Vendor Bills</span>
                     </a>
                 </li>
                 @endcan
@@ -97,7 +131,7 @@
                 @endcanany
 
                 {{-- ─── Masters ─────────────────────────────────────────────────── --}}
-                @canany(['customers.index','vendors.index','employees.index'])
+                @canany(['customers.index','suppliers.index','employees.index','inspection-types.index'])
                 <li class="nxl-item nxl-caption">
                     <label>Masters</label>
                 </li>
@@ -111,11 +145,20 @@
                 </li>
                 @endcan
 
-                @can('vendors.index')
-                <li class="nxl-item {{ $is('masters.vendors.*') ? 'active' : '' }}">
-                    <a href="{{ route('masters.vendors.index') }}" class="nxl-link">
+                @can('suppliers.index')
+                <li class="nxl-item {{ $is('masters.suppliers.*') ? 'active' : '' }}">
+                    <a href="{{ route('masters.suppliers.index') }}" class="nxl-link">
                         <span class="nxl-micon"><i class="feather-truck"></i></span>
-                        <span class="nxl-mtext">Vendors</span>
+                        <span class="nxl-mtext">Suppliers</span>
+                    </a>
+                </li>
+                @endcan
+
+                @can('inspection-types.index')
+                <li class="nxl-item {{ $is('masters.inspection-types.*') ? 'active' : '' }}">
+                    <a href="{{ route('masters.inspection-types.index') }}" class="nxl-link">
+                        <span class="nxl-micon"><i class="feather-check-square"></i></span>
+                        <span class="nxl-mtext">Inspection Types</span>
                     </a>
                 </li>
                 @endcan
@@ -129,6 +172,28 @@
                 </li>
                 @endcan
                 @endcanany
+
+                {{-- ─── Administration ─────────────────────────────────────────── --}}
+                @role('Admin')
+                <li class="nxl-item nxl-caption">
+                    <label>Administration</label>
+                </li>
+                <li class="nxl-item nxl-hasmenu {{ $is(['admin.users.*','admin.roles.*']) ? 'active' : '' }}">
+                    <a href="javascript:void(0);" class="nxl-link">
+                        <span class="nxl-micon"><i class="feather-settings"></i></span>
+                        <span class="nxl-mtext">User Management</span>
+                        <span class="nxl-arrow"><i class="feather-chevron-right"></i></span>
+                    </a>
+                    <ul class="nxl-submenu">
+                        <li class="nxl-item {{ $is('admin.users.*') ? 'active' : '' }}">
+                            <a class="nxl-link" href="{{ route('admin.users.index') }}">Users</a>
+                        </li>
+                        <li class="nxl-item {{ $is('admin.roles.*') ? 'active' : '' }}">
+                            <a class="nxl-link" href="{{ route('admin.roles.index') }}">Roles & Permissions</a>
+                        </li>
+                    </ul>
+                </li>
+                @endrole
 
                 {{-- ─── Reports ─────────────────────────────────────────────────── --}}
                 @can('reports.view')

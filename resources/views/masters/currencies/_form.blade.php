@@ -1,6 +1,6 @@
 <div class="row justify-content-center">
     <div class="col-xl-7">
-        <div class="card stretch stretch-full">
+        <div class="card">
             <div class="card-header">
                 <h5 class="card-title">Currency Details</h5>
             </div>

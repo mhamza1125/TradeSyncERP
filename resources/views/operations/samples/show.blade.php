@@ -83,10 +83,10 @@
                                 <span class="text-muted hstack gap-3"><i class="feather-calendar"></i>Received</span>
                                 <span>{{ \Carbon\Carbon::parse($sample->receive_date)->format('d M Y') }}</span>
                             </li>
-                            @if($sample->shipment_reference)
+                            @if($sample->sample_reference)
                             <li class="hstack justify-content-between mb-0">
-                                <span class="text-muted hstack gap-3"><i class="feather-anchor"></i>Shipment Ref</span>
-                                <span>{{ $sample->shipment_reference }}</span>
+                                <span class="text-muted hstack gap-3"><i class="feather-anchor"></i>Sample Ref</span>
+                                <span>{{ $sample->sample_reference }}</span>
                             </li>
                             @endif
                         </ul>
@@ -142,7 +142,7 @@
                             <div class="row g-0 mb-3"><div class="col-sm-5 text-muted">Category:</div><div class="col-sm-7 fw-semibold">{{ $sample->category->category_name }}</div></div>
                             <div class="row g-0 mb-3"><div class="col-sm-5 text-muted">Quantity:</div><div class="col-sm-7 fw-semibold">{{ $sample->quantity }}</div></div>
                             <div class="row g-0 mb-3"><div class="col-sm-5 text-muted">Receive Date:</div><div class="col-sm-7 fw-semibold">{{ \Carbon\Carbon::parse($sample->receive_date)->format('d M Y') }}</div></div>
-                            <div class="row g-0 mb-3"><div class="col-sm-5 text-muted">Shipment Ref:</div><div class="col-sm-7 fw-semibold">{{ $sample->shipment_reference ?? '—' }}</div></div>
+                            <div class="row g-0 mb-3"><div class="col-sm-5 text-muted">Shipment Ref:</div><div class="col-sm-7 fw-semibold">{{ $sample->sample_reference ?? '—' }}</div></div>
                             <div class="row g-0 mb-3"><div class="col-sm-5 text-muted">Alert Days:</div><div class="col-sm-7 fw-semibold">{{ $sample->alert_days }}</div></div>
                             @if($sample->remarks)
                             <div class="row g-0"><div class="col-sm-5 text-muted">Remarks:</div><div class="col-sm-7">{{ $sample->remarks }}</div></div>
@@ -151,62 +151,149 @@
 
                         {{-- Movements Tab --}}
                         <div class="tab-pane fade p-4" id="sampleMovements" role="tabpanel">
-                            <div class="mb-4 d-flex align-items-center justify-content-between">
-                                <h5 class="fw-bold mb-0">Movement History:</h5>
+                            <div class="mb-3 d-flex align-items-center justify-content-between">
+                                <h5 class="fw-bold mb-0">Movement History
+                                    <span class="badge bg-soft-secondary text-secondary ms-1">{{ $sample->movements->count() }}</span>
+                                </h5>
+                                <div class="d-flex gap-2">
+                                    @can('sample-movements.index')
+                                    <a href="{{ route('samples.movements.index', $sample) }}" class="btn btn-sm btn-light-brand">
+                                        <i class="feather-list me-1"></i> View All
+                                    </a>
+                                    @endcan
+                                    @can('sample-movements.create')
+                                    <a href="{{ route('samples.movements.create', $sample) }}" class="btn btn-sm btn-primary">
+                                        <i class="feather-send me-1"></i> Issue Movement
+                                    </a>
+                                    @endcan
+                                </div>
                             </div>
-                            @if($sample->movements && $sample->movements->count())
+                            @if($sample->movements->count())
                             <div class="table-responsive">
-                                <table class="table table-sm table-hover">
+                                <table class="table table-sm table-hover mb-0">
                                     <thead>
-                                        <tr><th>Date</th><th>From</th><th>To</th><th>Qty</th><th>Notes</th></tr>
-                                    </thead>
-                                    <tbody>
-                                        @foreach($sample->movements as $m)
                                         <tr>
-                                            <td>{{ $m->movement_date }}</td>
-                                            <td>{{ $m->from_location ?? '—' }}</td>
-                                            <td>{{ $m->to_location ?? '—' }}</td>
-                                            <td>{{ $m->quantity }}</td>
-                                            <td>{{ $m->notes ?? '—' }}</td>
+                                            <th>Issue Date</th>
+                                            <th>Assigned To</th>
+                                            <th>Expected Return</th>
+                                            <th>Status</th>
+                                            <th>Remarks</th>
+                                            <th></th>
                                         </tr>
-                                        @endforeach
-                                    </tbody>
-                                </table>
-                            </div>
-                            @else
-                            <p class="text-muted text-center py-4">No movements recorded.</p>
-                            @endif
-                        </div>
-
-                        {{-- Inspections Tab --}}
-                        <div class="tab-pane fade p-4" id="sampleInspections" role="tabpanel">
-                            <div class="mb-4 d-flex align-items-center justify-content-between">
-                                <h5 class="fw-bold mb-0">Inspections:</h5>
-                            </div>
-                            @if($sample->inspections && $sample->inspections->count())
-                            <div class="table-responsive">
-                                <table class="table table-sm table-hover">
-                                    <thead>
-                                        <tr><th>Date</th><th>Inspector</th><th>Overall Status</th></tr>
                                     </thead>
                                     <tbody>
-                                        @foreach($sample->inspections as $inspection)
-                                        @php $ic = ['Pass'=>'success','Fail'=>'danger','Pending'=>'warning']; @endphp
+                                        @foreach($sample->movements->take(5) as $m)
+                                        @php $mc = ['Issued'=>'primary','Returned'=>'success','Overdue'=>'danger']; @endphp
                                         <tr>
-                                            <td>{{ $inspection->inspection_date }}</td>
-                                            <td>{{ $inspection->inspector ?? '—' }}</td>
+                                            <td>{{ $m->issue_date->format('d M Y') }}</td>
                                             <td>
-                                                <span class="badge bg-soft-{{ $ic[$inspection->overall_status] ?? 'secondary' }} text-{{ $ic[$inspection->overall_status] ?? 'secondary' }}">
-                                                    {{ $inspection->overall_status }}
+                                                <span class="badge bg-soft-secondary text-secondary">{{ $m->assigned_to_type }}</span>
+                                            </td>
+                                            <td>{{ $m->expected_return_date?->format('d M Y') ?? '—' }}</td>
+                                            <td>
+                                                <span class="badge bg-soft-{{ $mc[$m->status] ?? 'secondary' }} text-{{ $mc[$m->status] ?? 'secondary' }}">
+                                                    {{ $m->status }}
                                                 </span>
+                                            </td>
+                                            <td class="text-muted">{{ Str::limit($m->remarks, 40) ?? '—' }}</td>
+                                            <td>
+                                                @can('sample-movements.index')
+                                                <a href="{{ route('samples.movements.show', $m) }}" class="text-primary" title="View"><i class="feather-eye"></i></a>
+                                                @endcan
                                             </td>
                                         </tr>
                                         @endforeach
                                     </tbody>
                                 </table>
                             </div>
+                            @if($sample->movements->count() > 5)
+                            <div class="text-center mt-2">
+                                <a href="{{ route('samples.movements.index', $sample) }}" class="small text-primary">View all {{ $sample->movements->count() }} movements &rarr;</a>
+                            </div>
+                            @endif
                             @else
-                            <p class="text-muted text-center py-4">No inspections recorded.</p>
+                            <div class="text-center py-4 text-muted">
+                                <i class="feather-send fs-2 d-block mb-2"></i>
+                                <p class="mb-2">No movements recorded yet.</p>
+                                @can('sample-movements.create')
+                                <a href="{{ route('samples.movements.create', $sample) }}" class="btn btn-sm btn-primary">
+                                    <i class="feather-plus me-1"></i> Issue First Movement
+                                </a>
+                                @endcan
+                            </div>
+                            @endif
+                        </div>
+
+                        {{-- Inspections Tab --}}
+                        <div class="tab-pane fade p-4" id="sampleInspections" role="tabpanel">
+                            <div class="mb-3 d-flex align-items-center justify-content-between">
+                                <h5 class="fw-bold mb-0">Inspections
+                                    <span class="badge bg-soft-secondary text-secondary ms-1">{{ $sample->inspections->count() }}</span>
+                                </h5>
+                                <div class="d-flex gap-2">
+                                    @can('inspections.index')
+                                    <a href="{{ route('samples.inspections.index', $sample) }}" class="btn btn-sm btn-light-brand">
+                                        <i class="feather-list me-1"></i> View All
+                                    </a>
+                                    @endcan
+                                    @can('inspections.create')
+                                    <a href="{{ route('samples.inspections.create', $sample) }}" class="btn btn-sm btn-primary">
+                                        <i class="feather-clipboard me-1"></i> New Inspection
+                                    </a>
+                                    @endcan
+                                </div>
+                            </div>
+                            @if($sample->inspections->count())
+                            <div class="table-responsive">
+                                <table class="table table-sm table-hover mb-0">
+                                    <thead>
+                                        <tr>
+                                            <th>Report #</th>
+                                            <th>Date</th>
+                                            <th>Inspector</th>
+                                            <th>Results</th>
+                                            <th>Status</th>
+                                            <th></th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        @foreach($sample->inspections->take(5) as $ins)
+                                        @php $ic = ['Pass'=>'success','Fail'=>'danger','Pending'=>'warning']; @endphp
+                                        <tr>
+                                            <td class="fw-semibold">{{ $ins->report_number }}</td>
+                                            <td>{{ $ins->inspection_date->format('d M Y') }}</td>
+                                            <td><span class="badge bg-soft-primary text-primary">{{ $ins->inspectionType?->name ?? '—' }}</span></td>
+                                            <td>{{ $ins->results->count() }} result(s)</td>
+                                            <td>
+                                                <span class="badge bg-soft-{{ $ic[$ins->overall_status] ?? 'secondary' }} text-{{ $ic[$ins->overall_status] ?? 'secondary' }}">
+                                                    {{ $ins->overall_status }}
+                                                </span>
+                                            </td>
+                                            <td>
+                                                @can('inspections.index')
+                                                <a href="{{ route('inspections.show', $ins) }}" class="text-primary" title="View"><i class="feather-eye"></i></a>
+                                                @endcan
+                                            </td>
+                                        </tr>
+                                        @endforeach
+                                    </tbody>
+                                </table>
+                            </div>
+                            @if($sample->inspections->count() > 5)
+                            <div class="text-center mt-2">
+                                <a href="{{ route('samples.inspections.index', $sample) }}" class="small text-primary">View all {{ $sample->inspections->count() }} inspections &rarr;</a>
+                            </div>
+                            @endif
+                            @else
+                            <div class="text-center py-4 text-muted">
+                                <i class="feather-clipboard fs-2 d-block mb-2"></i>
+                                <p class="mb-2">No inspections recorded yet.</p>
+                                @can('inspections.create')
+                                <a href="{{ route('samples.inspections.create', $sample) }}" class="btn btn-sm btn-primary">
+                                    <i class="feather-plus me-1"></i> Start First Inspection
+                                </a>
+                                @endcan
+                            </div>
                             @endif
                         </div>
 

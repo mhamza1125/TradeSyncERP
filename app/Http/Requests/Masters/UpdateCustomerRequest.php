@@ -19,10 +19,8 @@ class UpdateCustomerRequest extends FormRequest
             'phone'                    => ['required', 'string', 'max:50'],
             'email'                    => ['nullable', 'email', 'max:255'],
             'address'                  => ['nullable', 'string'],
-            'currency_id'              => ['nullable', 'exists:currencies,id'],
-            'default_currency'         => ['required', 'string', 'max:10'],
-            'opening_balance'          => ['nullable', 'numeric', 'min:0'],
-            'opening_balance_currency' => ['required', 'string', 'max:10'],
+            'currency_id'     => ['nullable', 'exists:currencies,id'],
+            'opening_balance' => ['nullable', 'numeric', 'min:0'],
             'status'                   => ['boolean'],
         ];
     }

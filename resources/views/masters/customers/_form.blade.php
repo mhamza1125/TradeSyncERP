@@ -1,7 +1,7 @@
 {{-- Reusable form partial for customer create/edit --}}
 <div class="row">
     <div class="col-xl-8">
-        <div class="card stretch stretch-full">
+        <div class="card">
             <div class="card-header">
                 <h5 class="card-title">Customer Information</h5>
             </div>
@@ -43,35 +43,37 @@
     </div>
 
     <div class="col-xl-4">
-        <div class="card stretch stretch-full">
+        <div class="card">
             <div class="card-header">
                 <h5 class="card-title">Financial Settings</h5>
             </div>
             <div class="card-body">
                 <div class="mb-4">
-                    <label class="form-label">Default Currency</label>
-                    <select name="currency_id" class="form-select @error('currency_id') is-invalid @enderror">
+                    <label class="form-label">Currency</label>
+                    <select name="currency_id" id="customerCurrencySelect" class="form-select @error('currency_id') is-invalid @enderror">
                         <option value="">— Select Currency —</option>
                         @foreach($currencies as $currency)
                             <option value="{{ $currency->id }}"
+                                data-code="{{ $currency->currency_code }}"
                                 @selected(old('currency_id', $customer->currency_id ?? '') == $currency->id)>
                                 {{ $currency->currency_code }} — {{ $currency->currency_name }}
                             </option>
                         @endforeach
                     </select>
+                    <small class="text-muted">The customer's ledger and opening balance will use this currency.</small>
                     @error('currency_id')<div class="invalid-feedback">{{ $message }}</div>@enderror
                 </div>
                 <div class="mb-4">
                     <label class="form-label">Opening Balance</label>
-                    <input type="number" step="0.01" name="opening_balance" class="form-control @error('opening_balance') is-invalid @enderror"
-                           placeholder="0.00" value="{{ old('opening_balance', $customer->opening_balance ?? 0) }}">
+                    <div class="input-group">
+                        <span class="input-group-text" id="obCurrencyLabel">
+                            {{ isset($customer) && $customer->currency ? $customer->currency->currency_code : 'PKR' }}
+                        </span>
+                        <input type="number" step="0.01" name="opening_balance" class="form-control @error('opening_balance') is-invalid @enderror"
+                               placeholder="0.00" value="{{ old('opening_balance', $customer->opening_balance ?? 0) }}">
+                    </div>
+                    <small class="text-muted">Amount the customer owes you (receivable). Enter a negative value if you owe them.</small>
                     @error('opening_balance')<div class="invalid-feedback">{{ $message }}</div>@enderror
-                </div>
-                <div class="mb-4">
-                    <label class="form-label">Opening Balance Currency</label>
-                    <input type="text" name="opening_balance_currency" class="form-control @error('opening_balance_currency') is-invalid @enderror"
-                           placeholder="PKR" value="{{ old('opening_balance_currency', $customer->opening_balance_currency ?? 'PKR') }}">
-                    @error('opening_balance_currency')<div class="invalid-feedback">{{ $message }}</div>@enderror
                 </div>
                 <div class="mb-4">
                     <label class="form-label">Status</label>
@@ -85,3 +87,13 @@
         </div>
     </div>
 </div>
+
+@push('scripts')
+<script>
+    document.getElementById('customerCurrencySelect')?.addEventListener('change', function () {
+        const selected = this.options[this.selectedIndex];
+        const code = selected.dataset.code || '—';
+        document.getElementById('obCurrencyLabel').textContent = code;
+    });
+</script>
+@endpush

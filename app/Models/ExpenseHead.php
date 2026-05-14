@@ -11,6 +11,7 @@ class ExpenseHead extends Model
     use LogsActivity;
 
     protected $fillable = [
+        'parent_id',
         'expense_name',
         'status',
     ];
@@ -27,8 +28,28 @@ class ExpenseHead extends Model
             ->dontSubmitEmptyLogs();
     }
 
+    public function parent()
+    {
+        return $this->belongsTo(ExpenseHead::class, 'parent_id');
+    }
+
+    public function children()
+    {
+        return $this->hasMany(ExpenseHead::class, 'parent_id');
+    }
+
     public function expenses()
     {
         return $this->hasMany(Expense::class);
+    }
+
+    public function isCategory(): bool
+    {
+        return is_null($this->parent_id);
+    }
+
+    public function isSubcategory(): bool
+    {
+        return !is_null($this->parent_id);
     }
 }

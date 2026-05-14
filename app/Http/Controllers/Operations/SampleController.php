@@ -5,13 +5,16 @@ namespace App\Http\Controllers\Operations;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Operations\StoreSampleRequest;
 use App\Http\Requests\Operations\UpdateSampleRequest;
+use App\Models\Attachment;
 use App\Models\Brand;
 use App\Models\Customer;
 use App\Models\ProductCategory;
 use App\Models\Sample;
+use App\Models\Supplier;
 use App\Models\TestingParameter;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Storage;
 
 class SampleController extends Controller
 {
@@ -49,17 +52,54 @@ class SampleController extends Controller
     {
         $customers  = Customer::where('status', true)->orderBy('customer_name')->get();
         $categories = ProductCategory::where('status', true)->orderBy('category_name')->get();
-        return view('operations.samples.create', compact('customers', 'categories'));
+        $suppliers  = Supplier::where('status', true)->orderBy('name')->get();
+        return view('operations.samples.create', compact('customers', 'categories', 'suppliers'));
     }
 
     public function store(StoreSampleRequest $request)
     {
         return DB::transaction(function () use ($request) {
             $data = $request->validated();
-
             $data['sample_code'] = $this->generateSampleCode();
 
+            // Handle main image upload
+            if ($request->hasFile('main_image_file')) {
+                $data['main_image'] = $request->file('main_image_file')->store('samples/main', 'public');
+            }
+
             $sample = Sample::create($data);
+
+            // Gallery images via attachments
+            if ($request->hasFile('gallery_images')) {
+                foreach ($request->file('gallery_images') as $file) {
+                    $path = $file->store('samples/gallery', 'public');
+                    $sample->attachments()->create([
+                        'title'           => $file->getClientOriginalName(),
+                        'file_name'       => $file->getClientOriginalName(),
+                        'file_path'       => $path,
+                        'mime_type'       => $file->getMimeType(),
+                        'file_size'       => $file->getSize(),
+                        'attachment_type' => 'gallery',
+                        'uploaded_by'     => auth()->id(),
+                    ]);
+                }
+            }
+
+            // Other attachments (documents)
+            if ($request->hasFile('attachments')) {
+                foreach ($request->file('attachments') as $index => $file) {
+                    $path = $file->store('samples/attachments', 'public');
+                    $sample->attachments()->create([
+                        'title'           => $request->input("attachment_titles.{$index}", $file->getClientOriginalName()),
+                        'file_name'       => $file->getClientOriginalName(),
+                        'file_path'       => $path,
+                        'mime_type'       => $file->getMimeType(),
+                        'file_size'       => $file->getSize(),
+                        'attachment_type' => 'document',
+                        'uploaded_by'     => auth()->id(),
+                    ]);
+                }
+            }
 
             if (!empty($data['parameters'])) {
                 $sample->testingParameters()->createMany($data['parameters']);
@@ -81,6 +121,7 @@ class SampleController extends Controller
             'testingParameters.parameter',
             'movements',
             'inspections.results',
+            'attachments',
         ]);
 
         return view('operations.samples.show', compact('sample'));
@@ -90,15 +131,58 @@ class SampleController extends Controller
     {
         $customers  = Customer::where('status', true)->orderBy('customer_name')->get();
         $categories = ProductCategory::where('status', true)->orderBy('category_name')->get();
+        $suppliers  = Supplier::where('status', true)->orderBy('name')->get();
         $brands     = Brand::where('customer_id', $sample->customer_id)->where('status', true)->get();
-        $sample->load('testingParameters.parameter');
+        $sample->load('testingParameters.parameter', 'attachments');
 
-        return view('operations.samples.edit', compact('sample', 'customers', 'categories', 'brands'));
+        return view('operations.samples.edit', compact('sample', 'customers', 'categories', 'brands', 'suppliers'));
     }
 
     public function update(UpdateSampleRequest $request, Sample $sample)
     {
-        $sample->update($request->validated());
+        $data = $request->validated();
+
+        // Handle main image replacement
+        if ($request->hasFile('main_image_file')) {
+            if ($sample->main_image) {
+                Storage::disk('public')->delete($sample->main_image);
+            }
+            $data['main_image'] = $request->file('main_image_file')->store('samples/main', 'public');
+        }
+
+        $sample->update($data);
+
+        // Append new gallery images
+        if ($request->hasFile('gallery_images')) {
+            foreach ($request->file('gallery_images') as $file) {
+                $path = $file->store('samples/gallery', 'public');
+                $sample->attachments()->create([
+                    'title'           => $file->getClientOriginalName(),
+                    'file_name'       => $file->getClientOriginalName(),
+                    'file_path'       => $path,
+                    'mime_type'       => $file->getMimeType(),
+                    'file_size'       => $file->getSize(),
+                    'attachment_type' => 'gallery',
+                    'uploaded_by'     => auth()->id(),
+                ]);
+            }
+        }
+
+        // Append new documents
+        if ($request->hasFile('attachments')) {
+            foreach ($request->file('attachments') as $index => $file) {
+                $path = $file->store('samples/attachments', 'public');
+                $sample->attachments()->create([
+                    'title'           => $request->input("attachment_titles.{$index}", $file->getClientOriginalName()),
+                    'file_name'       => $file->getClientOriginalName(),
+                    'file_path'       => $path,
+                    'mime_type'       => $file->getMimeType(),
+                    'file_size'       => $file->getSize(),
+                    'attachment_type' => 'document',
+                    'uploaded_by'     => auth()->id(),
+                ]);
+            }
+        }
 
         if ($request->wantsJson()) {
             return response()->json(['success' => true, 'sample' => $sample]);

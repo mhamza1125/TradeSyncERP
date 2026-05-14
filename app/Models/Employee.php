@@ -13,18 +13,35 @@ class Employee extends Model
 
     protected $fillable = [
         'employee_name',
+        'father_name',
         'department',
         'designation',
+        'job_title',
         'phone',
+        'nic',
+        'dob',
+        'gender',
+        'marital_status',
+        'emergency_contact',
+        'address',
+        'city',
+        'country',
+        'postal_code',
         'joining_date',
+        'hire_date',
         'basic_salary',
+        'salary',
         'status',
+        'remarks',
     ];
 
     protected $casts = [
-        'joining_date'  => 'date',
-        'basic_salary'  => 'decimal:2',
-        'status'        => 'boolean',
+        'dob'          => 'date',
+        'joining_date' => 'date',
+        'hire_date'    => 'date',
+        'basic_salary' => 'decimal:2',
+        'salary'       => 'decimal:2',
+        'status'       => 'boolean',
     ];
 
     public function getActivitylogOptions(): LogOptions
@@ -35,8 +52,23 @@ class Employee extends Model
             ->dontSubmitEmptyLogs();
     }
 
+    public function experiences()
+    {
+        return $this->hasMany(EmployeeExperience::class);
+    }
+
     public function salaryRunLines()
     {
         return $this->hasMany(SalaryRunLine::class);
+    }
+
+    public function inspections()
+    {
+        return $this->belongsToMany(Inspection::class, 'employee_inspection');
+    }
+
+    public function attachments()
+    {
+        return $this->morphMany(Attachment::class, 'attachable');
     }
 }

@@ -16,9 +16,7 @@ return new class extends Migration
             $table->string('email')->nullable();
             $table->text('address')->nullable();
             $table->foreignId('currency_id')->nullable()->constrained('currencies')->nullOnDelete();
-            $table->string('default_currency', 10)->default('PKR');
             $table->decimal('opening_balance', 15, 2)->default(0);
-            $table->string('opening_balance_currency', 10)->default('PKR');
             $table->boolean('status')->default(true);
             $table->timestamps();
             $table->softDeletes();

@@ -24,6 +24,9 @@
                         <i class="feather-filter"></i>
                     </a>
                     @can('parameters.create')
+                    <a href="{{ route('masters.parameters.bulk-create') }}" class="btn btn-light-brand">
+                        <i class="feather-layers me-2"></i><span>Bulk Add</span>
+                    </a>
                     <a href="{{ route('masters.parameters.create') }}" class="btn btn-primary">
                         <i class="feather-plus me-2"></i><span>Add Parameter</span>
                     </a>
