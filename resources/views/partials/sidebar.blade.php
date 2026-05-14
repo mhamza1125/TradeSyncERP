@@ -13,7 +13,7 @@
         </div>
 
         <div class="navbar-content">
-            <ul class="nxl-navbar">
+            <ul class="nxl-navbar pb-5">
 
                 {{-- ─── Dashboard ──────────────────────────────────────────────── --}}
                 <li class="nxl-item nxl-caption">
