@@ -1,121 +1,139 @@
 {{--
-    Inspection Header card — shared by create.blade.php and edit.blade.php.
-    Callers keep the <form> tag, column wrapper, and any create/edit-specific
-    adjacent cards (test-results table on create; results summary on edit).
-
-    Available variables:
-      $sample      – always present
-      $inspection  – present on edit only (use isset($inspection) to branch)
-      $employees   – Employee collection
-      $inspectionTypes – InspectionType collection
+    Shared inspection form partial (create & edit).
+    Variables: $employees, $samples (mapped [{id,text}]), $customerOrders (mapped [{id,text}])
+    Optional: $inspection (edit only)
 --}}
 @php
-    $savedInspectorIds = isset($inspection)
-        ? $inspection->inspectors->pluck('id')->toArray()
-        : [];
-    $defaultDate = isset($inspection)
-        ? $inspection->inspection_date->toDateString()
-        : now()->toDateString();
+    $savedSampleIds  = isset($inspection) ? $inspection->samples->pluck('id')->toArray() : [];
+    $savedOrderIds   = isset($inspection) ? $inspection->customerOrders->pluck('id')->toArray() : [];
+    $savedInspectors = isset($inspection) ? $inspection->inspectors->pluck('id')->toArray() : [];
 @endphp
 
+@push('styles')
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/tom-select@2.3.1/dist/css/tom-select.bootstrap5.min.css">
+<style>
+    .ts-wrapper.form-control { padding: 0; border: 0; }
+    .ts-wrapper .ts-control { border-radius: 0.375rem; }
+</style>
+@endpush
+
+{{-- ── Inspection Details ────────────────────────────────────────────────── --}}
 <div class="card mb-4">
     <div class="card-header">
-        <h5 class="card-title">
-            Inspection Header
+        <h5 class="card-title mb-0">
+            Inspection Details
             @isset($inspection)
-                <span class="text-muted fw-normal">— {{ $inspection->report_number }}</span>
+                <span class="text-muted fw-normal fs-14">— {{ $inspection->report_number }}</span>
             @endisset
         </h5>
     </div>
     <div class="card-body">
-
-        {{-- Sample info strip --}}
-        <div class="alert alert-light border mb-4">
-            <div class="d-flex gap-4 flex-wrap">
-                <div><span class="text-muted fs-12">Sample</span><br><strong>{{ $sample->sample_code }}</strong></div>
-                <div><span class="text-muted fs-12">Product</span><br><strong>{{ $sample->product_name }}</strong></div>
-                <div><span class="text-muted fs-12">Customer</span><br><strong>{{ $sample->customer->customer_name }}</strong></div>
-                @if($sample->supplier)
-                <div><span class="text-muted fs-12">Supplier / Factory</span><br><strong>{{ $sample->supplier->name }}</strong></div>
-                @endif
-            </div>
-        </div>
-
-        {{-- Edit-only notice --}}
-        @isset($inspection)
-        <div class="alert alert-warning border mb-4">
-            <small><i class="feather-info me-2"></i>
-                Test results cannot be modified after creation. Only the header fields are editable here.
-            </small>
-        </div>
-        @endisset
-
-        {{-- Core fields --}}
-        <div class="row">
-            <div class="col-lg-6 mb-4">
+        <div class="row g-3">
+            <div class="col-lg-4">
                 <label class="form-label">Inspection Date <span class="text-danger">*</span></label>
                 <input type="date" name="inspection_date"
                        class="form-control @error('inspection_date') is-invalid @enderror"
-                       value="{{ old('inspection_date', $defaultDate) }}" required>
+                       value="{{ old('inspection_date', isset($inspection) ? $inspection->inspection_date->toDateString() : now()->toDateString()) }}"
+                       required>
                 @error('inspection_date')<div class="invalid-feedback">{{ $message }}</div>@enderror
             </div>
-            <div class="col-lg-6 mb-4">
-                <label class="form-label">Inspection Type</label>
-                <select name="inspection_type_id" class="form-select @error('inspection_type_id') is-invalid @enderror">
-                    <option value="">— Select Type —</option>
-                    @foreach($inspectionTypes as $type)
-                    <option value="{{ $type->id }}"
-                        @selected(old('inspection_type_id', $inspection->inspection_type_id ?? '') == $type->id)>
-                        {{ $type->name }}
-                    </option>
-                    @endforeach
-                </select>
-                @error('inspection_type_id')<div class="invalid-feedback">{{ $message }}</div>@enderror
-            </div>
-            <div class="col-12 mb-4">
-                <label class="form-label">
-                    {{ isset($inspection) ? 'Inspectors' : 'Inspectors (our employees visiting factory)' }}
-                </label>
-                <div class="row g-2">
-                    @foreach($employees as $e)
-                    <div class="col-md-4">
-                        <div class="form-check">
-                            <input class="form-check-input" type="checkbox"
-                                   name="inspector_ids[]" value="{{ $e->id }}"
-                                   id="inspector_{{ $e->id }}"
-                                   @checked(in_array($e->id, old('inspector_ids', $savedInspectorIds)))>
-                            <label class="form-check-label" for="inspector_{{ $e->id }}">
-                                {{ $e->employee_name }}
-                                @if($e->job_title)<small class="text-muted">({{ $e->job_title }})</small>@endif
-                            </label>
-                        </div>
-                    </div>
-                    @endforeach
-                </div>
-                @error('inspector_ids')<div class="text-danger small mt-1">{{ $message }}</div>@enderror
-            </div>
-            <div class="col-lg-6 mb-4">
+            <div class="col-lg-4">
                 <label class="form-label">Overall Status</label>
                 <select name="overall_status" class="form-select @error('overall_status') is-invalid @enderror">
-                    @php
-                        $currentStatus = old('overall_status', $inspection->overall_status ?? 'Pending');
-                    @endphp
-                    <option value="Pending" @selected($currentStatus === 'Pending')>
-                        Pending{{ isset($inspection) ? '' : ' (auto-calculated)' }}
-                    </option>
-                    <option value="Pass" @selected($currentStatus === 'Pass')>Pass</option>
-                    <option value="Fail" @selected($currentStatus === 'Fail')>Fail</option>
+                    @foreach(['Pending','Pass','Fail'] as $s)
+                        <option value="{{ $s }}" @selected(old('overall_status', $inspection->overall_status ?? 'Pending') === $s)>{{ $s }}</option>
+                    @endforeach
                 </select>
                 @error('overall_status')<div class="invalid-feedback">{{ $message }}</div>@enderror
             </div>
-            <div class="col-12 mb-2">
+            <div class="col-12">
                 <label class="form-label">Remarks</label>
-                <textarea name="remarks" rows="{{ isset($inspection) ? 3 : 2 }}"
-                          class="form-control @error('remarks') is-invalid @enderror"
-                          placeholder="Optional overall notes…">{{ old('remarks', $inspection->remarks ?? '') }}</textarea>
-                @error('remarks')<div class="invalid-feedback">{{ $message }}</div>@enderror
+                <textarea name="remarks" rows="2" class="form-control"
+                          placeholder="Overall inspection notes…">{{ old('remarks', $inspection->remarks ?? '') }}</textarea>
             </div>
         </div>
-
     </div>
 </div>
+
+{{-- ── Samples Being Tested ──────────────────────────────────────────────── --}}
+<div class="card mb-4">
+    <div class="card-header">
+        <h5 class="card-title mb-0">Samples Being Tested</h5>
+        <small class="text-muted">Search and select samples for this inspection.</small>
+    </div>
+    <div class="card-body">
+        <select id="sampleSelect" name="sample_ids[]" multiple placeholder="Search samples…"
+                class="@error('sample_ids') is-invalid @enderror">
+            @foreach($samples as $s)
+                <option value="{{ $s['id'] }}" @selected(in_array($s['id'], old('sample_ids', $savedSampleIds)))>
+                    {{ $s['text'] }}
+                </option>
+            @endforeach
+        </select>
+        @error('sample_ids')<div class="text-danger fs-12 mt-1">{{ $message }}</div>@enderror
+    </div>
+</div>
+
+{{-- ── Linked Customer Orders ────────────────────────────────────────────── --}}
+<div class="card mb-4">
+    <div class="card-header">
+        <h5 class="card-title mb-0">Linked Customer Orders</h5>
+        <small class="text-muted">Search and select customer orders related to this inspection.</small>
+    </div>
+    <div class="card-body">
+        <select id="orderSelect" name="customer_order_ids[]" multiple placeholder="Search orders…"
+                class="@error('customer_order_ids') is-invalid @enderror">
+            @foreach($customerOrders as $o)
+                <option value="{{ $o['id'] }}" @selected(in_array($o['id'], old('customer_order_ids', $savedOrderIds)))>
+                    {{ $o['text'] }}
+                </option>
+            @endforeach
+        </select>
+        @error('customer_order_ids')<div class="text-danger fs-12 mt-1">{{ $message }}</div>@enderror
+    </div>
+</div>
+
+{{-- ── Assigned Inspectors ──────────────────────────────────────────────── --}}
+<div class="card mb-4">
+    <div class="card-header">
+        <h5 class="card-title mb-0">Assigned Inspectors</h5>
+    </div>
+    <div class="card-body">
+        <div class="row g-2">
+            @forelse($employees as $e)
+            <div class="col-md-4 col-lg-3">
+                <div class="form-check">
+                    <input class="form-check-input" type="checkbox"
+                           name="inspector_ids[]" value="{{ $e->id }}"
+                           id="insp_{{ $e->id }}"
+                           @checked(in_array($e->id, old('inspector_ids', $savedInspectors)))>
+                    <label class="form-check-label" for="insp_{{ $e->id }}">
+                        {{ $e->employee_name }}
+                        @if($e->designation)
+                            <small class="text-muted d-block">{{ $e->designation }}</small>
+                        @endif
+                    </label>
+                </div>
+            </div>
+            @empty
+            <p class="text-muted mb-0">No active employees found.</p>
+            @endforelse
+        </div>
+    </div>
+</div>
+
+@push('scripts')
+<script src="https://cdn.jsdelivr.net/npm/tom-select@2.3.1/dist/js/tom-select.complete.min.js"></script>
+<script>
+    new TomSelect('#sampleSelect', {
+        plugins: ['remove_button', 'checkbox_options'],
+        maxOptions: null,
+        placeholder: 'Search samples…',
+    });
+    new TomSelect('#orderSelect', {
+        plugins: ['remove_button', 'checkbox_options'],
+        maxOptions: null,
+        placeholder: 'Search orders…',
+    });
+</script>
+@endpush

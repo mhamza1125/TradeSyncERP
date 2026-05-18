@@ -11,8 +11,6 @@ class Inspection extends Model
     use LogsActivity;
 
     protected $fillable = [
-        'sample_id',
-        'inspection_type_id',
         'report_number',
         'inspection_date',
         'overall_status',
@@ -31,14 +29,14 @@ class Inspection extends Model
             ->dontSubmitEmptyLogs();
     }
 
-    public function sample()
+    public function samples()
     {
-        return $this->belongsTo(Sample::class);
+        return $this->belongsToMany(Sample::class, 'inspection_samples');
     }
 
-    public function inspectionType()
+    public function customerOrders()
     {
-        return $this->belongsTo(InspectionType::class);
+        return $this->belongsToMany(CustomerOrder::class, 'inspection_customer_orders');
     }
 
     public function inspectors()
@@ -46,8 +44,8 @@ class Inspection extends Model
         return $this->belongsToMany(Employee::class, 'employee_inspection');
     }
 
-    public function results()
+    public function runs()
     {
-        return $this->hasMany(InspectionResult::class);
+        return $this->hasMany(InspectionRun::class);
     }
 }

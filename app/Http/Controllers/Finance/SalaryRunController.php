@@ -82,15 +82,19 @@ class SalaryRunController extends Controller
 
             foreach ($request->lines as $lineData) {
                 $line = $salaryRun->lines()->findOrFail($lineData['id']);
+                $leaveDeduct = $lineData['leave_deduction_amount'] ?? 0;
                 $line->update([
-                    'basic_salary' => $lineData['basic_salary'],
-                    'bonus'        => $lineData['bonus'] ?? 0,
-                    'deduction'    => $lineData['deduction'] ?? 0,
-                    'advance'      => $lineData['advance'] ?? 0,
-                    'remarks'      => $lineData['remarks'] ?? null,
+                    'basic_salary'           => $lineData['basic_salary'],
+                    'bonus'                  => $lineData['bonus'] ?? 0,
+                    'deduction'              => $lineData['deduction'] ?? 0,
+                    'advance'                => $lineData['advance'] ?? 0,
+                    'leave_days'             => $lineData['leave_days'] ?? 0,
+                    'leave_deduction_amount' => $leaveDeduct,
+                    'remarks'                => $lineData['remarks'] ?? null,
                 ]);
                 $total += $lineData['basic_salary'] + ($lineData['bonus'] ?? 0)
-                    - ($lineData['deduction'] ?? 0) - ($lineData['advance'] ?? 0);
+                    - ($lineData['deduction'] ?? 0) - ($lineData['advance'] ?? 0)
+                    - $leaveDeduct;
             }
 
             $salaryRun->update(['total_net_payable' => $total]);

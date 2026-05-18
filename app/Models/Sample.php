@@ -17,12 +17,8 @@ class Sample extends Model
         'customer_id',
         'supplier_id',
         'received_by',
-        'brand_id',
         'product_name',
         'article',
-        'color',
-        'size',
-        'unit',
         'sample_reference',
         'physical_location',
         'source',
@@ -30,7 +26,6 @@ class Sample extends Model
         'position',
         'main_image',
         'receive_date',
-        'quantity',
         'priority_level',
         'alert_days',
         'status',
@@ -70,9 +65,9 @@ class Sample extends Model
         return $this->belongsTo(Employee::class, 'received_by');
     }
 
-    public function brand()
+    public function variations()
     {
-        return $this->belongsTo(Brand::class);
+        return $this->hasMany(SampleVariation::class);
     }
 
     public function testingParameters()
@@ -87,7 +82,7 @@ class Sample extends Model
 
     public function inspections()
     {
-        return $this->hasMany(Inspection::class);
+        return $this->belongsToMany(Inspection::class, 'inspection_samples');
     }
 
     public function attachments()

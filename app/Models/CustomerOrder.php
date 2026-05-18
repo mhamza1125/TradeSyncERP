@@ -14,7 +14,6 @@ class CustomerOrder extends Model
     protected $fillable = [
         'order_code',
         'customer_id',
-        'brand_id',
         'order_date',
         'required_by',
         'status',
@@ -39,9 +38,9 @@ class CustomerOrder extends Model
         return $this->belongsTo(Customer::class);
     }
 
-    public function brand()
+    public function inspections()
     {
-        return $this->belongsTo(Brand::class);
+        return $this->belongsToMany(Inspection::class, 'inspection_customer_orders');
     }
 
     public function items()

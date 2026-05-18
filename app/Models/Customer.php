@@ -17,6 +17,7 @@ class Customer extends Model
         'phone',
         'email',
         'address',
+        'brand',
         'currency_id',
         'opening_balance',
         'status',
@@ -38,11 +39,6 @@ class Customer extends Model
     public function currency()
     {
         return $this->belongsTo(Currency::class);
-    }
-
-    public function brands()
-    {
-        return $this->hasMany(Brand::class);
     }
 
     public function samples()

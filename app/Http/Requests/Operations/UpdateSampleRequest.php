@@ -18,7 +18,6 @@ class UpdateSampleRequest extends FormRequest
             'category_id'        => ['required', 'exists:product_categories,id'],
             'customer_id'        => ['required', 'exists:customers,id'],
             'supplier_id'        => ['nullable', 'exists:suppliers,id'],
-            'brand_id'           => ['required', 'exists:brands,id'],
             'product_name'       => ['required', 'string', 'max:255'],
             'sample_reference'   => ['nullable', 'string', 'max:255'],
             'physical_location'  => ['nullable', 'string', 'max:255'],

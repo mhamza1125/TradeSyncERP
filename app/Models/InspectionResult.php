@@ -11,13 +11,12 @@ class InspectionResult extends Model
     use LogsActivity;
 
     protected $fillable = [
-        'inspection_id',
-        'sample_testing_parameter_id',
-        'actual_result',
-        'pass_fail',
+        'inspection_run_id',
+        'sample_id',
+        'testing_parameter_id',
         'status',
+        'defect_id',
         'remarks',
-        'attachment',
     ];
 
     public function getActivitylogOptions(): LogOptions
@@ -28,13 +27,28 @@ class InspectionResult extends Model
             ->dontSubmitEmptyLogs();
     }
 
-    public function inspection()
+    public function inspectionRun()
     {
-        return $this->belongsTo(Inspection::class);
+        return $this->belongsTo(InspectionRun::class);
     }
 
-    public function sampleTestingParameter()
+    public function sample()
     {
-        return $this->belongsTo(SampleTestingParameter::class, 'sample_testing_parameter_id');
+        return $this->belongsTo(Sample::class);
+    }
+
+    public function testingParameter()
+    {
+        return $this->belongsTo(TestingParameter::class, 'testing_parameter_id');
+    }
+
+    public function defect()
+    {
+        return $this->belongsTo(Defect::class);
+    }
+
+    public function attachments()
+    {
+        return $this->morphMany(Attachment::class, 'attachable');
     }
 }

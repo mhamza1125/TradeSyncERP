@@ -53,7 +53,7 @@
                 @endcan
 
                 @can('samples.index')
-                <li class="nxl-item nxl-hasmenu {{ $is(['samples.*','movements.*','inspections.*']) ? 'active' : '' }}">
+                <li class="nxl-item nxl-hasmenu {{ $is(['samples.*','movements.*']) ? 'active' : '' }}">
                     <a href="javascript:void(0);" class="nxl-link">
                         <span class="nxl-micon"><i class="feather-package"></i></span>
                         <span class="nxl-mtext">Samples</span>
@@ -75,11 +75,24 @@
                             </a>
                         </li>
                         @endcan
-                        @can('inspections.index')
-                        <li class="nxl-item {{ $is(['samples.inspections.*','inspections.*']) ? 'active' : '' }}">
-                            <a class="nxl-link" href="{{ route('samples.index') }}?tab=inspections">
-                                <i class="feather-clipboard me-2 text-muted" style="font-size:12px"></i>Inspections
-                            </a>
+                    </ul>
+                </li>
+                @endcan
+
+                @can('inspections.index')
+                <li class="nxl-item nxl-hasmenu {{ $is('inspections.*') ? 'active' : '' }}">
+                    <a href="javascript:void(0);" class="nxl-link">
+                        <span class="nxl-micon"><i class="feather-search"></i></span>
+                        <span class="nxl-mtext">Inspections</span>
+                        <span class="nxl-arrow"><i class="feather-chevron-right"></i></span>
+                    </a>
+                    <ul class="nxl-submenu">
+                        <li class="nxl-item {{ $is('inspections.index') ? 'active' : '' }}">
+                            <a class="nxl-link" href="{{ route('inspections.index') }}">All Inspections</a>
+                        </li>
+                        @can('inspections.create')
+                        <li class="nxl-item {{ $is('inspections.create') ? 'active' : '' }}">
+                            <a class="nxl-link" href="{{ route('inspections.create') }}">New Inspection</a>
                         </li>
                         @endcan
                     </ul>
@@ -218,7 +231,7 @@
                 @endcan
 
                 {{-- ─── Settings ────────────────────────────────────────────────── --}}
-                @canany(['accounts.index','currencies.index','banks.index','expense-heads.index','brands.index','categories.index','parameters.index'])
+                @canany(['accounts.index','currencies.index','banks.index','expense-heads.index','categories.index','parameters.index'])
                 <li class="nxl-item nxl-caption">
                     <label>Settings</label>
                 </li>
@@ -255,19 +268,14 @@
                 </li>
                 @endcanany
 
-                @canany(['brands.index','categories.index','parameters.index'])
-                <li class="nxl-item nxl-hasmenu {{ $is(['masters.brands.*','masters.categories.*','masters.parameters.*']) ? 'active' : '' }}">
+                @canany(['categories.index','parameters.index'])
+                <li class="nxl-item nxl-hasmenu {{ $is(['masters.categories.*','masters.parameters.*']) ? 'active' : '' }}">
                     <a href="javascript:void(0);" class="nxl-link">
                         <span class="nxl-micon"><i class="feather-layers"></i></span>
                         <span class="nxl-mtext">Catalog</span>
                         <span class="nxl-arrow"><i class="feather-chevron-right"></i></span>
                     </a>
                     <ul class="nxl-submenu">
-                        @can('brands.index')
-                        <li class="nxl-item {{ $is('masters.brands.*') ? 'active' : '' }}">
-                            <a class="nxl-link" href="{{ route('masters.brands.index') }}">Brands</a>
-                        </li>
-                        @endcan
                         @can('categories.index')
                         <li class="nxl-item {{ $is('masters.categories.*') ? 'active' : '' }}">
                             <a class="nxl-link" href="{{ route('masters.categories.index') }}">Categories</a>

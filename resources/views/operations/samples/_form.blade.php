@@ -21,7 +21,7 @@
                     </div>
                     <div class="col-lg-6 mb-4">
                         <label class="form-label">Supplier / Factory</label>
-                        <select name="supplier_id" id="supplierSelect" class="form-select @error('supplier_id') is-invalid @enderror">
+                        <select name="supplier_id" class="form-select @error('supplier_id') is-invalid @enderror">
                             <option value="">— Select Supplier —</option>
                             @foreach($suppliers ?? [] as $supplier)
                                 <option value="{{ $supplier->id }}" @selected(old('supplier_id', $sample->supplier_id ?? '') == $supplier->id)>
@@ -30,20 +30,6 @@
                             @endforeach
                         </select>
                         @error('supplier_id')<div class="invalid-feedback">{{ $message }}</div>@enderror
-                    </div>
-                    <div class="col-lg-6 mb-4">
-                        <label class="form-label">Brand <span class="text-danger">*</span></label>
-                        <select name="brand_id" id="brandSelect" class="form-select @error('brand_id') is-invalid @enderror">
-                            <option value="">— Select Brand —</option>
-                            @if(isset($brands))
-                                @foreach($brands as $brand)
-                                    <option value="{{ $brand->id }}" @selected(old('brand_id', $sample->brand_id ?? '') == $brand->id)>
-                                        {{ $brand->brand_name }}
-                                    </option>
-                                @endforeach
-                            @endif
-                        </select>
-                        @error('brand_id')<div class="invalid-feedback">{{ $message }}</div>@enderror
                     </div>
                     <div class="col-lg-6 mb-4">
                         <label class="form-label">Product Category <span class="text-danger">*</span></label>
@@ -64,6 +50,12 @@
                         @error('product_name')<div class="invalid-feedback">{{ $message }}</div>@enderror
                     </div>
                     <div class="col-lg-6 mb-4">
+                        <label class="form-label">Article</label>
+                        <input type="text" name="article" class="form-control @error('article') is-invalid @enderror"
+                               placeholder="Article / style no." value="{{ old('article', $sample->article ?? '') }}">
+                        @error('article')<div class="invalid-feedback">{{ $message }}</div>@enderror
+                    </div>
+                    <div class="col-lg-6 mb-4">
                         <label class="form-label">Sample Reference</label>
                         <input type="text" name="sample_reference" class="form-control @error('sample_reference') is-invalid @enderror"
                                placeholder="AWB / BL / Reference no." value="{{ old('sample_reference', $sample->sample_reference ?? '') }}">
@@ -73,20 +65,13 @@
                         <label class="form-label">Physical Location</label>
                         <input type="text" name="physical_location" class="form-control @error('physical_location') is-invalid @enderror"
                                placeholder="e.g. Rack A-3, Lab Shelf 2" value="{{ old('physical_location', $sample->physical_location ?? '') }}">
-                        <small class="text-muted">Where the physical sample is stored.</small>
                         @error('physical_location')<div class="invalid-feedback">{{ $message }}</div>@enderror
                     </div>
                     <div class="col-lg-6 mb-4">
                         <label class="form-label">Receive Date <span class="text-danger">*</span></label>
                         <input type="date" name="receive_date" class="form-control @error('receive_date') is-invalid @enderror"
-                               value="{{ old('receive_date', isset($sample) ? $sample->receive_date : '') }}">
+                               value="{{ old('receive_date', isset($sample) ? $sample->receive_date?->toDateString() : '') }}">
                         @error('receive_date')<div class="invalid-feedback">{{ $message }}</div>@enderror
-                    </div>
-                    <div class="col-lg-6 mb-4">
-                        <label class="form-label">Quantity <span class="text-danger">*</span></label>
-                        <input type="number" min="1" name="quantity" class="form-control @error('quantity') is-invalid @enderror"
-                               placeholder="1" value="{{ old('quantity', $sample->quantity ?? '') }}">
-                        @error('quantity')<div class="invalid-feedback">{{ $message }}</div>@enderror
                     </div>
                     <div class="col-12 mb-4">
                         <label class="form-label">Remarks</label>
@@ -94,6 +79,87 @@
                                   placeholder="Additional notes...">{{ old('remarks', $sample->remarks ?? '') }}</textarea>
                         @error('remarks')<div class="invalid-feedback">{{ $message }}</div>@enderror
                     </div>
+                </div>
+            </div>
+        </div>
+
+        {{-- Color / Size / Quantity Variations --}}
+        <div class="card mt-4">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <div>
+                    <h5 class="card-title mb-0">Color / Size / Quantity Variations</h5>
+                    <small class="text-muted">Add one row per color-size combination.</small>
+                </div>
+                <button type="button" id="addVariationRow" class="btn btn-sm btn-primary">
+                    <i class="feather-plus me-1"></i> Add Row
+                </button>
+            </div>
+            <div class="card-body p-0">
+                <div class="table-responsive">
+                    <table class="table table-bordered mb-0" id="variationsTable">
+                        <thead>
+                            <tr>
+                                <th>#</th>
+                                <th>Color</th>
+                                <th>Size</th>
+                                <th class="wd-120">Quantity <span class="text-danger">*</span></th>
+                                <th class="wd-50"></th>
+                            </tr>
+                        </thead>
+                        <tbody id="variationsBody">
+                            @php
+                                $existingVariations = isset($sample) ? $sample->variations : collect();
+                                $varCount = max($existingVariations->count(), 1);
+                            @endphp
+                            @if($existingVariations->count())
+                                @foreach($existingVariations as $vi => $v)
+                                <tr class="variation-row">
+                                    <td class="var-num">{{ $vi + 1 }}</td>
+                                    <td>
+                                        <select name="variations[{{ $vi }}][color_id]" class="form-select form-select-sm">
+                                            <option value="">— Any —</option>
+                                            @foreach($colors as $color)
+                                            <option value="{{ $color->id }}" @selected(old("variations.{$vi}.color_id", $v->color_id) == $color->id)>{{ $color->name }}</option>
+                                            @endforeach
+                                        </select>
+                                    </td>
+                                    <td>
+                                        <select name="variations[{{ $vi }}][size_id]" class="form-select form-select-sm">
+                                            <option value="">— Any —</option>
+                                            @foreach($sizes as $size)
+                                            <option value="{{ $size->id }}" @selected(old("variations.{$vi}.size_id", $v->size_id) == $size->id)>{{ $size->name }}</option>
+                                            @endforeach
+                                        </select>
+                                    </td>
+                                    <td><input type="number" name="variations[{{ $vi }}][quantity]" class="form-control form-control-sm" min="1" value="{{ old("variations.{$vi}.quantity", $v->quantity) }}" required></td>
+                                    <td><button type="button" class="btn btn-sm btn-light-brand remove-variation"><i class="feather-trash-2"></i></button></td>
+                                </tr>
+                                @endforeach
+                            @else
+                            <tr class="variation-row">
+                                <td class="var-num">1</td>
+                                <td>
+                                    <select name="variations[0][color_id]" class="form-select form-select-sm">
+                                        <option value="">— Any —</option>
+                                        @foreach($colors as $color)
+                                        <option value="{{ $color->id }}">{{ $color->name }}</option>
+                                        @endforeach
+                                    </select>
+                                </td>
+                                <td>
+                                    <select name="variations[0][size_id]" class="form-select form-select-sm">
+                                        <option value="">— Any —</option>
+                                        @foreach($sizes as $size)
+                                        <option value="{{ $size->id }}">{{ $size->name }}</option>
+                                        @endforeach
+                                    </select>
+                                </td>
+                                <td><input type="number" name="variations[0][quantity]" class="form-control form-control-sm" min="1" value="1" required></td>
+                                <td></td>
+                            </tr>
+                            @endif
+                        </tbody>
+                    </table>
                 </div>
             </div>
         </div>
@@ -228,17 +294,47 @@
 
 @push('scripts')
 <script>
-    document.getElementById('customerSelect')?.addEventListener('change', function () {
-        const customerId = this.value;
-        const brandSelect = document.getElementById('brandSelect');
-        brandSelect.innerHTML = '<option value="">— Loading... —</option>';
-        if (!customerId) { brandSelect.innerHTML = '<option value="">— Select Brand —</option>'; return; }
-        fetch(`/api/customers/${customerId}/brands`)
-            .then(r => r.json())
-            .then(brands => {
-                brandSelect.innerHTML = '<option value="">— Select Brand —</option>';
-                brands.forEach(b => brandSelect.add(new Option(b.brand_name, b.id)));
-            });
+    let varIdx = {{ isset($sample) ? max($sample->variations->count(), 1) : 1 }};
+
+    const colorsData = @json($colors->map(fn($c) => ['id' => $c->id, 'name' => $c->name]));
+    const sizesData  = @json($sizes->map(fn($s) => ['id' => $s->id, 'name' => $s->name]));
+
+    function buildColorSelect(name) {
+        let opts = `<option value="">— Any —</option>`;
+        colorsData.forEach(c => opts += `<option value="${c.id}">${c.name}</option>`);
+        return `<select name="${name}" class="form-select form-select-sm">${opts}</select>`;
+    }
+
+    function buildSizeSelect(name) {
+        let opts = `<option value="">— Any —</option>`;
+        sizesData.forEach(s => opts += `<option value="${s.id}">${s.name}</option>`);
+        return `<select name="${name}" class="form-select form-select-sm">${opts}</select>`;
+    }
+
+    function renumberVars() {
+        document.querySelectorAll('.variation-row .var-num').forEach((td, i) => td.textContent = i + 1);
+    }
+
+    document.getElementById('addVariationRow').addEventListener('click', function () {
+        const tbody = document.getElementById('variationsBody');
+        const tr = document.createElement('tr');
+        tr.className = 'variation-row';
+        tr.innerHTML = `
+            <td class="var-num">${tbody.querySelectorAll('.variation-row').length + 1}</td>
+            <td>${buildColorSelect('variations[' + varIdx + '][color_id]')}</td>
+            <td>${buildSizeSelect('variations[' + varIdx + '][size_id]')}</td>
+            <td><input type="number" name="variations[${varIdx}][quantity]" class="form-control form-control-sm" min="1" value="1" required></td>
+            <td><button type="button" class="btn btn-sm btn-light-brand remove-variation"><i class="feather-trash-2"></i></button></td>
+        `;
+        tbody.appendChild(tr);
+        varIdx++;
+    });
+
+    document.getElementById('variationsBody').addEventListener('click', function (e) {
+        if (e.target.closest('.remove-variation')) {
+            const rows = document.querySelectorAll('.variation-row');
+            if (rows.length > 1) { e.target.closest('tr').remove(); renumberVars(); }
+        }
     });
 
     let attachIdx = 1;

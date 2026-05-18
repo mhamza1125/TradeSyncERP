@@ -31,6 +31,13 @@
                                placeholder="customer@example.com" value="{{ old('email', $customer->email ?? '') }}">
                         @error('email')<div class="invalid-feedback">{{ $message }}</div>@enderror
                     </div>
+                    <div class="col-lg-6 mb-4">
+                        <label class="form-label">Brand</label>
+                        <input type="text" name="brand" class="form-control @error('brand') is-invalid @enderror"
+                               placeholder="Brand name" value="{{ old('brand', $customer->brand ?? '') }}">
+                        <small class="text-muted">The brand this customer represents.</small>
+                        @error('brand')<div class="invalid-feedback">{{ $message }}</div>@enderror
+                    </div>
                     <div class="col-12 mb-4">
                         <label class="form-label">Address</label>
                         <textarea name="address" rows="3" class="form-control @error('address') is-invalid @enderror"

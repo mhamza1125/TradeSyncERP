@@ -8,7 +8,6 @@ use App\Http\Controllers\Finance\ExpenseController;
 use App\Http\Controllers\Finance\SalaryRunController;
 use App\Http\Controllers\Masters\AccountController;
 use App\Http\Controllers\Masters\BankController;
-use App\Http\Controllers\Masters\BrandController;
 use App\Http\Controllers\Masters\CurrencyController;
 use App\Http\Controllers\Masters\CustomerController;
 use App\Http\Controllers\Masters\EmployeeController;
@@ -19,6 +18,7 @@ use App\Http\Controllers\Masters\SupplierController;
 use App\Http\Controllers\Masters\TestingParameterController;
 use App\Http\Controllers\Operations\CustomerOrderController;
 use App\Http\Controllers\Operations\InspectionController;
+use App\Http\Controllers\Operations\InspectionRunController;
 use App\Http\Controllers\Operations\SampleController;
 use App\Http\Controllers\Operations\SampleMovementController;
 use App\Http\Controllers\Admin\RoleController;
@@ -42,7 +42,6 @@ Route::middleware(['auth', 'verified'])->group(function () {
     // ─── Master Data ────────────────────────────────────────────────────────────
     Route::prefix('masters')->name('masters.')->group(function () {
         Route::resource('customers',         CustomerController::class);
-        Route::resource('brands',            BrandController::class);
         Route::resource('categories',        ProductCategoryController::class);
         Route::resource('employees',         EmployeeController::class);
         Route::resource('suppliers',         SupplierController::class);
@@ -61,8 +60,17 @@ Route::middleware(['auth', 'verified'])->group(function () {
 
     Route::resource('samples', SampleController::class);
 
-    Route::resource('samples.movements',   SampleMovementController::class)->shallow();
-    Route::resource('samples.inspections', InspectionController::class)->shallow();
+    Route::resource('samples.movements', SampleMovementController::class)->shallow();
+
+    // Inspections (top-level) + run sub-pages
+    Route::resource('inspections', InspectionController::class);
+    Route::prefix('inspections/{inspection}/runs')->name('inspections.runs.')->group(function () {
+        Route::get('create',          [InspectionRunController::class, 'create'])->name('create');
+        Route::post('',               [InspectionRunController::class, 'store'])->name('store');
+        Route::get('{run}/edit',      [InspectionRunController::class, 'edit'])->name('edit');
+        Route::put('{run}',           [InspectionRunController::class, 'update'])->name('update');
+        Route::delete('{run}',        [InspectionRunController::class, 'destroy'])->name('destroy');
+    });
 
     // ─── Finance ─────────────────────────────────────────────────────────────────
     Route::resource('customer-invoices', CustomerInvoiceController::class)->parameters(['customer-invoices' => 'customerInvoice']);

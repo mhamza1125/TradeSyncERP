@@ -5,9 +5,10 @@ namespace App\Http\Controllers\Finance;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Finance\StoreCustomerInvoiceRequest;
 use App\Http\Requests\Finance\UpdateCustomerInvoiceRequest;
-use App\Models\Currency;
 use App\Models\Customer;
 use App\Models\CustomerInvoice;
+use App\Models\InspectionType;
+use App\Models\Supplier;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 
@@ -45,25 +46,25 @@ class CustomerInvoiceController extends Controller
 
     public function create()
     {
-        $customers  = Customer::where('status', true)->orderBy('customer_name')->get();
-        $currencies = Currency::orderBy('currency_name')->get();
-        return view('finance.customer-invoices.create', compact('customers', 'currencies'));
+        $customers       = Customer::with('currency')->where('status', true)->orderBy('customer_name')->get();
+        $suppliers       = Supplier::orderBy('name')->get();
+        $inspectionTypes = InspectionType::where('status', true)->orderBy('name')->get();
+
+        return view('finance.customer-invoices.create', compact('customers', 'suppliers', 'inspectionTypes'));
     }
 
     public function store(StoreCustomerInvoiceRequest $request)
     {
         return DB::transaction(function () use ($request) {
             $data = $request->validated();
-
             $data['invoice_number'] = $this->generateInvoiceNumber();
 
-            // Calculate totals from items
-            $subtotal = collect($data['items'])->sum('line_total');
-            $data['subtotal']      = $subtotal;
-            $data['tax_amount']    = $data['tax_amount'] ?? 0;
+            $subtotal = collect($data['items'])->sum('amount');
+            $data['subtotal']        = $subtotal;
+            $data['tax_amount']      = $data['tax_amount'] ?? 0;
             $data['discount_amount'] = $data['discount_amount'] ?? 0;
-            $data['total_amount']  = $subtotal + $data['tax_amount'] - $data['discount_amount'];
-            $data['amount_due']    = $data['total_amount'];
+            $data['total_amount']    = $subtotal + $data['tax_amount'] - $data['discount_amount'];
+            $data['amount_due']      = $data['total_amount'];
 
             $items = $data['items'];
             unset($data['items']);
@@ -78,16 +79,18 @@ class CustomerInvoiceController extends Controller
 
     public function show(CustomerInvoice $customerInvoice)
     {
-        $customerInvoice->load(['customer', 'items', 'foreignCurrency', 'attachments']);
+        $customerInvoice->load(['customer.currency', 'items.supplier', 'items.inspectionType', 'attachments']);
         return view('finance.customer-invoices.show', compact('customerInvoice'));
     }
 
     public function edit(CustomerInvoice $customerInvoice)
     {
-        $customers  = Customer::where('status', true)->orderBy('customer_name')->get();
-        $currencies = Currency::orderBy('currency_name')->get();
+        $customers       = Customer::with('currency')->where('status', true)->orderBy('customer_name')->get();
+        $suppliers       = Supplier::orderBy('name')->get();
+        $inspectionTypes = InspectionType::where('status', true)->orderBy('name')->get();
         $customerInvoice->load(['items', 'attachments']);
-        return view('finance.customer-invoices.edit', compact('customerInvoice', 'customers', 'currencies'));
+
+        return view('finance.customer-invoices.edit', compact('customerInvoice', 'customers', 'suppliers', 'inspectionTypes'));
     }
 
     public function update(UpdateCustomerInvoiceRequest $request, CustomerInvoice $customerInvoice)
@@ -95,7 +98,7 @@ class CustomerInvoiceController extends Controller
         return DB::transaction(function () use ($request, $customerInvoice) {
             $data = $request->validated();
 
-            $subtotal = collect($data['items'])->sum('line_total');
+            $subtotal = collect($data['items'])->sum('amount');
             $data['subtotal']        = $subtotal;
             $data['tax_amount']      = $data['tax_amount'] ?? 0;
             $data['discount_amount'] = $data['discount_amount'] ?? 0;

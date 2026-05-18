@@ -10,12 +10,13 @@ class AttachmentController extends Controller
 {
     /** Supported polymorphic types and their model classes */
     private array $morphMap = [
-        'customers'   => \App\Models\Customer::class,
-        'suppliers'   => \App\Models\Supplier::class,
-        'employees'   => \App\Models\Employee::class,
-        'transactions' => \App\Models\Transaction::class,
-        'samples'     => \App\Models\Sample::class,
-        'customer-invoices' => \App\Models\CustomerInvoice::class,
+        'customers'           => \App\Models\Customer::class,
+        'suppliers'           => \App\Models\Supplier::class,
+        'employees'           => \App\Models\Employee::class,
+        'transactions'        => \App\Models\Transaction::class,
+        'samples'             => \App\Models\Sample::class,
+        'customer-invoices'   => \App\Models\CustomerInvoice::class,
+        'inspection-results'  => \App\Models\InspectionResult::class,
     ];
 
     public function store(Request $request, string $type, int $id)

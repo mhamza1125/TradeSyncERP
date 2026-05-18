@@ -1,4 +1,12 @@
 {{-- Reusable customer invoice form partial --}}
+@php
+    $suppliersJson       = $suppliers->map(fn($s) => ['id' => $s->id, 'name' => $s->name]);
+    $inspTypesJson       = $inspectionTypes->map(fn($t) => ['id' => $t->id, 'name' => $t->name]);
+    $customersWithCurrency = $customers->mapWithKeys(fn($c) => [
+        $c->id => optional($c->currency)->currency_code ?? ''
+    ]);
+@endphp
+
 <div class="row">
     {{-- Main Invoice Info --}}
     <div class="col-xl-12">
@@ -8,12 +16,13 @@
             </div>
             <div class="card-body">
                 <div class="row mb-4">
-                    <div class="col-lg-6 mb-4">
+                    <div class="col-lg-5 mb-4">
                         <label class="form-label">Customer <span class="text-danger">*</span></label>
-                        <select name="customer_id" class="form-select @error('customer_id') is-invalid @enderror">
+                        <select name="customer_id" id="invoiceCustomerSelect" class="form-select @error('customer_id') is-invalid @enderror">
                             <option value="">— Select Customer —</option>
                             @foreach($customers as $customer)
                                 <option value="{{ $customer->id }}"
+                                    data-currency="{{ optional($customer->currency)->currency_code }}"
                                     @selected(old('customer_id', $customerInvoice->customer_id ?? '') == $customer->id)>
                                     {{ $customer->customer_name }}
                                 </option>
@@ -21,19 +30,25 @@
                         </select>
                         @error('customer_id')<div class="invalid-feedback">{{ $message }}</div>@enderror
                     </div>
-                    <div class="col-lg-6 mb-4">
+                    <div class="col-lg-3 mb-4 d-flex align-items-end">
+                        <div>
+                            <label class="form-label text-muted fs-12">Customer Currency</label>
+                            <div id="customerCurrencyDisplay" class="fw-bold fs-14 text-primary">—</div>
+                        </div>
+                    </div>
+                    <div class="col-lg-4 mb-4">
                         <label class="form-label">Invoice Date <span class="text-danger">*</span></label>
                         <input type="date" name="invoice_date" class="form-control @error('invoice_date') is-invalid @enderror"
-                               value="{{ old('invoice_date', isset($customerInvoice) ? $customerInvoice->invoice_date : now()->toDateString()) }}">
+                               value="{{ old('invoice_date', isset($customerInvoice) ? $customerInvoice->invoice_date?->toDateString() : now()->toDateString()) }}">
                         @error('invoice_date')<div class="invalid-feedback">{{ $message }}</div>@enderror
                     </div>
-                    <div class="col-lg-6 mb-4">
+                    <div class="col-lg-4 mb-4">
                         <label class="form-label">Due Date</label>
                         <input type="date" name="due_date" class="form-control @error('due_date') is-invalid @enderror"
-                               value="{{ old('due_date', isset($customerInvoice) ? $customerInvoice->due_date : '') }}">
+                               value="{{ old('due_date', isset($customerInvoice) ? $customerInvoice->due_date?->toDateString() : '') }}">
                         @error('due_date')<div class="invalid-feedback">{{ $message }}</div>@enderror
                     </div>
-                    <div class="col-lg-6 mb-4">
+                    <div class="col-lg-4 mb-4">
                         <label class="form-label">Status</label>
                         <select name="status" class="form-select @error('status') is-invalid @enderror">
                             @foreach(['Draft','Sent','Partial','Paid','Overdue','Cancelled'] as $s)
@@ -53,18 +68,19 @@
                 {{-- Line Items --}}
                 <div class="mb-4">
                     <h5 class="fw-bold">Invoice Items:</h5>
-                    <span class="fs-12 text-muted">Add items to this invoice</span>
+                    <span class="fs-12 text-muted">Each row = one inspection/service charge</span>
                 </div>
                 <div class="table-responsive">
                     <table class="table table-bordered" id="invoiceItemsTable">
                         <thead>
                             <tr class="single-item">
-                                <th class="wd-50">#</th>
-                                <th>Description</th>
-                                <th class="wd-120">Qty</th>
-                                <th class="wd-150">Unit Price</th>
-                                <th class="wd-150">Line Total</th>
-                                <th class="wd-50"></th>
+                                <th class="wd-40">#</th>
+                                <th>Supplier</th>
+                                <th>Inspection Type</th>
+                                <th>PO / Invoice No</th>
+                                <th class="wd-150">Date</th>
+                                <th class="wd-150">Amount</th>
+                                <th class="wd-40"></th>
                             </tr>
                         </thead>
                         <tbody id="invoiceItemsBody">
@@ -72,20 +88,50 @@
                                 @foreach($customerInvoice->items as $i => $item)
                                 <tr class="invoice-item-row">
                                     <td>{{ $i + 1 }}</td>
-                                    <td><input type="text" name="items[{{ $i }}][description]" class="form-control" placeholder="Item description" value="{{ old("items.{$i}.description", $item->description) }}"></td>
-                                    <td><input type="number" name="items[{{ $i }}][quantity]" class="form-control item-qty" placeholder="1" min="0.01" step="0.01" value="{{ old("items.{$i}.quantity", $item->quantity) }}"></td>
-                                    <td><input type="number" name="items[{{ $i }}][unit_price]" class="form-control item-price" placeholder="0.00" step="0.01" value="{{ old("items.{$i}.unit_price", $item->unit_price) }}"></td>
-                                    <td><input type="number" name="items[{{ $i }}][line_total]" class="form-control item-total" placeholder="0.00" readonly value="{{ old("items.{$i}.line_total", $item->line_total) }}"></td>
+                                    <td>
+                                        <select name="items[{{ $i }}][supplier_id]" class="form-select form-select-sm">
+                                            <option value="">— Select —</option>
+                                            @foreach($suppliers as $s)
+                                            <option value="{{ $s->id }}" @selected(old("items.{$i}.supplier_id", $item->supplier_id) == $s->id)>{{ $s->name }}</option>
+                                            @endforeach
+                                        </select>
+                                    </td>
+                                    <td>
+                                        <select name="items[{{ $i }}][inspection_type_id]" class="form-select form-select-sm">
+                                            <option value="">— Select —</option>
+                                            @foreach($inspectionTypes as $t)
+                                            <option value="{{ $t->id }}" @selected(old("items.{$i}.inspection_type_id", $item->inspection_type_id) == $t->id)>{{ $t->name }}</option>
+                                            @endforeach
+                                        </select>
+                                    </td>
+                                    <td><input type="text" name="items[{{ $i }}][po_invoice_no]" class="form-control form-control-sm" placeholder="PO / Inv No." value="{{ old("items.{$i}.po_invoice_no", $item->po_invoice_no) }}"></td>
+                                    <td><input type="date" name="items[{{ $i }}][item_date]" class="form-control form-control-sm" value="{{ old("items.{$i}.item_date", $item->item_date?->toDateString()) }}"></td>
+                                    <td><input type="number" name="items[{{ $i }}][amount]" class="form-control form-control-sm item-amount" placeholder="0.00" step="0.01" value="{{ old("items.{$i}.amount", $item->amount) }}"></td>
                                     <td><button type="button" class="btn btn-sm btn-light-brand remove-row"><i class="feather-trash-2"></i></button></td>
                                 </tr>
                                 @endforeach
                             @else
                             <tr class="invoice-item-row">
                                 <td>1</td>
-                                <td><input type="text" name="items[0][description]" class="form-control" placeholder="Item description"></td>
-                                <td><input type="number" name="items[0][quantity]" class="form-control item-qty" placeholder="1" min="0.01" step="0.01" value="1"></td>
-                                <td><input type="number" name="items[0][unit_price]" class="form-control item-price" placeholder="0.00" step="0.01"></td>
-                                <td><input type="number" name="items[0][line_total]" class="form-control item-total" placeholder="0.00" readonly></td>
+                                <td>
+                                    <select name="items[0][supplier_id]" class="form-select form-select-sm">
+                                        <option value="">— Select —</option>
+                                        @foreach($suppliers as $s)
+                                        <option value="{{ $s->id }}">{{ $s->name }}</option>
+                                        @endforeach
+                                    </select>
+                                </td>
+                                <td>
+                                    <select name="items[0][inspection_type_id]" class="form-select form-select-sm">
+                                        <option value="">— Select —</option>
+                                        @foreach($inspectionTypes as $t)
+                                        <option value="{{ $t->id }}">{{ $t->name }}</option>
+                                        @endforeach
+                                    </select>
+                                </td>
+                                <td><input type="text" name="items[0][po_invoice_no]" class="form-control form-control-sm" placeholder="PO / Inv No."></td>
+                                <td><input type="date" name="items[0][item_date]" class="form-control form-control-sm"></td>
+                                <td><input type="number" name="items[0][amount]" class="form-control form-control-sm item-amount" placeholder="0.00" step="0.01"></td>
                                 <td></td>
                             </tr>
                             @endif
@@ -115,65 +161,32 @@
             </div>
         </div>
     </div>
-
-    {{-- Foreign Currency Section --}}
-    <div class="col-xl-6 mt-4">
-        <div class="card">
-            <div class="card-header">
-                <h5 class="card-title">Foreign Currency Details</h5>
-                <p class="text-muted fs-12 mb-0">Fill in if this invoice was issued in a foreign currency.</p>
-            </div>
-            <div class="card-body">
-                <div class="mb-4">
-                    <label class="form-label">Invoice Currency</label>
-                    <select name="foreign_currency_id" class="form-select @error('foreign_currency_id') is-invalid @enderror">
-                        <option value="">— Local Currency (no conversion) —</option>
-                        @foreach($currencies as $cur)
-                        <option value="{{ $cur->id }}"
-                            @selected(old('foreign_currency_id', $customerInvoice->foreign_currency_id ?? '') == $cur->id)>
-                            {{ $cur->currency_code }} — {{ $cur->currency_name }}
-                        </option>
-                        @endforeach
-                    </select>
-                    <small class="text-muted">Select the currency in which this invoice was issued.</small>
-                    @error('foreign_currency_id')<div class="invalid-feedback">{{ $message }}</div>@enderror
-                </div>
-                <div class="mb-4">
-                    <label class="form-label">Exchange Rate</label>
-                    <input type="number" step="0.000001" name="exchange_rate"
-                           class="form-control @error('exchange_rate') is-invalid @enderror"
-                           placeholder="e.g. 278.50"
-                           value="{{ old('exchange_rate', $customerInvoice->exchange_rate ?? '') }}">
-                    <small class="text-muted">Enter the exchange rate applicable at invoice time (1 foreign unit = ? local).</small>
-                    @error('exchange_rate')<div class="invalid-feedback">{{ $message }}</div>@enderror
-                </div>
-                <div class="mb-4">
-                    <label class="form-label">Foreign Amount</label>
-                    <input type="number" step="0.01" name="foreign_amount"
-                           class="form-control @error('foreign_amount') is-invalid @enderror"
-                           placeholder="0.00"
-                           value="{{ old('foreign_amount', $customerInvoice->foreign_amount ?? '') }}">
-                    <small class="text-muted">Specify the converted local amount if different from the calculated total.</small>
-                    @error('foreign_amount')<div class="invalid-feedback">{{ $message }}</div>@enderror
-                </div>
-            </div>
-        </div>
-    </div>
 </div>
 
 @push('scripts')
 <script>
+    // Customer → currency display
+    const customerCurrencyMap = @json($customersWithCurrency);
+    const customerSelect = document.getElementById('invoiceCustomerSelect');
+
+    function updateCurrencyDisplay() {
+        const id  = customerSelect.value;
+        const cur = id ? (customerCurrencyMap[id] || '—') : '—';
+        document.getElementById('customerCurrencyDisplay').textContent = cur || '—';
+    }
+
+    customerSelect?.addEventListener('change', updateCurrencyDisplay);
+    updateCurrencyDisplay();
+
+    // Invoice totals
     let invoiceRowIdx = {{ isset($customerInvoice) ? $customerInvoice->items->count() : 1 }};
+    const suppliersData   = @json($suppliersJson);
+    const inspTypesData   = @json($inspTypesJson);
 
     function calcInvoiceTotals() {
         let subtotal = 0;
-        document.querySelectorAll('.invoice-item-row').forEach(row => {
-            const qty   = parseFloat(row.querySelector('.item-qty')?.value) || 0;
-            const price = parseFloat(row.querySelector('.item-price')?.value) || 0;
-            const total = qty * price;
-            const totalInput = row.querySelector('.item-total');
-            if (totalInput) totalInput.value = total.toFixed(2);
-            subtotal += total;
+        document.querySelectorAll('.item-amount').forEach(inp => {
+            subtotal += parseFloat(inp.value) || 0;
         });
         const tax      = parseFloat(document.querySelector('[name="tax_amount"]')?.value) || 0;
         const discount = parseFloat(document.querySelector('[name="discount_amount"]')?.value) || 0;
@@ -185,6 +198,18 @@
     document.querySelector('[name="discount_amount"]')?.addEventListener('input', calcInvoiceTotals);
     calcInvoiceTotals();
 
+    function buildSupplierSelect(idx) {
+        let opts = `<option value="">— Select —</option>`;
+        suppliersData.forEach(s => opts += `<option value="${s.id}">${s.name}</option>`);
+        return `<select name="items[${idx}][supplier_id]" class="form-select form-select-sm">${opts}</select>`;
+    }
+
+    function buildInspTypeSelect(idx) {
+        let opts = `<option value="">— Select —</option>`;
+        inspTypesData.forEach(t => opts += `<option value="${t.id}">${t.name}</option>`);
+        return `<select name="items[${idx}][inspection_type_id]" class="form-select form-select-sm">${opts}</select>`;
+    }
+
     document.getElementById('addInvoiceRow').addEventListener('click', function () {
         const tbody    = document.getElementById('invoiceItemsBody');
         const rowCount = tbody.querySelectorAll('.invoice-item-row').length + 1;
@@ -192,10 +217,11 @@
         tr.className   = 'invoice-item-row';
         tr.innerHTML   = `
             <td>${rowCount}</td>
-            <td><input type="text" name="items[${invoiceRowIdx}][description]" class="form-control" placeholder="Item description"></td>
-            <td><input type="number" name="items[${invoiceRowIdx}][quantity]" class="form-control item-qty" placeholder="1" min="0.01" step="0.01" value="1"></td>
-            <td><input type="number" name="items[${invoiceRowIdx}][unit_price]" class="form-control item-price" placeholder="0.00" step="0.01"></td>
-            <td><input type="number" name="items[${invoiceRowIdx}][line_total]" class="form-control item-total" placeholder="0.00" readonly></td>
+            <td>${buildSupplierSelect(invoiceRowIdx)}</td>
+            <td>${buildInspTypeSelect(invoiceRowIdx)}</td>
+            <td><input type="text" name="items[${invoiceRowIdx}][po_invoice_no]" class="form-control form-control-sm" placeholder="PO / Inv No."></td>
+            <td><input type="date" name="items[${invoiceRowIdx}][item_date]" class="form-control form-control-sm"></td>
+            <td><input type="number" name="items[${invoiceRowIdx}][amount]" class="form-control form-control-sm item-amount" placeholder="0.00" step="0.01"></td>
             <td><button type="button" class="btn btn-sm btn-light-brand remove-row"><i class="feather-trash-2"></i></button></td>
         `;
         tbody.appendChild(tr);

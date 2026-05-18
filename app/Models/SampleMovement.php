@@ -12,6 +12,7 @@ class SampleMovement extends Model
 
     protected $fillable = [
         'sample_id',
+        'inspection_run_id',
         'moved_by_type',
         'moved_by_id',
         'assigned_to_type',
@@ -41,6 +42,11 @@ class SampleMovement extends Model
     public function sample()
     {
         return $this->belongsTo(Sample::class);
+    }
+
+    public function inspectionRun()
+    {
+        return $this->belongsTo(InspectionRun::class);
     }
 
     public function movedByEmployee()

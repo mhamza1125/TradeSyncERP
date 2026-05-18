@@ -14,6 +14,9 @@ class DatabaseSeeder extends Seeder
             AccountsSeeder::class,
             ExpenseHeadsSeeder::class,
             InspectionTypeSeeder::class,
+            DefectsSeeder::class,
+            SampleColorsSeeder::class,
+            SampleSizesSeeder::class,
             AdminUserSeeder::class,
             TestDataSeeder::class,
         ]);

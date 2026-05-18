@@ -19,8 +19,10 @@ class UpdateSalaryRunLinesRequest extends FormRequest
             'lines.*.basic_salary' => ['required', 'numeric', 'min:0'],
             'lines.*.bonus'        => ['nullable', 'numeric', 'min:0'],
             'lines.*.deduction'    => ['nullable', 'numeric', 'min:0'],
-            'lines.*.advance'      => ['nullable', 'numeric', 'min:0'],
-            'lines.*.remarks'      => ['nullable', 'string'],
+            'lines.*.advance'                 => ['nullable', 'numeric', 'min:0'],
+            'lines.*.leave_days'              => ['nullable', 'integer', 'min:0'],
+            'lines.*.leave_deduction_amount'  => ['nullable', 'numeric', 'min:0'],
+            'lines.*.remarks'                 => ['nullable', 'string'],
         ];
     }
 }

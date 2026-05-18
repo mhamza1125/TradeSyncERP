@@ -13,15 +13,18 @@ class SalaryRunLine extends Model
         'bonus',
         'deduction',
         'advance',
+        'leave_days',
+        'leave_deduction_amount',
         'remarks',
     ];
 
     protected $casts = [
-        'basic_salary' => 'decimal:2',
-        'bonus'        => 'decimal:2',
-        'deduction'    => 'decimal:2',
-        'advance'      => 'decimal:2',
-        'net_payable'  => 'decimal:2',
+        'basic_salary'           => 'decimal:2',
+        'bonus'                  => 'decimal:2',
+        'deduction'              => 'decimal:2',
+        'advance'                => 'decimal:2',
+        'leave_deduction_amount' => 'decimal:2',
+        'net_payable'            => 'decimal:2',
     ];
 
     public function salaryRun()

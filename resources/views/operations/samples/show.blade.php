@@ -69,7 +69,7 @@
                             </li>
                             <li class="hstack justify-content-between mb-3">
                                 <span class="text-muted hstack gap-3"><i class="feather-tag"></i>Brand</span>
-                                <span>{{ $sample->brand->brand_name }}</span>
+                                <span>{{ $sample->customer->brand ?? '—' }}</span>
                             </li>
                             <li class="hstack justify-content-between mb-3">
                                 <span class="text-muted hstack gap-3"><i class="feather-grid"></i>Category</span>
@@ -138,7 +138,7 @@
                             <div class="row g-0 mb-3"><div class="col-sm-5 text-muted">Sample Code:</div><div class="col-sm-7 fw-semibold">{{ $sample->sample_code }}</div></div>
                             <div class="row g-0 mb-3"><div class="col-sm-5 text-muted">Product Name:</div><div class="col-sm-7 fw-semibold">{{ $sample->product_name }}</div></div>
                             <div class="row g-0 mb-3"><div class="col-sm-5 text-muted">Customer:</div><div class="col-sm-7 fw-semibold">{{ $sample->customer->customer_name }}</div></div>
-                            <div class="row g-0 mb-3"><div class="col-sm-5 text-muted">Brand:</div><div class="col-sm-7 fw-semibold">{{ $sample->brand->brand_name }}</div></div>
+                            <div class="row g-0 mb-3"><div class="col-sm-5 text-muted">Brand:</div><div class="col-sm-7 fw-semibold">{{ $sample->customer->brand ?? '—' }}</div></div>
                             <div class="row g-0 mb-3"><div class="col-sm-5 text-muted">Category:</div><div class="col-sm-7 fw-semibold">{{ $sample->category->category_name }}</div></div>
                             <div class="row g-0 mb-3"><div class="col-sm-5 text-muted">Quantity:</div><div class="col-sm-7 fw-semibold">{{ $sample->quantity }}</div></div>
                             <div class="row g-0 mb-3"><div class="col-sm-5 text-muted">Receive Date:</div><div class="col-sm-7 fw-semibold">{{ \Carbon\Carbon::parse($sample->receive_date)->format('d M Y') }}</div></div>
@@ -232,12 +232,12 @@
                                 </h5>
                                 <div class="d-flex gap-2">
                                     @can('inspections.index')
-                                    <a href="{{ route('samples.inspections.index', $sample) }}" class="btn btn-sm btn-light-brand">
+                                    <a href="{{ route('inspections.index') }}" class="btn btn-sm btn-light-brand">
                                         <i class="feather-list me-1"></i> View All
                                     </a>
                                     @endcan
                                     @can('inspections.create')
-                                    <a href="{{ route('samples.inspections.create', $sample) }}" class="btn btn-sm btn-primary">
+                                    <a href="{{ route('inspections.create') }}" class="btn btn-sm btn-primary">
                                         <i class="feather-clipboard me-1"></i> New Inspection
                                     </a>
                                     @endcan
@@ -251,7 +251,7 @@
                                             <th>Report #</th>
                                             <th>Date</th>
                                             <th>Inspector</th>
-                                            <th>Results</th>
+                                            <th>Runs</th>
                                             <th>Status</th>
                                             <th></th>
                                         </tr>
@@ -263,7 +263,7 @@
                                             <td class="fw-semibold">{{ $ins->report_number }}</td>
                                             <td>{{ $ins->inspection_date->format('d M Y') }}</td>
                                             <td><span class="badge bg-soft-primary text-primary">{{ $ins->inspectionType?->name ?? '—' }}</span></td>
-                                            <td>{{ $ins->results->count() }} result(s)</td>
+                                            <td>{{ $ins->runs->count() }} run(s)</td>
                                             <td>
                                                 <span class="badge bg-soft-{{ $ic[$ins->overall_status] ?? 'secondary' }} text-{{ $ic[$ins->overall_status] ?? 'secondary' }}">
                                                     {{ $ins->overall_status }}
@@ -281,7 +281,7 @@
                             </div>
                             @if($sample->inspections->count() > 5)
                             <div class="text-center mt-2">
-                                <a href="{{ route('samples.inspections.index', $sample) }}" class="small text-primary">View all {{ $sample->inspections->count() }} inspections &rarr;</a>
+                                <a href="{{ route('inspections.index') }}" class="small text-primary">View all {{ $sample->inspections->count() }} inspections &rarr;</a>
                             </div>
                             @endif
                             @else
@@ -289,7 +289,7 @@
                                 <i class="feather-clipboard fs-2 d-block mb-2"></i>
                                 <p class="mb-2">No inspections recorded yet.</p>
                                 @can('inspections.create')
-                                <a href="{{ route('samples.inspections.create', $sample) }}" class="btn btn-sm btn-primary">
+                                <a href="{{ route('inspections.create') }}" class="btn btn-sm btn-primary">
                                     <i class="feather-plus me-1"></i> Start First Inspection
                                 </a>
                                 @endcan

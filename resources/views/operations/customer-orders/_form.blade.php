@@ -9,7 +9,7 @@
                 <div class="row">
                     <div class="col-lg-6 mb-4">
                         <label class="form-label">Customer <span class="text-danger">*</span></label>
-                        <select name="customer_id" id="customerSelect" class="form-select @error('customer_id') is-invalid @enderror" required>
+                        <select name="customer_id" class="form-select @error('customer_id') is-invalid @enderror" required>
                             <option value="">— Select Customer —</option>
                             @foreach($customers as $c)
                             <option value="{{ $c->id }}" @selected(old('customer_id', $customerOrder->customer_id ?? '') == $c->id)>
@@ -20,20 +20,6 @@
                         @error('customer_id')<div class="invalid-feedback">{{ $message }}</div>@enderror
                     </div>
                     <div class="col-lg-6 mb-4">
-                        <label class="form-label">Brand <small class="text-muted">(filtered by customer)</small></label>
-                        <select name="brand_id" id="brandSelect" class="form-select @error('brand_id') is-invalid @enderror">
-                            <option value="">— Any Brand —</option>
-                            @foreach($brands as $b)
-                            <option value="{{ $b->id }}"
-                                    data-customer="{{ $b->customer_id }}"
-                                    @selected(old('brand_id', $customerOrder->brand_id ?? '') == $b->id)>
-                                {{ $b->brand_name }}
-                            </option>
-                            @endforeach
-                        </select>
-                        @error('brand_id')<div class="invalid-feedback">{{ $message }}</div>@enderror
-                    </div>
-                    <div class="col-lg-6 mb-4">
                         <label class="form-label">Order Date <span class="text-danger">*</span></label>
                         <input type="date" name="order_date"
                                class="form-control @error('order_date') is-invalid @enderror"
@@ -41,13 +27,14 @@
                         @error('order_date')<div class="invalid-feedback">{{ $message }}</div>@enderror
                     </div>
                     <div class="col-lg-6 mb-4">
-                        <label class="form-label">Required By</label>
+                        <label class="form-label">ETD</label>
                         <input type="date" name="required_by"
                                class="form-control @error('required_by') is-invalid @enderror"
                                value="{{ old('required_by', isset($customerOrder) ? $customerOrder->required_by?->toDateString() : '') }}">
+                        <small class="text-muted">Estimated Time of Departure / Delivery</small>
                         @error('required_by')<div class="invalid-feedback">{{ $message }}</div>@enderror
                     </div>
-                    <div class="col-lg-12 mb-4">
+                    <div class="col-lg-6 mb-4">
                         <label class="form-label">Remarks</label>
                         <textarea name="remarks" rows="2" class="form-control @error('remarks') is-invalid @enderror"
                                   placeholder="Optional notes about this order...">{{ old('remarks', $customerOrder->remarks ?? '') }}</textarea>
@@ -69,32 +56,48 @@
                         <thead>
                             <tr>
                                 <th>#</th>
-                                <th>Product Name <span class="text-danger">*</span></th>
-                                <th class="wd-150">Qty <span class="text-danger">*</span></th>
-                                <th class="wd-120">Unit</th>
+                                <th>Product Category <span class="text-danger">*</span></th>
+                                <th class="wd-120">Qty <span class="text-danger">*</span></th>
                                 <th>Description</th>
                                 <th class="wd-50"></th>
                             </tr>
                         </thead>
                         <tbody id="orderItemsBody">
+                            @php
+                                $categoriesJson = $categories->map(fn($c) => ['id' => $c->id, 'name' => $c->category_name]);
+                            @endphp
                             @if(isset($customerOrder) && $customerOrder->items->count())
                                 @foreach($customerOrder->items as $i => $item)
                                 <tr class="order-item-row">
                                     <td class="row-num">{{ $i + 1 }}</td>
-                                    <td><input type="text" name="items[{{ $i }}][product_name]" class="form-control" placeholder="Product name" required value="{{ old("items.{$i}.product_name", $item->product_name) }}"></td>
-                                    <td><input type="number" name="items[{{ $i }}][quantity]" class="form-control" min="1" value="{{ old("items.{$i}.quantity", $item->quantity) }}" required></td>
-                                    <td><input type="text" name="items[{{ $i }}][unit]" class="form-control" placeholder="e.g. meters" value="{{ old("items.{$i}.unit", $item->unit) }}"></td>
-                                    <td><input type="text" name="items[{{ $i }}][description]" class="form-control" placeholder="Optional description" value="{{ old("items.{$i}.description", $item->description) }}"></td>
+                                    <td>
+                                        <select name="items[{{ $i }}][product_category_id]" class="form-select form-select-sm">
+                                            <option value="">— Select —</option>
+                                            @foreach($categories as $cat)
+                                            <option value="{{ $cat->id }}" @selected(old("items.{$i}.product_category_id", $item->product_category_id) == $cat->id)>
+                                                {{ $cat->category_name }}
+                                            </option>
+                                            @endforeach
+                                        </select>
+                                    </td>
+                                    <td><input type="number" name="items[{{ $i }}][quantity]" class="form-control form-control-sm" min="1" value="{{ old("items.{$i}.quantity", $item->quantity) }}" required></td>
+                                    <td><input type="text" name="items[{{ $i }}][description]" class="form-control form-control-sm" placeholder="Optional" value="{{ old("items.{$i}.description", $item->description) }}"></td>
                                     <td><button type="button" class="btn btn-sm btn-light-brand remove-order-row"><i class="feather-trash-2"></i></button></td>
                                 </tr>
                                 @endforeach
                             @else
                             <tr class="order-item-row">
                                 <td class="row-num">1</td>
-                                <td><input type="text" name="items[0][product_name]" class="form-control" placeholder="Product name" required></td>
-                                <td><input type="number" name="items[0][quantity]" class="form-control" min="1" value="1" required></td>
-                                <td><input type="text" name="items[0][unit]" class="form-control" placeholder="e.g. meters"></td>
-                                <td><input type="text" name="items[0][description]" class="form-control" placeholder="Optional description"></td>
+                                <td>
+                                    <select name="items[0][product_category_id]" class="form-select form-select-sm">
+                                        <option value="">— Select —</option>
+                                        @foreach($categories as $cat)
+                                        <option value="{{ $cat->id }}">{{ $cat->category_name }}</option>
+                                        @endforeach
+                                    </select>
+                                </td>
+                                <td><input type="number" name="items[0][quantity]" class="form-control form-control-sm" min="1" value="1" required></td>
+                                <td><input type="text" name="items[0][description]" class="form-control form-control-sm" placeholder="Optional"></td>
                                 <td></td>
                             </tr>
                             @endif
@@ -138,42 +141,25 @@
 @push('scripts')
 <script>
     let orderItemIdx = {{ isset($customerOrder) ? max($customerOrder->items->count(), 1) : 1 }};
+    const categoriesData = @json($categoriesJson ?? []);
 
-    // Filter brands by selected customer
-    const customerSelect = document.getElementById('customerSelect');
-    const brandSelect    = document.getElementById('brandSelect');
-    const allBrandOpts   = Array.from(brandSelect.options).map(o => ({
-        value: o.value, text: o.text, customer: o.dataset.customer, selected: o.selected
-    }));
-
-    function filterBrands() {
-        const cid = customerSelect.value;
-        const cur = brandSelect.value;
-        brandSelect.innerHTML = '<option value="">— Any Brand —</option>';
-        allBrandOpts.filter(o => o.value === '' || o.customer == cid).forEach(o => {
-            if (o.value === '') return;
-            const opt = document.createElement('option');
-            opt.value = o.value;
-            opt.text  = o.text;
-            if (o.value == cur) opt.selected = true;
-            brandSelect.appendChild(opt);
+    function buildCategorySelect(name, selectedId = '') {
+        let opts = `<option value="">— Select —</option>`;
+        categoriesData.forEach(c => {
+            opts += `<option value="${c.id}" ${c.id == selectedId ? 'selected' : ''}>${c.name}</option>`;
         });
+        return `<select name="${name}" class="form-select form-select-sm">${opts}</select>`;
     }
 
-    customerSelect?.addEventListener('change', filterBrands);
-    filterBrands();
-
-    // Add/remove item rows
     document.getElementById('addOrderItem').addEventListener('click', function () {
         const tbody = document.getElementById('orderItemsBody');
         const tr = document.createElement('tr');
         tr.className = 'order-item-row';
         tr.innerHTML = `
             <td class="row-num">${tbody.querySelectorAll('.order-item-row').length + 1}</td>
-            <td><input type="text" name="items[${orderItemIdx}][product_name]" class="form-control" placeholder="Product name" required></td>
-            <td><input type="number" name="items[${orderItemIdx}][quantity]" class="form-control" min="1" value="1" required></td>
-            <td><input type="text" name="items[${orderItemIdx}][unit]" class="form-control" placeholder="e.g. meters"></td>
-            <td><input type="text" name="items[${orderItemIdx}][description]" class="form-control" placeholder="Optional description"></td>
+            <td>${buildCategorySelect('items[' + orderItemIdx + '][product_category_id]')}</td>
+            <td><input type="number" name="items[${orderItemIdx}][quantity]" class="form-control form-control-sm" min="1" value="1" required></td>
+            <td><input type="text" name="items[${orderItemIdx}][description]" class="form-control form-control-sm" placeholder="Optional"></td>
             <td><button type="button" class="btn btn-sm btn-light-brand remove-order-row"><i class="feather-trash-2"></i></button></td>
         `;
         tbody.appendChild(tr);

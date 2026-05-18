@@ -19,6 +19,7 @@ class StoreCustomerRequest extends FormRequest
             'phone'                    => ['required', 'string', 'max:50'],
             'email'                    => ['nullable', 'email', 'max:255'],
             'address'                  => ['nullable', 'string'],
+            'brand'                    => ['nullable', 'string', 'max:255'],
             'currency_id'     => ['nullable', 'exists:currencies,id'],
             'opening_balance' => ['nullable', 'numeric', 'min:0'],
             'status'                   => ['boolean'],

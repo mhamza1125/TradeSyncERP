@@ -23,9 +23,6 @@ class CustomerInvoice extends Model
         'amount_paid',
         'amount_due',
         'status',
-        'foreign_currency_id',
-        'exchange_rate',
-        'foreign_amount',
         'remarks',
     ];
 
@@ -38,8 +35,6 @@ class CustomerInvoice extends Model
         'total_amount'    => 'decimal:2',
         'amount_paid'     => 'decimal:2',
         'amount_due'      => 'decimal:2',
-        'exchange_rate'   => 'decimal:6',
-        'foreign_amount'  => 'decimal:2',
     ];
 
     public function getActivitylogOptions(): LogOptions
@@ -58,11 +53,6 @@ class CustomerInvoice extends Model
     public function items()
     {
         return $this->hasMany(CustomerInvoiceItem::class);
-    }
-
-    public function foreignCurrency()
-    {
-        return $this->belongsTo(Currency::class, 'foreign_currency_id');
     }
 
     public function attachments()

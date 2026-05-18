@@ -5,9 +5,9 @@ namespace App\Http\Controllers\Operations;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Operations\StoreCustomerOrderRequest;
 use App\Http\Requests\Operations\UpdateCustomerOrderRequest;
-use App\Models\Brand;
 use App\Models\Customer;
 use App\Models\CustomerOrder;
+use App\Models\ProductCategory;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 
@@ -23,7 +23,7 @@ class CustomerOrderController extends Controller
 
     public function index(Request $request)
     {
-        $orders = CustomerOrder::with(['customer', 'brand'])
+        $orders = CustomerOrder::with('customer')
             ->when($request->search, fn ($q) => $q->where('order_code', 'like', "%{$request->search}%"))
             ->when($request->customer_id, fn ($q) => $q->where('customer_id', $request->customer_id))
             ->when($request->status, fn ($q) => $q->where('status', $request->status))
@@ -40,10 +40,10 @@ class CustomerOrderController extends Controller
 
     public function create()
     {
-        $customers = Customer::where('status', true)->orderBy('customer_name')->get();
-        $brands    = Brand::where('status', true)->orderBy('brand_name')->get();
+        $customers  = Customer::where('status', true)->orderBy('customer_name')->get();
+        $categories = ProductCategory::orderBy('category_name')->get();
 
-        return view('operations.customer-orders.create', compact('customers', 'brands'));
+        return view('operations.customer-orders.create', compact('customers', 'categories'));
     }
 
     public function store(StoreCustomerOrderRequest $request)
@@ -65,7 +65,7 @@ class CustomerOrderController extends Controller
 
     public function show(CustomerOrder $customerOrder)
     {
-        $customerOrder->load(['customer', 'brand', 'items']);
+        $customerOrder->load(['customer', 'items.productCategory']);
 
         return view('operations.customer-orders.show', compact('customerOrder'));
     }
@@ -73,13 +73,10 @@ class CustomerOrderController extends Controller
     public function edit(CustomerOrder $customerOrder)
     {
         $customerOrder->load('items');
-        $customers = Customer::where('status', true)->orderBy('customer_name')->get();
-        $brands    = Brand::where('status', true)
-            ->where('customer_id', $customerOrder->customer_id)
-            ->orderBy('brand_name')
-            ->get();
+        $customers  = Customer::where('status', true)->orderBy('customer_name')->get();
+        $categories = ProductCategory::orderBy('category_name')->get();
 
-        return view('operations.customer-orders.edit', compact('customerOrder', 'customers', 'brands'));
+        return view('operations.customer-orders.edit', compact('customerOrder', 'customers', 'categories'));
     }
 
     public function update(UpdateCustomerOrderRequest $request, CustomerOrder $customerOrder)
@@ -108,8 +105,8 @@ class CustomerOrderController extends Controller
 
     private function generateOrderCode(): string
     {
-        $year  = now()->year;
-        $last  = CustomerOrder::withTrashed()
+        $year = now()->year;
+        $last = CustomerOrder::withTrashed()
             ->where('order_code', 'like', "CSO-{$year}-%")
             ->count();
 

@@ -89,6 +89,8 @@
                                             <th>Bonus</th>
                                             <th>Deduction</th>
                                             <th>Advance</th>
+                                            <th>Leave Days</th>
+                                            <th>Leave Deduction</th>
                                             <th class="text-end fw-bold">Net Pay</th>
                                             <th>Remarks</th>
                                         </tr>
@@ -139,8 +141,28 @@
                                                            value="{{ $line->advance }}" data-field="advance">
                                                 @endif
                                             </td>
+                                            <td>
+                                                @if($salaryRun->isPaid())
+                                                    {{ $line->leave_days }}
+                                                    <input type="hidden" name="lines[{{ $i }}][leave_days]" value="{{ $line->leave_days }}">
+                                                @else
+                                                    <input type="number" min="0" name="lines[{{ $i }}][leave_days]"
+                                                           class="form-control form-control-sm line-field" style="min-width:80px"
+                                                           value="{{ $line->leave_days }}" data-field="leave_days">
+                                                @endif
+                                            </td>
+                                            <td>
+                                                @if($salaryRun->isPaid())
+                                                    {{ number_format($line->leave_deduction_amount, 2) }}
+                                                    <input type="hidden" name="lines[{{ $i }}][leave_deduction_amount]" value="{{ $line->leave_deduction_amount }}">
+                                                @else
+                                                    <input type="number" step="0.01" name="lines[{{ $i }}][leave_deduction_amount]"
+                                                           class="form-control form-control-sm line-field" style="min-width:100px"
+                                                           value="{{ $line->leave_deduction_amount }}" data-field="leave_deduction_amount">
+                                                @endif
+                                            </td>
                                             <td class="text-end fw-bold text-dark net-pay">
-                                                {{ number_format($line->basic_salary + $line->bonus - $line->deduction - $line->advance, 2) }}
+                                                {{ number_format($line->net_payable, 2) }}
                                             </td>
                                             <td>
                                                 @if($salaryRun->isPaid())
@@ -240,11 +262,12 @@
 document.querySelectorAll('.line-field').forEach(function(input) {
     input.addEventListener('input', function() {
         var row = this.closest('tr');
-        var basic     = parseFloat(row.querySelector('[data-field="basic_salary"]').value) || 0;
-        var bonus     = parseFloat(row.querySelector('[data-field="bonus"]').value)        || 0;
-        var deduction = parseFloat(row.querySelector('[data-field="deduction"]').value)    || 0;
-        var advance   = parseFloat(row.querySelector('[data-field="advance"]').value)      || 0;
-        row.querySelector('.net-pay').textContent = (basic + bonus - deduction - advance).toFixed(2);
+        var basic       = parseFloat(row.querySelector('[data-field="basic_salary"]').value)          || 0;
+        var bonus       = parseFloat(row.querySelector('[data-field="bonus"]').value)               || 0;
+        var deduction   = parseFloat(row.querySelector('[data-field="deduction"]').value)           || 0;
+        var advance     = parseFloat(row.querySelector('[data-field="advance"]').value)             || 0;
+        var leaveDeduct = parseFloat(row.querySelector('[data-field="leave_deduction_amount"]').value) || 0;
+        row.querySelector('.net-pay').textContent = (basic + bonus - deduction - advance - leaveDeduct).toFixed(2);
 
         var total = 0;
         document.querySelectorAll('.net-pay').forEach(function(cell) {
