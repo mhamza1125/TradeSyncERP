@@ -16,6 +16,7 @@ class InspectionResult extends Model
         'testing_parameter_id',
         'status',
         'defect_id',
+        'defect_severity',
         'remarks',
     ];
 

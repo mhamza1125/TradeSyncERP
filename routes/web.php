@@ -72,6 +72,10 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::delete('{run}',        [InspectionRunController::class, 'destroy'])->name('destroy');
     });
 
+    // AQL plan calculator (AJAX)
+    Route::post('inspections/aql-calculate', [InspectionRunController::class, 'aqlCalculate'])
+        ->name('inspections.aql.calculate');
+
     // ─── Finance ─────────────────────────────────────────────────────────────────
     Route::resource('customer-invoices', CustomerInvoiceController::class)->parameters(['customer-invoices' => 'customerInvoice']);
 

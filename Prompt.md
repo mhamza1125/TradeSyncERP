@@ -1,123 +1,157 @@
-1. http://127.0.0.1:8000/samples/1/edit
-We should be able to add / edit colors and sizes by ourselves. Currently there is no sidebar navigaiton for that. 
+I want to refactor my Inspection Management Module into a dynamic section-based international-standard QC inspection system (similar to QIMA-style workflows).
 
-2. http://127.0.0.1:8000/inspections/1
-Display images more effectively, Currently these are too small to work with. We have to click and they open up in the new tab where we can see them. Also we can't delete attachment image in "Could not delete attachment." here http://127.0.0.1:8000/inspections/1/runs/2/edit. 
-That would be better if you add separte row for hte image rather than putting these in the column. 
+Current system structure:
 
+Inspection (general header)
+→ multiple Inspection Runs
+→ Products / Samples
+→ each product has Testing Parameters
+→ each parameter has Reviews (pass/fail, remarks, defects, attachments)
+→ defect recording and reporting
 
-Inspection dates, report dates, Some inspecitons run multiple days
+Single inspection can have multiple runs (example: DUPRO, Final QC, Re-QC, CLI, PPI, etc.).
 
-TS-0526-70D-AMS/364
-70D is customer
-AMS IS supplier
-364 is auto generated id
+Inspection types include:
 
-In invoice the euro and total column is the same. We can remove one of them.
+* Sample Check P1/P2 (SMS, PPS)
+* Pre-Production Inspection (PPI)
+* Inline Inspection (ILI / DUPPRO)
+* Final Quality Check (AQL / 100%)
+* Re-Inspection (Re-QC)
+* Container Loading Inspection (CLI)
 
-25th date, 30% defined salary of that month
-Services add ons. into the salary
-50k salary 5k pertrol 2k packsage etc. 
+I want to refactor this into a dynamic modular inspection system based on international QC standards (AQL, warehouse inspection, final inspection, container loading, pre-production checks, etc.).
 
-Seprate format for each type of inspection
+Required architecture:
 
-========================================================================================================
+1. Keep core structure:
+   Inspection
+   → Inspection Runs
+   → Products / Samples
+   → Parameters
+   → Reviews + Defects + Attachments
 
-Here's a clean, well-structured prompt you can paste into Claude Code:
+Do NOT destroy the existing foundation unless necessary.
 
----
+2. Introduce dynamic inspection sections/modules
 
-**Project Refactoring Tasks — Full Specification**
+Examples of sections:
 
-I need you to refactor this project according to the following specifications. Please analyze the existing codebase first, then implement each change:
+* Product screening images
+* Workmanship check
+* Defect recording
+* Critical / Major / Minor defect classification
+* AQL sampling summary
+* Packing check
+* Carton list / carton verification
+* Packaging check
+* Labels check
+* Measurement check
+* Functional test
+* Marking check
+* Approved sample conformity
+* Container loading details
+* Seal number verification
+* Shipment verification
+* Pre-production checklist
+* Factory readiness
+* Corrective action plan (CAP)
+* Final review and approval
 
----
+Users should be able to enable/disable sections using checkbox/toggle during inspection creation.
 
-**1. Merge Brand into Customer**
+Only selected sections should:
 
-- Remove the `brands` module/table entirely
-- Add a `brand` text field directly to the `customers` table
-- Remove all foreign key relationships between brands and customers
-- Update all references, forms, views, and API endpoints accordingly
-- The customer IS the brand — no separate entity needed
+* appear in the form
+* be required in workflow
+* appear in final PDF report
 
----
+3. Inspection Type = Default Preset
 
-**2. Rework the Sample Module**
+Example:
+Final QC (AQL) auto-enables:
 
-- Create two new tables: `sample_colors` and `sample_sizes`
-- A sample (article) has general details at the top level, plus multiple color/size/quantity variation rows linked to it
-- Update the sample creation form: general details at the top, then a dynamic rows section below where the user selects color + size from dropdowns and enters quantity per variation
-- The quantity per variation should be usable/moveable in the inspection module
+* workmanship
+* AQL
+* measurements
+* packing
+* labels
+* defects
+* functionality
 
----
+CLI auto-enables:
 
-**3. Update the Customer Order Module**
+* carton verification
+* loading supervision
+* container condition
+* seal number
+* shipment photos
 
-- Remove `product_name` and `units` fields from orders
-- Replace with `product_category` (dropdown/select) + `quantity` (number)
-- Rename the frontend label `required_by_date` → `ETD` (backend field name stays the same)
+PPI auto-enables:
 
----
+* factory readiness
+* raw material
+* sample approval
+* production readiness
 
-**4. Rework Customer Invoice**
+BUT users must still be able to customize manually.
 
-- Remove `quantity` from invoice line items
-- Each invoice row (description) consists of 4 fields: `Supplier` (select) + `Inspection Type` (select) + `PO/Invoice No` (text input) + `Date` (date picker), plus an `Amount` field
-- Remove the Foreign Currency Details section entirely
-- Add `currency` field to the `customers` table
-- When a customer is selected in invoice creation (and other invoice views), display their currency automatically
+4. UI requirement
 
----
+Build a single larger inspection result form per sample/product where sections are toggle-based.
 
-**5. Salary Runs — Leave Deductions**
+Avoid hardcoded separate pages for every inspection type.
 
-- Add the ability to record deductible leave days within a salary run entry
-- Include a field for the deduction amount (manually entered by the user)
+Do NOT create one giant messy form.
+Use clean modular section blocks/components with proper UX.
 
----
+Prefer:
+Inspection Info
+→ Product Info
+→ Selected Sections
+→ Section Details
+→ Final Review
 
-**6. Fully Rework Sample Movement & Inspection**
+or a well-structured large modular form with collapsible sections.
 
-Replace the current single-record inspection/movement with the following hierarchy:
+5. Reporting system
 
-```
-Inspection (top-level entry)
-  ├── Linked to one or more Customer Orders
-  ├── Assigned Employees (multi-select via checkboxes)
-  ├── Select Samples (This is what we will go and test in supplier factory)
-  └── Inspection Runs (multiple per inspection)
-        ├── inspection_type
-        ├── Sample Movement record (if a sample was taken)
-        └── Inspection Results
-              ├── status (dropdown — replaces the redundant pass/fail + status combo)
-              └── If rejected → select Defect from dropdown
-```
+PDF reports must be dynamic.
 
-- Build the Inspection creation UI like an order/invoice form
-- Allow multiple inspection runs per inspection entry
-- For inspection results: remove the separate pass/fail field, keep only the `status` dropdown; if status is "Rejected", show a defect selector
+Only enabled sections should appear in report output.
 
-**Defects Table:**
-Create a `defects` table with fields: `defect_name`, `corrective_action`. Seed it with:
+Reports should follow international inspection report standards like QIMA-style reports:
 
-| Defect | Corrective Action |
-|---|---|
-| Arm Hole Wrinkle | Open arm hole and inner side stitching & re stitch to remove the wrinkle |
-| Belt Loop Uneven | Open one loop and then reattach both loops together with proper alignment |
-| Back Pocket Position Uneven | Open pocket stitching and reattach (restitch) at the correct position |
+* professional layout
+* defect summary
+* pass/fail verdict
+* AQL acceptance logic
+* inspection remarks
+* photos
+* approvals
+* rejected quantity summary
 
-Use this defects table as the dropdown source in inspection results.
+Prefer:
+One report per product/sample (SKU-level)
 
----
+* optional master inspection summary
 
-**General instructions:**
-- Analyze the full codebase before starting
-- Make all necessary migration files
-- Seed the defects table
-- Update all affected forms, views, API routes, and controllers
-- Flag anything ambiguous before implementing
+6. Technical expectations
 
----
+Please analyze my current Laravel structure and propose:
 
-This gives Claude Code clear scope, hierarchy, and enough detail to avoid guessing. If your project uses a specific stack (Laravel, Next.js, etc.), prepend that to the prompt too.
+* best database design improvements
+* required migrations
+* models and relationships
+* scalable section architecture
+* dynamic report generation strategy
+* maintainable service layer design
+* reusable Blade components
+* clean admin UX
+* future-safe architecture without overengineering
+
+Avoid excessive plugin complexity or unnecessary abstraction.
+
+I want practical enterprise-grade architecture, not theoretical overengineering.
+
+Please review and implement/refactor accordingly with production-quality structure.
