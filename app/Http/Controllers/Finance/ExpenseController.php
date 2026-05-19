@@ -39,8 +39,12 @@ class ExpenseController extends Controller
 
     public function create()
     {
-        $expenseHeads = ExpenseHead::where('status', true)->orderBy('expense_name')->get();
-        $accounts     = Account::where('status', true)->orderBy('account_name')->get();
+        $expenseHeads = ExpenseHead::with(['children' => fn ($q) => $q->where('status', true)->orderBy('expense_name')])
+            ->whereNull('parent_id')
+            ->where('status', true)
+            ->orderBy('expense_name')
+            ->get();
+        $accounts = Account::where('status', true)->orderBy('account_name')->get();
         return view('finance.expenses.create', compact('expenseHeads', 'accounts'));
     }
 

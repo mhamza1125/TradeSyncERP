@@ -37,6 +37,23 @@
         <div class="header-right ms-auto">
             <div class="d-flex align-items-center">
 
+                <div class="nxl-h-item d-none d-sm-flex">
+                        <div class="full-screen-switcher">
+                            <a href="javascript:void(0);" class="nxl-head-link me-0" onclick="$('body').fullScreenHelper('toggle');">
+                                <i class="feather-maximize maximize"></i>
+                                <i class="feather-minimize minimize"></i>
+                            </a>
+                        </div>
+                    </div>
+                    <div class="nxl-h-item dark-light-theme">
+                        <a href="javascript:void(0);" class="nxl-head-link me-0 dark-button">
+                            <i class="feather-moon"></i>
+                        </a>
+                        <a href="javascript:void(0);" class="nxl-head-link me-0 light-button" style="display: none">
+                            <i class="feather-sun"></i>
+                        </a>
+                    </div>
+                    
                 {{-- Notifications bell --}}
                 <div class="dropdown nxl-h-item d-none d-sm-flex me-1">
                     <a href="javascript:void(0);" class="nxl-head-link me-0" data-bs-toggle="dropdown">

@@ -77,7 +77,7 @@
                             </li>
                             <li class="hstack justify-content-between mb-3">
                                 <span class="text-muted hstack gap-3"><i class="feather-hash"></i>Quantity</span>
-                                <span class="fw-semibold">{{ $sample->quantity }}</span>
+                                <span class="fw-semibold">{{ $sample->variations->sum('quantity') }}</span>
                             </li>
                             <li class="hstack justify-content-between mb-3">
                                 <span class="text-muted hstack gap-3"><i class="feather-calendar"></i>Received</span>
@@ -137,15 +137,85 @@
                             </div>
                             <div class="row g-0 mb-3"><div class="col-sm-5 text-muted">Sample Code:</div><div class="col-sm-7 fw-semibold">{{ $sample->sample_code }}</div></div>
                             <div class="row g-0 mb-3"><div class="col-sm-5 text-muted">Product Name:</div><div class="col-sm-7 fw-semibold">{{ $sample->product_name }}</div></div>
+                            @if($sample->article)
+                            <div class="row g-0 mb-3"><div class="col-sm-5 text-muted">Article / Style No:</div><div class="col-sm-7 fw-semibold">{{ $sample->article }}</div></div>
+                            @endif
                             <div class="row g-0 mb-3"><div class="col-sm-5 text-muted">Customer:</div><div class="col-sm-7 fw-semibold">{{ $sample->customer->customer_name }}</div></div>
                             <div class="row g-0 mb-3"><div class="col-sm-5 text-muted">Brand:</div><div class="col-sm-7 fw-semibold">{{ $sample->customer->brand ?? '—' }}</div></div>
                             <div class="row g-0 mb-3"><div class="col-sm-5 text-muted">Category:</div><div class="col-sm-7 fw-semibold">{{ $sample->category->category_name }}</div></div>
-                            <div class="row g-0 mb-3"><div class="col-sm-5 text-muted">Quantity:</div><div class="col-sm-7 fw-semibold">{{ $sample->quantity }}</div></div>
+                            <div class="row g-0 mb-3"><div class="col-sm-5 text-muted">Total Quantity:</div><div class="col-sm-7 fw-semibold">{{ $sample->variations->sum('quantity') }}</div></div>
                             <div class="row g-0 mb-3"><div class="col-sm-5 text-muted">Receive Date:</div><div class="col-sm-7 fw-semibold">{{ \Carbon\Carbon::parse($sample->receive_date)->format('d M Y') }}</div></div>
                             <div class="row g-0 mb-3"><div class="col-sm-5 text-muted">Shipment Ref:</div><div class="col-sm-7 fw-semibold">{{ $sample->sample_reference ?? '—' }}</div></div>
                             <div class="row g-0 mb-3"><div class="col-sm-5 text-muted">Alert Days:</div><div class="col-sm-7 fw-semibold">{{ $sample->alert_days }}</div></div>
                             @if($sample->remarks)
-                            <div class="row g-0"><div class="col-sm-5 text-muted">Remarks:</div><div class="col-sm-7">{{ $sample->remarks }}</div></div>
+                            <div class="row g-0 mb-3"><div class="col-sm-5 text-muted">Remarks:</div><div class="col-sm-7">{{ $sample->remarks }}</div></div>
+                            @endif
+
+                            {{-- Variations --}}
+                            @if($sample->variations->count())
+                            <hr class="my-4">
+                            <h6 class="fw-bold mb-3">Color / Size / Quantity Breakdown:</h6>
+                            <div class="table-responsive">
+                                <table class="table table-sm table-bordered mb-0">
+                                    <thead class="table-light">
+                                        <tr>
+                                            <th>#</th>
+                                            <th>Color</th>
+                                            <th>Size</th>
+                                            <th class="text-end">Qty</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        @foreach($sample->variations as $i => $v)
+                                        <tr>
+                                            <td class="text-muted">{{ $i + 1 }}</td>
+                                            <td>{{ optional($v->color)->name ?? '—' }}</td>
+                                            <td>{{ optional($v->size)->name ?? '—' }}</td>
+                                            <td class="text-end fw-semibold">{{ $v->quantity }}</td>
+                                        </tr>
+                                        @endforeach
+                                    </tbody>
+                                    <tfoot>
+                                        <tr class="table-light">
+                                            <td colspan="3" class="fw-bold text-end">Total:</td>
+                                            <td class="fw-bold text-end">{{ $sample->variations->sum('quantity') }}</td>
+                                        </tr>
+                                    </tfoot>
+                                </table>
+                            </div>
+                            @endif
+
+                            {{-- Attachments --}}
+                            @php
+                                $galleryImages = $sample->attachments->where('attachment_type', 'gallery');
+                                $documents     = $sample->attachments->where('attachment_type', 'document');
+                            @endphp
+                            @if($galleryImages->count() || $documents->count())
+                            <hr class="my-4">
+                            <h6 class="fw-bold mb-3">Attachments:</h6>
+                            @if($galleryImages->count())
+                            <p class="text-muted small mb-2">Gallery Images</p>
+                            <div class="d-flex flex-wrap gap-2 mb-3">
+                                @foreach($galleryImages as $img)
+                                <a href="{{ Storage::url($img->file_path) }}" target="_blank">
+                                    <img src="{{ Storage::url($img->file_path) }}" alt="{{ $img->title }}"
+                                         class="img-thumbnail" style="max-height:80px;">
+                                </a>
+                                @endforeach
+                            </div>
+                            @endif
+                            @if($documents->count())
+                            <p class="text-muted small mb-2">Documents</p>
+                            <ul class="list-unstyled mb-0">
+                                @foreach($documents as $doc)
+                                <li class="d-flex align-items-center gap-2 mb-2">
+                                    <i class="feather-file text-muted"></i>
+                                    <a href="{{ Storage::url($doc->file_path) }}" target="_blank">{{ $doc->title }}</a>
+                                    <small class="text-muted">{{ $doc->humanFileSize() }}</small>
+                                </li>
+                                @endforeach
+                            </ul>
+                            @endif
                             @endif
                         </div>
 

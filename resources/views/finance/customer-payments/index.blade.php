@@ -122,12 +122,20 @@
                                                     <i class="feather feather-eye"></i>
                                                 </a>
                                                 @endcan
-                                                @can('customer-payments.delete')
+                                                @canany(['customer-payments.edit', 'customer-payments.delete'])
                                                 <div class="dropdown">
-                                                    <a href="javascript:void(0)" class="avatar-text avatar-md" data-bs-toggle="dropdown" data-bs-offset="0,21">
+                                                    <a href="javascript:void(0)" class="avatar-text avatar-md" data-bs-toggle="dropdown" data-bs-offset="0,21" data-bs-strategy="fixed">
                                                         <i class="feather feather-more-horizontal"></i>
                                                     </a>
                                                     <ul class="dropdown-menu">
+                                                        @can('customer-payments.edit')
+                                                        <li>
+                                                            <a href="{{ route('customer-payments.edit', $payment) }}" class="dropdown-item">
+                                                                <i class="feather feather-edit me-3"></i><span>Edit</span>
+                                                            </a>
+                                                        </li>
+                                                        @endcan
+                                                        @can('customer-payments.delete')
                                                         <li>
                                                             <form action="{{ route('customer-payments.destroy', $payment) }}" method="POST"
                                                                   onsubmit="return confirm('Delete this payment?')">
@@ -137,9 +145,10 @@
                                                                 </button>
                                                             </form>
                                                         </li>
+                                                        @endcan
                                                     </ul>
                                                 </div>
-                                                @endcan
+                                                @endcanany
                                             </div>
                                         </td>
                                     </tr>

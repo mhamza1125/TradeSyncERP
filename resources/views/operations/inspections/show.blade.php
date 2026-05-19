@@ -122,8 +122,20 @@
                         <span class="badge bg-soft-primary text-primary">{{ $run->inspectionType->name }}</span>
                         @endif
                         @if($run->remarks)
-                        <span class="text-muted fs-12 ms-auto">{{ $run->remarks }}</span>
+                        <span class="text-muted fs-12">{{ $run->remarks }}</span>
                         @endif
+                        @can('inspections.edit')
+                        <div class="ms-auto d-flex gap-2">
+                            <a href="{{ route('inspections.runs.edit', [$inspection, $run]) }}"
+                               class="btn btn-sm btn-light-brand">
+                                <i class="feather-eye me-1"></i>View
+                            </a>
+                            <a href="{{ route('inspections.runs.edit', [$inspection, $run]) }}"
+                               class="btn btn-sm btn-primary">
+                                <i class="feather-edit-2 me-1"></i>Edit
+                            </a>
+                        </div>
+                        @endcan
                     </div>
 
                     @if($run->results->isEmpty())

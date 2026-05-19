@@ -76,49 +76,58 @@
                                     <tr>
                                         <th>#</th>
                                         <th>Description</th>
-                                        <th class="text-end">Qty</th>
                                         <th class="text-end">Unit Price</th>
-                                        <th class="text-end">Line Total</th>
                                     </tr>
                                 </thead>
                                 <tbody>
                                     @foreach($customerInvoice->items as $i => $item)
                                     <tr>
                                         <td>{{ $i + 1 }}</td>
-                                        <td>{{ $item->description }}</td>
-                                        <td class="text-end">{{ number_format($item->quantity, 2) }}</td>
-                                        <td class="text-end">{{ number_format($item->unit_price, 2) }}</td>
-                                        <td class="text-end">{{ number_format($item->line_total, 2) }}</td>
+                                        <td>
+                                            @if($item->supplier)
+                                            <div class="fw-semibold">{{ $item->supplier->name }}</div>
+                                            @endif
+                                            @if($item->inspectionType)
+                                            <div class="text-muted fs-12">{{ $item->inspectionType->name }}</div>
+                                            @endif
+                                            @if($item->po_invoice_no)
+                                            <div class="text-muted fs-12">PO/Inv: {{ $item->po_invoice_no }}</div>
+                                            @endif
+                                            @if($item->item_date)
+                                            <div class="text-muted fs-12">{{ $item->item_date->format('d M Y') }}</div>
+                                            @endif
+                                        </td>
+                                        <td class="text-end">{{ number_format($item->amount, 2) }}</td>
                                     </tr>
                                     @endforeach
                                 </tbody>
                                 <tfoot>
                                     <tr>
-                                        <td colspan="4" class="text-end">Subtotal</td>
+                                        <td colspan="2" class="text-end">Subtotal</td>
                                         <td class="text-end">{{ number_format($customerInvoice->subtotal, 2) }}</td>
                                     </tr>
                                     @if($customerInvoice->tax_amount > 0)
                                     <tr>
-                                        <td colspan="4" class="text-end">Tax</td>
+                                        <td colspan="2" class="text-end">Tax</td>
                                         <td class="text-end">{{ number_format($customerInvoice->tax_amount, 2) }}</td>
                                     </tr>
                                     @endif
                                     @if($customerInvoice->discount_amount > 0)
                                     <tr>
-                                        <td colspan="4" class="text-end">Discount</td>
+                                        <td colspan="2" class="text-end">Discount</td>
                                         <td class="text-end text-danger">- {{ number_format($customerInvoice->discount_amount, 2) }}</td>
                                     </tr>
                                     @endif
                                     <tr class="fw-bold">
-                                        <td colspan="4" class="text-end">Total</td>
+                                        <td colspan="2" class="text-end">Total</td>
                                         <td class="text-end">{{ number_format($customerInvoice->total_amount, 2) }}</td>
                                     </tr>
                                     <tr>
-                                        <td colspan="4" class="text-end text-success">Amount Paid</td>
+                                        <td colspan="2" class="text-end text-success">Amount Paid</td>
                                         <td class="text-end text-success">{{ number_format($customerInvoice->amount_paid, 2) }}</td>
                                     </tr>
                                     <tr class="fw-bold {{ $customerInvoice->amount_due > 0 ? 'text-danger' : 'text-success' }}">
-                                        <td colspan="4" class="text-end">Amount Due</td>
+                                        <td colspan="2" class="text-end">Amount Due</td>
                                         <td class="text-end">{{ number_format($customerInvoice->amount_due, 2) }}</td>
                                     </tr>
                                 </tfoot>

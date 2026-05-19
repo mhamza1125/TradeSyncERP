@@ -27,6 +27,11 @@
                     <a href="javascript:void(0)" class="btn btn-icon btn-light-brand printBTN">
                         <i class="feather-printer"></i>
                     </a>
+                    @can('customer-payments.edit')
+                    <a href="{{ route('customer-payments.edit', $customerPayment) }}" class="btn btn-primary">
+                        <i class="feather-edit me-2"></i>Edit
+                    </a>
+                    @endcan
                     @can('customer-payments.delete')
                     <form action="{{ route('customer-payments.destroy', $customerPayment) }}" method="POST"
                           onsubmit="return confirm('Delete this payment record?')">

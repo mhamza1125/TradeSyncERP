@@ -49,10 +49,20 @@
                                     <label class="form-label">Expense Head <span class="text-danger">*</span></label>
                                     <select name="expense_head_id" class="form-select @error('expense_head_id') is-invalid @enderror">
                                         <option value="">— Select Expense Head —</option>
-                                        @foreach($expenseHeads as $head)
-                                        <option value="{{ $head->id }}" @selected(old('expense_head_id') == $head->id)>
-                                            {{ $head->expense_name }}
-                                        </option>
+                                        @foreach($expenseHeads as $parent)
+                                            @if($parent->children->count())
+                                            <optgroup label="{{ $parent->expense_name }}">
+                                                @foreach($parent->children as $child)
+                                                <option value="{{ $child->id }}" @selected(old('expense_head_id') == $child->id)>
+                                                    {{ $child->expense_name }}
+                                                </option>
+                                                @endforeach
+                                            </optgroup>
+                                            @else
+                                            <option value="{{ $parent->id }}" @selected(old('expense_head_id') == $parent->id)>
+                                                {{ $parent->expense_name }}
+                                            </option>
+                                            @endif
                                         @endforeach
                                     </select>
                                     @error('expense_head_id')<div class="invalid-feedback">{{ $message }}</div>@enderror
