@@ -231,48 +231,15 @@
                 @endcan
 
                 {{-- ─── Settings ────────────────────────────────────────────────── --}}
-                @canany(['accounts.index','currencies.index','banks.index','expense-heads.index','categories.index','parameters.index'])
+                @canany(['categories.index','parameters.index','currencies.index','expense-heads.index','accounts.index','banks.index'])
                 <li class="nxl-item nxl-caption">
                     <label>Settings</label>
                 </li>
 
-                @canany(['accounts.index','currencies.index','banks.index'])
-                <li class="nxl-item nxl-hasmenu {{ $is(['masters.accounts.*','masters.currencies.*','masters.banks.*']) ? 'active' : '' }}">
+                <li class="nxl-item nxl-hasmenu {{ $is(['masters.categories.*','masters.parameters.*','masters.currencies.*','masters.expense-heads.*','masters.accounts.*','masters.banks.*']) ? 'active' : '' }}">
                     <a href="javascript:void(0);" class="nxl-link">
-                        <span class="nxl-micon"><i class="feather-dollar-sign"></i></span>
-                        <span class="nxl-mtext">Accounting</span>
-                        <span class="nxl-arrow"><i class="feather-chevron-right"></i></span>
-                    </a>
-                    <ul class="nxl-submenu">
-                        @can('accounts.index')
-                        <li class="nxl-item {{ $is('masters.accounts.*') ? 'active' : '' }}">
-                            <a class="nxl-link" href="{{ route('masters.accounts.index') }}">Accounts</a>
-                        </li>
-                        @endcan
-                        @can('banks.index')
-                        <li class="nxl-item {{ $is('masters.banks.*') ? 'active' : '' }}">
-                            <a class="nxl-link" href="{{ route('masters.banks.index') }}">Banks</a>
-                        </li>
-                        @endcan
-                        @can('currencies.index')
-                        <li class="nxl-item {{ $is('masters.currencies.*') ? 'active' : '' }}">
-                            <a class="nxl-link" href="{{ route('masters.currencies.index') }}">Currencies</a>
-                        </li>
-                        @endcan
-                        @can('expense-heads.index')
-                        <li class="nxl-item {{ $is('masters.expense-heads.*') ? 'active' : '' }}">
-                            <a class="nxl-link" href="{{ route('masters.expense-heads.index') }}">Expense Heads</a>
-                        </li>
-                        @endcan
-                    </ul>
-                </li>
-                @endcanany
-
-                @canany(['categories.index','parameters.index'])
-                <li class="nxl-item nxl-hasmenu {{ $is(['masters.categories.*','masters.parameters.*']) ? 'active' : '' }}">
-                    <a href="javascript:void(0);" class="nxl-link">
-                        <span class="nxl-micon"><i class="feather-layers"></i></span>
-                        <span class="nxl-mtext">Catalog</span>
+                        <span class="nxl-micon"><i class="feather-settings"></i></span>
+                        <span class="nxl-mtext">Configuration</span>
                         <span class="nxl-arrow"><i class="feather-chevron-right"></i></span>
                     </a>
                     <ul class="nxl-submenu">
@@ -286,9 +253,28 @@
                             <a class="nxl-link" href="{{ route('masters.parameters.index') }}">Testing Parameters</a>
                         </li>
                         @endcan
+                        @can('currencies.index')
+                        <li class="nxl-item {{ $is('masters.currencies.*') ? 'active' : '' }}">
+                            <a class="nxl-link" href="{{ route('masters.currencies.index') }}">Currencies</a>
+                        </li>
+                        @endcan
+                        @can('expense-heads.index')
+                        <li class="nxl-item {{ $is('masters.expense-heads.*') ? 'active' : '' }}">
+                            <a class="nxl-link" href="{{ route('masters.expense-heads.index') }}">Expense Heads</a>
+                        </li>
+                        @endcan
+                        @can('accounts.index')
+                        <li class="nxl-item {{ $is('masters.accounts.*') ? 'active' : '' }}">
+                            <a class="nxl-link" href="{{ route('masters.accounts.index') }}">Accounts</a>
+                        </li>
+                        @endcan
+                        @can('banks.index')
+                        <li class="nxl-item {{ $is('masters.banks.*') ? 'active' : '' }}">
+                            <a class="nxl-link" href="{{ route('masters.banks.index') }}">Banks</a>
+                        </li>
+                        @endcan
                     </ul>
                 </li>
-                @endcanany
                 @endcanany
 
             </ul>
