@@ -37,49 +37,9 @@
 
         <form id="salaryForm" action="{{ route('salary.store') }}" method="POST">
             @csrf
-            <div class="row justify-content-center">
-                <div class="col-xl-6">
-                    <div class="card stretch stretch-full">
-                        <div class="card-header">
-                            <h5 class="card-title">Salary Run Details</h5>
-                        </div>
-                        <div class="card-body">
-                            <div class="mb-4">
-                                <label class="form-label">Month <span class="text-danger">*</span></label>
-                                <input type="month" name="month"
-                                       class="form-control @error('month') is-invalid @enderror"
-                                       value="{{ old('month', now()->format('Y-m')) }}">
-                                @error('month')<div class="invalid-feedback">{{ $message }}</div>@enderror
-                                <small class="text-muted">Select the month to generate salary for all active employees.</small>
-                            </div>
-                            <div class="mb-4">
-                                <label class="form-label">Pay From Account <span class="text-danger">*</span></label>
-                                <select name="account_id" class="form-select @error('account_id') is-invalid @enderror">
-                                    <option value="">— Select Account —</option>
-                                    @foreach($accounts as $account)
-                                    <option value="{{ $account->id }}" @selected(old('account_id') == $account->id)>
-                                        {{ $account->account_name }} ({{ $account->account_type }})
-                                    </option>
-                                    @endforeach
-                                </select>
-                                @error('account_id')<div class="invalid-feedback">{{ $message }}</div>@enderror
-                            </div>
-
-                            <div class="alert alert-soft-info p-3">
-                                <div class="d-flex gap-3">
-                                    <i class="feather-info fs-20 text-info"></i>
-                                    <div>
-                                        <strong>Note:</strong> This will generate salary lines for all active employees
-                                        using their current basic salary. You can adjust bonuses, deductions, and advances
-                                        after the run is created.
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
+            @include('finance.salary._form')
         </form>
     </div>
 </div>
 @endsection
+

@@ -1,16 +1,16 @@
 @extends('index')
 
-@section('title', 'Record Payment - TradeSyncERP')
+@section('title', 'Edit Salary Run - TradeSyncERP')
 
 @section('content')
 <div class="nxl-content">
     <div class="page-header">
         <div class="page-header-left d-flex align-items-center">
-            <div class="page-header-title"><h5 class="m-b-10">Customer Payments</h5></div>
+            <div class="page-header-title"><h5 class="m-b-10">Salary Runs</h5></div>
             <ul class="breadcrumb">
                 <li class="breadcrumb-item"><a href="{{ route('dashboard') }}">Home</a></li>
-                <li class="breadcrumb-item"><a href="{{ route('customer-payments.index') }}">Payments</a></li>
-                <li class="breadcrumb-item">Record Payment</li>
+                <li class="breadcrumb-item"><a href="{{ route('salary.index') }}">Salary Runs</a></li>
+                <li class="breadcrumb-item">Edit</li>
             </ul>
         </div>
         <div class="page-header-right ms-auto">
@@ -21,11 +21,11 @@
                     </a>
                 </div>
                 <div class="d-flex align-items-center gap-2 page-header-right-items-wrapper">
-                    <a href="{{ route('customer-payments.index') }}" class="btn btn-light-brand">
+                    <a href="{{ route('salary.show', $salaryRun) }}" class="btn btn-light-brand">
                         <i class="feather-arrow-left me-2"></i><span>Back</span>
                     </a>
-                    <button type="submit" form="paymentForm" class="btn btn-primary">
-                        <i class="feather-save me-2"></i><span>Save Payment</span>
+                    <button type="submit" form="salaryEditForm" class="btn btn-primary">
+                        <i class="feather-save me-2"></i><span>Update Run</span>
                     </button>
                 </div>
             </div>
@@ -34,9 +34,10 @@
 
     <div class="main-content">
         @include('partials.flash-messages')
-        <form id="paymentForm" action="{{ route('customer-payments.store') }}" method="POST">
-            @csrf
-            @include('finance.customer-payments._form')
+
+        <form id="salaryEditForm" action="{{ route('salary.update', $salaryRun) }}" method="POST">
+            @csrf @method('PUT')
+            @include('finance.salary._form')
         </form>
     </div>
 </div>

@@ -13,46 +13,66 @@
             </ul>
         </div>
         <div class="page-header-right ms-auto">
-            @can('inspections.create')
-            <a href="{{ route('inspections.create') }}" class="btn btn-primary">
-                <i class="feather-clipboard me-2"></i><span>New Inspection</span>
-            </a>
-            @endcan
+            <div class="page-header-right-items">
+                <div class="d-flex d-md-none">
+                    <a href="javascript:void(0)" class="page-header-right-close-toggle">
+                        <i class="feather-arrow-left me-2"></i><span>Back</span>
+                    </a>
+                </div>
+                <div class="d-flex align-items-center gap-2 page-header-right-items-wrapper">
+                    <a href="javascript:void(0);" class="btn btn-icon btn-light-brand" data-bs-toggle="collapse" data-bs-target="#collapseFilters">
+                        <i class="feather-filter"></i>
+                    </a>
+                    @can('inspections.create')
+                    <a href="{{ route('inspections.create') }}" class="btn btn-primary">
+                        <i class="feather-clipboard me-2"></i><span>New Inspection</span>
+                    </a>
+                    @endcan
+                </div>
+            </div>
+            <div class="d-md-none d-flex align-items-center">
+                <a href="javascript:void(0)" class="page-header-right-open-toggle">
+                    <i class="feather-align-right fs-20"></i>
+                </a>
+            </div>
         </div>
     </div>
 
-    <div class="main-content">
-        @include('partials.flash-messages')
-
-        {{-- Filters --}}
-        <form method="GET" class="card mb-3">
-            <div class="card-body py-3">
-                <div class="row g-2 align-items-end">
-                    <div class="col-lg-3">
-                        <input type="text" name="search" class="form-control form-control-sm"
+    <div id="collapseFilters" class="accordion-collapse collapse page-header-collapse {{ request()->hasAny(['search','from_date','to_date','status']) ? 'show' : '' }}">
+        <div class="accordion-body pb-2">
+            <form method="GET" action="{{ route('inspections.index') }}">
+                <div class="row g-3">
+                    <div class="col-md-3">
+                        <input type="text" name="search" class="form-control"
                                placeholder="Report number…" value="{{ request('search') }}">
                     </div>
-                    <div class="col-lg-2">
-                        <input type="date" name="from_date" class="form-control form-control-sm" value="{{ request('from_date') }}">
+                    <div class="col-md-2">
+                        <input type="date" name="from_date" class="form-control" value="{{ request('from_date') }}">
                     </div>
-                    <div class="col-lg-2">
-                        <input type="date" name="to_date" class="form-control form-control-sm" value="{{ request('to_date') }}">
+                    <div class="col-md-2">
+                        <input type="date" name="to_date" class="form-control" value="{{ request('to_date') }}">
                     </div>
-                    <div class="col-lg-2">
-                        <select name="status" class="form-select form-select-sm">
+                    <div class="col-md-2">
+                        <select name="status" class="form-select">
                             <option value="">All Statuses</option>
                             @foreach(['Pending','Pass','Fail'] as $s)
                             <option value="{{ $s }}" @selected(request('status') == $s)>{{ $s }}</option>
                             @endforeach
                         </select>
                     </div>
-                    <div class="col-lg-auto">
-                        <button type="submit" class="btn btn-sm btn-primary">Filter</button>
-                        <a href="{{ route('inspections.index') }}" class="btn btn-sm btn-light ms-1">Reset</a>
+                    <div class="col-md-1">
+                        <button type="submit" class="btn btn-primary w-100"><i class="feather-search"></i></button>
+                    </div>
+                    <div class="col-md-1">
+                        <a href="{{ route('inspections.index') }}" class="btn btn-light-brand w-100">Reset</a>
                     </div>
                 </div>
-            </div>
-        </form>
+            </form>
+        </div>
+    </div>
+
+    <div class="main-content">
+        @include('partials.flash-messages')
 
         <div class="card stretch stretch-full">
             <div class="card-body p-0">

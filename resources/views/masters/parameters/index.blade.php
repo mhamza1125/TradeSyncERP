@@ -108,17 +108,25 @@
                                             </td>
                                             <td>
                                                 <div class="hstack gap-2 justify-content-end">
-                                                    @can('parameters.edit')
-                                                    <a href="{{ route('masters.parameters.edit', $parameter) }}" class="avatar-text avatar-md" data-bs-toggle="tooltip" title="Edit">
-                                                        <i class="feather feather-edit"></i>
+                                                    @can('parameters.index')
+                                                    <a href="{{ route('masters.parameters.show', $parameter) }}" class="avatar-text avatar-md" data-bs-toggle="tooltip" title="View">
+                                                        <i class="feather feather-eye"></i>
                                                     </a>
                                                     @endcan
-                                                    @can('parameters.delete')
                                                     <div class="dropdown">
                                                         <a href="javascript:void(0)" class="avatar-text avatar-md" data-bs-toggle="dropdown" data-bs-offset="0,21">
                                                             <i class="feather feather-more-horizontal"></i>
                                                         </a>
                                                         <ul class="dropdown-menu">
+                                                            @can('parameters.edit')
+                                                            <li>
+                                                                <a class="dropdown-item" href="{{ route('masters.parameters.edit', $parameter) }}">
+                                                                    <i class="feather feather-edit-3 me-3"></i><span>Edit</span>
+                                                                </a>
+                                                            </li>
+                                                            @endcan
+                                                            @can('parameters.delete')
+                                                            <li class="dropdown-divider"></li>
                                                             <li>
                                                                 <form action="{{ route('masters.parameters.destroy', $parameter) }}" method="POST"
                                                                       onsubmit="return confirm('Deactivate this parameter?')">
@@ -128,9 +136,9 @@
                                                                     </button>
                                                                 </form>
                                                             </li>
+                                                            @endcan
                                                         </ul>
                                                     </div>
-                                                    @endcan
                                                 </div>
                                             </td>
                                         </tr>

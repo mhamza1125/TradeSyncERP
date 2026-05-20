@@ -116,17 +116,25 @@
                                         </td>
                                         <td>
                                             <div class="hstack gap-2 justify-content-end">
-                                                @can('accounts.edit')
-                                                <a href="{{ route('masters.accounts.edit', $account) }}" class="avatar-text avatar-md" data-bs-toggle="tooltip" title="Edit">
-                                                    <i class="feather feather-edit"></i>
+                                                @can('accounts.index')
+                                                <a href="{{ route('masters.accounts.show', $account) }}" class="avatar-text avatar-md" data-bs-toggle="tooltip" title="View">
+                                                    <i class="feather feather-eye"></i>
                                                 </a>
                                                 @endcan
-                                                @can('accounts.delete')
                                                 <div class="dropdown">
                                                     <a href="javascript:void(0)" class="avatar-text avatar-md" data-bs-toggle="dropdown" data-bs-offset="0,21">
                                                         <i class="feather feather-more-horizontal"></i>
                                                     </a>
                                                     <ul class="dropdown-menu">
+                                                        @can('accounts.edit')
+                                                        <li>
+                                                            <a class="dropdown-item" href="{{ route('masters.accounts.edit', $account) }}">
+                                                                <i class="feather feather-edit-3 me-3"></i><span>Edit</span>
+                                                            </a>
+                                                        </li>
+                                                        @endcan
+                                                        @can('accounts.delete')
+                                                        <li class="dropdown-divider"></li>
                                                         <li>
                                                             <form action="{{ route('masters.accounts.destroy', $account) }}" method="POST"
                                                                   onsubmit="return confirm('Deactivate this account?')">
@@ -136,9 +144,9 @@
                                                                 </button>
                                                             </form>
                                                         </li>
+                                                        @endcan
                                                     </ul>
                                                 </div>
-                                                @endcan
                                             </div>
                                         </td>
                                     </tr>

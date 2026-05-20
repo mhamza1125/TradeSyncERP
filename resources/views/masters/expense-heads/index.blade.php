@@ -106,17 +106,25 @@
                                             </td>
                                             <td>
                                                 <div class="hstack gap-2 justify-content-end">
-                                                    @can('expense-heads.edit')
-                                                    <a href="{{ route('masters.expense-heads.edit', $head) }}" class="avatar-text avatar-md" data-bs-toggle="tooltip" title="Edit">
-                                                        <i class="feather feather-edit"></i>
+                                                    @can('expense-heads.index')
+                                                    <a href="{{ route('masters.expense-heads.show', $head) }}" class="avatar-text avatar-md" data-bs-toggle="tooltip" title="View">
+                                                        <i class="feather feather-eye"></i>
                                                     </a>
                                                     @endcan
-                                                    @can('expense-heads.delete')
                                                     <div class="dropdown">
                                                         <a href="javascript:void(0)" class="avatar-text avatar-md" data-bs-toggle="dropdown" data-bs-offset="0,21">
                                                             <i class="feather feather-more-horizontal"></i>
                                                         </a>
                                                         <ul class="dropdown-menu">
+                                                            @can('expense-heads.edit')
+                                                            <li>
+                                                                <a class="dropdown-item" href="{{ route('masters.expense-heads.edit', $head) }}">
+                                                                    <i class="feather feather-edit-3 me-3"></i><span>Edit</span>
+                                                                </a>
+                                                            </li>
+                                                            @endcan
+                                                            @can('expense-heads.delete')
+                                                            <li class="dropdown-divider"></li>
                                                             <li>
                                                                 <form action="{{ route('masters.expense-heads.destroy', $head) }}" method="POST"
                                                                       onsubmit="return confirm('Deactivate this expense head?')">
@@ -126,9 +134,9 @@
                                                                     </button>
                                                                 </form>
                                                             </li>
+                                                            @endcan
                                                         </ul>
                                                     </div>
-                                                    @endcan
                                                 </div>
                                             </td>
                                         </tr>

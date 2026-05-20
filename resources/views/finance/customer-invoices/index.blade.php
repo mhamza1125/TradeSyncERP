@@ -100,7 +100,7 @@
                                 <th class="text-end">Paid</th>
                                 <th class="text-end">Due</th>
                                 <th>Status</th>
-                                <th class="text-end">Actions</th>
+                                <th class="text-end pe-3">Actions</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -132,25 +132,39 @@
                                     @endphp
                                     <span class="badge bg-{{ $badge }}">{{ $invoice->status }}</span>
                                 </td>
-                                <td class="text-end">
-                                    <div class="d-flex justify-content-end gap-1">
-                                        <a href="{{ route('customer-invoices.show', $invoice) }}" class="btn btn-sm btn-icon btn-light-brand" title="View">
-                                            <i class="feather-eye"></i>
-                                        </a>
-                                        @can('customer-invoices.edit')
-                                        <a href="{{ route('customer-invoices.edit', $invoice) }}" class="btn btn-sm btn-icon btn-light-brand" title="Edit">
-                                            <i class="feather-edit-2"></i>
+                                <td>
+                                    <div class="hstack gap-2 justify-content-end">
+                                        @can('customer-invoices.index')
+                                        <a href="{{ route('customer-invoices.show', $invoice) }}" class="avatar-text avatar-md" data-bs-toggle="tooltip" title="View">
+                                            <i class="feather feather-eye"></i>
                                         </a>
                                         @endcan
-                                        @can('customer-invoices.delete')
-                                        <form action="{{ route('customer-invoices.destroy', $invoice) }}" method="POST"
-                                              onsubmit="return confirm('Delete this invoice?')">
-                                            @csrf @method('DELETE')
-                                            <button class="btn btn-sm btn-icon btn-light-brand" title="Delete">
-                                                <i class="feather-trash-2 text-danger"></i>
-                                            </button>
-                                        </form>
-                                        @endcan
+                                        <div class="dropdown">
+                                            <a href="javascript:void(0)" class="avatar-text avatar-md" data-bs-toggle="dropdown" data-bs-offset="0,21">
+                                                <i class="feather feather-more-horizontal"></i>
+                                            </a>
+                                            <ul class="dropdown-menu">
+                                                @can('customer-invoices.edit')
+                                                <li>
+                                                    <a class="dropdown-item" href="{{ route('customer-invoices.edit', $invoice) }}">
+                                                        <i class="feather feather-edit-3 me-3"></i><span>Edit</span>
+                                                    </a>
+                                                </li>
+                                                @endcan
+                                                @can('customer-invoices.delete')
+                                                <li class="dropdown-divider"></li>
+                                                <li>
+                                                    <form action="{{ route('customer-invoices.destroy', $invoice) }}" method="POST"
+                                                          onsubmit="return confirm('Delete this invoice?')">
+                                                        @csrf @method('DELETE')
+                                                        <button class="dropdown-item text-danger" type="submit">
+                                                            <i class="feather feather-trash-2 me-3"></i><span>Delete</span>
+                                                        </button>
+                                                    </form>
+                                                </li>
+                                                @endcan
+                                            </ul>
+                                        </div>
                                     </div>
                                 </td>
                             </tr>

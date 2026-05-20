@@ -1,13 +1,13 @@
 <div class="row">
-    {{-- Main Order Info --}}
-    <div class="col-xl-8">
+    {{-- Main Order Info — full width --}}
+    <div class="col-lg-12">
         <div class="card">
             <div class="card-header">
                 <h5 class="card-title">Order Details</h5>
             </div>
             <div class="card-body">
                 <div class="row">
-                    <div class="col-lg-6 mb-4">
+                    <div class="col-lg-4 mb-4">
                         <label class="form-label">Customer <span class="text-danger">*</span></label>
                         <select name="customer_id" class="form-select @error('customer_id') is-invalid @enderror" required>
                             <option value="">— Select Customer —</option>
@@ -19,14 +19,23 @@
                         </select>
                         @error('customer_id')<div class="invalid-feedback">{{ $message }}</div>@enderror
                     </div>
-                    <div class="col-lg-6 mb-4">
+                    <div class="col-lg-4 mb-4">
                         <label class="form-label">Order Date <span class="text-danger">*</span></label>
                         <input type="date" name="order_date"
                                class="form-control @error('order_date') is-invalid @enderror"
                                value="{{ old('order_date', isset($customerOrder) ? $customerOrder->order_date?->toDateString() : now()->toDateString()) }}">
                         @error('order_date')<div class="invalid-feedback">{{ $message }}</div>@enderror
                     </div>
-                    <div class="col-lg-6 mb-4">
+                    <div class="col-lg-4 mb-4">
+                        <label class="form-label">Status <span class="text-danger">*</span></label>
+                        <select name="status" class="form-select @error('status') is-invalid @enderror">
+                            @foreach(['Draft','Confirmed','Processing','Dispatched','Cancelled'] as $s)
+                            <option value="{{ $s }}" @selected(old('status', $customerOrder->status ?? 'Draft') == $s)>{{ $s }}</option>
+                            @endforeach
+                        </select>
+                        @error('status')<div class="invalid-feedback">{{ $message }}</div>@enderror
+                    </div>
+                    <div class="col-lg-4 mb-4">
                         <label class="form-label">ETD</label>
                         <input type="date" name="required_by"
                                class="form-control @error('required_by') is-invalid @enderror"
@@ -34,7 +43,7 @@
                         <small class="text-muted">Estimated Time of Departure / Delivery</small>
                         @error('required_by')<div class="invalid-feedback">{{ $message }}</div>@enderror
                     </div>
-                    <div class="col-lg-6 mb-4">
+                    <div class="col-lg-8 mb-4">
                         <label class="form-label">Remarks</label>
                         <textarea name="remarks" rows="2" class="form-control @error('remarks') is-invalid @enderror"
                                   placeholder="Optional notes about this order...">{{ old('remarks', $customerOrder->remarks ?? '') }}</textarea>
@@ -103,35 +112,6 @@
                             @endif
                         </tbody>
                     </table>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    {{-- Settings --}}
-    <div class="col-xl-4">
-        <div class="card">
-            <div class="card-header">
-                <h5 class="card-title">Order Status</h5>
-            </div>
-            <div class="card-body">
-                <div class="mb-4">
-                    <label class="form-label">Status <span class="text-danger">*</span></label>
-                    <select name="status" class="form-select @error('status') is-invalid @enderror">
-                        @foreach(['Draft','Confirmed','Processing','Dispatched','Cancelled'] as $s)
-                        <option value="{{ $s }}" @selected(old('status', $customerOrder->status ?? 'Draft') == $s)>{{ $s }}</option>
-                        @endforeach
-                    </select>
-                    @error('status')<div class="invalid-feedback">{{ $message }}</div>@enderror
-                </div>
-                <div class="alert alert-light border">
-                    <small class="text-muted">
-                        <strong>Draft</strong> — Not yet confirmed by customer.<br>
-                        <strong>Confirmed</strong> — Customer has confirmed this request.<br>
-                        <strong>Processing</strong> — Samples are being prepared.<br>
-                        <strong>Dispatched</strong> — Samples sent to customer.<br>
-                        <strong>Cancelled</strong> — Order has been cancelled.
-                    </small>
                 </div>
             </div>
         </div>

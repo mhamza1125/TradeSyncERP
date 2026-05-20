@@ -93,17 +93,25 @@
                                             </td>
                                             <td>
                                                 <div class="hstack gap-2 justify-content-end">
-                                                    @can('categories.edit')
-                                                    <a href="{{ route('masters.categories.edit', $category) }}" class="avatar-text avatar-md" data-bs-toggle="tooltip" title="Edit">
-                                                        <i class="feather feather-edit"></i>
+                                                    @can('categories.index')
+                                                    <a href="{{ route('masters.categories.show', $category) }}" class="avatar-text avatar-md" data-bs-toggle="tooltip" title="View">
+                                                        <i class="feather feather-eye"></i>
                                                     </a>
                                                     @endcan
-                                                    @can('categories.delete')
                                                     <div class="dropdown">
                                                         <a href="javascript:void(0)" class="avatar-text avatar-md" data-bs-toggle="dropdown" data-bs-offset="0,21">
                                                             <i class="feather feather-more-horizontal"></i>
                                                         </a>
                                                         <ul class="dropdown-menu">
+                                                            @can('categories.edit')
+                                                            <li>
+                                                                <a class="dropdown-item" href="{{ route('masters.categories.edit', $category) }}">
+                                                                    <i class="feather feather-edit-3 me-3"></i><span>Edit</span>
+                                                                </a>
+                                                            </li>
+                                                            @endcan
+                                                            @can('categories.delete')
+                                                            <li class="dropdown-divider"></li>
                                                             <li>
                                                                 <form action="{{ route('masters.categories.destroy', $category) }}" method="POST"
                                                                       onsubmit="return confirm('Deactivate this category?')">
@@ -113,9 +121,9 @@
                                                                     </button>
                                                                 </form>
                                                             </li>
+                                                            @endcan
                                                         </ul>
                                                     </div>
-                                                    @endcan
                                                 </div>
                                             </td>
                                         </tr>

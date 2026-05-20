@@ -82,7 +82,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::resource('expenses', ExpenseController::class)->only(['index', 'create', 'store', 'show', 'destroy']);
 
     Route::resource('salary', SalaryRunController::class)->parameters(['salary' => 'salaryRun'])
-        ->only(['index', 'create', 'store', 'show']);
+        ->only(['index', 'create', 'store', 'show', 'edit', 'update']);
     Route::put('salary/{salaryRun}/lines',  [SalaryRunController::class, 'updateLines'])->name('salary.lines.update');
     Route::post('salary/{salaryRun}/pay',   [SalaryRunController::class, 'pay'])->name('salary.pay');
 

@@ -96,17 +96,25 @@
                                             </td>
                                             <td>
                                                 <div class="hstack gap-2 justify-content-end">
-                                                    @can('currencies.edit')
-                                                    <a href="{{ route('masters.currencies.edit', $currency) }}" class="avatar-text avatar-md" data-bs-toggle="tooltip" title="Edit">
-                                                        <i class="feather feather-edit"></i>
+                                                    @can('currencies.index')
+                                                    <a href="{{ route('masters.currencies.show', $currency) }}" class="avatar-text avatar-md" data-bs-toggle="tooltip" title="View">
+                                                        <i class="feather feather-eye"></i>
                                                     </a>
                                                     @endcan
-                                                    @can('currencies.delete')
                                                     <div class="dropdown">
                                                         <a href="javascript:void(0)" class="avatar-text avatar-md" data-bs-toggle="dropdown" data-bs-offset="0,21">
                                                             <i class="feather feather-more-horizontal"></i>
                                                         </a>
                                                         <ul class="dropdown-menu">
+                                                            @can('currencies.edit')
+                                                            <li>
+                                                                <a class="dropdown-item" href="{{ route('masters.currencies.edit', $currency) }}">
+                                                                    <i class="feather feather-edit-3 me-3"></i><span>Edit</span>
+                                                                </a>
+                                                            </li>
+                                                            @endcan
+                                                            @can('currencies.delete')
+                                                            <li class="dropdown-divider"></li>
                                                             <li>
                                                                 <form action="{{ route('masters.currencies.destroy', $currency) }}" method="POST"
                                                                       onsubmit="return confirm('Deactivate this currency?')">
@@ -116,9 +124,9 @@
                                                                     </button>
                                                                 </form>
                                                             </li>
+                                                            @endcan
                                                         </ul>
                                                     </div>
-                                                    @endcan
                                                 </div>
                                             </td>
                                         </tr>

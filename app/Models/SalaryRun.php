@@ -12,6 +12,9 @@ class SalaryRun extends Model
 
     protected $fillable = [
         'month',
+        'working_days',
+        'off_days',
+        'remarks',
         'account_id',
         'total_net_payable',
         'status',
@@ -21,7 +24,7 @@ class SalaryRun extends Model
     ];
 
     protected $casts = [
-        'payment_date'     => 'date',
+        'payment_date'      => 'date',
         'total_net_payable' => 'decimal:2',
     ];
 

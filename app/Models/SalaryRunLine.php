@@ -13,8 +13,13 @@ class SalaryRunLine extends Model
         'bonus',
         'deduction',
         'advance',
+        'allowances',
         'leave_days',
         'leave_deduction_amount',
+        'total_leaves',
+        'deductible_leaves',
+        'loan_balance',
+        'loan_deduction',
         'remarks',
     ];
 
@@ -23,7 +28,10 @@ class SalaryRunLine extends Model
         'bonus'                  => 'decimal:2',
         'deduction'              => 'decimal:2',
         'advance'                => 'decimal:2',
+        'allowances'             => 'decimal:2',
         'leave_deduction_amount' => 'decimal:2',
+        'loan_balance'           => 'decimal:2',
+        'loan_deduction'         => 'decimal:2',
         'net_payable'            => 'decimal:2',
     ];
 

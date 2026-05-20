@@ -85,6 +85,11 @@
                                         </td>
                                         <td>
                                             <div class="hstack gap-2 justify-content-end">
+                                                @can('inspection-types.index')
+                                                <a href="{{ route('masters.inspection-types.show', $type) }}" class="avatar-text avatar-md" data-bs-toggle="tooltip" title="View">
+                                                    <i class="feather feather-eye"></i>
+                                                </a>
+                                                @endcan
                                                 <div class="dropdown">
                                                     <a href="javascript:void(0)" class="avatar-text avatar-md" data-bs-toggle="dropdown" data-bs-offset="0,21">
                                                         <i class="feather feather-more-horizontal"></i>

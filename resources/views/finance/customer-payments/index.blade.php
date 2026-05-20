@@ -131,11 +131,12 @@
                                                         @can('customer-payments.edit')
                                                         <li>
                                                             <a href="{{ route('customer-payments.edit', $payment) }}" class="dropdown-item">
-                                                                <i class="feather feather-edit me-3"></i><span>Edit</span>
+                                                                <i class="feather feather-edit-3 me-3"></i><span>Edit</span>
                                                             </a>
                                                         </li>
                                                         @endcan
                                                         @can('customer-payments.delete')
+                                                        <li class="dropdown-divider"></li>
                                                         <li>
                                                             <form action="{{ route('customer-payments.destroy', $payment) }}" method="POST"
                                                                   onsubmit="return confirm('Delete this payment?')">

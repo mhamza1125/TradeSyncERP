@@ -81,6 +81,22 @@
                                                     <i class="feather feather-eye"></i>
                                                 </a>
                                                 @endcan
+                                                @if(!$run->isPaid())
+                                                @can('salary.edit')
+                                                <div class="dropdown">
+                                                    <a href="javascript:void(0)" class="avatar-text avatar-md" data-bs-toggle="dropdown" data-bs-offset="0,21" data-bs-strategy="fixed">
+                                                        <i class="feather feather-more-horizontal"></i>
+                                                    </a>
+                                                    <ul class="dropdown-menu">
+                                                        <li>
+                                                            <a href="{{ route('salary.edit', $run) }}" class="dropdown-item">
+                                                                <i class="feather feather-edit-3 me-3"></i><span>Edit</span>
+                                                            </a>
+                                                        </li>
+                                                    </ul>
+                                                </div>
+                                                @endcan
+                                                @endif
                                             </div>
                                         </td>
                                     </tr>

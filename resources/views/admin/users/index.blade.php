@@ -106,19 +106,31 @@
                                 </td>
                                 <td class="text-muted fs-12">{{ $user->created_at->format('d M Y') }}</td>
                                 <td class="text-end pe-3">
-                                    <div class="d-flex justify-content-end gap-1">
-                                        <a href="{{ route('admin.users.edit', $user) }}" class="btn btn-sm btn-light-brand" title="Edit">
-                                            <i class="feather-edit-2"></i>
-                                        </a>
-                                        @if($user->id !== auth()->id())
-                                        <form action="{{ route('admin.users.destroy', $user) }}" method="POST"
-                                              onsubmit="return confirm('Delete user {{ addslashes($user->name) }}?')">
-                                            @csrf @method('DELETE')
-                                            <button class="btn btn-sm btn-light-danger" title="Delete">
-                                                <i class="feather-trash-2"></i>
-                                            </button>
-                                        </form>
-                                        @endif
+                                    <div class="hstack gap-2 justify-content-end">
+                                        <div class="dropdown">
+                                            <a href="javascript:void(0)" class="avatar-text avatar-md" data-bs-toggle="dropdown" data-bs-offset="0,21">
+                                                <i class="feather feather-more-horizontal"></i>
+                                            </a>
+                                            <ul class="dropdown-menu">
+                                                <li>
+                                                    <a class="dropdown-item" href="{{ route('admin.users.edit', $user) }}">
+                                                        <i class="feather feather-edit-3 me-3"></i><span>Edit</span>
+                                                    </a>
+                                                </li>
+                                                @if($user->id !== auth()->id())
+                                                <li class="dropdown-divider"></li>
+                                                <li>
+                                                    <form action="{{ route('admin.users.destroy', $user) }}" method="POST"
+                                                          onsubmit="return confirm('Delete user {{ addslashes($user->name) }}?')">
+                                                        @csrf @method('DELETE')
+                                                        <button class="dropdown-item text-danger" type="submit">
+                                                            <i class="feather feather-trash-2 me-3"></i><span>Delete</span>
+                                                        </button>
+                                                    </form>
+                                                </li>
+                                                @endif
+                                            </ul>
+                                        </div>
                                     </div>
                                 </td>
                             </tr>
