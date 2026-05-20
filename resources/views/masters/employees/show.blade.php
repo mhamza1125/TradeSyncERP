@@ -96,6 +96,9 @@
                                 <a href="javascript:void(0);" class="nav-link active" data-bs-toggle="tab" data-bs-target="#empOverview" role="tab">Overview</a>
                             </li>
                             <li class="nav-item flex-fill border-top" role="presentation">
+                                <a href="javascript:void(0);" class="nav-link" data-bs-toggle="tab" data-bs-target="#empPayments" role="tab">Payment History</a>
+                            </li>
+                            <li class="nav-item flex-fill border-top" role="presentation">
                                 <a href="javascript:void(0);" class="nav-link" data-bs-toggle="tab" data-bs-target="#empActivity" role="tab">Activity Log</a>
                             </li>
                         </ul>
@@ -122,6 +125,66 @@
                                 @endif
                             </div></div>
                         </div>
+                        <div class="tab-pane fade" id="empPayments" role="tabpanel">
+                            <h5 class="fw-bold mb-4 px-4 pt-4">Payment History:</h5>
+                            @php
+                                $salaryRows = $salaryHistory->map(fn ($line) => [
+                                    'date'   => optional($line->salaryRun->payment_date ?? $line->salaryRun->created_at)->format('d M Y') ?? '—',
+                                    'type'   => 'Salary',
+                                    'ref'    => 'Month: ' . ($line->salaryRun->month ?? '—'),
+                                    'amount' => $line->net_payable ?? 0,
+                                ]);
+                                $loanRows = $loanTransactions->map(fn ($txn) => [
+                                    'date'   => $txn->transaction_date->format('d M Y'),
+                                    'type'   => $txn->transaction_type ?? 'Loan',
+                                    'ref'    => $txn->remarks ?? '—',
+                                    'amount' => $txn->amount,
+                                ]);
+                                $paymentRows = $salaryRows->merge($loanRows)->sortByDesc('date');
+                            @endphp
+                            <div class="table-responsive px-4 pb-4">
+                                <table class="table table-hover mb-0">
+                                    <thead class="table-light">
+                                        <tr>
+                                            <th>Date</th>
+                                            <th>Type</th>
+                                            <th>Reference</th>
+                                            <th class="text-end">Amount</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        @forelse($paymentRows as $row)
+                                        <tr>
+                                            <td class="text-nowrap">{{ $row['date'] }}</td>
+                                            <td>
+                                                <span class="badge bg-soft-{{ $row['type'] === 'Salary' ? 'primary' : 'warning' }} text-{{ $row['type'] === 'Salary' ? 'primary' : 'warning' }}">
+                                                    {{ $row['type'] }}
+                                                </span>
+                                            </td>
+                                            <td class="text-muted small">{{ $row['ref'] }}</td>
+                                            <td class="text-end fw-semibold">{{ number_format($row['amount'], 2) }}</td>
+                                        </tr>
+                                        @empty
+                                        <tr>
+                                            <td colspan="4" class="text-center py-5 text-muted">
+                                                <i class="feather-inbox fs-1 d-block mb-2"></i>
+                                                No payment records found.
+                                            </td>
+                                        </tr>
+                                        @endforelse
+                                    </tbody>
+                                    @if($paymentRows->count())
+                                    <tfoot class="table-light fw-bold">
+                                        <tr>
+                                            <td colspan="3" class="text-end">Total Paid:</td>
+                                            <td class="text-end">{{ number_format($paymentRows->sum('amount'), 2) }}</td>
+                                        </tr>
+                                    </tfoot>
+                                    @endif
+                                </table>
+                            </div>
+                        </div>
+
                         <div class="tab-pane fade p-4" id="empActivity" role="tabpanel">
                             <h5 class="fw-bold mb-4">Activity Log:</h5>
                             @php $activities = $employee->activities ?? collect(); @endphp

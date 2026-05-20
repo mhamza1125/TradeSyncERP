@@ -7,6 +7,7 @@ use App\Http\Requests\Masters\StoreEmployeeRequest;
 use App\Http\Requests\Masters\UpdateEmployeeRequest;
 use App\Models\Employee;
 use App\Models\EmployeeExperience;
+use App\Models\Transaction;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 
@@ -66,7 +67,18 @@ class EmployeeController extends Controller
     public function show(Employee $employee)
     {
         $employee->load('attachments', 'experiences');
-        return view('masters.employees.show', compact('employee'));
+
+        $salaryHistory = $employee->salaryRunLines()
+            ->with('salaryRun')
+            ->orderByDesc('id')
+            ->get();
+
+        $loanTransactions = Transaction::where('reference_type', 'Employee')
+            ->where('reference_id', $employee->id)
+            ->orderByDesc('transaction_date')
+            ->get();
+
+        return view('masters.employees.show', compact('employee', 'salaryHistory', 'loanTransactions'));
     }
 
     public function edit(Employee $employee)

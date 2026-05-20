@@ -54,6 +54,9 @@
                         <h6 class="text-muted mb-1">Customer</h6>
                         <p class="fw-semibold mb-0">{{ $customerInvoice->customer->customer_name }}</p>
                         <p class="text-muted mb-0">{{ $customerInvoice->customer->phone }}</p>
+                        @if($customerInvoice->customer->currency)
+                        <p class="text-muted mb-0">Currency: <span class="fw-semibold text-dark">{{ $customerInvoice->customer->currency->code }}</span></p>
+                        @endif
                     </div>
                     <div class="col-sm-6 text-sm-end">
                         <h6 class="text-muted mb-1">Invoice Date</h6>
@@ -142,9 +145,10 @@
         </div>
 
         {{-- Secondary cards: FC details + Attachments side by side if both exist --}}
-        @if($customerInvoice->foreignCurrency || $customerInvoice->attachments->count())
+        @php $customerCurrency = $customerInvoice->customer->currency ?? null; @endphp
+        @if($customerCurrency || $customerInvoice->attachments->count())
         <div class="row">
-            @if($customerInvoice->foreignCurrency)
+            @if($customerCurrency && $customerInvoice->foreign_amount)
             <div class="col-md-4 mb-4">
                 <div class="card stretch stretch-full h-100">
                     <div class="card-header">
@@ -153,7 +157,7 @@
                     <div class="card-body">
                         <dl class="row mb-0">
                             <dt class="col-6 text-muted">Currency</dt>
-                            <dd class="col-6">{{ $customerInvoice->foreignCurrency->currency_code }}</dd>
+                            <dd class="col-6">{{ $customerCurrency->code }}</dd>
                             <dt class="col-6 text-muted">Exchange Rate</dt>
                             <dd class="col-6">{{ $customerInvoice->exchange_rate }}</dd>
                             <dt class="col-6 text-muted">Foreign Amount</dt>
@@ -165,7 +169,7 @@
             @endif
 
             @if($customerInvoice->attachments->count())
-            <div class="col-md-{{ $customerInvoice->foreignCurrency ? '8' : '12' }} mb-4">
+            <div class="col-md-{{ ($customerCurrency && $customerInvoice->foreign_amount) ? '8' : '12' }} mb-4">
                 <div class="card stretch stretch-full h-100">
                     <div class="card-header">
                         <h5 class="card-title">Attachments</h5>

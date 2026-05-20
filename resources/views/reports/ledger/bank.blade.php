@@ -27,6 +27,11 @@
                     <button onclick="window.print()" class="btn btn-light-brand">
                         <i class="feather-printer me-2"></i>Print
                     </button>
+                    @can('transfers.create')
+                    <a href="{{ route('transfers.create') }}" class="btn btn-primary">
+                        <i class="feather-repeat me-2"></i>Transfer Funds
+                    </a>
+                    @endcan
                 </div>
             </div>
             <div class="d-md-none d-flex align-items-center">
@@ -116,17 +121,18 @@
                                         <th>Particulars</th>
                                         <th class="text-end">Debit (Dr)</th>
                                         <th class="text-end">Credit (Cr)</th>
+                                        <th class="text-end">Balance</th>
                                         <th>Recorded By</th>
                                     </tr>
                                 </thead>
                                 <tbody>
-                                    @php $totalDr = 0; $totalCr = 0; @endphp
+                                    @php $totalDr = 0; $totalCr = 0; $balance = $openingBalance; @endphp
                                     @forelse($transactions as $txn)
                                     @php
-                                        $isDr = $txn->debit_account_id === $account->id;
-                                        $isCr = $txn->credit_account_id === $account->id;
-                                        if ($isDr) $totalDr += $txn->amount;
-                                        if ($isCr) $totalCr += $txn->amount;
+                                        $isDr = $txn->debit_account_id == $account->id;
+                                        $isCr = $txn->credit_account_id == $account->id;
+                                        if ($isDr) { $totalDr += $txn->amount; $balance += $txn->amount; }
+                                        if ($isCr) { $totalCr += $txn->amount; $balance -= $txn->amount; }
                                         $other = $isDr ? $txn->creditAccount : $txn->debitAccount;
                                     @endphp
                                     <tr>
@@ -153,11 +159,14 @@
                                         <td class="text-end fw-semibold {{ $isCr ? 'text-success' : 'text-muted' }}">
                                             {{ $isCr ? number_format($txn->amount, 2) : '—' }}
                                         </td>
+                                        <td class="text-end fw-semibold {{ $balance >= 0 ? 'text-dark' : 'text-danger' }}">
+                                            {{ number_format($balance, 2) }}
+                                        </td>
                                         <td class="text-muted small">{{ $txn->creator->name ?? '—' }}</td>
                                     </tr>
                                     @empty
                                     <tr>
-                                        <td colspan="7" class="text-center py-5 text-muted">
+                                        <td colspan="8" class="text-center py-5 text-muted">
                                             <i class="feather-inbox fs-1 d-block mb-2"></i>
                                             No transactions found for the selected period.
                                         </td>
@@ -170,6 +179,7 @@
                                         <td colspan="4" class="text-end">Page Totals:</td>
                                         <td class="text-end text-danger">{{ number_format($totalDr, 2) }}</td>
                                         <td class="text-end text-success">{{ number_format($totalCr, 2) }}</td>
+                                        <td class="text-end {{ $balance >= 0 ? 'text-dark' : 'text-danger' }}">{{ number_format($balance, 2) }}</td>
                                         <td></td>
                                     </tr>
                                 </tfoot>

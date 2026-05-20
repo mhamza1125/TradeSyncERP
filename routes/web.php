@@ -6,6 +6,7 @@ use App\Http\Controllers\Finance\CustomerInvoiceController;
 use App\Http\Controllers\Finance\CustomerPaymentController;
 use App\Http\Controllers\Finance\ExpenseController;
 use App\Http\Controllers\Finance\SalaryRunController;
+use App\Http\Controllers\Finance\TransferController;
 use App\Http\Controllers\Masters\AccountController;
 use App\Http\Controllers\Masters\BankController;
 use App\Http\Controllers\Masters\CurrencyController;
@@ -88,6 +89,9 @@ Route::middleware(['auth', 'verified'])->group(function () {
 
     Route::resource('customer-payments', CustomerPaymentController::class)->parameters(['customer-payments' => 'customerPayment'])
         ->only(['index', 'create', 'store', 'show', 'edit', 'update', 'destroy']);
+
+    Route::get('transfers/create', [TransferController::class, 'create'])->name('transfers.create');
+    Route::post('transfers',       [TransferController::class, 'store'])->name('transfers.store');
 
     // ─── Attachments (polymorphic) ────────────────────────────────────────────────
     Route::post('attachments/{type}/{id}', [AttachmentController::class, 'store'])->name('attachments.store');

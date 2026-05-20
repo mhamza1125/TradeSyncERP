@@ -5,11 +5,7 @@
 @section('content')
 <div class="nxl-content apps-container">
     <div class="nxl-content without-header nxl-full-content">
-        <div class="main-content d-flex">
-
-            @include('partials.masters-sidebar')
-
-            <div class="content-area" data-scrollbar-target="#psScrollbarInit">
+        <div class="content-area" data-scrollbar-target="#psScrollbarInit">
                 <div class="content-area-header bg-white sticky-top">
                     <div class="page-header-left d-flex align-items-center">
                         <a href="javascript:void(0);" class="app-sidebar-open-trigger me-2">
@@ -43,7 +39,6 @@
                     </form>
                 </div>
             </div>
-        </div>
     </div>
 </div>
 @endsection

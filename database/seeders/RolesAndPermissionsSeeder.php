@@ -39,6 +39,7 @@ class RolesAndPermissionsSeeder extends Seeder
             'salary.index', 'salary.create', 'salary.edit', 'salary.delete', 'salary.pay', 'salary.view',
             'customer-payments.index', 'customer-payments.create', 'customer-payments.edit', 'customer-payments.delete', 'customer-payments.view',
             'customer-invoices.index', 'customer-invoices.create', 'customer-invoices.edit', 'customer-invoices.delete', 'customer-invoices.view',
+            'transfers.create',
 
             // Reports
             'reports.view',
@@ -89,6 +90,7 @@ class RolesAndPermissionsSeeder extends Seeder
             'salary.index', 'salary.create', 'salary.edit', 'salary.delete', 'salary.pay', 'salary.view',
             'customer-payments.index', 'customer-payments.create', 'customer-payments.edit', 'customer-payments.delete', 'customer-payments.view',
             'customer-invoices.index', 'customer-invoices.create', 'customer-invoices.edit', 'customer-invoices.delete', 'customer-invoices.view',
+            'transfers.create',
             'reports.view',
         ]);
 

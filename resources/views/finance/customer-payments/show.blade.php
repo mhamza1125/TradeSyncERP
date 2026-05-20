@@ -111,24 +111,6 @@
                                 </div>
                             </div>
                         </div>
-                        @if($customerPayment->transaction)
-                        <hr class="border-dashed">
-                        <div class="px-4 pb-4">
-                            <h6 class="fw-bold mb-3">Transaction Reference:</h6>
-                            <div class="row g-0 mb-2">
-                                <div class="col-sm-4 text-muted">Transaction Date:</div>
-                                <div class="col-sm-8 fw-semibold">{{ \Carbon\Carbon::parse($customerPayment->transaction->transaction_date)->format('d M Y') }}</div>
-                            </div>
-                            <div class="row g-0 mb-2">
-                                <div class="col-sm-4 text-muted">Debit Account:</div>
-                                <div class="col-sm-8 fw-semibold">{{ optional($customerPayment->transaction->debitAccount)->account_name }}</div>
-                            </div>
-                            <div class="row g-0">
-                                <div class="col-sm-4 text-muted">Credit Account:</div>
-                                <div class="col-sm-8 fw-semibold">{{ optional($customerPayment->transaction->creditAccount)->account_name }}</div>
-                            </div>
-                        </div>
-                        @endif
                     </div>
                 </div>
             </div>
