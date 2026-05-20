@@ -123,11 +123,23 @@
                                     @php $totalDr = 0; $totalCr = 0; $balance = $openingBalance; @endphp
                                     @forelse($transactions as $txn)
                                     @php
-                                        $isDr = $txn->debit_account_id == $account->id;
-                                        $isCr = $txn->credit_account_id == $account->id;
+                                        // JournalEntry (transfers) uses actual debit/credit IDs recorded correctly.
+                                        // All other types were recorded with the same account on both sides (data bug),
+                                        // so derive the column from transaction_type instead.
+                                        if ($txn->transaction_type === 'JournalEntry') {
+                                            $isDr = $txn->debit_account_id == $account->id && $txn->credit_account_id != $account->id;
+                                            $isCr = $txn->credit_account_id == $account->id && $txn->debit_account_id != $account->id;
+                                            $other = $isDr ? $txn->creditAccount : $txn->debitAccount;
+                                        } elseif ($txn->transaction_type === 'CustomerReceipt') {
+                                            $isDr = true; $isCr = false;
+                                            $other = null;
+                                        } else {
+                                            // Expense, Salary, VendorPayment — money going OUT
+                                            $isDr = false; $isCr = true;
+                                            $other = null;
+                                        }
                                         if ($isDr) { $totalDr += $txn->amount; $balance += $txn->amount; }
                                         if ($isCr) { $totalCr += $txn->amount; $balance -= $txn->amount; }
-                                        $other = $isDr ? $txn->creditAccount : $txn->debitAccount;
                                     @endphp
                                     <tr>
                                         <td class="text-nowrap">{{ $txn->transaction_date->format('d M Y') }}</td>
@@ -147,10 +159,10 @@
                                                 <div class="text-muted small">{{ $txn->remarks }}</div>
                                             @endif
                                         </td>
-                                        <td class="text-end fw-semibold {{ $isDr ? 'text-danger' : 'text-muted' }}">
+                                        <td class="text-end fw-semibold {{ $isDr ? 'text-success' : 'text-muted' }}">
                                             {{ $isDr ? number_format($txn->amount, 2) : '—' }}
                                         </td>
-                                        <td class="text-end fw-semibold {{ $isCr ? 'text-success' : 'text-muted' }}">
+                                        <td class="text-end fw-semibold {{ $isCr ? 'text-danger' : 'text-muted' }}">
                                             {{ $isCr ? number_format($txn->amount, 2) : '—' }}
                                         </td>
                                         <td class="text-end fw-semibold {{ $balance >= 0 ? 'text-dark' : 'text-danger' }}">
@@ -171,8 +183,8 @@
                                 <tfoot class="table-light fw-bold">
                                     <tr>
                                         <td colspan="4" class="text-end">Page Totals:</td>
-                                        <td class="text-end text-danger">{{ number_format($totalDr, 2) }}</td>
-                                        <td class="text-end text-success">{{ number_format($totalCr, 2) }}</td>
+                                        <td class="text-end text-success">{{ number_format($totalDr, 2) }}</td>
+                                        <td class="text-end text-danger">{{ number_format($totalCr, 2) }}</td>
                                         <td class="text-end {{ $balance >= 0 ? 'text-dark' : 'text-danger' }}">{{ number_format($balance, 2) }}</td>
                                         <td></td>
                                     </tr>

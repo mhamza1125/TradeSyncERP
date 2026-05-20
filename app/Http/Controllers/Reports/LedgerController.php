@@ -34,14 +34,19 @@ class LedgerController extends Controller
             $openingBalance = (float) $account->opening_balance;
             if ($transactions->currentPage() > 1) {
                 $offset = ($transactions->currentPage() - 1) * $transactions->perPage();
-                $openingBalance += Transaction::select('debit_account_id', 'credit_account_id', 'amount')
+                $openingBalance += Transaction::select('debit_account_id', 'credit_account_id', 'transaction_type', 'amount')
                     ->where(fn ($q) => $q->where('debit_account_id', $account->id)->orWhere('credit_account_id', $account->id))
                     ->when($request->from_date, fn ($q) => $q->where('transaction_date', '>=', $request->from_date))
                     ->when($request->to_date, fn ($q) => $q->where('transaction_date', '<=', $request->to_date))
                     ->orderBy('transaction_date')
                     ->take($offset)
                     ->get()
-                    ->reduce(fn ($carry, $txn) => $carry + ($txn->debit_account_id == $account->id ? (float) $txn->amount : -(float) $txn->amount), 0.0);
+                    ->reduce(function ($carry, $txn) use ($account) {
+                        if ($txn->transaction_type === 'JournalEntry') {
+                            return $carry + ($txn->debit_account_id == $account->id ? (float) $txn->amount : -(float) $txn->amount);
+                        }
+                        return $carry + ($txn->transaction_type === 'CustomerReceipt' ? (float) $txn->amount : -(float) $txn->amount);
+                    }, 0.0);
             }
         }
 
@@ -67,14 +72,19 @@ class LedgerController extends Controller
             $openingBalance = (float) $account->opening_balance;
             if ($transactions->currentPage() > 1) {
                 $offset = ($transactions->currentPage() - 1) * $transactions->perPage();
-                $openingBalance += Transaction::select('debit_account_id', 'credit_account_id', 'amount')
+                $openingBalance += Transaction::select('debit_account_id', 'credit_account_id', 'transaction_type', 'amount')
                     ->where(fn ($q) => $q->where('debit_account_id', $account->id)->orWhere('credit_account_id', $account->id))
                     ->when($request->from_date, fn ($q) => $q->where('transaction_date', '>=', $request->from_date))
                     ->when($request->to_date, fn ($q) => $q->where('transaction_date', '<=', $request->to_date))
                     ->orderBy('transaction_date')
                     ->take($offset)
                     ->get()
-                    ->reduce(fn ($carry, $txn) => $carry + ($txn->debit_account_id == $account->id ? (float) $txn->amount : -(float) $txn->amount), 0.0);
+                    ->reduce(function ($carry, $txn) use ($account) {
+                        if ($txn->transaction_type === 'JournalEntry') {
+                            return $carry + ($txn->debit_account_id == $account->id ? (float) $txn->amount : -(float) $txn->amount);
+                        }
+                        return $carry + ($txn->transaction_type === 'CustomerReceipt' ? (float) $txn->amount : -(float) $txn->amount);
+                    }, 0.0);
             }
         }
 
