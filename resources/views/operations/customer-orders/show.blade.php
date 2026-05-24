@@ -29,13 +29,13 @@
         </div>
     </div>
 
-    <div class="main-content">
+    <div class="main-content pb-4">
         @include('partials.flash-messages')
 
         <div class="row">
             {{-- Order Summary --}}
             <div class="col-xl-8">
-                <div class="card stretch stretch-full mb-4">
+                <div class="card mb-4">
                     <div class="card-header">
                         <h5 class="card-title">Order Information</h5>
                     </div>
@@ -81,7 +81,7 @@
                 </div>
 
                 {{-- Requested Items --}}
-                <div class="card stretch stretch-full">
+                <div class="card">
                     <div class="card-header">
                         <h5 class="card-title">Requested Items ({{ $customerOrder->items->count() }})</h5>
                     </div>
@@ -116,7 +116,7 @@
 
             {{-- Side Panel --}}
             <div class="col-xl-4">
-                <div class="card stretch stretch-full">
+                <div class="card">
                     <div class="card-header">
                         <h5 class="card-title">Actions</h5>
                     </div>

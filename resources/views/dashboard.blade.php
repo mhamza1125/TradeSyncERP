@@ -302,6 +302,37 @@
             </div>
         </div>
 
+        {{-- ── Logged-in User Banner ────────────────────────────────────────── --}}
+        @php
+            $authUser  = auth()->user();
+            $authRoles = $authUser->getRoleNames();
+        @endphp
+        <div class="row mt-2">
+            <div class="col-12">
+                <div class="card mb-0">
+                    <div class="card-body py-3">
+                        <div class="d-flex align-items-center gap-3">
+                            <div class="avatar-text avatar-md bg-soft-primary text-primary border-soft-primary rounded-circle fw-bold fs-15">
+                                {{ strtoupper(substr($authUser->name, 0, 1)) }}
+                            </div>
+                            <div>
+                                <div class="fw-semibold text-dark">{{ $authUser->name }}</div>
+                                <div class="fs-12 text-muted">
+                                    @foreach($authRoles as $role)
+                                        <span class="badge bg-soft-primary text-primary me-1">{{ $role }}</span>
+                                    @endforeach
+                                    <span class="text-muted">{{ $authUser->email }}</span>
+                                </div>
+                            </div>
+                            <div class="ms-auto text-muted fs-12 d-none d-md-block">
+                                <i class="feather-clock me-1"></i>{{ now()->format('l, d M Y · H:i') }}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
         {{-- ── Row 3: Recent orders + recent activity ───────────────────────── --}}
         <div class="row mt-2">
 

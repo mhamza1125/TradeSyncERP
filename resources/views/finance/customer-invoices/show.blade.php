@@ -123,6 +123,19 @@
                                 <td colspan="2" class="text-end">Total</td>
                                 <td class="text-end">{{ number_format($customerInvoice->total_amount, 2) }}</td>
                             </tr>
+                            @php
+                                $invoiceCurrencyCode = $customerInvoice->customer->currency?->currency_code ?? 'PKR';
+                                $amountInWords = \App\Helpers\NumberToWords::convert(
+                                    (float) $customerInvoice->total_amount,
+                                    \App\Helpers\NumberToWords::currencyName($invoiceCurrencyCode),
+                                    \App\Helpers\NumberToWords::subunitName($invoiceCurrencyCode)
+                                );
+                            @endphp
+                            <tr>
+                                <td colspan="3" class="text-end fst-italic text-muted fs-12 py-1">
+                                    <i class="feather-type me-1"></i>{{ $amountInWords }}
+                                </td>
+                            </tr>
                             <tr>
                                 <td colspan="2" class="text-end text-success">Amount Paid</td>
                                 <td class="text-end text-success">{{ number_format($customerInvoice->amount_paid, 2) }}</td>

@@ -27,6 +27,7 @@ use App\Http\Controllers\Admin\RoleController;
 use App\Http\Controllers\Admin\UserController as AdminUserController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\Reports\LedgerController;
+use App\Http\Controllers\Tools\AqlCalculatorController;
 use Illuminate\Support\Facades\Route;
 
 Route::get('/', fn () => redirect()->route('dashboard'));
@@ -113,6 +114,9 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::resource('users', AdminUserController::class);
         Route::resource('roles', RoleController::class)->except(['show']);
     });
+
+    // ─── Tools ───────────────────────────────────────────────────────────────────
+    Route::get('tools/aql-calculator', AqlCalculatorController::class)->name('tools.aql-calculator');
 
     // ─── Ledgers & Reports ───────────────────────────────────────────────────────
     Route::prefix('ledger')->name('ledger.')->group(function () {

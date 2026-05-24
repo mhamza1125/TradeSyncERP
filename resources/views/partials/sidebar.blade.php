@@ -199,6 +199,17 @@
                 @endcan
                 @endcanany
 
+                {{-- ─── Tools ──────────────────────────────────────────────────── --}}
+                <li class="nxl-item nxl-caption">
+                    <label>Tools</label>
+                </li>
+                <li class="nxl-item {{ $is('tools.aql-calculator') ? 'active' : '' }}">
+                    <a href="{{ route('tools.aql-calculator') }}" class="nxl-link">
+                        <span class="nxl-micon"><i class="feather-cpu"></i></span>
+                        <span class="nxl-mtext">AQL Calculator</span>
+                    </a>
+                </li>
+
                 {{-- ─── Reports ─────────────────────────────────────────────────── --}}
                 @can('reports.view')
                 <li class="nxl-item nxl-caption">
