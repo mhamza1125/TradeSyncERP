@@ -88,7 +88,9 @@ class InspectionController extends Controller
             'runs.results.testingParameter',
             'runs.results.defect',
             'runs.results.attachments',
-            'runs.sampleMovement',
+            'runs.sampleMovements.sample',
+            'runs.movements.items.sample',
+            'runs.movements.employees',
         ]);
 
         return view('operations.inspections.show', compact('inspection'));

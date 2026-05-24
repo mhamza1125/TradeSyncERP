@@ -20,6 +20,7 @@ use App\Http\Controllers\Masters\TestingParameterController;
 use App\Http\Controllers\Operations\CustomerOrderController;
 use App\Http\Controllers\Operations\InspectionController;
 use App\Http\Controllers\Operations\InspectionRunController;
+use App\Http\Controllers\Operations\MovementController;
 use App\Http\Controllers\Operations\SampleController;
 use App\Http\Controllers\Operations\SampleMovementController;
 use App\Http\Controllers\Admin\RoleController;
@@ -61,7 +62,17 @@ Route::middleware(['auth', 'verified'])->group(function () {
 
     Route::resource('samples', SampleController::class);
 
-    Route::resource('samples.movements', SampleMovementController::class)->shallow();
+    // Grouped movement system (new)
+    Route::get('movements',                  [MovementController::class, 'index'])->name('movements.index');
+    Route::get('movements/create',           [MovementController::class, 'create'])->name('movements.create');
+    Route::post('movements',                 [MovementController::class, 'store'])->name('movements.store');
+    Route::get('movements/{movement}',       [MovementController::class, 'show'])->name('movements.show');
+    Route::get('movements/{movement}/edit',  [MovementController::class, 'edit'])->name('movements.edit');
+    Route::put('movements/{movement}',       [MovementController::class, 'update'])->name('movements.update');
+    Route::delete('movements/{movement}',    [MovementController::class, 'destroy'])->name('movements.destroy');
+
+    // Legacy nested individual movements (index / create / store only)
+    Route::resource('samples.movements', SampleMovementController::class)->only(['index', 'create', 'store']);
 
     // Inspections (top-level) + run sub-pages
     Route::resource('inspections', InspectionController::class);

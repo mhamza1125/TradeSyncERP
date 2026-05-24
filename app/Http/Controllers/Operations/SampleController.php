@@ -128,7 +128,8 @@ class SampleController extends Controller
     public function show(Sample $sample)
     {
         $sample->load([
-            'customer', 'category',
+            'customer',
+            'category.testingParameters',
             'variations.color', 'variations.size',
             'testingParameters.parameter',
             'movements',

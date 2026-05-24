@@ -47,6 +47,16 @@ class InspectionRun extends Model
         return $this->hasOne(SampleMovement::class);
     }
 
+    public function sampleMovements()
+    {
+        return $this->hasMany(SampleMovement::class);
+    }
+
+    public function movements()
+    {
+        return $this->hasMany(Movement::class);
+    }
+
     public function hasSectionEnabled(string $slug): bool
     {
         return $this->runSections

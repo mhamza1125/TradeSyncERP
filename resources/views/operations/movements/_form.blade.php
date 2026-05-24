@@ -7,6 +7,16 @@
     Variables present on create only: $employees, $suppliers, $customers
 --}}
 
+@unless(isset($movement))
+@push('styles')
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/tom-select@2.3.1/dist/css/tom-select.bootstrap5.min.css">
+<style>
+    .ts-wrapper.form-control { padding: 0; border: 0; }
+    .ts-wrapper .ts-control { border-radius: 0.375rem; }
+</style>
+@endpush
+@endunless
+
 <div class="row">
 
     {{-- ── Main content column ──────────────────────────────────────────────── --}}
@@ -124,7 +134,7 @@
                     <div class="col-lg-6 mb-4">
                         <label class="form-label">Assigned To <span class="text-danger">*</span></label>
                         <div id="atEmployee" class="at-panel" style="display:none">
-                            <select name="assigned_to_id" class="form-select at-select">
+                            <select id="atEmployeeSelect" name="assigned_to_id" class="form-select at-select">
                                 <option value="">— Select Employee —</option>
                                 @foreach($employees as $e)
                                 <option value="{{ $e->id }}" @selected(old('assigned_to_id') == $e->id)>{{ $e->employee_name }}</option>
@@ -132,7 +142,7 @@
                             </select>
                         </div>
                         <div id="atSupplier" class="at-panel" style="display:none">
-                            <select name="assigned_to_id" class="form-select at-select">
+                            <select id="atSupplierSelect" name="assigned_to_id" class="form-select at-select">
                                 <option value="">— Select Supplier —</option>
                                 @foreach($suppliers as $s)
                                 <option value="{{ $s->id }}" @selected(old('assigned_to_id') == $s->id)>{{ $s->name }}</option>
@@ -140,7 +150,7 @@
                             </select>
                         </div>
                         <div id="atCustomer" class="at-panel" style="display:none">
-                            <select name="assigned_to_id" class="form-select at-select">
+                            <select id="atCustomerSelect" name="assigned_to_id" class="form-select at-select">
                                 <option value="">— Select Customer —</option>
                                 @foreach($customers as $c)
                                 <option value="{{ $c->id }}" @selected(old('assigned_to_id') == $c->id)>{{ $c->customer_name }}</option>
@@ -231,40 +241,65 @@
 
 </div>
 
-{{-- Dynamic toggle JS — only needed on the create (issue) form --}}
+{{-- TomSelect + dynamic toggle JS — only needed on the create (issue) form --}}
 @unless(isset($movement))
 @push('scripts')
+<script src="https://cdn.jsdelivr.net/npm/tom-select@2.3.1/dist/js/tom-select.complete.min.js"></script>
 <script>
+// ── TomSelect initialization ──────────────────────────────────────────────────
+const movedByTs = new TomSelect('#movedByIdEmployee', {
+    maxOptions: null,
+    placeholder: '— Select Employee —',
+});
+
+const atEmployeeTs = new TomSelect('#atEmployeeSelect', {
+    maxOptions: null,
+    placeholder: '— Select Employee —',
+});
+const atSupplierTs = new TomSelect('#atSupplierSelect', {
+    maxOptions: null,
+    placeholder: '— Select Supplier —',
+});
+const atCustomerTs = new TomSelect('#atCustomerSelect', {
+    maxOptions: null,
+    placeholder: '— Select Customer —',
+});
+
+// ── Moved By toggle ───────────────────────────────────────────────────────────
 const movedByType   = document.getElementById('movedByType');
 const movedByEmpDiv = document.getElementById('movedByEmployee');
 const movedByUsrDiv = document.getElementById('movedByUser');
-const movedByEmpSel = document.getElementById('movedByIdEmployee');
 
 function toggleMovedBy() {
     const isUser = movedByType.value === 'User';
     movedByEmpDiv.style.display = isUser ? 'none' : 'block';
     movedByUsrDiv.style.display = isUser ? 'block' : 'none';
-    movedByEmpSel.disabled = isUser;
+    isUser ? movedByTs.disable() : movedByTs.enable();
 }
 movedByType.addEventListener('change', toggleMovedBy);
 toggleMovedBy();
 
+// ── Assigned To toggle ────────────────────────────────────────────────────────
 const assignedToType = document.getElementById('assignedToType');
 const atPanels = {
-    Employee: document.getElementById('atEmployee'),
-    Supplier: document.getElementById('atSupplier'),
-    Customer: document.getElementById('atCustomer'),
-    Storage:  document.getElementById('atStorage'),
+    Employee: { el: document.getElementById('atEmployee'), ts: atEmployeeTs },
+    Supplier: { el: document.getElementById('atSupplier'), ts: atSupplierTs },
+    Customer: { el: document.getElementById('atCustomer'), ts: atCustomerTs },
+    Storage:  { el: document.getElementById('atStorage'),  ts: null },
 };
 const atPlaceholder = document.getElementById('atPlaceholder');
 
 function toggleAssignedTo() {
     const val = assignedToType.value;
     atPlaceholder.style.display = val ? 'none' : 'block';
-    Object.entries(atPanels).forEach(([k, el]) => {
+    Object.entries(atPanels).forEach(([k, { el, ts }]) => {
         const active = k === val;
         el.style.display = active ? 'block' : 'none';
-        el.querySelectorAll('.at-select').forEach(i => { i.disabled = !active; });
+        if (ts) {
+            active ? ts.enable() : ts.disable();
+        } else {
+            el.querySelectorAll('.at-select').forEach(i => { i.disabled = !active; });
+        }
     });
 }
 assignedToType.addEventListener('change', toggleAssignedTo);

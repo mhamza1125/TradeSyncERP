@@ -53,7 +53,7 @@
                 @endcan
 
                 @can('samples.index')
-                <li class="nxl-item nxl-hasmenu {{ $is(['samples.*','movements.*']) ? 'active' : '' }}">
+                <li class="nxl-item nxl-hasmenu {{ $is('samples.*') ? 'active' : '' }}">
                     <a href="javascript:void(0);" class="nxl-link">
                         <span class="nxl-micon"><i class="feather-package"></i></span>
                         <span class="nxl-mtext">Samples</span>
@@ -68,11 +68,24 @@
                             <a class="nxl-link" href="{{ route('samples.create') }}">New Sample</a>
                         </li>
                         @endcan
-                        @can('sample-movements.index')
-                        <li class="nxl-item {{ $is(['samples.movements.*','movements.*']) ? 'active' : '' }}">
-                            <a class="nxl-link" href="{{ route('samples.index') }}?tab=movements">
-                                <i class="feather-send me-2 text-muted" style="font-size:12px"></i>Movements
-                            </a>
+                    </ul>
+                </li>
+                @endcan
+
+                @can('sample-movements.index')
+                <li class="nxl-item nxl-hasmenu {{ $is(['movements.*','samples.movements.*']) ? 'active' : '' }}">
+                    <a href="javascript:void(0);" class="nxl-link">
+                        <span class="nxl-micon"><i class="feather-send"></i></span>
+                        <span class="nxl-mtext">Sample Movements</span>
+                        <span class="nxl-arrow"><i class="feather-chevron-right"></i></span>
+                    </a>
+                    <ul class="nxl-submenu">
+                        <li class="nxl-item {{ $is('movements.index') ? 'active' : '' }}">
+                            <a class="nxl-link" href="{{ route('movements.index') }}">All Movements</a>
+                        </li>
+                        @can('sample-movements.create')
+                        <li class="nxl-item {{ $is('movements.create') ? 'active' : '' }}">
+                            <a class="nxl-link" href="{{ route('movements.create') }}">Record Movement</a>
                         </li>
                         @endcan
                     </ul>

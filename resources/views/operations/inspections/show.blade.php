@@ -19,6 +19,9 @@
                     <i class="feather-arrow-left"></i>
                 </a>
                 @can('inspections.edit')
+                <a href="{{ route('inspections.runs.create', $inspection) }}" class="btn btn-primary">
+                    <i class="feather-plus me-2"></i>Add Run
+                </a>
                 <a href="{{ route('inspections.edit', $inspection) }}" class="btn btn-light-brand">
                     <i class="feather-edit-3 me-2"></i>Edit
                 </a>
@@ -124,8 +127,14 @@
                         @if($run->remarks)
                         <span class="text-muted fs-12">{{ $run->remarks }}</span>
                         @endif
-                        @can('inspections.edit')
                         <div class="ms-auto d-flex gap-2">
+                            @can('sample-movements.create')
+                            <a href="{{ route('movements.create', ['inspection_run_id' => $run->id]) }}"
+                               class="btn btn-sm btn-light-brand">
+                                <i class="feather-send me-1"></i>Record Movement
+                            </a>
+                            @endcan
+                            @can('inspections.edit')
                             <a href="{{ route('inspections.runs.edit', [$inspection, $run]) }}"
                                class="btn btn-sm btn-light-brand">
                                 <i class="feather-eye me-1"></i>View
@@ -134,8 +143,8 @@
                                class="btn btn-sm btn-primary">
                                 <i class="feather-edit-2 me-1"></i>Edit
                             </a>
+                            @endcan
                         </div>
-                        @endcan
                     </div>
 
                     @if($run->results->isEmpty())
@@ -216,10 +225,62 @@
                     </div>
                     @endif
 
-                    @if($run->sampleMovement)
-                    <div class="card-footer text-muted fs-12">
-                        <i class="feather-package me-1"></i>
-                        Sample movement logged — Status: {{ $run->sampleMovement->status }}
+                    {{-- Linked Movement Events --}}
+                    @if($run->movements->count())
+                    <div class="card-footer p-0">
+                        <div class="px-4 py-2 border-top">
+                            <div class="d-flex align-items-center justify-content-between mb-2">
+                                <span class="fw-semibold fs-12 text-muted">
+                                    <i class="feather-send me-1"></i>
+                                    Linked Movement Events ({{ $run->movements->count() }})
+                                </span>
+                            </div>
+                            <div class="table-responsive">
+                                <table class="table table-sm mb-0">
+                                    <thead class="table-light">
+                                        <tr>
+                                            <th class="fs-11">Samples</th>
+                                            <th class="fs-11">Assigned To</th>
+                                            <th class="fs-11">Issue Date</th>
+                                            <th class="fs-11">Expected Return</th>
+                                            <th class="fs-11">Status</th>
+                                            <th class="fs-11"></th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        @foreach($run->movements as $mv)
+                                        @php $mc = ['Issued'=>'primary','Returned'=>'success','Overdue'=>'danger']; @endphp
+                                        <tr>
+                                            <td class="fs-12">
+                                                <span class="fw-semibold">{{ $mv->items->count() }} sample(s)</span>
+                                                <div class="text-muted fs-11">
+                                                    {{ $mv->items->take(2)->map(fn($i) => $i->sample?->sample_code ?? '?')->join(', ') }}
+                                                    {{ $mv->items->count() > 2 ? '+'.($mv->items->count() - 2).' more' : '' }}
+                                                </div>
+                                            </td>
+                                            <td class="fs-12">
+                                                <span class="badge bg-soft-info text-info">{{ $mv->assigned_to_type }}</span>
+                                            </td>
+                                            <td class="fs-12">{{ $mv->issue_date->format('d M Y') }}</td>
+                                            <td class="fs-12">{{ $mv->expected_return_date?->format('d M Y') ?? '—' }}</td>
+                                            <td>
+                                                <span class="badge bg-soft-{{ $mc[$mv->status] ?? 'secondary' }} text-{{ $mc[$mv->status] ?? 'secondary' }} fs-11">
+                                                    {{ $mv->status }}
+                                                </span>
+                                            </td>
+                                            <td>
+                                                @can('sample-movements.index')
+                                                <a href="{{ route('movements.show', $mv) }}" class="text-primary fs-12" title="View">
+                                                    <i class="feather-eye"></i>
+                                                </a>
+                                                @endcan
+                                            </td>
+                                        </tr>
+                                        @endforeach
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
                     </div>
                     @endif
                 </div>

@@ -225,18 +225,11 @@
                                 <h5 class="fw-bold mb-0">Movement History
                                     <span class="badge bg-soft-secondary text-secondary ms-1">{{ $sample->movements->count() }}</span>
                                 </h5>
-                                <div class="d-flex gap-2">
-                                    @can('sample-movements.index')
-                                    <a href="{{ route('samples.movements.index', $sample) }}" class="btn btn-sm btn-light-brand">
-                                        <i class="feather-list me-1"></i> View All
-                                    </a>
-                                    @endcan
-                                    @can('sample-movements.create')
-                                    <a href="{{ route('samples.movements.create', $sample) }}" class="btn btn-sm btn-primary">
-                                        <i class="feather-send me-1"></i> Issue Movement
-                                    </a>
-                                    @endcan
-                                </div>
+                                @can('sample-movements.index')
+                                <a href="{{ route('samples.movements.index', $sample) }}" class="btn btn-sm btn-light-brand">
+                                    <i class="feather-list me-1"></i> View All
+                                </a>
+                                @endcan
                             </div>
                             @if($sample->movements->count())
                             <div class="table-responsive">
@@ -284,12 +277,7 @@
                             @else
                             <div class="text-center py-4 text-muted">
                                 <i class="feather-send fs-2 d-block mb-2"></i>
-                                <p class="mb-2">No movements recorded yet.</p>
-                                @can('sample-movements.create')
-                                <a href="{{ route('samples.movements.create', $sample) }}" class="btn btn-sm btn-primary">
-                                    <i class="feather-plus me-1"></i> Issue First Movement
-                                </a>
-                                @endcan
+                                <p class="mb-0">No movements recorded for this sample.</p>
                             </div>
                             @endif
                         </div>
@@ -297,21 +285,14 @@
                         {{-- Inspections Tab --}}
                         <div class="tab-pane fade p-4" id="sampleInspections" role="tabpanel">
                             <div class="mb-3 d-flex align-items-center justify-content-between">
-                                <h5 class="fw-bold mb-0">Inspections
+                                <h5 class="fw-bold mb-0">Inspection History
                                     <span class="badge bg-soft-secondary text-secondary ms-1">{{ $sample->inspections->count() }}</span>
                                 </h5>
-                                <div class="d-flex gap-2">
-                                    @can('inspections.index')
-                                    <a href="{{ route('inspections.index') }}" class="btn btn-sm btn-light-brand">
-                                        <i class="feather-list me-1"></i> View All
-                                    </a>
-                                    @endcan
-                                    @can('inspections.create')
-                                    <a href="{{ route('inspections.create') }}" class="btn btn-sm btn-primary">
-                                        <i class="feather-clipboard me-1"></i> New Inspection
-                                    </a>
-                                    @endcan
-                                </div>
+                                @can('inspections.index')
+                                <a href="{{ route('inspections.index') }}" class="btn btn-sm btn-light-brand">
+                                    <i class="feather-list me-1"></i> View All
+                                </a>
+                                @endcan
                             </div>
                             @if($sample->inspections->count())
                             <div class="table-responsive">
@@ -320,7 +301,6 @@
                                         <tr>
                                             <th>Report #</th>
                                             <th>Date</th>
-                                            <th>Inspector</th>
                                             <th>Runs</th>
                                             <th>Status</th>
                                             <th></th>
@@ -332,7 +312,6 @@
                                         <tr>
                                             <td class="fw-semibold">{{ $ins->report_number }}</td>
                                             <td>{{ $ins->inspection_date->format('d M Y') }}</td>
-                                            <td><span class="badge bg-soft-primary text-primary">{{ $ins->inspectionType?->name ?? '—' }}</span></td>
                                             <td>{{ $ins->runs->count() }} run(s)</td>
                                             <td>
                                                 <span class="badge bg-soft-{{ $ic[$ins->overall_status] ?? 'secondary' }} text-{{ $ic[$ins->overall_status] ?? 'secondary' }}">
@@ -357,12 +336,7 @@
                             @else
                             <div class="text-center py-4 text-muted">
                                 <i class="feather-clipboard fs-2 d-block mb-2"></i>
-                                <p class="mb-2">No inspections recorded yet.</p>
-                                @can('inspections.create')
-                                <a href="{{ route('inspections.create') }}" class="btn btn-sm btn-primary">
-                                    <i class="feather-plus me-1"></i> Start First Inspection
-                                </a>
-                                @endcan
+                                <p class="mb-0">No inspections recorded for this sample.</p>
                             </div>
                             @endif
                         </div>
@@ -370,33 +344,61 @@
                         {{-- Testing Parameters Tab --}}
                         <div class="tab-pane fade p-4" id="sampleParameters" role="tabpanel">
                             <div class="mb-4">
-                                <h5 class="fw-bold mb-0">Testing Parameters:</h5>
+                                <h5 class="fw-bold mb-0">Testing Parameters</h5>
                             </div>
-                            @if($sample->testingParameters && $sample->testingParameters->count())
+                            @php
+                                $sampleParams   = $sample->testingParameters;
+                                $categoryParams = $sample->category?->testingParameters ?? collect();
+                                $fromCategory   = $sampleParams->isEmpty() && $categoryParams->isNotEmpty();
+                            @endphp
+
+                            @if($sampleParams->isNotEmpty() || $fromCategory)
+
+                            @if($fromCategory)
+                            <div class="alert alert-info py-2 mb-3 fs-12 d-flex align-items-center gap-2">
+                                <i class="feather-info"></i>
+                                Showing category-level parameters for <strong class="ms-1">{{ $sample->category->category_name }}</strong>.
+                                No sample-specific parameters have been assigned yet.
+                            </div>
+                            @endif
+
                             <div class="table-responsive">
                                 <table class="table table-sm table-hover">
                                     <thead>
-                                        <tr><th>Parameter</th><th>Required Value</th><th>Result</th><th>Status</th></tr>
+                                        <tr>
+                                            <th>#</th>
+                                            <th>Parameter</th>
+                                            <th>{{ $fromCategory ? 'Description' : 'Requirement / Standard' }}</th>
+                                            @unless($fromCategory)<th>Remarks</th>@endunless
+                                        </tr>
                                     </thead>
                                     <tbody>
-                                        @foreach($sample->testingParameters as $tp)
-                                        @php $tc = ['Pass'=>'success','Fail'=>'danger','Pending'=>'warning']; @endphp
-                                        <tr>
-                                            <td>{{ optional($tp->parameter)->parameter_name ?? '—' }}</td>
-                                            <td>{{ $tp->required_value ?? '—' }}</td>
-                                            <td>{{ $tp->result ?? '—' }}</td>
-                                            <td>
-                                                <span class="badge bg-soft-{{ $tc[$tp->status] ?? 'secondary' }} text-{{ $tc[$tp->status] ?? 'secondary' }}">
-                                                    {{ $tp->status ?? 'Pending' }}
-                                                </span>
-                                            </td>
-                                        </tr>
-                                        @endforeach
+                                        @if($fromCategory)
+                                            @foreach($categoryParams as $i => $cp)
+                                            <tr>
+                                                <td class="text-muted">{{ $i + 1 }}</td>
+                                                <td class="fw-semibold">{{ $cp->parameter_name }}</td>
+                                                <td class="text-muted">{{ $cp->description ?? '—' }}</td>
+                                            </tr>
+                                            @endforeach
+                                        @else
+                                            @foreach($sampleParams as $i => $tp)
+                                            <tr>
+                                                <td class="text-muted">{{ $i + 1 }}</td>
+                                                <td class="fw-semibold">{{ optional($tp->parameter)->parameter_name ?? '—' }}</td>
+                                                <td>{{ $tp->requirement_standard ?? '—' }}</td>
+                                                <td class="text-muted">{{ $tp->remarks ?? '—' }}</td>
+                                            </tr>
+                                            @endforeach
+                                        @endif
                                     </tbody>
                                 </table>
                             </div>
                             @else
-                            <p class="text-muted text-center py-4">No testing parameters assigned.</p>
+                            <div class="text-center py-4 text-muted">
+                                <i class="feather-sliders fs-2 d-block mb-2"></i>
+                                <p class="mb-0">No testing parameters assigned to this sample or its category.</p>
+                            </div>
                             @endif
                         </div>
                     </div>
