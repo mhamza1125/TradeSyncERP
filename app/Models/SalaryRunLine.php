@@ -20,19 +20,25 @@ class SalaryRunLine extends Model
         'deductible_leaves',
         'loan_balance',
         'loan_deduction',
+        'late_hours',
+        'late_minutes',
+        'late_deduction_calculated',
+        'late_deduction',
         'remarks',
     ];
 
     protected $casts = [
-        'basic_salary'           => 'decimal:2',
-        'bonus'                  => 'decimal:2',
-        'deduction'              => 'decimal:2',
-        'advance'                => 'decimal:2',
-        'allowances'             => 'decimal:2',
-        'leave_deduction_amount' => 'decimal:2',
-        'loan_balance'           => 'decimal:2',
-        'loan_deduction'         => 'decimal:2',
-        'net_payable'            => 'decimal:2',
+        'basic_salary'              => 'decimal:2',
+        'bonus'                     => 'decimal:2',
+        'deduction'                 => 'decimal:2',
+        'advance'                   => 'decimal:2',
+        'allowances'                => 'decimal:2',
+        'leave_deduction_amount'    => 'decimal:2',
+        'loan_balance'              => 'decimal:2',
+        'loan_deduction'            => 'decimal:2',
+        'late_deduction_calculated' => 'decimal:2',
+        'late_deduction'            => 'decimal:2',
+        'net_payable'               => 'decimal:2',
     ];
 
     public function salaryRun()
@@ -43,5 +49,10 @@ class SalaryRunLine extends Model
     public function employee()
     {
         return $this->belongsTo(Employee::class);
+    }
+
+    public function lineAllowances()
+    {
+        return $this->hasMany(SalaryRunLineAllowance::class);
     }
 }

@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\AttachmentController;
 use App\Http\Controllers\DashboardController;
+use App\Http\Controllers\Finance\AllowanceTypeController;
 use App\Http\Controllers\Finance\CustomerInvoiceController;
 use App\Http\Controllers\Finance\CustomerPaymentController;
 use App\Http\Controllers\Finance\ExpenseController;
@@ -9,14 +10,17 @@ use App\Http\Controllers\Finance\SalaryRunController;
 use App\Http\Controllers\Finance\TransferController;
 use App\Http\Controllers\Masters\AccountController;
 use App\Http\Controllers\Masters\BankController;
+use App\Http\Controllers\Masters\ColorController;
 use App\Http\Controllers\Masters\CurrencyController;
 use App\Http\Controllers\Masters\CustomerController;
 use App\Http\Controllers\Masters\EmployeeController;
 use App\Http\Controllers\Masters\ExpenseHeadController;
 use App\Http\Controllers\Masters\InspectionTypeController;
 use App\Http\Controllers\Masters\ProductCategoryController;
+use App\Http\Controllers\Masters\SizeController;
 use App\Http\Controllers\Masters\SupplierController;
 use App\Http\Controllers\Masters\TestingParameterController;
+use App\Http\Controllers\ActivityController;
 use App\Http\Controllers\Operations\CustomerOrderController;
 use App\Http\Controllers\Operations\InspectionController;
 use App\Http\Controllers\Operations\InspectionRunController;
@@ -37,6 +41,9 @@ Route::middleware(['auth', 'verified'])->group(function () {
     // Dashboard
     Route::get('/dashboard', DashboardController::class)->name('dashboard');
 
+    // Recent Activities
+    Route::get('/activities', [ActivityController::class, 'index'])->name('activities.index');
+
     // Profile
     Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
     Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');
@@ -56,6 +63,8 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::resource('expense-heads',     ExpenseHeadController::class)->parameters(['expense-heads' => 'expense_head']);
         Route::resource('currencies',        CurrencyController::class);
         Route::resource('banks',             BankController::class);
+        Route::resource('colors',            ColorController::class);
+        Route::resource('sizes',             SizeController::class);
     });
 
     // ─── Sample Operations ───────────────────────────────────────────────────────
@@ -101,6 +110,10 @@ Route::middleware(['auth', 'verified'])->group(function () {
 
     Route::resource('customer-payments', CustomerPaymentController::class)->parameters(['customer-payments' => 'customerPayment'])
         ->only(['index', 'create', 'store', 'show', 'edit', 'update', 'destroy']);
+
+    Route::resource('allowance-types', AllowanceTypeController::class)
+        ->parameters(['allowance-types' => 'allowanceType'])
+        ->except(['show']);
 
     Route::get('transfers/create', [TransferController::class, 'create'])->name('transfers.create');
     Route::post('transfers',       [TransferController::class, 'store'])->name('transfers.store');

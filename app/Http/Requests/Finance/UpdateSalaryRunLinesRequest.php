@@ -31,7 +31,13 @@ class UpdateSalaryRunLinesRequest extends FormRequest
             'lines.*.deductible_leaves'      => ['nullable', 'integer', 'min:0'],
             'lines.*.loan_balance'           => ['nullable', 'numeric', 'min:0'],
             'lines.*.loan_deduction'         => ['nullable', 'numeric', 'min:0'],
-            'lines.*.remarks'                => ['nullable', 'string'],
+            'lines.*.late_hours'             => ['nullable', 'integer', 'min:0'],
+            'lines.*.late_minutes'           => ['nullable', 'integer', 'min:0', 'max:59'],
+            'lines.*.late_deduction'                       => ['nullable', 'numeric', 'min:0'],
+            'lines.*.line_allowances'                      => ['nullable', 'array'],
+            'lines.*.line_allowances.*.allowance_type_id'  => ['nullable', 'exists:allowance_types,id'],
+            'lines.*.line_allowances.*.amount'             => ['nullable', 'numeric', 'min:0'],
+            'lines.*.remarks'                              => ['nullable', 'string'],
         ];
     }
 }

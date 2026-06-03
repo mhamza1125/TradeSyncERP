@@ -89,6 +89,17 @@
                                         <div><span class="text-muted">Invoiced Amount:</span> <span class="fw-bold text-dark">{{ number_format($customerPayment->invoiced_amount_fc, 2) }} {{ $customerPayment->foreign_currency }}</span></div>
                                         <div><span class="text-muted">Received (FC):</span> <span class="fw-bold text-dark">{{ number_format($customerPayment->received_fc, 2) }} {{ $customerPayment->foreign_currency }}</span></div>
                                         <div><span class="text-muted">Deduction (FC):</span> <span class="fw-bold text-{{ $customerPayment->deduction_fc > 0 ? 'danger' : 'muted' }}">{{ number_format($customerPayment->deduction_fc, 2) }}</span></div>
+                                        @if($customerPayment->received_fc > 0)
+                                        @php
+                                            $fcCode   = $customerPayment->foreign_currency ?? 'USD';
+                                            $fcWords  = \App\Helpers\NumberToWords::convert(
+                                                (float) $customerPayment->received_fc,
+                                                \App\Helpers\NumberToWords::currencyName($fcCode),
+                                                \App\Helpers\NumberToWords::subunitName($fcCode)
+                                            );
+                                        @endphp
+                                        <div class="mt-1 fst-italic fs-12"><i class="feather-type me-1"></i>{{ $fcWords }}</div>
+                                        @endif
                                     </div>
                                 </div>
                                 <div class="border-end border-end-dashed border-gray-500 d-none d-sm-block"></div>
@@ -98,6 +109,16 @@
                                         <div><span class="text-muted">Exchange Rate:</span> <span class="fw-bold text-dark">{{ number_format($customerPayment->exchange_rate, 4) }}</span></div>
                                         <div><span class="text-muted">Expected PKR:</span> <span class="fw-bold text-dark">{{ number_format($customerPayment->expected_pkr, 2) }}</span></div>
                                         <div><span class="text-muted">Actual PKR Received:</span> <span class="fw-bold text-success fs-16">{{ number_format($customerPayment->actual_pkr_received, 2) }}</span></div>
+                                        @if($customerPayment->actual_pkr_received > 0)
+                                        @php
+                                            $pkrWords = \App\Helpers\NumberToWords::convert(
+                                                (float) $customerPayment->actual_pkr_received,
+                                                \App\Helpers\NumberToWords::currencyName('PKR'),
+                                                \App\Helpers\NumberToWords::subunitName('PKR')
+                                            );
+                                        @endphp
+                                        <div class="fst-italic fs-12"><i class="feather-type me-1"></i>{{ $pkrWords }}</div>
+                                        @endif
                                         <div><span class="text-muted">PKR Gain/Loss:</span>
                                             @if($customerPayment->pkr_gain_loss > 0)
                                                 <span class="fw-bold text-success">+{{ number_format($customerPayment->pkr_gain_loss, 2) }}</span>

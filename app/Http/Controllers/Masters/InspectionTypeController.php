@@ -23,7 +23,7 @@ class InspectionTypeController extends Controller
         $inspectionTypes = InspectionType::query()
             ->when($request->search, fn ($q, $s) => $q->where('name', 'like', "%{$s}%"))
             ->when($request->status !== null && $request->status !== '', fn ($q) => $q->where('status', $request->status))
-            ->withCount('inspections')
+            ->withCount('runs')
             ->latest()
             ->paginate(20)
             ->withQueryString();
@@ -50,7 +50,7 @@ class InspectionTypeController extends Controller
 
     public function show(InspectionType $inspectionType)
     {
-        $inspectionType->load('inspections');
+        $inspectionType->load('runs');
         return view('masters.inspection-types.show', compact('inspectionType'));
     }
 

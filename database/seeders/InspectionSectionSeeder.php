@@ -341,6 +341,31 @@ class InspectionSectionSeeder extends Seeder
                     'inspector_name'    => '',
                 ],
             ],
+            [
+                'name'         => 'Barcode Testing',
+                'slug'         => 'barcode_testing',
+                'description'  => 'Verify barcode readability and functionality. Records functional / non-functional / partial scan results with photos.',
+                'section_type' => 'checklist',
+                'icon'         => 'feather-grid',
+                'sort_order'   => 210,
+                'default_data' => [
+                    'barcode_status' => 'functional',
+                    'remarks'        => '',
+                ],
+            ],
+            [
+                'name'         => 'Protector Evaluation',
+                'slug'         => 'protector_evaluation',
+                'description'  => 'Evaluate protective gear (jackets, armor padding) for impact strength, flexibility, and comfort.',
+                'section_type' => 'checklist',
+                'icon'         => 'feather-shield',
+                'sort_order'   => 220,
+                'default_data' => [
+                    'evaluation_result' => 'pending',
+                    'impact_notes'      => '',
+                    'flexibility_notes' => '',
+                ],
+            ],
         ];
 
         foreach ($sections as $sec) {

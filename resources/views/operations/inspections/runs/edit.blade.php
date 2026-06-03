@@ -210,11 +210,21 @@
                                     @endif
                                 @break
 
-                                @default {{-- checklist --}}
-                                    @include('operations.inspections.runs.sections._checklist', [
-                                        'runSection' => $runSection,
-                                        'defects'    => $defects,
-                                    ])
+                                @default {{-- checklist + slug-specific overrides --}}
+                                    @if($secSlug === 'barcode_testing')
+                                        @include('operations.inspections.runs.sections._barcode_testing', [
+                                            'runSection' => $runSection,
+                                        ])
+                                    @elseif($secSlug === 'protector_evaluation')
+                                        @include('operations.inspections.runs.sections._protector_evaluation', [
+                                            'runSection' => $runSection,
+                                        ])
+                                    @else
+                                        @include('operations.inspections.runs.sections._checklist', [
+                                            'runSection' => $runSection,
+                                            'defects'    => $defects,
+                                        ])
+                                    @endif
                                 @break
 
                             @endswitch

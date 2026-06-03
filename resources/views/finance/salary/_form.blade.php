@@ -48,6 +48,8 @@
                             <div id="totalDaysDisplay" class="form-control bg-light text-center fw-semibold">—</div>
                         </div>
                     </div>
+                </div>
+                <div class="row">
                     <div class="col-lg-12 mb-4">
                         <label class="form-label">Remarks</label>
                         <textarea name="remarks" rows="2"

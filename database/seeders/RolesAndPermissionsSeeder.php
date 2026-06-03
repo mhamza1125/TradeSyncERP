@@ -25,6 +25,8 @@ class RolesAndPermissionsSeeder extends Seeder
             'expense-heads.index', 'expense-heads.create', 'expense-heads.edit', 'expense-heads.delete', 'expense-heads.view',
             'currencies.index', 'currencies.create', 'currencies.edit', 'currencies.delete', 'currencies.view',
             'banks.index', 'banks.create', 'banks.edit', 'banks.delete', 'banks.view',
+            'colors.index', 'colors.create', 'colors.edit', 'colors.delete', 'colors.view',
+            'sizes.index', 'sizes.create', 'sizes.edit', 'sizes.delete', 'sizes.view',
 
             // Operations
             'samples.index', 'samples.create', 'samples.edit', 'samples.delete', 'samples.view',
@@ -39,6 +41,7 @@ class RolesAndPermissionsSeeder extends Seeder
             'salary.index', 'salary.create', 'salary.edit', 'salary.delete', 'salary.pay', 'salary.view',
             'customer-payments.index', 'customer-payments.create', 'customer-payments.edit', 'customer-payments.delete', 'customer-payments.view',
             'customer-invoices.index', 'customer-invoices.create', 'customer-invoices.edit', 'customer-invoices.delete', 'customer-invoices.view',
+            'allowance-types.index', 'allowance-types.create', 'allowance-types.edit', 'allowance-types.delete',
             'transfers.create',
 
             // Reports
@@ -63,6 +66,8 @@ class RolesAndPermissionsSeeder extends Seeder
             'suppliers.index', 'suppliers.create', 'suppliers.edit', 'suppliers.view',
             'inspection-types.index', 'inspection-types.create', 'inspection-types.edit', 'inspection-types.view',
             'parameters.index', 'parameters.create', 'parameters.edit', 'parameters.delete', 'parameters.view',
+            'colors.index', 'colors.create', 'colors.edit', 'colors.view',
+            'sizes.index', 'sizes.create', 'sizes.edit', 'sizes.view',
             'customer-orders.index', 'customer-orders.create', 'customer-orders.edit', 'customer-orders.delete', 'customer-orders.view',
             'samples.index', 'samples.create', 'samples.edit', 'samples.delete', 'samples.view',
             'sample-movements.index', 'sample-movements.create', 'sample-movements.edit', 'sample-movements.delete', 'sample-movements.view',
@@ -90,6 +95,7 @@ class RolesAndPermissionsSeeder extends Seeder
             'salary.index', 'salary.create', 'salary.edit', 'salary.delete', 'salary.pay', 'salary.view',
             'customer-payments.index', 'customer-payments.create', 'customer-payments.edit', 'customer-payments.delete', 'customer-payments.view',
             'customer-invoices.index', 'customer-invoices.create', 'customer-invoices.edit', 'customer-invoices.delete', 'customer-invoices.view',
+            'allowance-types.index', 'allowance-types.create', 'allowance-types.edit',
             'transfers.create',
             'reports.view',
         ]);

@@ -25,6 +25,12 @@
                         <span class="nxl-mtext">Dashboard</span>
                     </a>
                 </li>
+                <li class="nxl-item {{ $is('activities.index') ? 'active' : '' }}">
+                    <a href="{{ route('activities.index') }}" class="nxl-link">
+                        <span class="nxl-micon"><i class="feather-activity"></i></span>
+                        <span class="nxl-mtext">Recent Activities</span>
+                    </a>
+                </li>
 
                 {{-- ─── Operations (Core Work) ─────────────────────────────────── --}}
                 @canany(['customer-orders.index','samples.index','sample-movements.index','inspections.index'])
@@ -154,6 +160,13 @@
                     </a>
                 </li>
                 @endcan
+
+                <li class="nxl-item {{ $is('allowance-types.*') ? 'active' : '' }}">
+                    <a href="{{ route('allowance-types.index') }}" class="nxl-link">
+                        <span class="nxl-micon"><i class="feather-gift"></i></span>
+                        <span class="nxl-mtext">Allowance Types</span>
+                    </a>
+                </li>
                 @endcanany
 
                 {{-- ─── Master Data ─────────────────────────────────────────────── --}}
@@ -291,6 +304,20 @@
                     </a>
                 </li>
                 @endcan
+
+                <li class="nxl-item {{ $is('masters.colors.*') ? 'active' : '' }}">
+                    <a href="{{ route('masters.colors.index') }}" class="nxl-link">
+                        <span class="nxl-micon"><i class="feather-droplet"></i></span>
+                        <span class="nxl-mtext">Colors</span>
+                    </a>
+                </li>
+
+                <li class="nxl-item {{ $is('masters.sizes.*') ? 'active' : '' }}">
+                    <a href="{{ route('masters.sizes.index') }}" class="nxl-link">
+                        <span class="nxl-micon"><i class="feather-maximize-2"></i></span>
+                        <span class="nxl-mtext">Sizes</span>
+                    </a>
+                </li>
                 @endcanany
 
                 {{-- ─── Administration (Admin Only) ────────────────────────────── --}}
