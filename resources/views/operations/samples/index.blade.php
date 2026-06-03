@@ -98,6 +98,7 @@
                                         <th>Receive Date</th>
                                         <th>Priority</th>
                                         <th>Status</th>
+                                        <th class="text-center">Total Qty</th>
                                         <th class="text-end">Actions</th>
                                     </tr>
                                 </thead>
@@ -126,6 +127,9 @@
                                             <span class="badge bg-soft-{{ $statusColors[$sample->status] ?? 'secondary' }} text-{{ $statusColors[$sample->status] ?? 'secondary' }}">
                                                 {{ $sample->status }}
                                             </span>
+                                        </td>
+                                        <td class="text-center fw-semibold">
+                                            {{ $sample->variations_sum_quantity ?? 0 }}
                                         </td>
                                         <td>
                                             <div class="hstack gap-2 justify-content-end">
@@ -165,7 +169,7 @@
                                     </tr>
                                     @empty
                                     <tr>
-                                        <td colspan="8" class="text-center py-5 text-muted">
+                                        <td colspan="9" class="text-center py-5 text-muted">
                                             <i class="feather-package fs-1 d-block mb-2"></i>
                                             No samples found.
                                         </td>

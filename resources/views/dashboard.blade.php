@@ -333,7 +333,73 @@
             </div>
         </div>
 
-        {{-- ── Row 3: Recent orders + recent activity ───────────────────────── --}}
+        {{-- ── Row 3: Currently Logged-in Users ────────────────────────────── --}}
+        <div class="row mt-2">
+            <div class="col-12">
+                <div class="card stretch stretch-full">
+                    <div class="card-header d-flex justify-content-between align-items-center">
+                        <h5 class="card-title mb-0">
+                            <span class="me-2">Currently Online</span>
+                            <span class="badge bg-soft-success text-success fs-11">
+                                {{ $loggedInUsers->count() }} active
+                            </span>
+                        </h5>
+                        <span class="fs-12 text-muted">Active within last 30 minutes</span>
+                    </div>
+                    <div class="card-body p-0">
+                        <div class="table-responsive">
+                            <table class="table table-hover mb-0">
+                                <thead>
+                                    <tr>
+                                        <th>User</th>
+                                        <th>Email</th>
+                                        <th>Last Active</th>
+                                        <th class="text-center">Sessions</th>
+                                        <th>Status</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    @forelse($loggedInUsers as $onlineUser)
+                                    <tr>
+                                        <td>
+                                            <div class="d-flex align-items-center gap-2">
+                                                <div class="avatar-text avatar-sm bg-soft-primary text-primary border-soft-primary rounded-circle fw-bold">
+                                                    {{ strtoupper(substr($onlineUser->name, 0, 1)) }}
+                                                </div>
+                                                <span class="fw-semibold text-dark">{{ $onlineUser->name }}</span>
+                                                @if($onlineUser->id === auth()->id())
+                                                <span class="badge bg-soft-info text-info fs-10">You</span>
+                                                @endif
+                                            </div>
+                                        </td>
+                                        <td class="text-muted fs-12">{{ $onlineUser->email }}</td>
+                                        <td class="text-muted fs-12">
+                                            {{ \Carbon\Carbon::createFromTimestamp($onlineUser->last_activity_ts)->diffForHumans() }}
+                                        </td>
+                                        <td class="text-center">
+                                            <span class="badge bg-soft-secondary text-secondary">{{ $onlineUser->session_count }}</span>
+                                        </td>
+                                        <td>
+                                            <span class="d-flex align-items-center gap-1">
+                                                <span class="badge bg-success rounded-pill" style="width:8px;height:8px;padding:0;display:inline-block;"></span>
+                                                <span class="fs-12 text-success fw-semibold">Online</span>
+                                            </span>
+                                        </td>
+                                    </tr>
+                                    @empty
+                                    <tr>
+                                        <td colspan="5" class="text-center py-4 text-muted">No active users in the last 30 minutes.</td>
+                                    </tr>
+                                    @endforelse
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        {{-- ── Row 4: Recent orders + recent activity ───────────────────────── --}}
         <div class="row mt-2">
 
             {{-- Recent customer orders --}}
@@ -430,7 +496,6 @@
                 </div>
             </div>
         </div>
-
     </div>
 </div>
 @endsection

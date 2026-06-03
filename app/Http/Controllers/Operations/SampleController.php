@@ -27,7 +27,7 @@ class SampleController extends Controller
 
     public function index(Request $request)
     {
-        $samples = Sample::with(['customer', 'category'])
+        $samples = Sample::withSum('variations', 'quantity')->with(['customer', 'category'])
             ->when($request->search, fn ($q, $s) => $q->where('sample_code', 'like', "%{$s}%")
                 ->orWhere('product_name', 'like', "%{$s}%"))
             ->when($request->customer_id, fn ($q) => $q->where('customer_id', $request->customer_id))

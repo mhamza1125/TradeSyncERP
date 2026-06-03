@@ -10,6 +10,7 @@ use App\Models\Expense;
 use App\Models\Inspection;
 use App\Models\Sample;
 use App\Models\SampleMovement;
+use App\Models\User;
 use Illuminate\Support\Facades\DB;
 use Spatie\Activitylog\Models\Activity;
 
@@ -75,6 +76,29 @@ class DashboardController extends Controller
             ->limit(10)
             ->get();
 
+        // ── Currently active users (session active within last 30 minutes) ────
+        $activeCutoff = now()->subMinutes(30)->timestamp;
+        $activeUserIds = DB::table('sessions')
+            ->whereNotNull('user_id')
+            ->where('last_activity', '>=', $activeCutoff)
+            ->distinct()
+            ->pluck('user_id');
+
+        $activeSessions = DB::table('sessions')
+            ->whereNotNull('user_id')
+            ->where('last_activity', '>=', $activeCutoff)
+            ->get()
+            ->groupBy('user_id');
+
+        $loggedInUsers = User::whereIn('id', $activeUserIds)->get()
+            ->map(function ($user) use ($activeSessions) {
+                $sessions = $activeSessions->get($user->id, collect());
+                $user->last_activity_ts = $sessions->max('last_activity');
+                $user->session_count    = $sessions->count();
+                return $user;
+            })
+            ->sortByDesc('last_activity_ts');
+
         return view('dashboard', compact(
             'totalCustomers',
             'activeSamples',
@@ -90,7 +114,8 @@ class DashboardController extends Controller
             'expensesThisMonth',
             'samplesByStatus',
             'recentOrders',
-            'recentActivity'
+            'recentActivity',
+            'loggedInUsers'
         ));
     }
 }

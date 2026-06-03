@@ -72,7 +72,7 @@
                                         <div class="row g-3 mb-1">
                                             <div class="col-sm-6 col-lg-4">
                                                 <label class="form-label fw-bold text-dark mb-1">Pay Account</label>
-                                                <select name="account_id" class="form-select form-select-sm">
+                                                <select name="account_id" class="form-select">
                                                     <option value="">— Select Account —</option>
                                                     @foreach($accounts as $acc)
                                                     <option value="{{ $acc->id }}" @selected($salaryRun->account_id == $acc->id)>
@@ -84,19 +84,19 @@
                                             <div class="col-sm-3 col-lg-2">
                                                 <label class="form-label fw-bold text-dark mb-1">Working Days</label>
                                                 <input type="number" name="working_days" min="0" max="31"
-                                                       class="form-control form-control-sm"
+                                                       class="form-control"
                                                        value="{{ $salaryRun->working_days }}" placeholder="—">
                                             </div>
                                             <div class="col-sm-3 col-lg-2">
                                                 <label class="form-label fw-bold text-dark mb-1">Off Days</label>
                                                 <input type="number" name="off_days" min="0" max="31"
-                                                       class="form-control form-control-sm"
+                                                       class="form-control"
                                                        value="{{ $salaryRun->off_days }}" placeholder="—">
                                             </div>
                                             <div class="col-sm-12 col-lg-4">
                                                 <label class="form-label fw-bold text-dark mb-1">Remarks</label>
                                                 <input type="text" name="remarks"
-                                                       class="form-control form-control-sm"
+                                                       class="form-control"
                                                        value="{{ $salaryRun->remarks }}" placeholder="Batch notes…">
                                             </div>
                                         </div>
@@ -144,27 +144,37 @@
                                     <thead>
                                         <tr class="table-light">
                                             <th rowspan="2" class="align-middle" style="min-width:30px">#</th>
-                                            <th rowspan="2" class="align-middle" style="min-width:140px">Employee</th>
-                                            <th rowspan="2" class="align-middle text-end" style="min-width:110px">Basic Salary</th>
-                                            <th rowspan="2" class="align-middle text-end" style="min-width:90px">Bonus</th>
-                                            <th rowspan="2" class="align-middle text-end" style="min-width:100px">Allowances</th>
-                                            <th rowspan="2" class="align-middle text-end" style="min-width:90px">Deduction</th>
-                                            <th rowspan="2" class="align-middle text-end" style="min-width:110px">Salary Advance</th>
-                                            <th colspan="3" class="text-center border-start border-end" style="min-width:280px">Leave</th>
-                                            <th colspan="2" class="text-center border-start border-end" style="min-width:200px">Loan</th>
-                                            <th colspan="3" class="text-center border-start border-end" style="min-width:280px">Late Arrival</th>
-                                            <th rowspan="2" class="align-middle text-end fw-bold" style="min-width:110px">Net Pay</th>
-                                            <th rowspan="2" class="align-middle" style="min-width:120px">Remarks</th>
+                                            <th rowspan="2" class="align-middle" style="min-width:160px">Employee</th>
+                                            <th rowspan="2" class="align-middle text-end" style="min-width:140px">Basic Salary</th>
+                                            <th rowspan="2" class="align-middle text-end" style="min-width:120px">Bonus</th>
+                                            <th rowspan="2" class="align-middle text-end" style="min-width:220px">Allowances</th>
+                                            <th rowspan="2" class="align-middle text-end" style="min-width:120px">Deduction</th>
+                                            <th rowspan="2" class="align-middle text-end" style="min-width:140px">Salary Advance</th>
+                                            <th colspan="3" class="text-center border-start border-end" style="min-width:350px">Leave</th>
+                                            <th colspan="2" class="text-center border-start border-end" style="min-width:260px">Loan</th>
+                                            <th colspan="3" class="text-center border-start border-end" style="min-width:330px">
+                                                Late Arrival
+                                                <i class="feather-help-circle ms-1 text-muted fs-12"
+                                                   data-bs-toggle="popover"
+                                                   data-bs-trigger="hover focus"
+                                                   data-bs-placement="top"
+                                                   data-bs-html="true"
+                                                   title="Late Arrival Deduction Formula"
+                                                   data-bs-content="<strong>Formula:</strong><br>Daily Rate = Basic ÷ Working Days<br>Hourly Rate = Daily Rate ÷ 8<br>Deduction = (Hours + Mins÷60) × Hourly Rate<br><br><em>Example:</em> Basic 30,000 ÷ 26 days ÷ 8 hrs = 144.23/hr<br>3h 30m late → 3.5 × 144.23 = <strong>504.81</strong><br><br><small class='text-muted'>Auto-calculated but can be overridden.</small>"
+                                                   style="cursor:pointer;"></i>
+                                            </th>
+                                            <th rowspan="2" class="align-middle text-end fw-bold" style="min-width:130px">Net Pay</th>
+                                            <th rowspan="2" class="align-middle" style="min-width:150px">Remarks</th>
                                         </tr>
                                         <tr class="table-light fs-12">
-                                            <th class="text-center border-start">Days</th>
-                                            <th class="text-center">Deductible</th>
-                                            <th class="text-end border-end" style="min-width:100px">Deduction Amt</th>
-                                            <th class="text-end border-start" style="min-width:110px">Balance</th>
-                                            <th class="text-end border-end" style="min-width:90px">This Month</th>
-                                            <th class="text-center border-start" style="min-width:70px">Hours</th>
-                                            <th class="text-center" style="min-width:70px">Mins</th>
-                                            <th class="text-end border-end" style="min-width:110px">Deduction</th>
+                                            <th class="text-center border-start" style="min-width:100px">Days</th>
+                                            <th class="text-center" style="min-width:100px">Deductible</th>
+                                            <th class="text-end border-end" style="min-width:130px">Deduction Amt</th>
+                                            <th class="text-end border-start" style="min-width:130px">Balance</th>
+                                            <th class="text-end border-end" style="min-width:120px">This Month</th>
+                                            <th class="text-center border-start" style="min-width:100px">Hours</th>
+                                            <th class="text-center" style="min-width:100px">Mins</th>
+                                            <th class="text-end border-end" style="min-width:130px">Deduction</th>
                                         </tr>
                                     </thead>
                                     <tbody>
@@ -172,7 +182,12 @@
                                         <input type="hidden" name="lines[{{ $i }}][id]" value="{{ $line->id }}">
                                         <tr>
                                             <td class="align-middle">{{ $i + 1 }}</td>
-                                            <td class="fw-semibold text-dark align-middle">{{ $line->employee->employee_name }}</td>
+                                            <td class="fw-semibold text-dark align-middle">
+                                                {{ optional($line->employee)->employee_name ?? '—' }}
+                                                @if(!$line->employee)
+                                                <span class="badge bg-soft-danger text-danger fs-10 ms-1" title="Employee record deleted">Deleted</span>
+                                                @endif
+                                            </td>
 
                                             {{-- Basic Salary --}}
                                             <td class="align-middle text-end">
@@ -181,7 +196,7 @@
                                                     <input type="hidden" name="lines[{{ $i }}][basic_salary]" value="{{ $line->basic_salary }}">
                                                 @else
                                                     <input type="number" step="0.01" name="lines[{{ $i }}][basic_salary]"
-                                                           class="form-control form-control-sm line-field text-end"
+                                                           class="form-control line-field text-end"
                                                            value="{{ $line->basic_salary }}" data-field="basic_salary">
                                                 @endif
                                             </td>
@@ -193,7 +208,7 @@
                                                     <input type="hidden" name="lines[{{ $i }}][bonus]" value="{{ $line->bonus }}">
                                                 @else
                                                     <input type="number" step="0.01" name="lines[{{ $i }}][bonus]"
-                                                           class="form-control form-control-sm line-field text-end"
+                                                           class="form-control line-field text-end"
                                                            value="{{ $line->bonus }}" data-field="bonus">
                                                 @endif
                                             </td>
@@ -222,7 +237,7 @@
                                                         @forelse($line->lineAllowances as $ai => $la)
                                                         <div class="d-flex gap-1 mb-1 allowance-row">
                                                             <select name="lines[{{ $i }}][line_allowances][{{ $ai }}][allowance_type_id]"
-                                                                    class="form-select form-select-sm" style="width:130px;">
+                                                                    class="form-select" style="min-width:150px;">
                                                                 <option value="">— Type —</option>
                                                                 @foreach($allowanceTypes as $at)
                                                                 <option value="{{ $at->id }}" @selected($la->allowance_type_id == $at->id)>{{ $at->name }}</option>
@@ -230,16 +245,16 @@
                                                             </select>
                                                             <input type="number" step="0.01" min="0"
                                                                    name="lines[{{ $i }}][line_allowances][{{ $ai }}][amount]"
-                                                                   class="form-control form-control-sm allowance-amount text-end"
+                                                                   class="form-control allowance-amount text-end"
                                                                    value="{{ $la->amount }}"
-                                                                   style="width:80px;"
+                                                                   style="min-width:120px;"
                                                                    data-line="{{ $i }}">
                                                             <button type="button" class="btn btn-xs btn-light remove-allowance-row" title="Remove">×</button>
                                                         </div>
                                                         @empty
                                                         <div class="d-flex gap-1 mb-1 allowance-row">
                                                             <select name="lines[{{ $i }}][line_allowances][0][allowance_type_id]"
-                                                                    class="form-select form-select-sm" style="width:130px;">
+                                                                    class="form-select" style="min-width:150px;">
                                                                 <option value="">— Type —</option>
                                                                 @foreach($allowanceTypes as $at)
                                                                 <option value="{{ $at->id }}">{{ $at->name }}</option>
@@ -247,9 +262,9 @@
                                                             </select>
                                                             <input type="number" step="0.01" min="0"
                                                                    name="lines[{{ $i }}][line_allowances][0][amount]"
-                                                                   class="form-control form-control-sm allowance-amount text-end"
+                                                                   class="form-control allowance-amount text-end"
                                                                    value="0"
-                                                                   style="width:80px;"
+                                                                   style="min-width:120px;"
                                                                    data-line="{{ $i }}">
                                                             <button type="button" class="btn btn-xs btn-light remove-allowance-row" title="Remove">×</button>
                                                         </div>
@@ -281,7 +296,7 @@
                                                     <input type="hidden" name="lines[{{ $i }}][deduction]" value="{{ $line->deduction }}">
                                                 @else
                                                     <input type="number" step="0.01" name="lines[{{ $i }}][deduction]"
-                                                           class="form-control form-control-sm line-field text-end"
+                                                           class="form-control line-field text-end"
                                                            value="{{ $line->deduction }}" data-field="deduction">
                                                 @endif
                                             </td>
@@ -293,7 +308,7 @@
                                                     <input type="hidden" name="lines[{{ $i }}][advance]" value="{{ $line->advance }}">
                                                 @else
                                                     <input type="number" step="0.01" name="lines[{{ $i }}][advance]"
-                                                           class="form-control form-control-sm line-field text-end"
+                                                           class="form-control line-field text-end"
                                                            value="{{ $line->advance }}" data-field="advance">
                                                 @endif
                                             </td>
@@ -305,7 +320,7 @@
                                                     <input type="hidden" name="lines[{{ $i }}][leave_days]" value="{{ $line->leave_days }}">
                                                 @else
                                                     <input type="number" min="0" name="lines[{{ $i }}][leave_days]"
-                                                           class="form-control form-control-sm line-field text-center"
+                                                           class="form-control line-field text-center"
                                                            value="{{ $line->leave_days }}" data-field="leave_days">
                                                 @endif
                                             </td>
@@ -317,7 +332,7 @@
                                                     <input type="hidden" name="lines[{{ $i }}][deductible_leaves]" value="{{ $line->deductible_leaves }}">
                                                 @else
                                                     <input type="number" min="0" name="lines[{{ $i }}][deductible_leaves]"
-                                                           class="form-control form-control-sm line-field text-center"
+                                                           class="form-control line-field text-center"
                                                            value="{{ $line->deductible_leaves }}" data-field="deductible_leaves">
                                                 @endif
                                             </td>
@@ -329,7 +344,7 @@
                                                     <input type="hidden" name="lines[{{ $i }}][leave_deduction_amount]" value="{{ $line->leave_deduction_amount }}">
                                                 @else
                                                     <input type="number" step="0.01" name="lines[{{ $i }}][leave_deduction_amount]"
-                                                           class="form-control form-control-sm line-field text-end"
+                                                           class="form-control line-field text-end"
                                                            value="{{ $line->leave_deduction_amount }}" data-field="leave_deduction_amount">
                                                 @endif
                                             </td>
@@ -341,7 +356,7 @@
                                                     <input type="hidden" name="lines[{{ $i }}][loan_balance]" value="{{ $line->loan_balance }}">
                                                 @else
                                                     <input type="number" step="0.01" name="lines[{{ $i }}][loan_balance]"
-                                                           class="form-control form-control-sm line-field text-end"
+                                                           class="form-control line-field text-end"
                                                            value="{{ $line->loan_balance }}" data-field="loan_balance"
                                                            placeholder="Pending balance">
                                                 @endif
@@ -354,7 +369,7 @@
                                                     <input type="hidden" name="lines[{{ $i }}][loan_deduction]" value="{{ $line->loan_deduction }}">
                                                 @else
                                                     <input type="number" step="0.01" name="lines[{{ $i }}][loan_deduction]"
-                                                           class="form-control form-control-sm line-field text-end"
+                                                           class="form-control line-field text-end"
                                                            value="{{ $line->loan_deduction }}" data-field="loan_deduction">
                                                 @endif
                                             </td>
@@ -366,7 +381,7 @@
                                                     <input type="hidden" name="lines[{{ $i }}][late_hours]" value="{{ $line->late_hours ?? 0 }}">
                                                 @else
                                                     <input type="number" min="0" name="lines[{{ $i }}][late_hours]"
-                                                           class="form-control form-control-sm line-field text-center"
+                                                           class="form-control line-field text-center"
                                                            value="{{ $line->late_hours ?? 0 }}" data-field="late_hours"
                                                            data-basic="{{ $line->basic_salary }}"
                                                            data-working-days="{{ $salaryRun->working_days ?: 26 }}"
@@ -381,7 +396,7 @@
                                                     <input type="hidden" name="lines[{{ $i }}][late_minutes]" value="{{ $line->late_minutes ?? 0 }}">
                                                 @else
                                                     <input type="number" min="0" max="59" name="lines[{{ $i }}][late_minutes]"
-                                                           class="form-control form-control-sm line-field text-center"
+                                                           class="form-control line-field text-center"
                                                            value="{{ $line->late_minutes ?? 0 }}" data-field="late_minutes"
                                                            placeholder="0">
                                                 @endif
@@ -394,7 +409,7 @@
                                                     <input type="hidden" name="lines[{{ $i }}][late_deduction]" value="{{ $line->late_deduction ?? 0 }}">
                                                 @else
                                                     <input type="number" step="0.01" name="lines[{{ $i }}][late_deduction]"
-                                                           class="form-control form-control-sm line-field text-end late-deduction-field"
+                                                           class="form-control line-field text-end late-deduction-field"
                                                            value="{{ $line->late_deduction ?? 0 }}" data-field="late_deduction"
                                                            title="Auto-calculated; override here if needed">
                                                 @endif
@@ -412,7 +427,7 @@
                                                     <input type="hidden" name="lines[{{ $i }}][remarks]" value="{{ $line->remarks }}">
                                                 @else
                                                     <input type="text" name="lines[{{ $i }}][remarks]"
-                                                           class="form-control form-control-sm"
+                                                           class="form-control"
                                                            value="{{ $line->remarks }}" placeholder="Optional">
                                                 @endif
                                             </td>
@@ -599,8 +614,8 @@
             var opts = '<option value="">— Type —</option>' +
                 types.map(function (t) { return '<option value="' + t.id + '">' + t.name + '</option>'; }).join('');
             var html = '<div class="d-flex gap-1 mb-1 allowance-row">' +
-                '<select name="lines[' + lineIdx + '][line_allowances][' + rowCount + '][allowance_type_id]" class="form-select form-select-sm" style="width:130px;">' + opts + '</select>' +
-                '<input type="number" step="0.01" min="0" name="lines[' + lineIdx + '][line_allowances][' + rowCount + '][amount]" class="form-control form-control-sm allowance-amount text-end" value="0" style="width:80px;" data-line="' + lineIdx + '">' +
+                '<select name="lines[' + lineIdx + '][line_allowances][' + rowCount + '][allowance_type_id]" class="form-select" style="min-width:150px;">' + opts + '</select>' +
+                '<input type="number" step="0.01" min="0" name="lines[' + lineIdx + '][line_allowances][' + rowCount + '][amount]" class="form-control allowance-amount text-end" value="0" style="min-width:120px;" data-line="' + lineIdx + '">' +
                 '<button type="button" class="btn btn-xs btn-light remove-allowance-row" title="Remove">×</button>' +
                 '</div>';
             container.insertAdjacentHTML('beforeend', html);
@@ -619,6 +634,11 @@
             }
             if (lineIdx) syncAllowanceTotal(lineIdx);
         }
+    });
+
+    // Init Bootstrap popovers (used by the Late Arrival help icon)
+    document.querySelectorAll('[data-bs-toggle="popover"]').forEach(function (el) {
+        new bootstrap.Popover(el);
     });
 
     // Keep modal amount up to date when it opens (reflects any unsaved live edits)
