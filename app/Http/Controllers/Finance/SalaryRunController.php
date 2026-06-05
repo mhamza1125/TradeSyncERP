@@ -146,9 +146,8 @@ class SalaryRunController extends Controller
 
                 $lateDeduct = $lineData['late_deduction'] ?? 0;
 
-                // Auto-calculate late deduction based on working_days from run header
-                $workingDays = $salaryRun->working_days ?: 26;
-                $dailySalary = $lineData['basic_salary'] / $workingDays;
+                // Per-day wage always based on 31 days for late deduction calculation
+                $dailySalary = $lineData['basic_salary'] / 31;
                 $hourlyRate  = $dailySalary / 8;
                 $lateHours   = (int) ($lineData['late_hours'] ?? 0);
                 $lateMinutes = (int) ($lineData['late_minutes'] ?? 0);
