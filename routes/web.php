@@ -19,11 +19,11 @@ use App\Http\Controllers\Masters\InspectionTypeController;
 use App\Http\Controllers\Masters\ProductCategoryController;
 use App\Http\Controllers\Masters\SizeController;
 use App\Http\Controllers\Masters\SupplierController;
-use App\Http\Controllers\Masters\TestingParameterController;
 use App\Http\Controllers\ActivityController;
 use App\Http\Controllers\Operations\CustomerOrderController;
 use App\Http\Controllers\Operations\InspectionController;
 use App\Http\Controllers\Operations\InspectionRunController;
+use App\Http\Controllers\Operations\InspectionSectionController;
 use App\Http\Controllers\Operations\MovementController;
 use App\Http\Controllers\Operations\SampleController;
 use App\Http\Controllers\Operations\SampleMovementController;
@@ -56,9 +56,8 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::resource('employees',         EmployeeController::class);
         Route::resource('suppliers',         SupplierController::class);
         Route::resource('inspection-types',  InspectionTypeController::class)->parameters(['inspection-types' => 'inspectionType']);
-        Route::get('parameters/bulk-create', [TestingParameterController::class, 'bulkCreate'])->name('parameters.bulk-create');
-        Route::post('parameters/bulk-store', [TestingParameterController::class, 'bulkStore'])->name('parameters.bulk-store');
-        Route::resource('parameters',        TestingParameterController::class);
+        Route::get( 'inspection-types/{inspectionType}/sections',       [InspectionTypeController::class, 'sections'])->name('inspection-types.sections');
+        Route::post('inspection-types/{inspectionType}/sections',       [InspectionTypeController::class, 'syncSections'])->name('inspection-types.sections.sync');
         Route::resource('accounts',          AccountController::class);
         Route::resource('expense-heads',     ExpenseHeadController::class)->parameters(['expense-heads' => 'expense_head']);
         Route::resource('currencies',        CurrencyController::class);
@@ -83,6 +82,11 @@ Route::middleware(['auth', 'verified'])->group(function () {
 
     // Legacy nested individual movements (index / create / store only)
     Route::resource('samples.movements', SampleMovementController::class)->only(['index', 'create', 'store']);
+
+    // Inspection Sections library management
+    Route::resource('inspection-sections', InspectionSectionController::class)
+        ->parameters(['inspection-sections' => 'inspectionSection'])
+        ->except(['show']);
 
     // Inspections (top-level) + run sub-pages
     Route::resource('inspections', InspectionController::class);

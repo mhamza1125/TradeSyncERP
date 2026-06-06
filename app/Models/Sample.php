@@ -70,19 +70,25 @@ class Sample extends Model
         return $this->hasMany(SampleVariation::class);
     }
 
-    public function testingParameters()
-    {
-        return $this->hasMany(SampleTestingParameter::class);
-    }
 
     public function movements()
     {
         return $this->hasMany(SampleMovement::class);
     }
 
+    public function runs()
+    {
+        return $this->hasMany(InspectionRun::class);
+    }
+
     public function inspections()
     {
-        return $this->belongsToMany(Inspection::class, 'inspection_samples');
+        return $this->belongsToMany(
+            Inspection::class,
+            'inspection_runs',
+            'sample_id',
+            'inspection_id'
+        )->distinct();
     }
 
     public function attachments()

@@ -3,13 +3,14 @@
 namespace App\Http\Controllers\Operations;
 
 use App\Http\Controllers\Controller;
-use App\Models\Defect;
 use App\Models\Inspection;
 use App\Models\InspectionRun;
 use App\Models\InspectionRunAql;
 use App\Models\InspectionRunSection;
+use App\Models\Defect;
 use App\Models\InspectionSection;
-use App\Models\InspectionType;
+use App\Models\InspectionTypeSectionDefault;
+use App\Models\Sample;
 use App\Services\Inspection\AqlCalculationService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -22,74 +23,47 @@ class InspectionRunController extends Controller
         $this->middleware('permission:inspections.edit');
     }
 
-    // ── Create: section selector ─────────────────────────────────────────────
+    // ── Create: sample picker ────────────────────────────────────────────────
 
     public function create(Inspection $inspection)
     {
-        $inspectionTypes = InspectionType::where('status', true)
-            ->with(['defaultSections' => fn($q) => $q->orderBy('inspection_type_section_defaults.sort_order')])
-            ->orderBy('name')
-            ->get();
+        $inspection->load('inspectionType');
 
-        $allSections = InspectionSection::active()->orderBy('sort_order')->get();
+        $samples = Sample::with('customer', 'category')
+            ->orderBy('sample_code')
+            ->get()
+            ->map(fn($s) => [
+                'id'   => $s->id,
+                'text' => $s->sample_code
+                    . ($s->product_name ? ' — ' . $s->product_name : '')
+                    . ($s->customer ? ' (' . $s->customer->customer_name . ')' : ''),
+            ]);
 
-        return view('operations.inspections.runs.create', compact(
-            'inspection', 'inspectionTypes', 'allSections'
-        ));
+        return view('operations.inspections.runs.create', compact('inspection', 'samples'));
     }
 
-    // ── Store: create run + instantiate chosen sections ──────────────────────
+    // ── Store: create run with single sample, auto-resolve sections ──────────
 
     public function store(Request $request, Inspection $inspection)
     {
         $request->validate([
-            'inspection_type_id' => ['nullable', 'exists:inspection_types,id'],
-            'remarks'            => ['nullable', 'string', 'max:1000'],
-            'section_ids'        => ['nullable', 'array'],
-            'section_ids.*'      => ['exists:inspection_sections,id'],
+            'sample_id' => ['required', 'exists:samples,id'],
         ]);
 
         return DB::transaction(function () use ($request, $inspection) {
+            $inspection->load('inspectionType');
             $runNumber = $inspection->runs()->max('run_number') + 1;
 
             $run = $inspection->runs()->create([
-                'inspection_type_id' => $request->inspection_type_id,
-                'run_number'         => $runNumber,
-                'remarks'            => $request->remarks,
-                'verdict'            => 'Pending',
+                'sample_id'  => $request->sample_id,
+                'run_number' => $runNumber,
+                'verdict'    => 'Pending',
             ]);
 
-            // Instantiate selected sections with default data as starting point
-            $sectionIds = $request->input('section_ids', []);
-            if (! empty($sectionIds)) {
-                $sections = InspectionSection::whereIn('id', $sectionIds)
-                    ->orderBy('sort_order')
-                    ->get();
-
-                foreach ($sections as $order => $section) {
-                    InspectionRunSection::create([
-                        'inspection_run_id'    => $run->id,
-                        'inspection_section_id'=> $section->id,
-                        'sort_order'           => ($order + 1) * 10,
-                        'data'                 => $section->default_data,
-                        'status'               => 'pending',
-                    ]);
-                }
-
-                // Create the AQL record if aql_sampling section selected
-                if ($this->hasSectionSlug($sections, 'aql_sampling')) {
-                    InspectionRunAql::create([
-                        'inspection_run_id' => $run->id,
-                        'aql_major'         => 2.5,
-                        'aql_minor'         => 4.0,
-                        'aql_critical'      => 0.065,
-                        'inspection_level'  => 'II',
-                    ]);
-                }
-            }
+            $this->resolveRunSections($run, $request->sample_id, $inspection->inspection_type_id);
 
             return redirect()->route('inspections.runs.edit', [$inspection, $run])
-                ->with('success', "Run #{$runNumber} created. Complete the enabled sections below.");
+                ->with('success', "Run #{$runNumber} created. Complete the sections below.");
         });
     }
 
@@ -97,43 +71,30 @@ class InspectionRunController extends Controller
 
     public function edit(Inspection $inspection, InspectionRun $run)
     {
-        $inspection->load([
-            'samples.category.testingParameters' => fn($q) => $q->where('status', true)->orderBy('parameter_name'),
-            'samples.customer',
-        ]);
+        $inspection->load('inspectionType');
 
         $run->load([
+            'sample.customer',
+            'sample.category',
             'runSections.section',
             'runSections.attachments',
-            'results.defect.category',
-            'results.attachments',
-            'results.testingParameter',
             'aql',
-            'inspectionType',
         ]);
 
-        $inspectionTypes = InspectionType::where('status', true)->orderBy('name')->get();
-        $defects         = Defect::where('status', true)
+        $defects = Defect::where('status', true)
             ->with('category')
             ->orderBy('defect_name')
             ->get();
-
-        // Map existing results keyed by "sample_id_parameter_id"
-        $resultsMap = $run->results->mapWithKeys(
-            fn($r) => ["{$r->sample_id}_{$r->testing_parameter_id}" => $r]
-        );
 
         // Map run sections by slug for view access
         $sectionMap = $run->runSections->mapWithKeys(
             fn($rs) => [$rs->section->slug => $rs]
         );
 
-        // AQL JS data for the client-side calculator
         $aqlJsData = $this->aql->tableForJs();
 
         return view('operations.inspections.runs.edit', compact(
-            'inspection', 'run', 'inspectionTypes',
-            'defects', 'resultsMap', 'sectionMap', 'aqlJsData'
+            'inspection', 'run', 'defects', 'sectionMap', 'aqlJsData'
         ));
     }
 
@@ -142,20 +103,7 @@ class InspectionRunController extends Controller
     public function update(Request $request, Inspection $inspection, InspectionRun $run)
     {
         $request->validate([
-            'inspection_type_id'                  => ['nullable', 'exists:inspection_types,id'],
-            'remarks'                             => ['nullable', 'string', 'max:1000'],
             'verdict'                             => ['nullable', 'in:Pending,Pass,Fail,Conditional'],
-
-            // Testing parameter results
-            'results'                             => ['array'],
-            'results.*.sample_id'                => ['required', 'exists:samples,id'],
-            'results.*.testing_parameter_id'     => ['required', 'exists:testing_parameters_master,id'],
-            'results.*.status'                   => ['required', 'in:Pending,Pass,Fail,Rejected'],
-            'results.*.defect_id'                => ['nullable', 'exists:defects,id'],
-            'results.*.defect_severity'          => ['nullable', 'in:Critical,Major,Minor,Functional'],
-            'results.*.remarks'                  => ['nullable', 'string', 'max:1000'],
-            'files'                               => ['nullable', 'array'],
-            'files.*.*'                           => ['file', 'max:20480', 'mimes:jpg,jpeg,png,gif,webp,pdf,doc,docx'],
 
             // AQL
             'aql.lot_size'                       => ['nullable', 'integer', 'min:1'],
@@ -183,50 +131,15 @@ class InspectionRunController extends Controller
         return DB::transaction(function () use ($request, $inspection, $run) {
             // ── 1. Run header ─────────────────────────────────────────────────
             $run->update([
-                'inspection_type_id' => $request->inspection_type_id,
-                'remarks'            => $request->remarks,
-                'verdict'            => $request->input('verdict', 'Pending'),
+                'verdict' => $request->input('verdict', 'Pending'),
             ]);
 
-            // ── 2. Testing parameter results ──────────────────────────────────
-            foreach ($request->input('results', []) as $key => $data) {
-                $result = $run->results()->updateOrCreate(
-                    [
-                        'sample_id'            => $data['sample_id'],
-                        'testing_parameter_id' => $data['testing_parameter_id'],
-                    ],
-                    [
-                        'status'         => $data['status'],
-                        'defect_id'      => in_array($data['status'], ['Fail', 'Rejected'])
-                            ? ($data['defect_id'] ?? null) : null,
-                        'defect_severity'=> in_array($data['status'], ['Fail', 'Rejected'])
-                            ? ($data['defect_severity'] ?? null) : null,
-                        'remarks'        => $data['remarks'] ?? null,
-                    ]
-                );
-
-                if ($request->hasFile("files.{$key}")) {
-                    foreach ($request->file("files.{$key}") as $file) {
-                        $path = $file->store("inspection-results/{$result->id}", 'public');
-                        $result->attachments()->create([
-                            'title'           => pathinfo($file->getClientOriginalName(), PATHINFO_FILENAME),
-                            'file_name'       => $file->getClientOriginalName(),
-                            'file_path'       => $path,
-                            'mime_type'       => $file->getMimeType(),
-                            'file_size'       => $file->getSize(),
-                            'attachment_type' => 'document',
-                            'uploaded_by'     => auth()->id(),
-                        ]);
-                    }
-                }
-            }
-
-            // ── 3. AQL record ─────────────────────────────────────────────────
+            // ── 2. AQL record ─────────────────────────────────────────────────
             if ($request->filled('aql.lot_size')) {
                 $aqlInput = $request->input('aql', []);
 
-                $lotSize    = (int) ($aqlInput['lot_size'] ?? 0);
-                $level      = $aqlInput['inspection_level'] ?? 'II';
+                $lotSize     = (int) ($aqlInput['lot_size'] ?? 0);
+                $level       = $aqlInput['inspection_level'] ?? 'II';
                 $aqlCritical = isset($aqlInput['aql_critical']) ? (float) $aqlInput['aql_critical'] : null;
                 $aqlMajor    = isset($aqlInput['aql_major'])    ? (float) $aqlInput['aql_major']    : null;
                 $aqlMinor    = isset($aqlInput['aql_minor'])    ? (float) $aqlInput['aql_minor']    : null;
@@ -269,7 +182,7 @@ class InspectionRunController extends Controller
                 );
             }
 
-            // ── 4. Dynamic section data ───────────────────────────────────────
+            // ── 3. Dynamic section data ───────────────────────────────────────
             foreach ($request->input('sections', []) as $runSectionId => $sectionData) {
                 $runSection = InspectionRunSection::where('id', $runSectionId)
                     ->where('inspection_run_id', $run->id)
@@ -285,7 +198,6 @@ class InspectionRunController extends Controller
                     'data'   => $sectionData['data']   ?? $runSection->data,
                 ]);
 
-                // Section photo uploads
                 if ($request->hasFile("section_files.{$runSectionId}")) {
                     foreach ($request->file("section_files.{$runSectionId}") as $file) {
                         $path = $file->store("inspection-sections/{$runSection->id}", 'public');
@@ -312,16 +224,6 @@ class InspectionRunController extends Controller
     public function destroy(Inspection $inspection, InspectionRun $run)
     {
         DB::transaction(function () use ($run) {
-            // Clean up result attachments
-            foreach ($run->results as $result) {
-                foreach ($result->attachments as $att) {
-                    Storage::disk('public')->delete($att->file_path);
-                }
-                $result->attachments()->delete();
-                $result->delete();
-            }
-
-            // Clean up section attachments
             foreach ($run->runSections as $rs) {
                 foreach ($rs->attachments as $att) {
                     Storage::disk('public')->delete($att->file_path);
@@ -361,10 +263,56 @@ class InspectionRunController extends Controller
         return response()->json($plan);
     }
 
-    // ── Helpers ───────────────────────────────────────────────────────────────
+    // ── Auto-resolve sections ─────────────────────────────────────────────────
 
-    private function hasSectionSlug($sections, string $slug): bool
+    private function resolveRunSections(InspectionRun $run, int $sampleId, ?int $inspectionTypeId): void
     {
-        return $sections->contains(fn($s) => $s->slug === $slug);
+        if (! $inspectionTypeId) {
+            return;
+        }
+
+        $sample = Sample::with('category')->find($sampleId);
+
+        // Load active type-section defaults: global (NULL category) OR matching sample category
+        $defaults = InspectionTypeSectionDefault::with('section')
+            ->whereHas('section', fn($q) => $q->where('is_active', true))
+            ->where('inspection_type_id', $inspectionTypeId)
+            ->where(function ($q) use ($sample) {
+                $q->whereNull('category_id');
+                if ($sample?->category_id) {
+                    $q->orWhere('category_id', $sample->category_id);
+                }
+            })
+            ->orderBy('sort_order')
+            ->get();
+
+        // Guard against duplicate sections already on this run
+        $existingSectionIds = $run->runSections()->pluck('inspection_section_id')->all();
+
+        foreach ($defaults as $i => $default) {
+            if (! $default->section || in_array($default->inspection_section_id, $existingSectionIds)) {
+                continue;
+            }
+
+            InspectionRunSection::create([
+                'inspection_run_id'     => $run->id,
+                'inspection_section_id' => $default->inspection_section_id,
+                'sort_order'            => ($i + 1) * 10,
+                'data'                  => $default->section->default_data,
+                'status'                => 'pending',
+            ]);
+        }
+
+        // Create AQL record if aql_sampling section is included and none exists yet
+        $hasAql = $defaults->contains(fn($d) => $d->section?->slug === 'aql_sampling');
+        if ($hasAql && ! $run->aql()->exists()) {
+            InspectionRunAql::create([
+                'inspection_run_id' => $run->id,
+                'aql_major'         => 2.5,
+                'aql_minor'         => 4.0,
+                'aql_critical'      => 0.065,
+                'inspection_level'  => 'II',
+            ]);
+        }
     }
 }

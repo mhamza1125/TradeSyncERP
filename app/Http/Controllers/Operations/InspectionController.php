@@ -4,11 +4,9 @@ namespace App\Http\Controllers\Operations;
 
 use App\Http\Controllers\Controller;
 use App\Models\CustomerOrder;
-use App\Models\Defect;
 use App\Models\Employee;
 use App\Models\Inspection;
 use App\Models\InspectionType;
-use App\Models\Sample;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 
@@ -24,7 +22,7 @@ class InspectionController extends Controller
 
     public function index(Request $request)
     {
-        $inspections = Inspection::with(['samples', 'inspectors', 'runs'])
+        $inspections = Inspection::with(['inspectionType', 'inspectors', 'runs'])
             ->when($request->search, fn($q) =>
                 $q->where('report_number', 'like', "%{$request->search}%"))
             ->when($request->from_date, fn($q) =>
@@ -42,33 +40,32 @@ class InspectionController extends Controller
 
     public function create()
     {
-        [$employees, $samples, $customerOrders] = $this->formData();
+        [$employees, $customerOrders, $inspectionTypes] = $this->formData();
 
-        return view('operations.inspections.create', compact('employees', 'samples', 'customerOrders'));
+        return view('operations.inspections.create', compact('employees', 'customerOrders', 'inspectionTypes'));
     }
 
     public function store(Request $request)
     {
         $request->validate([
-            'inspection_date'    => ['required', 'date'],
-            'overall_status'     => ['required', 'in:Pass,Fail,Pending'],
-            'sample_ids'         => ['array'],
-            'sample_ids.*'       => ['exists:samples,id'],
-            'customer_order_ids' => ['array'],
+            'inspection_type_id'   => ['required', 'exists:inspection_types,id'],
+            'inspection_date'      => ['required', 'date'],
+            'overall_status'       => ['required', 'in:Pass,Fail,Pending'],
+            'customer_order_ids'   => ['array'],
             'customer_order_ids.*' => ['exists:customer_orders,id'],
-            'inspector_ids'      => ['array'],
-            'remarks'            => ['nullable', 'string'],
+            'inspector_ids'        => ['array'],
+            'remarks'              => ['nullable', 'string'],
         ]);
 
         return DB::transaction(function () use ($request) {
             $inspection = Inspection::create([
-                'report_number'   => $this->generateReportNumber(),
-                'inspection_date' => $request->inspection_date,
-                'overall_status'  => $request->overall_status ?? 'Pending',
-                'remarks'         => $request->remarks,
+                'report_number'      => $this->generateReportNumber(),
+                'inspection_type_id' => $request->inspection_type_id,
+                'inspection_date'    => $request->inspection_date,
+                'overall_status'     => $request->overall_status ?? 'Pending',
+                'remarks'            => $request->remarks,
             ]);
 
-            $inspection->samples()->sync($request->input('sample_ids', []));
             $inspection->customerOrders()->sync($request->input('customer_order_ids', []));
             $inspection->inspectors()->sync($request->input('inspector_ids', []));
 
@@ -80,17 +77,13 @@ class InspectionController extends Controller
     public function show(Inspection $inspection)
     {
         $inspection->load([
-            'samples.customer',
+            'inspectionType',
             'customerOrders.customer',
             'inspectors',
-            'runs.inspectionType',
-            'runs.results.sample',
-            'runs.results.testingParameter',
-            'runs.results.defect',
-            'runs.results.attachments',
-            'runs.sampleMovements.sample',
-            'runs.movements.items.sample',
-            'runs.movements.employees',
+            'runs.sample.customer',
+            'runs.sample.category',
+            'runs.runSections.section',
+            'runs.movements',
         ]);
 
         return view('operations.inspections.show', compact('inspection'));
@@ -99,27 +92,26 @@ class InspectionController extends Controller
     public function edit(Inspection $inspection)
     {
         $inspection->load([
-            'samples.customer',
+            'inspectionType',
             'customerOrders.customer',
             'inspectors',
-            'runs.inspectionType',
+            'runs.sample.customer',
             'runs.results',
         ]);
 
-        [$employees, $samples, $customerOrders] = $this->formData();
+        [$employees, $customerOrders, $inspectionTypes] = $this->formData();
 
         return view('operations.inspections.edit', compact(
-            'inspection', 'employees', 'samples', 'customerOrders'
+            'inspection', 'employees', 'customerOrders', 'inspectionTypes'
         ));
     }
 
     public function update(Request $request, Inspection $inspection)
     {
         $request->validate([
+            'inspection_type_id'   => ['required', 'exists:inspection_types,id'],
             'inspection_date'      => ['required', 'date'],
             'overall_status'       => ['required', 'in:Pass,Fail,Pending'],
-            'sample_ids'           => ['array'],
-            'sample_ids.*'         => ['exists:samples,id'],
             'customer_order_ids'   => ['array'],
             'customer_order_ids.*' => ['exists:customer_orders,id'],
             'inspector_ids'        => ['array'],
@@ -128,12 +120,12 @@ class InspectionController extends Controller
 
         return DB::transaction(function () use ($request, $inspection) {
             $inspection->update([
-                'inspection_date' => $request->inspection_date,
-                'overall_status'  => $request->overall_status,
-                'remarks'         => $request->remarks,
+                'inspection_type_id' => $request->inspection_type_id,
+                'inspection_date'    => $request->inspection_date,
+                'overall_status'     => $request->overall_status,
+                'remarks'            => $request->remarks,
             ]);
 
-            $inspection->samples()->sync($request->input('sample_ids', []));
             $inspection->customerOrders()->sync($request->input('customer_order_ids', []));
             $inspection->inspectors()->sync($request->input('inspector_ids', []));
 
@@ -154,15 +146,6 @@ class InspectionController extends Controller
     {
         $employees = Employee::where('status', true)->orderBy('employee_name')->get();
 
-        $samples = Sample::with('customer')
-            ->orderBy('sample_code')
-            ->get()
-            ->map(fn($s) => [
-                'id'   => $s->id,
-                'text' => $s->sample_code . ($s->product_name ? ' — ' . $s->product_name : '')
-                            . ($s->customer ? ' (' . $s->customer->customer_name . ')' : ''),
-            ]);
-
         $customerOrders = CustomerOrder::with('customer')
             ->orderBy('order_code')
             ->get()
@@ -171,13 +154,15 @@ class InspectionController extends Controller
                 'text' => $o->order_code . ($o->customer ? ' — ' . $o->customer->customer_name : ''),
             ]);
 
-        return [$employees, $samples, $customerOrders];
+        $inspectionTypes = InspectionType::where('status', true)->orderBy('name')->get();
+
+        return [$employees, $customerOrders, $inspectionTypes];
     }
 
     private function generateReportNumber(): string
     {
-        $year  = now()->year;
-        $seq   = str_pad((Inspection::max('id') ?? 0) + 1, 5, '0', STR_PAD_LEFT);
+        $year = now()->year;
+        $seq  = str_pad((Inspection::max('id') ?? 0) + 1, 5, '0', STR_PAD_LEFT);
         return "RPT-{$year}-{$seq}";
     }
 }

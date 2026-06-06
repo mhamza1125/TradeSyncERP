@@ -50,45 +50,26 @@
                 {{-- Header card --}}
                 <div class="card mb-4">
                     <div class="card-body">
-                        <div class="d-flex align-items-center gap-3 mb-3">
-                            <div>
+                        <div class="d-flex align-items-start gap-3 flex-wrap">
+                            <div class="flex-grow-1">
                                 <h4 class="mb-1">{{ $inspection->report_number }}</h4>
-                                <span class="text-muted fs-13">{{ $inspection->inspection_date->format('d M Y') }}</span>
+                                <div class="text-muted fs-13 mb-2">{{ $inspection->inspection_date->format('d M Y') }}</div>
+                                @if($inspection->inspectionType)
+                                    <span class="badge bg-soft-primary text-primary fs-12">
+                                        <i class="feather-tag me-1"></i>{{ $inspection->inspectionType->name }}
+                                    </span>
+                                @endif
                             </div>
                             @php $ic = ['Pass'=>'success','Fail'=>'danger','Pending'=>'warning']; @endphp
-                            <span class="badge bg-soft-{{ $ic[$inspection->overall_status] ?? 'secondary' }} text-{{ $ic[$inspection->overall_status] ?? 'secondary' }} fs-13 ms-auto">
+                            <span class="badge bg-soft-{{ $ic[$inspection->overall_status] ?? 'secondary' }} text-{{ $ic[$inspection->overall_status] ?? 'secondary' }} fs-14 px-3 py-2">
                                 {{ $inspection->overall_status }}
                             </span>
                         </div>
                         @if($inspection->remarks)
-                        <p class="text-muted mb-0">{{ $inspection->remarks }}</p>
+                        <p class="text-muted mb-0 mt-3 pt-3 border-top">{{ $inspection->remarks }}</p>
                         @endif
                     </div>
                 </div>
-
-                {{-- Samples --}}
-                @if($inspection->samples->count())
-                <div class="card mb-4">
-                    <div class="card-header"><h5 class="card-title mb-0">Samples Being Tested</h5></div>
-                    <div class="card-body">
-                        <div class="row g-2">
-                            @foreach($inspection->samples as $s)
-                            <div class="col-md-6">
-                                <div class="border rounded p-3">
-                                    <a href="{{ route('samples.show', $s) }}" class="fw-bold text-primary">{{ $s->sample_code }}</a>
-                                    @if($s->product_name)
-                                    <div class="text-muted fs-12">{{ $s->product_name }}</div>
-                                    @endif
-                                    @if($s->customer)
-                                    <div class="text-muted fs-12">{{ $s->customer->customer_name }}</div>
-                                    @endif
-                                </div>
-                            </div>
-                            @endforeach
-                        </div>
-                    </div>
-                </div>
-                @endif
 
                 {{-- Customer Orders --}}
                 @if($inspection->customerOrders->count())
@@ -114,179 +95,132 @@
                 {{-- ── Inspection Runs ─────────────────────────────────── --}}
                 @forelse($inspection->runs as $runIdx => $run)
                 @php
-                    $rc = ['Pass'=>'success','Fail'=>'danger','Rejected'=>'warning','Pending'=>'secondary'];
-                    // Group results: sample_id → [results]
-                    $bySample = $run->results->groupBy('sample_id');
+                    $rc = ['Pass'=>'success','Fail'=>'danger','Conditional'=>'warning','Pending'=>'secondary'];
+                    $sectionStats = [
+                        'complete' => $run->runSections->where('status', 'complete')->count(),
+                        'pending'  => $run->runSections->where('status', 'pending')->count(),
+                        'na'       => $run->runSections->where('status', 'na')->count(),
+                        'total'    => $run->runSections->count(),
+                    ];
                 @endphp
                 <div class="card mb-4">
-                    <div class="card-header d-flex align-items-center gap-2">
-                        <h5 class="card-title mb-0">Run {{ $runIdx + 1 }}</h5>
-                        @if($run->inspectionType)
-                        <span class="badge bg-soft-primary text-primary">{{ $run->inspectionType->name }}</span>
-                        @endif
-                        @if($run->remarks)
-                        <span class="text-muted fs-12">{{ $run->remarks }}</span>
-                        @endif
+                    <div class="card-header d-flex align-items-center gap-3 flex-wrap">
+                        <div class="d-flex align-items-center gap-2">
+                            <span class="fw-semibold fs-14">Run #{{ $run->run_number }}</span>
+                            <span class="badge bg-soft-{{ $rc[$run->verdict] ?? 'secondary' }} text-{{ $rc[$run->verdict] ?? 'secondary' }}">
+                                {{ $run->verdict }}
+                            </span>
+                        </div>
                         <div class="ms-auto d-flex gap-2">
-                            @can('sample-movements.create')
-                            <a href="{{ route('movements.create', ['inspection_run_id' => $run->id]) }}"
-                               class="btn btn-sm btn-light-brand">
-                                <i class="feather-send me-1"></i>Record Movement
-                            </a>
-                            @endcan
                             @can('inspections.edit')
                             <a href="{{ route('inspections.runs.edit', [$inspection, $run]) }}"
-                               class="btn btn-sm btn-light-brand">
-                                <i class="feather-eye me-1"></i>View
-                            </a>
-                            <a href="{{ route('inspections.runs.edit', [$inspection, $run]) }}"
                                class="btn btn-sm btn-primary">
-                                <i class="feather-edit-2 me-1"></i>Edit
+                                <i class="feather-edit-2 me-1"></i>Edit Run
                             </a>
                             @endcan
                         </div>
                     </div>
 
-                    @if($run->results->isEmpty())
                     <div class="card-body">
-                        <p class="text-muted mb-0">No results recorded for this run.</p>
-                    </div>
-                    @else
-                    <div class="card-body p-0">
-                        @foreach($bySample as $sampleId => $results)
-                        @php $sample = $results->first()->sample; @endphp
-                        <div class="px-4 pt-3 pb-1">
-                            <div class="fw-semibold fs-13 mb-2">
-                                <i class="feather-package me-1 text-muted"></i>
-                                @if($sample)
-                                    <a href="{{ route('samples.show', $sample) }}" class="text-dark">{{ $sample->sample_code }}</a>
-                                    <span class="text-muted fw-normal ms-1">— {{ $sample->product_name }}</span>
-                                @else
-                                    <span class="text-muted fst-italic">Sample removed</span>
-                                @endif
+                        {{-- Sample info --}}
+                        @if($run->sample)
+                        <div class="d-flex align-items-center gap-3 mb-4 p-3 bg-light rounded">
+                            @if($run->sample->main_image)
+                                <img src="{{ Storage::url($run->sample->main_image) }}"
+                                     class="rounded border"
+                                     style="width:48px;height:48px;object-fit:cover;">
+                            @else
+                                <div class="d-flex align-items-center justify-content-center bg-soft-primary text-primary rounded"
+                                     style="width:48px;height:48px;flex-shrink:0">
+                                    <i class="feather-package"></i>
+                                </div>
+                            @endif
+                            <div>
+                                <a href="{{ route('samples.show', $run->sample) }}" class="fw-semibold text-primary">
+                                    {{ $run->sample->sample_code }}
+                                </a>
+                                <div class="text-muted fs-12">{{ $run->sample->product_name }}</div>
+                                <div class="d-flex gap-2 mt-1">
+                                    @if($run->sample->customer)
+                                        <span class="badge bg-soft-secondary text-secondary fs-11">
+                                            {{ $run->sample->customer->customer_name }}
+                                        </span>
+                                    @endif
+                                    @if($run->sample->category)
+                                        <span class="badge bg-soft-primary text-primary fs-11">
+                                            {{ $run->sample->category->category_name }}
+                                        </span>
+                                    @endif
+                                </div>
                             </div>
                         </div>
-                        <div class="table-responsive px-4 pb-3">
-                            <table class="table table-sm table-bordered mb-0">
-                                <thead class="table-light">
-                                    <tr>
-                                        <th class="fs-12">Testing Parameter</th>
-                                        <th class="fs-12" style="width:110px">Status</th>
-                                        <th class="fs-12">Defect / Remarks</th>
-                                        <th class="fs-12" style="width:80px">Images</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                @foreach($results as $result)
-                                <tr>
-                                    <td class="fs-12 align-middle">
-                                        {{ optional($result->testingParameter)->parameter_name ?? '—' }}
-                                    </td>
-                                    <td class="align-middle">
-                                        <span class="badge bg-soft-{{ $rc[$result->status] ?? 'secondary' }} text-{{ $rc[$result->status] ?? 'secondary' }} fs-11">
-                                            {{ $result->status }}
-                                        </span>
-                                    </td>
-                                    <td class="fs-12 align-middle">
-                                        @if($result->status === 'Rejected' && $result->defect)
-                                        <div class="text-danger fw-semibold">{{ $result->defect->defect_name }}</div>
-                                        @if($result->defect->corrective_action)
-                                        <div class="text-muted">{{ $result->defect->corrective_action }}</div>
-                                        @endif
-                                        @endif
-                                        @if($result->remarks)
-                                        <div class="text-muted {{ $result->status === 'Rejected' ? 'mt-1' : '' }}">{{ $result->remarks }}</div>
-                                        @endif
-                                    </td>
-                                    <td class="align-middle text-center">
-                                        @php $imgs = $result->attachments->filter(fn($a) => $a->isImage()); @endphp
-                                        @if($imgs->count())
-                                        <div class="d-flex flex-wrap gap-1 justify-content-center">
-                                            @foreach($imgs->take(3) as $img)
-                                            <a href="{{ $img->url }}" target="_blank">
-                                                <img src="{{ $img->url }}" alt="" class="rounded" style="width:36px;height:36px;object-fit:cover;">
-                                            </a>
-                                            @endforeach
-                                            @if($imgs->count() > 3)
-                                            <span class="text-muted fs-11">+{{ $imgs->count() - 3 }}</span>
-                                            @endif
-                                        </div>
-                                        @else
-                                        <span class="text-muted fs-11">—</span>
-                                        @endif
-                                    </td>
-                                </tr>
-                                @endforeach
-                                </tbody>
-                            </table>
-                        </div>
-                        @if(!$loop->last)<hr class="my-0">@endif
-                        @endforeach
-                    </div>
-                    @endif
+                        @endif
 
-                    {{-- Linked Movement Events --}}
-                    @if($run->movements->count())
-                    <div class="card-footer p-0">
-                        <div class="px-4 py-2 border-top">
-                            <div class="d-flex align-items-center justify-content-between mb-2">
-                                <span class="fw-semibold fs-12 text-muted">
-                                    <i class="feather-send me-1"></i>
-                                    Linked Movement Events ({{ $run->movements->count() }})
+                        {{-- Section progress --}}
+                        @if($sectionStats['total'])
+                        <div class="mb-3">
+                            <div class="d-flex justify-content-between align-items-center mb-2">
+                                <span class="fs-13 fw-semibold text-muted">Section Progress</span>
+                                <span class="fs-12 text-muted">
+                                    {{ $sectionStats['complete'] }}/{{ $sectionStats['total'] }} complete
                                 </span>
                             </div>
-                            <div class="table-responsive">
-                                <table class="table table-sm mb-0">
-                                    <thead class="table-light">
-                                        <tr>
-                                            <th class="fs-11">Samples</th>
-                                            <th class="fs-11">Assigned To</th>
-                                            <th class="fs-11">Issue Date</th>
-                                            <th class="fs-11">Expected Return</th>
-                                            <th class="fs-11">Status</th>
-                                            <th class="fs-11"></th>
-                                        </tr>
-                                    </thead>
-                                    <tbody>
-                                        @foreach($run->movements as $mv)
-                                        @php $mc = ['Issued'=>'primary','Returned'=>'success','Overdue'=>'danger']; @endphp
-                                        <tr>
-                                            <td class="fs-12">
-                                                <span class="fw-semibold">{{ $mv->items->count() }} sample(s)</span>
-                                                <div class="text-muted fs-11">
-                                                    {{ $mv->items->take(2)->map(fn($i) => $i->sample?->sample_code ?? '?')->join(', ') }}
-                                                    {{ $mv->items->count() > 2 ? '+'.($mv->items->count() - 2).' more' : '' }}
-                                                </div>
-                                            </td>
-                                            <td class="fs-12">
-                                                <span class="badge bg-soft-info text-info">{{ $mv->assigned_to_type }}</span>
-                                            </td>
-                                            <td class="fs-12">{{ $mv->issue_date->format('d M Y') }}</td>
-                                            <td class="fs-12">{{ $mv->expected_return_date?->format('d M Y') ?? '—' }}</td>
-                                            <td>
-                                                <span class="badge bg-soft-{{ $mc[$mv->status] ?? 'secondary' }} text-{{ $mc[$mv->status] ?? 'secondary' }} fs-11">
-                                                    {{ $mv->status }}
-                                                </span>
-                                            </td>
-                                            <td>
-                                                @can('sample-movements.index')
-                                                <a href="{{ route('movements.show', $mv) }}" class="text-primary fs-12" title="View">
-                                                    <i class="feather-eye"></i>
-                                                </a>
-                                                @endcan
-                                            </td>
-                                        </tr>
-                                        @endforeach
-                                    </tbody>
-                                </table>
+                            <div class="progress" style="height:6px">
+                                @php
+                                    $pct = $sectionStats['total'] > 0
+                                        ? round(($sectionStats['complete'] / $sectionStats['total']) * 100)
+                                        : 0;
+                                @endphp
+                                <div class="progress-bar bg-success" style="width:{{ $pct }}%"></div>
+                            </div>
+                            <div class="d-flex gap-3 mt-2 fs-12">
+                                <span class="text-success">{{ $sectionStats['complete'] }} done</span>
+                                <span class="text-warning">{{ $sectionStats['pending'] }} pending</span>
+                                @if($sectionStats['na'])<span class="text-muted">{{ $sectionStats['na'] }} N/A</span>@endif
                             </div>
                         </div>
+                        @endif
+
+                        {{-- Section list --}}
+                        @if($run->runSections->count())
+                        <div class="row g-2">
+                            @foreach($run->runSections as $rs)
+                            @php
+                                $sc = ['pending'=>'secondary','complete'=>'success','na'=>'light'];
+                                $sl = ['pending'=>'Pending','complete'=>'Done','na'=>'N/A'];
+                            @endphp
+                            <div class="col-md-6">
+                                <div class="d-flex align-items-center gap-2 p-2 border rounded">
+                                    <i class="{{ $rs->section->icon ?? 'feather-layers' }} text-muted" style="font-size:14px;flex-shrink:0"></i>
+                                    <span class="fs-12 flex-grow-1">{{ $rs->section->name }}</span>
+                                    <span class="badge bg-soft-{{ $sc[$rs->status] ?? 'secondary' }} text-{{ $sc[$rs->status] ?? 'secondary' }} fs-10">
+                                        {{ $sl[$rs->status] ?? $rs->status }}
+                                    </span>
+                                </div>
+                            </div>
+                            @endforeach
+                        </div>
+                        @endif
+                    </div>
+
+                    {{-- Linked movements --}}
+                    @if($run->movements->count())
+                    <div class="card-footer">
+                        <span class="fw-semibold fs-12 text-muted">
+                            <i class="feather-send me-1"></i>
+                            {{ $run->movements->count() }} linked movement event(s)
+                        </span>
                     </div>
                     @endif
                 </div>
                 @empty
                 <div class="card mb-4">
-                    <div class="card-body text-center text-muted py-4">No inspection runs recorded.</div>
+                    <div class="card-body text-center text-muted py-4">
+                        No inspection runs recorded.
+                        @can('inspections.edit')
+                        <a href="{{ route('inspections.runs.create', $inspection) }}" class="d-block mt-2">Add first run</a>
+                        @endcan
+                    </div>
                 </div>
                 @endforelse
 
@@ -315,42 +249,25 @@
                     </div>
                 </div>
 
-                {{-- Summary --}}
+                {{-- Run summary --}}
                 @if($inspection->runs->count())
-                @php
-                    $allResults   = $inspection->runs->flatMap(fn($r) => $r->results);
-                    $totalCount   = $allResults->count();
-                    $passCount    = $allResults->where('status', 'Pass')->count();
-                    $failCount    = $allResults->where('status', 'Fail')->count();
-                    $rejCount     = $allResults->where('status', 'Rejected')->count();
-                    $pendingCount = $allResults->where('status', 'Pending')->count();
-                @endphp
                 <div class="card mb-4">
-                    <div class="card-header"><h5 class="card-title mb-0">Results Summary</h5></div>
+                    <div class="card-header"><h5 class="card-title mb-0">Run Summary</h5></div>
                     <div class="card-body p-0">
                         <ul class="list-group list-group-flush">
                             <li class="list-group-item d-flex justify-content-between">
-                                <span class="text-muted">Total checks</span>
-                                <strong>{{ $totalCount }}</strong>
+                                <span class="text-muted">Total Runs</span>
+                                <strong>{{ $inspection->runs->count() }}</strong>
                             </li>
+                            @foreach(['Pass'=>'success','Fail'=>'danger','Conditional'=>'warning','Pending'=>'secondary'] as $v => $c)
+                            @php $cnt = $inspection->runs->where('verdict', $v)->count(); @endphp
+                            @if($cnt)
                             <li class="list-group-item d-flex justify-content-between">
-                                <span class="text-success"><i class="feather-check me-1"></i>Pass</span>
-                                <strong class="text-success">{{ $passCount }}</strong>
-                            </li>
-                            <li class="list-group-item d-flex justify-content-between">
-                                <span class="text-danger"><i class="feather-x me-1"></i>Fail</span>
-                                <strong class="text-danger">{{ $failCount }}</strong>
-                            </li>
-                            <li class="list-group-item d-flex justify-content-between">
-                                <span class="text-warning"><i class="feather-alert-triangle me-1"></i>Rejected</span>
-                                <strong class="text-warning">{{ $rejCount }}</strong>
-                            </li>
-                            @if($pendingCount)
-                            <li class="list-group-item d-flex justify-content-between">
-                                <span class="text-muted">Pending</span>
-                                <strong>{{ $pendingCount }}</strong>
+                                <span class="text-{{ $c }}">{{ $v }}</span>
+                                <strong class="text-{{ $c }}">{{ $cnt }}</strong>
                             </li>
                             @endif
+                            @endforeach
                         </ul>
                     </div>
                 </div>

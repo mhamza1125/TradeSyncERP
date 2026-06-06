@@ -48,9 +48,16 @@
                 <div class="card stretch stretch-full">
                     <div class="card-body">
                         <div class="text-center mb-4">
+                            @if($sample->main_image)
+                            <img src="{{ Storage::url($sample->main_image) }}"
+                                 alt="{{ $sample->sample_code }}"
+                                 class="rounded-circle border mb-3"
+                                 style="width:80px;height:80px;object-fit:cover;">
+                            @else
                             <div class="avatar-text avatar-lg bg-soft-primary text-primary fs-3 rounded-circle d-inline-flex align-items-center justify-content-center mb-3">
                                 <i class="feather-package"></i>
                             </div>
+                            @endif
                             <div class="fs-16 fw-bold">{{ $sample->sample_code }}</div>
                             <div class="text-muted">{{ $sample->product_name }}</div>
                             <div class="mt-2 d-flex justify-content-center gap-2">
@@ -123,9 +130,6 @@
                             </li>
                             <li class="nav-item flex-fill border-top" role="presentation">
                                 <a href="javascript:void(0);" class="nav-link" data-bs-toggle="tab" data-bs-target="#sampleInspections" role="tab">Inspections</a>
-                            </li>
-                            <li class="nav-item flex-fill border-top" role="presentation">
-                                <a href="javascript:void(0);" class="nav-link" data-bs-toggle="tab" data-bs-target="#sampleParameters" role="tab">Parameters</a>
                             </li>
                         </ul>
                     </div>
@@ -341,66 +345,6 @@
                             @endif
                         </div>
 
-                        {{-- Testing Parameters Tab --}}
-                        <div class="tab-pane fade p-4" id="sampleParameters" role="tabpanel">
-                            <div class="mb-4">
-                                <h5 class="fw-bold mb-0">Testing Parameters</h5>
-                            </div>
-                            @php
-                                $sampleParams   = $sample->testingParameters;
-                                $categoryParams = $sample->category?->testingParameters ?? collect();
-                                $fromCategory   = $sampleParams->isEmpty() && $categoryParams->isNotEmpty();
-                            @endphp
-
-                            @if($sampleParams->isNotEmpty() || $fromCategory)
-
-                            @if($fromCategory)
-                            <div class="alert alert-info py-2 mb-3 fs-12 d-flex align-items-center gap-2">
-                                <i class="feather-info"></i>
-                                Showing category-level parameters for <strong class="ms-1">{{ $sample->category->category_name }}</strong>.
-                                No sample-specific parameters have been assigned yet.
-                            </div>
-                            @endif
-
-                            <div class="table-responsive">
-                                <table class="table table-sm table-hover">
-                                    <thead>
-                                        <tr>
-                                            <th>#</th>
-                                            <th>Parameter</th>
-                                            <th>{{ $fromCategory ? 'Description' : 'Requirement / Standard' }}</th>
-                                            @unless($fromCategory)<th>Remarks</th>@endunless
-                                        </tr>
-                                    </thead>
-                                    <tbody>
-                                        @if($fromCategory)
-                                            @foreach($categoryParams as $i => $cp)
-                                            <tr>
-                                                <td class="text-muted">{{ $i + 1 }}</td>
-                                                <td class="fw-semibold">{{ $cp->parameter_name }}</td>
-                                                <td class="text-muted">{{ $cp->description ?? '—' }}</td>
-                                            </tr>
-                                            @endforeach
-                                        @else
-                                            @foreach($sampleParams as $i => $tp)
-                                            <tr>
-                                                <td class="text-muted">{{ $i + 1 }}</td>
-                                                <td class="fw-semibold">{{ optional($tp->parameter)->parameter_name ?? '—' }}</td>
-                                                <td>{{ $tp->requirement_standard ?? '—' }}</td>
-                                                <td class="text-muted">{{ $tp->remarks ?? '—' }}</td>
-                                            </tr>
-                                            @endforeach
-                                        @endif
-                                    </tbody>
-                                </table>
-                            </div>
-                            @else
-                            <div class="text-center py-4 text-muted">
-                                <i class="feather-sliders fs-2 d-block mb-2"></i>
-                                <p class="mb-0">No testing parameters assigned to this sample or its category.</p>
-                            </div>
-                            @endif
-                        </div>
                     </div>
                 </div>
             </div>

@@ -29,18 +29,22 @@
     <div class="main-content">
         @include('partials.flash-messages')
 
-        {{-- ── Inspection details form (details + samples + orders + inspectors) ── --}}
+        {{-- Inspection details form ──────────────────────────────────────── --}}
         <form id="editInspectionForm" action="{{ route('inspections.update', $inspection) }}" method="POST">
             @csrf @method('PUT')
             @include('operations.inspections._form')
         </form>
 
-        {{-- ── Runs table (separate from the details form) ────────────────────── --}}
+        {{-- Runs table ───────────────────────────────────────────────────── --}}
         <div class="card mb-4">
             <div class="card-header d-flex justify-content-between align-items-center">
                 <div>
                     <h5 class="card-title mb-0">Inspection Runs</h5>
-                    <small class="text-muted">Each run is a test event. Click a run to edit its testing parameter results.</small>
+                    <small class="text-muted">
+                        Each run tests one sample. Sections are automatically applied based on the inspection type
+                        <strong>{{ $inspection->inspectionType?->name ?? '(no type)' }}</strong>
+                        and the sample's category.
+                    </small>
                 </div>
                 <a href="{{ route('inspections.runs.create', $inspection) }}" class="btn btn-sm btn-primary">
                     <i class="feather-plus me-1"></i>Add Run
@@ -59,54 +63,49 @@
                         <thead class="table-light">
                             <tr>
                                 <th class="ps-4">#</th>
-                                <th>Inspection Type</th>
-                                <th>Remarks</th>
-                                <th class="text-center">Results</th>
-                                <th class="text-center">Pass</th>
-                                <th class="text-center">Fail / Rejected</th>
+                                <th>Sample</th>
+                                <th>Category</th>
+                                <th class="text-center">Sections</th>
+                                <th class="text-center">Verdict</th>
                                 <th class="text-end pe-4">Actions</th>
                             </tr>
                         </thead>
                         <tbody>
                             @foreach($inspection->runs as $i => $run)
                             @php
-                                $total    = $run->results->count();
-                                $passed   = $run->results->where('status', 'Pass')->count();
-                                $failed   = $run->results->whereIn('status', ['Fail', 'Rejected'])->count();
-                                $pending  = $run->results->where('status', 'Pending')->count();
+                                $verdictColors = [
+                                    'Pass'        => 'success',
+                                    'Fail'        => 'danger',
+                                    'Conditional' => 'warning',
+                                    'Pending'     => 'secondary',
+                                ];
+                                $vColor = $verdictColors[$run->verdict] ?? 'secondary';
                             @endphp
                             <tr>
                                 <td class="ps-4 fw-semibold text-muted">{{ $i + 1 }}</td>
                                 <td>
-                                    @if($run->inspectionType)
-                                        <span class="badge bg-soft-primary text-primary">{{ $run->inspectionType->name }}</span>
+                                    @if($run->sample)
+                                        <div class="fw-semibold fs-13">{{ $run->sample->sample_code }}</div>
+                                        <div class="text-muted fs-12">{{ $run->sample->product_name }}</div>
                                     @else
-                                        <span class="text-muted fst-italic fs-12">No type</span>
+                                        <span class="text-muted fst-italic fs-12">No sample</span>
                                     @endif
                                 </td>
-                                <td class="text-muted fs-13">{{ $run->remarks ?: '—' }}</td>
+                                <td class="text-muted fs-13">
+                                    {{ $run->sample?->customer?->customer_name ?? '—' }}
+                                </td>
                                 <td class="text-center">
-                                    @if($total)
-                                        <span class="badge bg-soft-secondary text-secondary">{{ $total }}</span>
+                                    @php $sectionCount = $run->runSections->count() @endphp
+                                    @if($sectionCount)
+                                        <span class="badge bg-soft-info text-info">{{ $sectionCount }} sections</span>
                                     @else
                                         <span class="text-muted fs-12">—</span>
                                     @endif
                                 </td>
                                 <td class="text-center">
-                                    @if($passed)
-                                        <span class="badge bg-soft-success text-success">{{ $passed }}</span>
-                                    @else
-                                        <span class="text-muted fs-12">—</span>
-                                    @endif
-                                </td>
-                                <td class="text-center">
-                                    @if($failed)
-                                        <span class="badge bg-soft-danger text-danger">{{ $failed }}</span>
-                                    @elseif($pending)
-                                        <span class="badge bg-soft-warning text-warning">{{ $pending }} pending</span>
-                                    @else
-                                        <span class="text-muted fs-12">—</span>
-                                    @endif
+                                    <span class="badge bg-soft-{{ $vColor }} text-{{ $vColor }}">
+                                        {{ $run->verdict }}
+                                    </span>
                                 </td>
                                 <td class="text-end pe-4">
                                     <div class="d-flex justify-content-end gap-2">

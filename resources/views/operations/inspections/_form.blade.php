@@ -1,16 +1,14 @@
 {{--
     Shared inspection form partial (create & edit).
-    Variables: $employees, $samples (mapped [{id,text}]), $customerOrders (mapped [{id,text}])
+    Variables: $employees, $customerOrders (mapped [{id,text}]), $inspectionTypes
     Optional: $inspection (edit only)
 --}}
 @php
-    $savedSampleIds  = isset($inspection) ? $inspection->samples->pluck('id')->toArray() : [];
     $savedOrderIds   = isset($inspection) ? $inspection->customerOrders->pluck('id')->toArray() : [];
     $savedInspectors = isset($inspection) ? $inspection->inspectors->pluck('id')->toArray() : [];
+    $savedTypeId     = isset($inspection) ? $inspection->inspection_type_id : null;
 
-    // Build lookup maps for JS pre-population
-    $samplesMap    = collect($samples)->keyBy('id');
-    $employeesMap  = $employees->keyBy('id')->map(fn($e) => [
+    $employeesMap = $employees->keyBy('id')->map(fn($e) => [
         'name'        => $e->employee_name,
         'designation' => $e->designation ?? null,
     ]);
@@ -37,7 +35,25 @@
     </div>
     <div class="card-body">
         <div class="row g-3">
-            <div class="col-lg-4">
+            <div class="col-lg-6">
+                <label class="form-label">Inspection Type <span class="text-danger">*</span></label>
+                <select name="inspection_type_id"
+                        class="form-select @error('inspection_type_id') is-invalid @enderror"
+                        required>
+                    <option value="">— Select Inspection Type —</option>
+                    @foreach($inspectionTypes as $type)
+                        <option value="{{ $type->id }}"
+                            @selected(old('inspection_type_id', $savedTypeId) == $type->id)>
+                            {{ $type->name }}
+                        </option>
+                    @endforeach
+                </select>
+                @error('inspection_type_id')
+                    <div class="invalid-feedback">{{ $message }}</div>
+                @enderror
+                <small class="text-muted">Defines which sections are applied to each run.</small>
+            </div>
+            <div class="col-lg-3">
                 <label class="form-label">Inspection Date <span class="text-danger">*</span></label>
                 <input type="date" name="inspection_date"
                        class="form-control @error('inspection_date') is-invalid @enderror"
@@ -45,7 +61,7 @@
                        required>
                 @error('inspection_date')<div class="invalid-feedback">{{ $message }}</div>@enderror
             </div>
-            <div class="col-lg-4">
+            <div class="col-lg-3">
                 <label class="form-label">Overall Status</label>
                 <select name="overall_status" class="form-select @error('overall_status') is-invalid @enderror">
                     @foreach(['Pending','Pass','Fail'] as $s)
@@ -60,45 +76,6 @@
                           placeholder="Overall inspection notes…">{{ old('remarks', $inspection->remarks ?? '') }}</textarea>
             </div>
         </div>
-    </div>
-</div>
-
-{{-- ── Samples Being Tested ──────────────────────────────────────────────── --}}
-<div class="card mb-4">
-    <div class="card-header d-flex align-items-center justify-content-between">
-        <h5 class="card-title mb-0">Samples Being Tested</h5>
-        <small class="text-muted">Search and add samples one by one.</small>
-    </div>
-    <div class="card-body">
-        @error('sample_ids')<div class="alert alert-danger py-2 mb-3">{{ $message }}</div>@enderror
-
-        <div class="d-flex gap-2 mb-3">
-            <div class="flex-grow-1">
-                <select id="sampleAddDropdown" placeholder="Search samples…"></select>
-            </div>
-            <button type="button" id="addSampleBtn" class="btn btn-light-brand">
-                <i class="feather-plus me-1"></i>Add
-            </button>
-        </div>
-
-        <div id="samplesTableWrap" class="border rounded insp-table-wrap" style="{{ count(old('sample_ids', $savedSampleIds)) ? '' : 'display:none' }}">
-            <table class="table table-sm table-hover mb-0">
-                <thead class="table-light sticky-top">
-                    <tr>
-                        <th>#</th>
-                        <th>Sample Code</th>
-                        <th>Details</th>
-                        <th style="width:40px"></th>
-                    </tr>
-                </thead>
-                <tbody id="samplesTableBody"></tbody>
-            </table>
-        </div>
-        <div id="noSamplesMsg" class="text-muted fs-12 mt-1"
-             style="{{ count(old('sample_ids', $savedSampleIds)) ? 'display:none' : '' }}">
-            No samples added yet.
-        </div>
-        <div id="sampleHiddenInputs"></div>
     </div>
 </div>
 
@@ -139,7 +116,8 @@
             </button>
         </div>
 
-        <div id="inspectorsTableWrap" class="border rounded insp-table-wrap" style="{{ count(old('inspector_ids', $savedInspectors)) ? '' : 'display:none' }}">
+        <div id="inspectorsTableWrap" class="border rounded insp-table-wrap"
+             style="{{ count(old('inspector_ids', $savedInspectors)) ? '' : 'display:none' }}">
             <table class="table table-sm table-hover mb-0">
                 <thead class="table-light sticky-top">
                     <tr>
@@ -163,37 +141,12 @@
 @push('scripts')
 <script src="https://cdn.jsdelivr.net/npm/tom-select@2.3.1/dist/js/tom-select.complete.min.js"></script>
 <script>
-// ── Data from server ──────────────────────────────────────────────────────────
-const SAMPLES_MAP   = @json($samplesMap);
 const EMPLOYEES_MAP = @json($employeesMap);
-
-// Pre-saved (edit mode) or old input
-const SAVED_SAMPLE_IDS    = @json(array_values(old('sample_ids', $savedSampleIds)));
 const SAVED_INSPECTOR_IDS = @json(array_values(old('inspector_ids', $savedInspectors)));
 
-// ── State ─────────────────────────────────────────────────────────────────────
-let addedSamples    = new Set();
 let addedInspectors = new Set();
-let sampleRow       = 0;
 let inspectorRow    = 0;
 
-// ── TomSelect: Sample search dropdown ─────────────────────────────────────────
-const sampleOptions = Object.entries(SAMPLES_MAP).map(([id, s]) => ({
-    value: String(id),
-    text:  s.text,
-}));
-
-const sampleDropdown = new TomSelect('#sampleAddDropdown', {
-    options:     sampleOptions,
-    valueField:  'value',
-    labelField:  'text',
-    searchField: ['text'],
-    placeholder: 'Search samples…',
-    maxOptions:  null,
-    create:      false,
-});
-
-// ── TomSelect: Inspector search dropdown ──────────────────────────────────────
 const inspectorOptions = Object.entries(EMPLOYEES_MAP).map(([id, e]) => ({
     value: String(id),
     text:  e.name + (e.designation ? ' (' + e.designation + ')' : ''),
@@ -209,79 +162,17 @@ const inspectorDropdown = new TomSelect('#inspectorAddDropdown', {
     create:      false,
 });
 
-// ── TomSelect: Customer Orders ────────────────────────────────────────────────
 new TomSelect('#orderSelect', {
     plugins: ['remove_button', 'checkbox_options'],
     maxOptions: null,
     placeholder: 'Search orders…',
 });
 
-// ── DOM refs ──────────────────────────────────────────────────────────────────
-const samplesTableBody   = document.getElementById('samplesTableBody');
-const samplesTableWrap   = document.getElementById('samplesTableWrap');
-const noSamplesMsg       = document.getElementById('noSamplesMsg');
-const sampleHiddenInputs = document.getElementById('sampleHiddenInputs');
-
 const inspectorsTableBody   = document.getElementById('inspectorsTableBody');
 const inspectorsTableWrap   = document.getElementById('inspectorsTableWrap');
 const noInspectorsMsg       = document.getElementById('noInspectorsMsg');
 const inspectorHiddenInputs = document.getElementById('inspectorHiddenInputs');
 
-// ── Add Sample ────────────────────────────────────────────────────────────────
-function addSample(id) {
-    id = String(id);
-    if (addedSamples.has(id)) { sampleDropdown.clear(); return; }
-    const s = SAMPLES_MAP[id];
-    if (!s) return;
-
-    addedSamples.add(id);
-    sampleRow++;
-
-    const parts = s.text.split(' — ');
-    const code  = parts[0] ?? s.text;
-    const rest  = parts.slice(1).join(' — ');
-
-    const tr = document.createElement('tr');
-    tr.dataset.sampleId = id;
-    tr.innerHTML = `
-        <td class="text-muted">${sampleRow}</td>
-        <td class="fw-semibold">${escHtml(code)}</td>
-        <td class="text-muted fs-12">${escHtml(rest)}</td>
-        <td>
-            <button type="button" class="btn btn-sm btn-light-danger remove-sample-btn"
-                    data-id="${id}" title="Remove">
-                <i class="feather-x"></i>
-            </button>
-        </td>`;
-    samplesTableBody.appendChild(tr);
-
-    const input = document.createElement('input');
-    input.type  = 'hidden';
-    input.name  = 'sample_ids[]';
-    input.value = id;
-    input.id    = `sample_hidden_${id}`;
-    sampleHiddenInputs.appendChild(input);
-
-    samplesTableWrap.style.display = '';
-    noSamplesMsg.style.display     = 'none';
-    sampleDropdown.clear();
-}
-
-function removeSample(id) {
-    id = String(id);
-    addedSamples.delete(id);
-    samplesTableBody.querySelectorAll(`[data-sample-id="${id}"]`).forEach(r => r.remove());
-    const h = document.getElementById(`sample_hidden_${id}`);
-    if (h) h.remove();
-    renumberRows(samplesTableBody);
-    if (addedSamples.size === 0) {
-        samplesTableWrap.style.display = 'none';
-        noSamplesMsg.style.display     = '';
-    }
-    sampleRow = addedSamples.size;
-}
-
-// ── Add Inspector ─────────────────────────────────────────────────────────────
 function addInspector(id) {
     id = String(id);
     if (addedInspectors.has(id)) { inspectorDropdown.clear(); return; }
@@ -331,16 +222,6 @@ function removeInspector(id) {
     inspectorRow = addedInspectors.size;
 }
 
-// ── Event Listeners ───────────────────────────────────────────────────────────
-document.getElementById('addSampleBtn').addEventListener('click', () => {
-    const val = sampleDropdown.getValue();
-    if (val) addSample(val);
-});
-samplesTableBody.addEventListener('click', e => {
-    const btn = e.target.closest('.remove-sample-btn');
-    if (btn) removeSample(btn.dataset.id);
-});
-
 document.getElementById('addInspectorBtn').addEventListener('click', () => {
     const val = inspectorDropdown.getValue();
     if (val) addInspector(val);
@@ -350,11 +231,8 @@ inspectorsTableBody.addEventListener('click', e => {
     if (btn) removeInspector(btn.dataset.id);
 });
 
-// ── Pre-populate saved / old values ──────────────────────────────────────────
-SAVED_SAMPLE_IDS.forEach(id => addSample(String(id)));
 SAVED_INSPECTOR_IDS.forEach(id => addInspector(String(id)));
 
-// ── Helpers ───────────────────────────────────────────────────────────────────
 function renumberRows(tbody) {
     tbody.querySelectorAll('tr').forEach((tr, i) => {
         const numCell = tr.querySelector('td:first-child');

@@ -33,7 +33,7 @@
                 </li>
 
                 {{-- ─── Operations (Core Work) ─────────────────────────────────── --}}
-                @canany(['customer-orders.index','samples.index','sample-movements.index','inspections.index'])
+                @canany(['customer-orders.index','samples.index','sample-movements.index','inspections.index','inspection-sections.index'])
                 <li class="nxl-item nxl-caption">
                     <label>Operations (Core Work)</label>
                 </li>
@@ -115,6 +115,15 @@
                         </li>
                         @endcan
                     </ul>
+                </li>
+                @endcan
+
+                @can('inspection-sections.index')
+                <li class="nxl-item {{ $is('inspection-sections.*') ? 'active' : '' }}">
+                    <a href="{{ route('inspection-sections.index') }}" class="nxl-link">
+                        <span class="nxl-micon"><i class="feather-layers"></i></span>
+                        <span class="nxl-mtext">Inspection Sections</span>
+                    </a>
                 </li>
                 @endcan
                 @endcanany
@@ -203,11 +212,29 @@
                 @endcan
 
                 @can('inspection-types.index')
-                <li class="nxl-item {{ $is('masters.inspection-types.*') ? 'active' : '' }}">
-                    <a href="{{ route('masters.inspection-types.index') }}" class="nxl-link">
+                <li class="nxl-item nxl-hasmenu {{ $is('masters.inspection-types.*') ? 'active' : '' }}">
+                    <a href="javascript:void(0);" class="nxl-link">
                         <span class="nxl-micon"><i class="feather-check-square"></i></span>
                         <span class="nxl-mtext">Inspection Types</span>
+                        <span class="nxl-arrow"><i class="feather-chevron-right"></i></span>
                     </a>
+                    <ul class="nxl-submenu">
+                        <li class="nxl-item {{ $is('masters.inspection-types.index') ? 'active' : '' }}">
+                            <a class="nxl-link" href="{{ route('masters.inspection-types.index') }}">All Types</a>
+                        </li>
+                        @can('inspection-types.create')
+                        <li class="nxl-item {{ $is('masters.inspection-types.create') ? 'active' : '' }}">
+                            <a class="nxl-link" href="{{ route('masters.inspection-types.create') }}">New Type</a>
+                        </li>
+                        @endcan
+                        @can('inspection-types.edit')
+                        <li class="nxl-item {{ $is('masters.inspection-types.sections') ? 'active' : '' }}">
+                            <a class="nxl-link" href="{{ route('masters.inspection-types.index') }}">
+                                <i class="feather-layers me-1 fs-12"></i>Section Assignments
+                            </a>
+                        </li>
+                        @endcan
+                    </ul>
                 </li>
                 @endcan
                 @endcanany
@@ -246,7 +273,7 @@
                 @endcan
 
                 {{-- ─── Configuration (Settings) ───────────────────────────────── --}}
-                @canany(['categories.index','parameters.index','currencies.index','expense-heads.index','accounts.index','banks.index'])
+                @canany(['categories.index','currencies.index','expense-heads.index','accounts.index','banks.index'])
                 <li class="nxl-item nxl-caption">
                     <label>Configuration (Settings)</label>
                 </li>
@@ -260,14 +287,6 @@
                 </li>
                 @endcan
 
-                @can('parameters.index')
-                <li class="nxl-item {{ $is('masters.parameters.*') ? 'active' : '' }}">
-                    <a href="{{ route('masters.parameters.index') }}" class="nxl-link">
-                        <span class="nxl-micon"><i class="feather-sliders"></i></span>
-                        <span class="nxl-mtext">Testing Parameters</span>
-                    </a>
-                </li>
-                @endcan
 
                 @can('currencies.index')
                 <li class="nxl-item {{ $is('masters.currencies.*') ? 'active' : '' }}">

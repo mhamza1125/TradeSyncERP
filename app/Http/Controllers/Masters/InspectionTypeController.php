@@ -5,8 +5,12 @@ namespace App\Http\Controllers\Masters;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Masters\StoreInspectionTypeRequest;
 use App\Http\Requests\Masters\UpdateInspectionTypeRequest;
+use App\Models\InspectionSection;
 use App\Models\InspectionType;
+use App\Models\InspectionTypeSectionDefault;
+use App\Models\ProductCategory;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 
 class InspectionTypeController extends Controller
 {
@@ -14,7 +18,7 @@ class InspectionTypeController extends Controller
     {
         $this->middleware('permission:inspection-types.index')->only(['index', 'show']);
         $this->middleware('permission:inspection-types.create')->only(['create', 'store']);
-        $this->middleware('permission:inspection-types.edit')->only(['edit', 'update']);
+        $this->middleware('permission:inspection-types.edit')->only(['edit', 'update', 'sections', 'syncSections']);
         $this->middleware('permission:inspection-types.delete')->only('destroy');
     }
 
@@ -50,8 +54,46 @@ class InspectionTypeController extends Controller
 
     public function show(InspectionType $inspectionType)
     {
-        $inspectionType->load('runs');
+        $inspectionType->load(['inspections', 'sectionDefaults.section', 'sectionDefaults.category']);
         return view('masters.inspection-types.show', compact('inspectionType'));
+    }
+
+    public function sections(InspectionType $inspectionType)
+    {
+        $inspectionType->load(['sectionDefaults.section', 'sectionDefaults.category']);
+
+        $sections   = InspectionSection::where('is_active', true)->orderBy('sort_order')->orderBy('name')->get();
+        $categories = ProductCategory::orderBy('category_name')->get();
+
+        return view('masters.inspection-types.sections', compact('inspectionType', 'sections', 'categories'));
+    }
+
+    public function syncSections(Request $request, InspectionType $inspectionType)
+    {
+        $request->validate([
+            'rows'                  => ['nullable', 'array'],
+            'rows.*.section_id'     => ['required', 'exists:inspection_sections,id'],
+            'rows.*.category_id'    => ['nullable', 'exists:product_categories,id'],
+            'rows.*.sort_order'     => ['nullable', 'integer', 'min:0'],
+            'rows.*.is_required'    => ['nullable', 'boolean'],
+        ]);
+
+        DB::transaction(function () use ($request, $inspectionType) {
+            $inspectionType->sectionDefaults()->delete();
+
+            foreach ($request->input('rows', []) as $i => $row) {
+                InspectionTypeSectionDefault::create([
+                    'inspection_type_id'    => $inspectionType->id,
+                    'inspection_section_id' => $row['section_id'],
+                    'category_id'           => $row['category_id'] ?: null,
+                    'sort_order'            => isset($row['sort_order']) && $row['sort_order'] !== '' ? (int) $row['sort_order'] : ($i + 1) * 10,
+                    'is_required'           => ! empty($row['is_required']),
+                ]);
+            }
+        });
+
+        return redirect()->route('masters.inspection-types.sections', $inspectionType)
+            ->with('success', 'Section assignments saved successfully.');
     }
 
     public function edit(InspectionType $inspectionType)

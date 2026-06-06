@@ -67,7 +67,6 @@
                                 <thead>
                                     <tr>
                                         <th>Category Name</th>
-                                        <th>Testing Parameters</th>
                                         <th>Status</th>
                                         <th class="text-end">Actions</th>
                                     </tr>
@@ -76,11 +75,6 @@
                                     @forelse($categories as $category)
                                     <tr class="single-item">
                                         <td class="fw-semibold text-dark">{{ $category->category_name }}</td>
-                                        <td>
-                                            <span class="badge bg-soft-primary text-primary">
-                                                {{ $category->testing_parameters_count ?? 0 }} Parameters
-                                            </span>
-                                        </td>
                                         <td>
                                             @if($category->status)
                                                 <span class="badge bg-soft-success text-success">Active</span>
@@ -126,7 +120,7 @@
                                     </tr>
                                     @empty
                                     <tr>
-                                        <td colspan="4" class="text-center py-5 text-muted">
+                                        <td colspan="3" class="text-center py-5 text-muted">
                                             <i class="feather-layers fs-1 d-block mb-2"></i>
                                             No categories found.
                                         </td>

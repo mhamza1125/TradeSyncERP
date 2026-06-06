@@ -30,10 +30,7 @@ class StoreSampleRequest extends FormRequest
             'variations.*.color_id'  => ['nullable', 'exists:sample_colors,id'],
             'variations.*.size_id'   => ['nullable', 'exists:sample_sizes,id'],
             'variations.*.quantity'  => ['required_with:variations', 'integer', 'min:1'],
-            'parameters'         => ['nullable', 'array'],
-            'parameters.*.parameter_id'        => ['required_with:parameters', 'exists:testing_parameters_master,id'],
-            'parameters.*.requirement_standard' => ['nullable', 'string', 'max:255'],
-            'parameters.*.remarks'              => ['nullable', 'string'],
+
         ];
     }
 }

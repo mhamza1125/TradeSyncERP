@@ -23,7 +23,6 @@ class ProductCategoryController extends Controller
         $categories = ProductCategory::query()
             ->when($request->search, fn ($q, $s) => $q->where('category_name', 'like', "%{$s}%"))
             ->when($request->status !== null && $request->status !== '', fn ($q) => $q->where('status', $request->status))
-            ->withCount('testingParameters')
             ->latest()
             ->paginate(20)
             ->withQueryString();

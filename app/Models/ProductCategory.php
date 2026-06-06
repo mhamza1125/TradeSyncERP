@@ -27,10 +27,6 @@ class ProductCategory extends Model
             ->dontSubmitEmptyLogs();
     }
 
-    public function testingParameters()
-    {
-        return $this->hasMany(TestingParameter::class, 'category_id');
-    }
 
     public function samples()
     {

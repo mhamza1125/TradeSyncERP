@@ -104,6 +104,11 @@
                                                     <ul class="dropdown-menu">
                                                         @can('inspection-types.edit')
                                                         <li>
+                                                            <a class="dropdown-item" href="{{ route('masters.inspection-types.sections', $type) }}">
+                                                                <i class="feather feather-layers me-3"></i><span>Manage Sections</span>
+                                                            </a>
+                                                        </li>
+                                                        <li>
                                                             <a class="dropdown-item" href="{{ route('masters.inspection-types.edit', $type) }}">
                                                                 <i class="feather feather-edit-3 me-3"></i><span>Edit</span>
                                                             </a>

@@ -1,163 +1,99 @@
-{{-- Workmanship Check — renders existing inspection_results testing parameter rows --}}
-@php $rowIdx = 0; @endphp
+{{-- Workmanship Check — quality checklist for the run's sample --}}
+@php
+    $sample = $run->sample;
+    $items  = $runSection->data['items'] ?? [];
+@endphp
 
-@if($inspection->samples->isEmpty())
-    <div class="alert alert-soft-warning mb-0">
-        No samples linked to this inspection.
-        <a href="{{ route('inspections.edit', $inspection) }}">Add samples</a> first.
+{{-- Sample info bar --}}
+@if($sample)
+<div class="d-flex align-items-center gap-3 p-3 bg-light rounded mb-4">
+    <i class="feather-package text-primary fs-4"></i>
+    <div>
+        <div class="fw-semibold fs-14">{{ $sample->sample_code }}
+            @if($sample->product_name)
+                <span class="text-muted fw-normal">— {{ $sample->product_name }}</span>
+            @endif
+        </div>
+        <div class="fs-12 text-muted d-flex gap-2">
+            @if($sample->customer)
+                <span>{{ $sample->customer->customer_name }}</span>
+            @endif
+            @if($sample->category)
+                <span class="badge bg-soft-primary text-primary">{{ $sample->category->category_name }}</span>
+            @endif
+        </div>
     </div>
+</div>
 @else
-    @foreach($inspection->samples as $sample)
-    @php
-        $params = $sample->category?->testingParameters ?? collect();
-    @endphp
-    @if($params->isEmpty()) @continue @endif
+<div class="alert alert-soft-warning mb-4">No sample linked to this run.</div>
+@endif
 
-    <h6 class="fw-semibold mb-2 mt-3 d-flex align-items-center gap-2">
-        <i class="feather-package text-muted"></i>
-        {{ $sample->sample_code }}
-        @if($sample->product_name)
-            <span class="text-muted fw-normal">— {{ $sample->product_name }}</span>
-        @endif
-        @if($sample->customer)
-            <span class="badge bg-soft-secondary text-secondary">{{ $sample->customer->customer_name }}</span>
-        @endif
-        @if($sample->category)
-            <span class="badge bg-soft-primary text-primary ms-auto">{{ $sample->category->category_name }}</span>
-        @endif
-    </h6>
-
-    <div class="table-responsive mb-4">
-        <table class="table table-sm table-bordered align-middle mb-0">
-            <thead class="table-light">
-                <tr>
-                    <th class="ps-3" style="width:200px">Parameter</th>
-                    <th style="width:130px">Status</th>
-                    <th style="width:160px" class="defect-col">Defect</th>
-                    <th style="width:130px" class="defect-col">Severity</th>
-                    <th>Remarks</th>
-                    <th style="width:180px">Photos / Files</th>
-                </tr>
-            </thead>
-            <tbody>
-            @foreach($params as $param)
+{{-- Checklist items --}}
+@if(count($items))
+<div class="table-responsive">
+    <table class="table table-sm table-bordered align-middle mb-0">
+        <thead class="table-light">
+            <tr>
+                <th class="ps-3">#</th>
+                <th>Inspection Item</th>
+                <th style="width:140px">Result</th>
+                <th>Notes</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach($items as $idx => $item)
             @php
-                $key        = "{$sample->id}_{$param->id}";
-                $result     = $resultsMap[$key] ?? null;
-                $status     = old("results.{$rowIdx}.status", $result?->status ?? 'Pending');
-                $defectId   = old("results.{$rowIdx}.defect_id", $result?->defect_id);
-                $severity   = old("results.{$rowIdx}.defect_severity", $result?->defect_severity);
-                $remarks    = old("results.{$rowIdx}.remarks", $result?->remarks ?? '');
-                $attachments= $result?->attachments ?? collect();
-                $showDefect = in_array($status, ['Fail', 'Rejected']);
+                $itemStatus = old("sections.{$runSection->id}.data.items.{$idx}.status",
+                    $item['status'] ?? 'Pending');
+                $itemNote   = old("sections.{$runSection->id}.data.items.{$idx}.note",
+                    $item['note'] ?? '');
             @endphp
-
-            <tr class="{{ $status === 'Rejected' ? 'table-danger' : ($status === 'Fail' ? 'table-warning' : ($status === 'Pass' ? 'table-success' : '')) }}"
-                style="--bs-table-bg-type: transparent;">
-                <td class="ps-3 fw-semibold fs-13">
-                    <input type="hidden" name="results[{{ $rowIdx }}][sample_id]"            value="{{ $sample->id }}">
-                    <input type="hidden" name="results[{{ $rowIdx }}][testing_parameter_id]" value="{{ $param->id }}">
-                    {{ $param->parameter_name }}
-                    @if($param->description)
-                        <small class="text-muted d-block fw-normal">{{ $param->description }}</small>
+            <tr>
+                <td class="text-muted ps-3">{{ $idx + 1 }}</td>
+                <td class="fw-semibold fs-13">
+                    {{ $item['name'] ?? "Item " . ($idx + 1) }}
+                    @if(!empty($item['required']))
+                        <span class="text-danger ms-1" title="Required">*</span>
+                    @endif
+                    @if(!empty($item['description']))
+                        <small class="d-block text-muted fw-normal">{{ $item['description'] }}</small>
                     @endif
                 </td>
-
                 <td>
-                    <select name="results[{{ $rowIdx }}][status]"
-                            class="form-select form-select-sm result-status"
-                            data-row="{{ $rowIdx }}">
-                        @foreach(['Pending','Pass','Fail','Rejected'] as $s)
-                            <option value="{{ $s }}" @selected($status === $s)>{{ $s }}</option>
+                    <select name="sections[{{ $runSection->id }}][data][items][{{ $idx }}][status]"
+                            class="form-select form-select-sm">
+                        @foreach(['Pending', 'Pass', 'Fail'] as $s)
+                            <option value="{{ $s }}" @selected($itemStatus === $s)>{{ $s }}</option>
                         @endforeach
                     </select>
-                </td>
-
-                <td>
-                    <div class="defect-wrap {{ $showDefect ? '' : 'd-none' }}">
-                        <select name="results[{{ $rowIdx }}][defect_id]"
-                                class="form-select form-select-sm defect-select-{{ $rowIdx }}">
-                            <option value="">— Select —</option>
-                            @foreach($defects as $d)
-                                <option value="{{ $d->id }}"
-                                        @selected($defectId == $d->id)>
-                                    {{ $d->defect_name }}
-                                    @if($d->category) ({{ $d->category->code }}) @endif
-                                </option>
-                            @endforeach
-                        </select>
-                    </div>
-                </td>
-
-                <td>
-                    <div class="severity-wrap {{ $showDefect ? '' : 'd-none' }}">
-                        <select name="results[{{ $rowIdx }}][defect_severity]"
-                                class="form-select form-select-sm severity-select-{{ $rowIdx }}">
-                            <option value="">— Severity —</option>
-                            @foreach(['Critical','Major','Minor','Functional'] as $sv)
-                                <option value="{{ $sv }}" @selected($severity === $sv)>{{ $sv }}</option>
-                            @endforeach
-                        </select>
-                    </div>
-                </td>
-
-                <td>
-                    <input type="text" name="results[{{ $rowIdx }}][remarks]"
-                           class="form-control form-control-sm"
-                           value="{{ $remarks }}"
-                           placeholder="Optional…">
-                </td>
-
-                <td>
-                    {{-- Existing attachments --}}
-                    @if($attachments->count())
-                    <div class="d-flex flex-wrap gap-1 mb-2">
-                        @foreach($attachments as $att)
-                        <div class="position-relative" style="width:48px;height:48px;" id="att-{{ $att->id }}">
-                            @if($att->isImage())
-                                <a href="{{ $att->url }}" target="_blank">
-                                    <img src="{{ $att->url }}" class="rounded border" style="width:48px;height:48px;object-fit:cover;" alt="{{ $att->title }}">
-                                </a>
-                            @else
-                                <a href="{{ $att->url }}" target="_blank"
-                                   class="d-flex align-items-center justify-content-center border rounded bg-light text-muted"
-                                   style="width:48px;height:48px;" title="{{ $att->file_name }}">
-                                    <i class="feather-file" style="font-size:18px"></i>
-                                </a>
-                            @endif
-                            <button type="button"
-                                    class="btn btn-danger p-0 position-absolute top-0 end-0 rounded-circle delete-attachment"
-                                    style="width:16px;height:16px;font-size:9px;line-height:1;"
-                                    data-att-id="{{ $att->id }}"
-                                    data-target="att-{{ $att->id }}"
-                                    title="Remove">×</button>
-                        </div>
-                        @endforeach
-                    </div>
+                    {{-- Preserve item name/required through form submission --}}
+                    <input type="hidden" name="sections[{{ $runSection->id }}][data][items][{{ $idx }}][name]"
+                           value="{{ $item['name'] ?? '' }}">
+                    @if(!empty($item['required']))
+                    <input type="hidden" name="sections[{{ $runSection->id }}][data][items][{{ $idx }}][required]"
+                           value="1">
                     @endif
-
-                    <label class="btn btn-xs btn-light-brand w-100 mb-0" style="cursor:pointer;">
-                        <i class="feather-paperclip me-1"></i>Add Files
-                        <input type="file"
-                               name="files[{{ $rowIdx }}][]"
-                               multiple accept="image/*,.pdf,.doc,.docx"
-                               class="d-none file-input"
-                               data-preview="fp-{{ $rowIdx }}">
-                    </label>
-                    <div id="fp-{{ $rowIdx }}" class="d-flex flex-wrap gap-1 mt-1"></div>
+                    @if(!empty($item['description']))
+                    <input type="hidden" name="sections[{{ $runSection->id }}][data][items][{{ $idx }}][description]"
+                           value="{{ $item['description'] }}">
+                    @endif
+                </td>
+                <td>
+                    <input type="text"
+                           name="sections[{{ $runSection->id }}][data][items][{{ $idx }}][note]"
+                           class="form-control form-control-sm"
+                           value="{{ $itemNote }}"
+                           placeholder="Observation…">
                 </td>
             </tr>
-            @php $rowIdx++; @endphp
             @endforeach
-            </tbody>
-        </table>
-    </div>
-    @endforeach
-
-    @if($rowIdx === 0)
-    <div class="alert alert-soft-info mb-0">
-        The linked samples have no testing parameters in their categories.
-        <a href="{{ route('masters.parameters.index') }}">Manage parameters</a>
-    </div>
-    @endif
+        </tbody>
+    </table>
+</div>
+@else
+<div class="text-center py-4 text-muted">
+    <i class="feather-sliders fs-2 d-block mb-2 opacity-50"></i>
+    <p class="mb-0 fs-13">No checklist items defined for this section.</p>
+    <small>Edit the inspection section template to add items.</small>
+</div>
 @endif

@@ -82,10 +82,9 @@
                             <tr>
                                 <th>Report #</th>
                                 <th>Date</th>
-                                <th>Samples</th>
-                                <th>Orders</th>
-                                <th>Inspectors</th>
+                                <th>Type</th>
                                 <th>Runs</th>
+                                <th>Inspectors</th>
                                 <th>Overall</th>
                                 <th class="text-end">Actions</th>
                             </tr>
@@ -101,14 +100,17 @@
                                 </td>
                                 <td>{{ $ins->inspection_date->format('d M Y') }}</td>
                                 <td>
-                                    @foreach($ins->samples->take(2) as $s)
-                                    <span class="badge bg-soft-secondary text-secondary me-1">{{ $s->sample_code }}</span>
-                                    @endforeach
-                                    @if($ins->samples->count() > 2)
-                                    <span class="text-muted fs-12">+{{ $ins->samples->count() - 2 }}</span>
+                                    @if($ins->inspectionType)
+                                        <span class="badge bg-soft-primary text-primary">{{ $ins->inspectionType->name }}</span>
+                                    @else
+                                        <span class="text-muted fst-italic fs-12">—</span>
                                     @endif
                                 </td>
-                                <td>{{ $ins->customerOrders->count() ?: '—' }}</td>
+                                <td>
+                                    <span class="badge bg-soft-secondary text-secondary">
+                                        {{ $ins->runs->count() }} run(s)
+                                    </span>
+                                </td>
                                 <td>
                                     @foreach($ins->inspectors->take(2) as $e)
                                     <span class="badge bg-soft-info text-info me-1">{{ $e->employee_name }}</span>
@@ -117,7 +119,6 @@
                                     <span class="text-muted fs-12">+{{ $ins->inspectors->count() - 2 }}</span>
                                     @endif
                                 </td>
-                                <td>{{ $ins->runs->count() }}</td>
                                 <td>
                                     <span class="badge bg-soft-{{ $ic[$ins->overall_status] ?? 'secondary' }} text-{{ $ic[$ins->overall_status] ?? 'secondary' }}">
                                         {{ $ins->overall_status }}
@@ -159,7 +160,7 @@
                             </tr>
                             @empty
                             <tr>
-                                <td colspan="8" class="text-center py-5 text-muted">
+                                <td colspan="7" class="text-center py-5 text-muted">
                                     <i class="feather-clipboard fs-1 d-block mb-2"></i>
                                     No inspections found.
                                     @can('inspections.create')

@@ -12,6 +12,7 @@ class Inspection extends Model
 
     protected $fillable = [
         'report_number',
+        'inspection_type_id',
         'inspection_date',
         'overall_status',
         'remarks',
@@ -29,9 +30,9 @@ class Inspection extends Model
             ->dontSubmitEmptyLogs();
     }
 
-    public function samples()
+    public function inspectionType()
     {
-        return $this->belongsToMany(Sample::class, 'inspection_samples');
+        return $this->belongsTo(InspectionType::class);
     }
 
     public function customerOrders()

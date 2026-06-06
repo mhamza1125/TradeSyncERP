@@ -129,9 +129,8 @@ class SampleController extends Controller
     {
         $sample->load([
             'customer',
-            'category.testingParameters',
+            'category',
             'variations.color', 'variations.size',
-            'testingParameters.parameter',
             'movements',
             'inspections.runs',
             'attachments',

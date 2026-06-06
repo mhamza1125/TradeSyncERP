@@ -7,7 +7,7 @@ use Illuminate\Database\Eloquent\Model;
 class InspectionRun extends Model
 {
     protected $fillable = [
-        'inspection_id', 'inspection_type_id',
+        'inspection_id', 'sample_id',
         'run_number', 'verdict', 'remarks',
         'started_at', 'completed_at',
     ];
@@ -22,15 +22,11 @@ class InspectionRun extends Model
         return $this->belongsTo(Inspection::class);
     }
 
-    public function inspectionType()
+    public function sample()
     {
-        return $this->belongsTo(InspectionType::class);
+        return $this->belongsTo(Sample::class);
     }
 
-    public function results()
-    {
-        return $this->hasMany(InspectionResult::class);
-    }
 
     public function runSections()
     {

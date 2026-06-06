@@ -16,7 +16,6 @@ class AttachmentController extends Controller
         'transactions'        => \App\Models\Transaction::class,
         'samples'             => \App\Models\Sample::class,
         'customer-invoices'   => \App\Models\CustomerInvoice::class,
-        'inspection-results'  => \App\Models\InspectionResult::class,
     ];
 
     public function store(Request $request, string $type, int $id)

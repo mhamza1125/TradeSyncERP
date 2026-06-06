@@ -16,7 +16,6 @@ use App\Models\Expense;
 use App\Models\ExpenseHead;
 use App\Models\ProductCategory;
 use App\Models\Sample;
-use App\Models\TestingParameter;
 use App\Models\User;
 use App\Models\Supplier;
 use App\Models\Transaction;
@@ -38,7 +37,6 @@ class TestDataSeeder extends Seeder
         Expense::truncate();
         Transaction::truncate();
         Sample::withTrashed()->forceDelete();
-        TestingParameter::truncate();
         ProductCategory::truncate();
         Employee::withTrashed()->forceDelete();
         Customer::withTrashed()->forceDelete();
@@ -199,47 +197,11 @@ class TestDataSeeder extends Seeder
         ]);
         $accountantUser->syncRoles(['Accountant']);
 
-        // ─── Sample Categories & Testing Parameters ────────────────────────
+        // ─── Sample Categories ─────────────────────────────────────────────
         $garmentsCat    = ProductCategory::create(['category_name' => 'GARMENTS (JACKETS / PANTS)', 'status' => true]);
         $bootsCat       = ProductCategory::create(['category_name' => 'BOOTS',                      'status' => true]);
         $glovesCat      = ProductCategory::create(['category_name' => 'GLOVES',                     'status' => true]);
         $accessoriesCat = ProductCategory::create(['category_name' => 'ACCESSORIES',                'status' => true]);
-
-        foreach ([
-            ['parameter_name' => 'Seam Strength',          'description' => 'Force required to break seams (N/5cm)'],
-            ['parameter_name' => 'Abrasion Resistance',    'description' => 'Martindale abrasion cycles before failure'],
-            ['parameter_name' => 'Color Fastness to Wash', 'description' => 'Wash fastness rating ISO 105-C06'],
-            ['parameter_name' => 'CE Protection Level',    'description' => 'CE EN 17092 protection class (A/AA/AAA)'],
-            ['parameter_name' => 'Waterproofing Rating',   'description' => 'Hydrostatic pressure resistance (mm H₂O)'],
-        ] as $p) {
-            TestingParameter::create(array_merge($p, ['category_id' => $garmentsCat->id, 'status' => true]));
-        }
-
-        foreach ([
-            ['parameter_name' => 'Sole Adhesion Strength', 'description' => 'Peel strength of sole bond (N/cm)'],
-            ['parameter_name' => 'Impact Resistance',      'description' => 'Toecap impact energy absorption (J)'],
-            ['parameter_name' => 'Ankle Support Rating',   'description' => 'Lateral rigidity and ankle protection rating'],
-            ['parameter_name' => 'Material Durability',    'description' => 'Upper material flex and abrasion endurance'],
-        ] as $p) {
-            TestingParameter::create(array_merge($p, ['category_id' => $bootsCat->id, 'status' => true]));
-        }
-
-        foreach ([
-            ['parameter_name' => 'Palm Abrasion Resistance', 'description' => 'Abrasion cycles on palm area before failure'],
-            ['parameter_name' => 'Impact Absorption',        'description' => 'Transmitted force on knuckle protector (kN)'],
-            ['parameter_name' => 'Stitching Integrity',      'description' => 'Seam burst strength (N)'],
-            ['parameter_name' => 'CE Level Rating',          'description' => 'CE EN 13594 Level 1 or 2 classification'],
-        ] as $p) {
-            TestingParameter::create(array_merge($p, ['category_id' => $glovesCat->id, 'status' => true]));
-        }
-
-        foreach ([
-            ['parameter_name' => 'Buckle Tensile Strength', 'description' => 'Load at which buckle fails (kN)'],
-            ['parameter_name' => 'Surface Finish Quality',  'description' => 'Visual and tactile finish inspection'],
-            ['parameter_name' => 'Hardware Corrosion Test', 'description' => 'Salt spray hours before visible corrosion'],
-        ] as $p) {
-            TestingParameter::create(array_merge($p, ['category_id' => $accessoriesCat->id, 'status' => true]));
-        }
 
         // ─── Samples ───────────────────────────────────────────────────────
         collect([
