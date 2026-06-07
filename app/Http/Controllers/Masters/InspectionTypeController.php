@@ -85,7 +85,7 @@ class InspectionTypeController extends Controller
                 InspectionTypeSectionDefault::create([
                     'inspection_type_id'    => $inspectionType->id,
                     'inspection_section_id' => $row['section_id'],
-                    'category_id'           => $row['category_id'] ?: null,
+                    'category_id'           => ($row['category_id'] ?? null) ?: null,
                     'sort_order'            => isset($row['sort_order']) && $row['sort_order'] !== '' ? (int) $row['sort_order'] : ($i + 1) * 10,
                     'is_required'           => ! empty($row['is_required']),
                 ]);

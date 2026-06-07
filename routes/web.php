@@ -96,6 +96,11 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::get('{run}/edit',      [InspectionRunController::class, 'edit'])->name('edit');
         Route::put('{run}',           [InspectionRunController::class, 'update'])->name('update');
         Route::delete('{run}',        [InspectionRunController::class, 'destroy'])->name('destroy');
+        // AJAX: section file upload / delete
+        Route::post('{run}/sections/{runSection}/upload',  [InspectionRunController::class, 'uploadAttachment'])->name('sections.upload');
+        Route::delete('{run}/attachments/{attachment}',    [InspectionRunController::class, 'deleteAttachment'])->name('attachments.delete');
+        // AJAX: per-section (subsection) status + data persistence
+        Route::post('{run}/sections/{runSection}/save',    [InspectionRunController::class, 'saveSection'])->name('sections.save');
     });
 
     // AQL plan calculator (AJAX)

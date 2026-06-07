@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Operations;
 
 use App\Http\Controllers\Controller;
+use App\Models\Attachment;
 use App\Models\Inspection;
 use App\Models\InspectionRun;
 use App\Models\InspectionRunAql;
@@ -103,8 +104,6 @@ class InspectionRunController extends Controller
     public function update(Request $request, Inspection $inspection, InspectionRun $run)
     {
         $request->validate([
-            'verdict'                             => ['nullable', 'in:Pending,Pass,Fail,Conditional'],
-
             // AQL
             'aql.lot_size'                       => ['nullable', 'integer', 'min:1'],
             'aql.inspection_level'               => ['nullable', 'in:I,II,III,S1,S2,S3,S4'],
@@ -118,21 +117,14 @@ class InspectionRunController extends Controller
             'aql.notes'                          => ['nullable', 'string', 'max:2000'],
 
             // Dynamic sections
-            'sections'                           => ['nullable', 'array'],
-            'sections.*.status'                  => ['nullable', 'in:pending,complete,na'],
-            'sections.*.notes'                   => ['nullable', 'string', 'max:2000'],
-            'sections.*.data'                    => ['nullable', 'array'],
-
-            // Section photo uploads
-            'section_files'                      => ['nullable', 'array'],
-            'section_files.*.*'                  => ['file', 'max:20480', 'mimes:jpg,jpeg,png,gif,webp,pdf'],
+            'sections'          => ['nullable', 'array'],
+            'sections.*.status' => ['nullable', 'in:pending,complete,na'],
+            'sections.*.notes'  => ['nullable', 'string', 'max:2000'],
+            'sections.*.data'   => ['nullable', 'array'],
+            'finish_run'        => ['nullable', 'boolean'],
         ]);
 
         return DB::transaction(function () use ($request, $inspection, $run) {
-            // ── 1. Run header ─────────────────────────────────────────────────
-            $run->update([
-                'verdict' => $request->input('verdict', 'Pending'),
-            ]);
 
             // ── 2. AQL record ─────────────────────────────────────────────────
             if ($request->filled('aql.lot_size')) {
@@ -192,26 +184,18 @@ class InspectionRunController extends Controller
                     continue;
                 }
 
+                $mergedData = array_merge($runSection->data ?? [], $sectionData['data'] ?? []);
+
                 $runSection->update([
                     'status' => $sectionData['status'] ?? 'pending',
                     'notes'  => $sectionData['notes']  ?? null,
-                    'data'   => $sectionData['data']   ?? $runSection->data,
+                    'data'   => $mergedData,
                 ]);
+            }
 
-                if ($request->hasFile("section_files.{$runSectionId}")) {
-                    foreach ($request->file("section_files.{$runSectionId}") as $file) {
-                        $path = $file->store("inspection-sections/{$runSection->id}", 'public');
-                        $runSection->attachments()->create([
-                            'title'           => pathinfo($file->getClientOriginalName(), PATHINFO_FILENAME),
-                            'file_name'       => $file->getClientOriginalName(),
-                            'file_path'       => $path,
-                            'mime_type'       => $file->getMimeType(),
-                            'file_size'       => $file->getSize(),
-                            'attachment_type' => 'image',
-                            'uploaded_by'     => auth()->id(),
-                        ]);
-                    }
-                }
+            // ── 4. Handle finish flag ─────────────────────────────────────────
+            if ($request->boolean('finish_run')) {
+                $run->update(['completed_at' => now()]);
             }
 
             return redirect()->route('inspections.runs.edit', [$inspection, $run])
@@ -238,6 +222,95 @@ class InspectionRunController extends Controller
 
         return redirect()->route('inspections.edit', $inspection)
             ->with('success', 'Run deleted.');
+    }
+
+    // ── AJAX: upload attachments for a run section ───────────────────────────
+
+    public function uploadAttachment(Request $request, Inspection $inspection, InspectionRun $run, InspectionRunSection $runSection)
+    {
+        abort_unless($runSection->inspection_run_id === $run->id, 403);
+
+        $request->validate([
+            'files'    => ['required', 'array', 'max:20'],
+            'files.*'  => ['required', 'file', 'max:20480', 'mimes:jpg,jpeg,png,gif,webp,pdf,doc,docx'],
+            'task_key' => ['nullable', 'string', 'max:100'],
+        ]);
+
+        $taskKey = $request->input('task_key') ?: null;
+        $result  = [];
+
+        foreach ($request->file('files') as $file) {
+            $path = $file->store("inspection-sections/{$runSection->id}", 'public');
+            $att  = $runSection->attachments()->create([
+                'title'           => pathinfo($file->getClientOriginalName(), PATHINFO_FILENAME),
+                'file_name'       => $file->getClientOriginalName(),
+                'file_path'       => $path,
+                'mime_type'       => $file->getMimeType(),
+                'file_size'       => $file->getSize(),
+                'attachment_type' => str_starts_with($file->getMimeType(), 'image/') ? 'image' : 'document',
+                'task_key'        => $taskKey,
+                'uploaded_by'     => auth()->id(),
+            ]);
+
+            $result[] = [
+                'id'         => $att->id,
+                'url'        => Storage::disk('public')->url($att->file_path),
+                'name'       => $att->file_name,
+                'is_image'   => $att->isImage(),
+                'delete_url' => route('inspections.runs.attachments.delete', [$inspection, $run, $att]),
+            ];
+        }
+
+        return response()->json(['attachments' => $result]);
+    }
+
+    // ── AJAX: delete a run-section attachment ─────────────────────────────────
+
+    public function deleteAttachment(Request $request, Inspection $inspection, InspectionRun $run, Attachment $attachment)
+    {
+        $runSection = $attachment->attachable;
+        abort_unless(
+            $runSection instanceof InspectionRunSection && $runSection->inspection_run_id === $run->id,
+            403
+        );
+
+        Storage::disk('public')->delete($attachment->file_path);
+        $attachment->delete();
+
+        return response()->json(['success' => true]);
+    }
+
+    // ── AJAX: save a single section's data + completion status ───────────────
+
+    public function saveSection(Request $request, Inspection $inspection, InspectionRun $run, InspectionRunSection $runSection)
+    {
+        abort_unless($runSection->inspection_run_id === $run->id, 403);
+        abort_if($run->completed_at, 422, 'This run is already finished.');
+
+        $validated = $request->validate([
+            'status' => ['required', 'in:pending,complete,na'],
+            'notes'  => ['nullable', 'string', 'max:2000'],
+            'data'   => ['nullable', 'array'],
+        ]);
+
+        $mergedData = array_merge($runSection->data ?? [], $validated['data'] ?? []);
+
+        $runSection->update([
+            'status' => $validated['status'],
+            'notes'  => $validated['notes'] ?? $runSection->notes,
+            'data'   => $mergedData,
+        ]);
+
+        $run->loadMissing('runSections');
+        $total    = $run->runSections->count();
+        $complete = $run->runSections->where('status', 'complete')->count();
+
+        return response()->json([
+            'success'        => true,
+            'status'         => $runSection->status,
+            'sections_total' => $total,
+            'sections_done'  => $complete,
+        ]);
     }
 
     // ── AJAX: AQL plan calculation ────────────────────────────────────────────

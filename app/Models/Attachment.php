@@ -16,6 +16,7 @@ class Attachment extends Model
         'mime_type',
         'file_size',
         'attachment_type',
+        'task_key',
         'uploaded_by',
     ];
 

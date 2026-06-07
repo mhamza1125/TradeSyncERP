@@ -96,7 +96,7 @@ class InspectionController extends Controller
             'customerOrders.customer',
             'inspectors',
             'runs.sample.customer',
-            'runs.results',
+            'runs.runSections',
         ]);
 
         [$employees, $customerOrders, $inspectionTypes] = $this->formData();

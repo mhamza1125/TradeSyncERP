@@ -4,9 +4,13 @@
 
 @section('content')
 <div class="nxl-content">
+
+    {{-- ── Page Header ──────────────────────────────────────────────────────── --}}
     <div class="page-header">
         <div class="page-header-left d-flex align-items-center">
-            <div class="page-header-title"><h5 class="m-b-10">Section Assignments</h5></div>
+            <div class="page-header-title">
+                <h5 class="m-b-10">Section Assignments</h5>
+            </div>
             <ul class="breadcrumb">
                 <li class="breadcrumb-item"><a href="{{ route('dashboard') }}">Home</a></li>
                 <li class="breadcrumb-item"><a href="{{ route('masters.inspection-types.index') }}">Inspection Types</a></li>
@@ -20,7 +24,7 @@
                     <i class="feather-arrow-left me-2"></i>Back
                 </a>
                 <button type="submit" form="sectionsForm" class="btn btn-primary">
-                    <i class="feather-save me-2"></i>Save Assignments
+                    <i class="feather-save me-2"></i>Save
                 </button>
             </div>
         </div>
@@ -29,337 +33,373 @@
     <div class="main-content">
         @include('partials.flash-messages')
 
-        {{-- Inspection Type context banner --}}
-        <div class="card mb-4 border-0 bg-soft-primary">
-            <div class="card-body py-3">
-                <div class="d-flex align-items-center gap-3">
-                    <div class="avatar-text avatar-md bg-primary text-white rounded-circle fw-bold flex-shrink-0">
-                        <i class="feather-check-square"></i>
-                    </div>
-                    <div>
-                        <div class="fw-semibold fs-15">{{ $inspectionType->name }}</div>
-                        @if($inspectionType->description)
-                        <div class="text-muted fs-12">{{ $inspectionType->description }}</div>
-                        @endif
-                    </div>
-                    <div class="ms-auto fs-13 text-muted">
-                        Configure which sections are automatically applied when a run of this type is created.
-                        <br>
-                        <strong>Global</strong> sections apply to all sample categories.
-                        <strong>Category-specific</strong> sections apply only when the sample belongs to that category.
-                    </div>
-                </div>
-            </div>
-        </div>
-
+        {{-- ── Form ────────────────────────────────────────────────────────── --}}
         <form id="sectionsForm"
               action="{{ route('masters.inspection-types.sections.sync', $inspectionType) }}"
               method="POST">
             @csrf
 
-            <div class="card">
-                <div class="card-header d-flex align-items-center justify-content-between">
-                    <div>
-                        <h5 class="card-title mb-0">Assigned Sections</h5>
-                        <small class="text-muted">Sections are applied in the order shown (Sort #). Drag to reorder.</small>
+            {{-- Toolbar: count + bulk actions + search --}}
+            <div class="card mb-3 border-0 shadow-sm">
+                <div class="card-body py-2 px-3">
+                    <div class="d-flex align-items-center flex-wrap gap-2">
+
+                        {{-- Selected count --}}
+                        <span class="fw-semibold fs-14 me-1">
+                            <span id="selected-count">{{ $inspectionType->sectionDefaults->count() }}</span>
+                            of {{ $sections->count() }} sections enabled
+                        </span>
+
+                        {{-- Bulk selection --}}
+                        <button type="button" id="select-all-btn" class="btn btn-xs btn-outline-success">
+                            <i class="feather-check-square me-1"></i>Select All
+                        </button>
+                        <button type="button" id="clear-all-btn" class="btn btn-xs btn-outline-secondary">
+                            <i class="feather-square me-1"></i>Clear All
+                        </button>
+
+                        {{-- Search (right-aligned) --}}
+                        <div class="ms-auto" style="min-width:220px;max-width:280px">
+                            <div class="input-group input-group-sm">
+                                <span class="input-group-text bg-light border-end-0">
+                                    <i class="feather-search text-muted" style="font-size:13px"></i>
+                                </span>
+                                <input type="text" id="section-search"
+                                       class="form-control border-start-0 bg-light"
+                                       placeholder="Search sections…">
+                            </div>
+                        </div>
+
                     </div>
-                    <button type="button" id="addRowBtn" class="btn btn-sm btn-light-brand">
-                        <i class="feather-plus me-1"></i>Add Section
-                    </button>
                 </div>
+            </div>
 
-                <div class="card-body p-0">
-                    <div class="table-responsive">
-                        <table class="table table-hover mb-0" id="sectionsTable">
-                            <thead class="table-light">
-                                <tr>
-                                    <th style="width:40px"></th>
-                                    <th>Section</th>
-                                    <th style="width:220px">Scope</th>
-                                    <th style="width:160px">Category</th>
-                                    <th style="width:100px">Sort #</th>
-                                    <th style="width:90px" class="text-center">Required</th>
-                                    <th style="width:50px"></th>
-                                </tr>
-                            </thead>
-                            <tbody id="sectionsBody">
-                                @php
-                                    $existing = $inspectionType->sectionDefaults->values();
-                                @endphp
+            {{-- Section cards grid --}}
+            @php
+                $typeLabels = [
+                    'task_list'         => 'Task List',
+                    'quantity_sampling' => 'Quantity',
+                    'cartons'           => 'Cartons',
+                    'cover_photo'       => 'Cover',
+                    'files_review'      => 'Files',
+                    'defects'           => 'Defects',
+                    'finish'            => 'Finish',
+                    'images'            => 'Images',
+                    'workmanship'       => 'Workmanship',
+                    'aql'               => 'AQL',
+                    'checklist'         => 'Checklist',
+                    'container'         => 'Container',
+                    'verification'      => 'Verification',
+                    'review'            => 'Review',
+                ];
+                $typeColors = [
+                    'images'            => 'purple',
+                    'workmanship'       => 'primary',
+                    'aql'               => 'success',
+                    'checklist'         => 'info',
+                    'container'         => 'warning',
+                    'verification'      => 'warning',
+                    'review'            => 'secondary',
+                    'task_list'         => 'primary',
+                    'quantity_sampling' => 'info',
+                    'cartons'           => 'warning',
+                    'cover_photo'       => 'purple',
+                    'files_review'      => 'secondary',
+                    'defects'           => 'danger',
+                    'finish'            => 'success',
+                ];
+            @endphp
 
-                                @forelse($existing as $idx => $def)
-                                @php
-                                    $isGlobal = is_null($def->category_id);
-                                @endphp
-                                <tr class="section-row" data-idx="{{ $idx }}">
-                                    <td class="drag-handle text-muted" style="cursor:grab">
-                                        <i class="feather-menu"></i>
-                                    </td>
-                                    <td>
-                                        <select name="rows[{{ $idx }}][section_id]"
-                                                class="form-select form-select-sm section-select"
-                                                required>
-                                            <option value="">— Select Section —</option>
-                                            @foreach($sections as $sec)
-                                                <option value="{{ $sec->id }}"
-                                                        data-type="{{ $sec->section_type }}"
-                                                        @selected($def->inspection_section_id === $sec->id)>
-                                                    {{ $sec->name }}
-                                                    <span class="text-muted">({{ $sec->section_type }})</span>
-                                                </option>
-                                            @endforeach
+            <div class="row g-3" id="sections-grid">
+                @foreach($sections as $loopIdx => $sec)
+                @php
+                    $assigned  = $inspectionType->sectionDefaults->firstWhere('inspection_section_id', $sec->id);
+                    $isChecked = ! is_null($assigned);
+                    $isGlobal  = ! $isChecked || is_null($assigned->category_id);
+                    $color     = $typeColors[$sec->section_type] ?? 'secondary';
+                    $sortVal   = $assigned?->sort_order ?? (($loopIdx + 1) * 10);
+                @endphp
+
+                <div class="col-md-6 col-lg-4 col-xl-3 section-col"
+                     data-name="{{ strtolower($sec->name) }}"
+                     data-type="{{ $sec->section_type }}">
+
+                    <div class="card h-100 section-card border-2 {{ $isChecked ? 'border-primary shadow-sm' : 'border-light' }}"
+                         id="card-{{ $sec->id }}"
+                         style="{{ $isChecked ? '' : 'opacity:.8' }} transition:all .15s ease; cursor:pointer">
+
+                        <div class="card-body p-3">
+
+                            {{-- Checkbox + section header --}}
+                            <div class="d-flex align-items-start gap-2 mb-0">
+                                {{-- Big toggle checkbox --}}
+                                <div class="flex-shrink-0 mt-1">
+                                    <input type="checkbox"
+                                           class="form-check-input section-toggle"
+                                           id="toggle-{{ $sec->id }}"
+                                           data-section-id="{{ $sec->id }}"
+                                           style="width:20px;height:20px;cursor:pointer"
+                                           {{ $isChecked ? 'checked' : '' }}>
+                                </div>
+
+                                {{-- Info --}}
+                                <label for="toggle-{{ $sec->id }}"
+                                       class="flex-grow-1 mb-0"
+                                       style="cursor:pointer">
+                                    <div class="d-flex align-items-center gap-2 mb-1 flex-wrap">
+                                        <i class="{{ $sec->icon ?? 'feather-layers' }} text-{{ $color }}"
+                                           style="font-size:14px;flex-shrink:0"></i>
+                                        <span class="fw-semibold fs-13 lh-sm">{{ $sec->name }}</span>
+                                        @if($isChecked && $assigned->is_required)
+                                            <span class="badge bg-soft-danger text-danger fs-10 ms-auto">Required</span>
+                                        @endif
+                                    </div>
+                                    <span class="badge bg-soft-{{ $color }} text-{{ $color }} fs-10">
+                                        {{ $typeLabels[$sec->section_type] ?? $sec->section_type }}
+                                    </span>
+                                </label>
+                            </div>
+
+                            {{-- Inline config — visible only when checked --}}
+                            <div class="section-config {{ $isChecked ? '' : 'd-none' }}" id="config-{{ $sec->id }}">
+                                <hr class="my-2">
+
+                                <div class="row g-2">
+                                    {{-- Scope --}}
+                                    <div class="col-12">
+                                        <select class="form-select form-select-sm scope-select"
+                                                id="scope-{{ $sec->id }}"
+                                                data-section-id="{{ $sec->id }}">
+                                            <option value="global"   {{ $isGlobal   ? 'selected' : '' }}>
+                                                Global — All Categories
+                                            </option>
+                                            <option value="category" {{ !$isGlobal  ? 'selected' : '' }}>
+                                                Category Specific
+                                            </option>
                                         </select>
-                                    </td>
-                                    <td>
-                                        <select name="rows[{{ $idx }}][scope]"
-                                                class="form-select form-select-sm scope-select">
-                                            <option value="global"    @selected($isGlobal)>Global — All Categories</option>
-                                            <option value="category"  @selected(!$isGlobal)>Category Specific</option>
-                                        </select>
-                                    </td>
-                                    <td class="category-cell" @if($isGlobal) style="opacity:.35;pointer-events:none" @endif>
-                                        <select name="rows[{{ $idx }}][category_id]"
-                                                class="form-select form-select-sm category-select"
-                                                @disabled($isGlobal)>
+                                    </div>
+
+                                    {{-- Category (hidden when global) --}}
+                                    <div class="col-12 cat-row" id="cat-row-{{ $sec->id }}"
+                                         style="{{ $isGlobal ? 'display:none' : '' }}">
+                                        <select class="form-select form-select-sm"
+                                                id="cat-{{ $sec->id }}">
                                             <option value="">— Any Category —</option>
                                             @foreach($categories as $cat)
-                                                <option value="{{ $cat->id }}"
-                                                        @selected($def->category_id === $cat->id)>
-                                                    {{ $cat->category_name }}
-                                                </option>
+                                            <option value="{{ $cat->id }}"
+                                                    {{ ($assigned?->category_id === $cat->id) ? 'selected' : '' }}>
+                                                {{ $cat->category_name }}
+                                            </option>
                                             @endforeach
                                         </select>
-                                    </td>
-                                    <td>
-                                        <input type="number" name="rows[{{ $idx }}][sort_order]"
-                                               class="form-control form-control-sm sort-input"
-                                               value="{{ $def->sort_order }}" min="0" style="width:75px">
-                                    </td>
-                                    <td class="text-center">
-                                        <div class="form-check form-switch d-flex justify-content-center mb-0">
-                                            <input class="form-check-input" type="checkbox" role="switch"
-                                                   name="rows[{{ $idx }}][is_required]" value="1"
-                                                   @checked($def->is_required)>
-                                        </div>
-                                    </td>
-                                    <td>
-                                        <button type="button" class="btn btn-sm btn-icon btn-light-danger remove-row"
-                                                title="Remove">
-                                            <i class="feather-x"></i>
-                                        </button>
-                                    </td>
-                                </tr>
-                                @empty
-                                <tr id="emptyRow">
-                                    <td colspan="7" class="text-center py-5 text-muted">
-                                        <i class="feather-layers" style="font-size:2rem;opacity:.3"></i>
-                                        <p class="mt-2 mb-1">No sections assigned yet.</p>
-                                        <small>Click <strong>Add Section</strong> to begin configuring this inspection type.</small>
-                                    </td>
-                                </tr>
-                                @endforelse
-                            </tbody>
-                        </table>
-                    </div>
-                </div>
+                                    </div>
 
-                @if($existing->count())
-                <div class="card-footer text-muted fs-12">
-                    <i class="feather-info me-1"></i>
-                    {{ $existing->count() }} section(s) assigned —
-                    {{ $existing->whereNull('category_id')->count() }} global,
-                    {{ $existing->whereNotNull('category_id')->count() }} category-specific.
-                </div>
-                @endif
+                                    {{-- Sort + Required --}}
+                                    <div class="col-6">
+                                        <div class="input-group input-group-sm">
+                                            <span class="input-group-text bg-light"
+                                                  style="font-size:11px;padding:4px 7px">#</span>
+                                            <input type="number"
+                                                   class="form-control form-control-sm"
+                                                   id="sort-{{ $sec->id }}"
+                                                   value="{{ $sortVal }}"
+                                                   min="0"
+                                                   placeholder="Sort"
+                                                   title="Sort order">
+                                        </div>
+                                    </div>
+                                    <div class="col-6 d-flex align-items-center">
+                                        <div class="form-check form-switch mb-0">
+                                            <input type="checkbox"
+                                                   class="form-check-input req-toggle"
+                                                   role="switch"
+                                                   id="req-{{ $sec->id }}"
+                                                   data-section-id="{{ $sec->id }}"
+                                                   {{ $assigned?->is_required ? 'checked' : '' }}>
+                                            <label class="form-check-label fs-12"
+                                                   for="req-{{ $sec->id }}">Required</label>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                        </div>{{-- /card-body --}}
+                    </div>{{-- /card --}}
+                </div>{{-- /col --}}
+                @endforeach
+            </div>{{-- /row --}}
+
+            {{-- No results message (shown by JS) --}}
+            <div id="no-results" class="text-center py-5 text-muted d-none">
+                <i class="feather-search fs-2 d-block mb-2 opacity-30"></i>
+                <p class="mb-0">No sections match your search.</p>
             </div>
 
         </form>
 
-        {{-- Available Sections reference panel --}}
-        <div class="card mt-4">
-            <div class="card-header">
-                <h6 class="card-title mb-0 text-muted">Available Sections (Reference)</h6>
-            </div>
-            <div class="card-body">
-                <div class="row g-2">
-                    @foreach($sections as $sec)
-                    @php
-                        $typeColors = [
-                            'images'       => 'purple',
-                            'workmanship'  => 'primary',
-                            'aql'          => 'success',
-                            'checklist'    => 'info',
-                            'container'    => 'warning',
-                            'verification' => 'warning',
-                            'review'       => 'secondary',
-                        ];
-                        $color = $typeColors[$sec->section_type] ?? 'secondary';
-                    @endphp
-                    <div class="col-md-4 col-lg-3">
-                        <div class="d-flex align-items-center gap-2 p-2 border rounded bg-light">
-                            <i class="{{ $sec->icon ?? 'feather-layers' }} text-{{ $color }}" style="font-size:14px;flex-shrink:0"></i>
-                            <div class="flex-grow-1 min-w-0">
-                                <div class="fs-12 fw-semibold text-truncate">{{ $sec->name }}</div>
-                                <span class="badge bg-soft-{{ $color }} text-{{ $color }} fs-10">{{ $sec->section_type }}</span>
-                            </div>
-                            <button type="button"
-                                    class="btn btn-xs btn-soft-primary quick-add-btn flex-shrink-0"
-                                    data-section-id="{{ $sec->id }}"
-                                    data-section-name="{{ $sec->name }}"
-                                    title="Quick-add this section">
-                                <i class="feather-plus" style="font-size:11px"></i>
-                            </button>
-                        </div>
-                    </div>
-                    @endforeach
-                </div>
-            </div>
-        </div>
-
-    </div>
+    </div>{{-- /main-content --}}
 </div>
-
-{{-- Row template (hidden) --}}
-<template id="rowTemplate">
-    <tr class="section-row" data-idx="__IDX__">
-        <td class="drag-handle text-muted" style="cursor:grab">
-            <i class="feather-menu"></i>
-        </td>
-        <td>
-            <select name="rows[__IDX__][section_id]"
-                    class="form-select form-select-sm section-select"
-                    required>
-                <option value="">— Select Section —</option>
-                @foreach($sections as $sec)
-                <option value="{{ $sec->id }}" data-type="{{ $sec->section_type }}">
-                    {{ $sec->name }} ({{ $sec->section_type }})
-                </option>
-                @endforeach
-            </select>
-        </td>
-        <td>
-            <select name="rows[__IDX__][scope]" class="form-select form-select-sm scope-select">
-                <option value="global">Global — All Categories</option>
-                <option value="category">Category Specific</option>
-            </select>
-        </td>
-        <td class="category-cell" style="opacity:.35;pointer-events:none">
-            <select name="rows[__IDX__][category_id]"
-                    class="form-select form-select-sm category-select" disabled>
-                <option value="">— Any Category —</option>
-                @foreach($categories as $cat)
-                <option value="{{ $cat->id }}">{{ $cat->category_name }}</option>
-                @endforeach
-            </select>
-        </td>
-        <td>
-            <input type="number" name="rows[__IDX__][sort_order]"
-                   class="form-control form-control-sm sort-input"
-                   value="__SORT__" min="0" style="width:75px">
-        </td>
-        <td class="text-center">
-            <div class="form-check form-switch d-flex justify-content-center mb-0">
-                <input class="form-check-input" type="checkbox" role="switch"
-                       name="rows[__IDX__][is_required]" value="1" checked>
-            </div>
-        </td>
-        <td>
-            <button type="button" class="btn btn-sm btn-icon btn-light-danger remove-row" title="Remove">
-                <i class="feather-x"></i>
-            </button>
-        </td>
-    </tr>
-</template>
 @endsection
 
 @push('scripts')
 <script>
 (function () {
-    const body     = document.getElementById('sectionsBody');
-    const tmpl     = document.getElementById('rowTemplate');
-    const addBtn   = document.getElementById('addRowBtn');
-    const emptyRow = document.getElementById('emptyRow');
+    'use strict';
 
-    let rowIdx = {{ $inspectionType->sectionDefaults->count() }};
+    const form        = document.getElementById('sectionsForm');
+    const grid        = document.getElementById('sections-grid');
+    const countEl     = document.getElementById('selected-count');
+    const noResults   = document.getElementById('no-results');
+    const searchInput = document.getElementById('section-search');
+    const selectAllBtn = document.getElementById('select-all-btn');
+    const clearAllBtn  = document.getElementById('clear-all-btn');
 
-    function removeEmptyRow() {
-        document.getElementById('emptyRow')?.remove();
+    // ── Helpers ────────────────────────────────────────────────────────────────
+
+    function getCheckedCount() {
+        return form.querySelectorAll('.section-toggle:checked').length;
     }
 
-    function reindexRows() {
-        body.querySelectorAll('tr.section-row').forEach((tr, i) => {
-            tr.dataset.idx = i;
-            tr.querySelectorAll('[name]').forEach(el => {
-                el.name = el.name.replace(/rows\[\d+\]/, `rows[${i}]`);
-            });
-        });
-        rowIdx = body.querySelectorAll('tr.section-row').length;
+    function updateCount() {
+        if (countEl) countEl.textContent = getCheckedCount();
     }
 
-    function attachRowEvents(tr) {
-        // Scope toggle
-        const scopeSel   = tr.querySelector('.scope-select');
-        const catCell    = tr.querySelector('.category-cell');
-        const catSel     = tr.querySelector('.category-select');
+    function styleCard(card, checked) {
+        if (checked) {
+            card.classList.add('border-primary', 'shadow-sm');
+            card.classList.remove('border-light');
+            card.style.opacity = '1';
+        } else {
+            card.classList.remove('border-primary', 'shadow-sm');
+            card.classList.add('border-light');
+            card.style.opacity = '.8';
+        }
+    }
 
-        scopeSel.addEventListener('change', function () {
-            const isGlobal = this.value === 'global';
-            catCell.style.opacity         = isGlobal ? '.35' : '1';
-            catCell.style.pointerEvents   = isGlobal ? 'none' : 'auto';
-            catSel.disabled               = isGlobal;
-            if (isGlobal) catSel.value    = '';
+    // ── Toggle logic ───────────────────────────────────────────────────────────
+
+    form.querySelectorAll('.section-toggle').forEach(toggle => {
+        toggle.addEventListener('change', function () {
+            const id     = this.dataset.sectionId;
+            const config = document.getElementById('config-' + id);
+            const card   = document.getElementById('card-' + id);
+
+            config?.classList.toggle('d-none', !this.checked);
+            styleCard(card, this.checked);
+            updateCount();
         });
+    });
 
-        // Remove
-        tr.querySelector('.remove-row').addEventListener('click', function () {
-            tr.remove();
-            reindexRows();
-            if (!body.querySelector('tr.section-row')) {
-                body.innerHTML = `<tr id="emptyRow"><td colspan="7" class="text-center py-5 text-muted">
-                    <i class="feather-layers" style="font-size:2rem;opacity:.3"></i>
-                    <p class="mt-2 mb-1">No sections assigned.</p>
-                    <small>Click <strong>Add Section</strong> to add one.</small></td></tr>`;
+    // Required toggle → update badge in header
+    form.querySelectorAll('.req-toggle').forEach(tog => {
+        tog.addEventListener('change', function () {
+            const id   = this.dataset.sectionId;
+            const card = document.getElementById('card-' + id);
+            let badge  = card.querySelector('.badge.bg-soft-danger');
+            if (this.checked) {
+                if (!badge) {
+                    badge = document.createElement('span');
+                    badge.className = 'badge bg-soft-danger text-danger fs-10 ms-auto';
+                    badge.textContent = 'Required';
+                    card.querySelector('label .d-flex')?.appendChild(badge);
+                }
+            } else {
+                badge?.remove();
             }
         });
-    }
+    });
 
-    function addRow(sectionId, sortOrder) {
-        removeEmptyRow();
-        const sort = sortOrder ?? (body.querySelectorAll('tr.section-row').length + 1) * 10;
-        const html = tmpl.innerHTML
-            .replaceAll('__IDX__',  rowIdx)
-            .replaceAll('__SORT__', sort);
+    // ── Scope → category dropdown ──────────────────────────────────────────────
 
-        const tmp = document.createElement('tbody');
-        tmp.innerHTML = html;
-        const tr = tmp.querySelector('tr');
-        body.appendChild(tr);
-
-        if (sectionId) {
-            const sel = tr.querySelector('.section-select');
-            sel.value = sectionId;
-        }
-
-        attachRowEvents(tr);
-        rowIdx++;
-    }
-
-    // Wire existing rows
-    body.querySelectorAll('tr.section-row').forEach(tr => attachRowEvents(tr));
-
-    addBtn.addEventListener('click', () => addRow(null, null));
-
-    // Quick-add buttons from reference panel
-    document.querySelectorAll('.quick-add-btn').forEach(btn => {
-        btn.addEventListener('click', function () {
-            addRow(this.dataset.sectionId, null);
+    form.querySelectorAll('.scope-select').forEach(sel => {
+        sel.addEventListener('change', function () {
+            const id      = this.dataset.sectionId;
+            const catRow  = document.getElementById('cat-row-' + id);
+            const isGlobal = this.value === 'global';
+            if (catRow) {
+                catRow.style.display = isGlobal ? 'none' : '';
+                if (isGlobal) {
+                    catRow.querySelector('select').value = '';
+                }
+            }
         });
     });
 
-    // Auto-sort on sort input change
-    body.addEventListener('change', function (e) {
-        if (!e.target.classList.contains('sort-input')) return;
+    // ── Bulk selection ─────────────────────────────────────────────────────────
+
+    selectAllBtn?.addEventListener('click', function () {
+        grid.querySelectorAll('.section-col').forEach(col => {
+            if (col.style.display === 'none') return; // skip filtered-out items
+            const toggle = col.querySelector('.section-toggle');
+            if (toggle && !toggle.checked) {
+                toggle.checked = true;
+                toggle.dispatchEvent(new Event('change'));
+            }
+        });
     });
+
+    clearAllBtn?.addEventListener('click', function () {
+        grid.querySelectorAll('.section-col').forEach(col => {
+            if (col.style.display === 'none') return; // skip filtered-out items
+            const toggle = col.querySelector('.section-toggle');
+            if (toggle && toggle.checked) {
+                toggle.checked = false;
+                toggle.dispatchEvent(new Event('change'));
+            }
+        });
+    });
+
+    // ── Search ─────────────────────────────────────────────────────────────────
+
+    function applyFilters() {
+        const q = (searchInput?.value || '').toLowerCase().trim();
+        let visCount = 0;
+
+        grid.querySelectorAll('.section-col').forEach(col => {
+            const name  = col.dataset.name || '';
+            const show  = !q || name.includes(q);
+            col.style.display = show ? '' : 'none';
+            if (show) visCount++;
+        });
+
+        noResults?.classList.toggle('d-none', visCount > 0);
+    }
+
+    searchInput?.addEventListener('input', applyFilters);
+
+    // ── Form submit: inject hidden rows ────────────────────────────────────────
+
+    form.addEventListener('submit', function () {
+        this.querySelectorAll('.injected-hidden').forEach(el => el.remove());
+
+        const checked = [...this.querySelectorAll('.section-toggle:checked')];
+
+        checked.forEach((toggle, i) => {
+            const id    = toggle.dataset.sectionId;
+            const scope = document.getElementById('scope-' + id)?.value  || 'global';
+            const catId = document.getElementById('cat-' + id)?.value    || '';
+            const sort  = document.getElementById('sort-' + id)?.value   || String((i + 1) * 10);
+            const req   = document.getElementById('req-' + id)?.checked  ? '1' : '';
+
+            const inject = (name, val) => {
+                const inp    = document.createElement('input');
+                inp.type     = 'hidden';
+                inp.name     = name;
+                inp.value    = val;
+                inp.className = 'injected-hidden';
+                form.appendChild(inp);
+            };
+
+            inject(`rows[${i}][section_id]`,  id);
+            inject(`rows[${i}][category_id]`, scope === 'category' ? catId : '');
+            inject(`rows[${i}][sort_order]`,  sort);
+            inject(`rows[${i}][is_required]`, req);
+        });
+    });
+
+    // ── Init ───────────────────────────────────────────────────────────────────
+    updateCount();
+
 })();
 </script>
 @endpush

@@ -366,6 +366,274 @@ class InspectionSectionSeeder extends Seeder
                     'flexibility_notes' => '',
                 ],
             ],
+
+            // ── New SI (Standard Inspection) Sections ─────────────────────────────
+
+            [
+                'name'         => 'Quantity & Sampling Count',
+                'slug'         => 'quantity_sampling',
+                'description'  => 'Record product quantities, packed goods, cartons, and AQL sampling level.',
+                'section_type' => 'quantity_sampling',
+                'icon'         => 'feather-hash',
+                'sort_order'   => 10,
+                'default_data' => [
+                    'product_quantity'   => '',
+                    'packed_goods_qty'   => '',
+                    'packed_cartons_qty' => '',
+                    'aql_level'          => '',
+                ],
+            ],
+            [
+                'name'         => 'Selected Cartons SI',
+                'slug'         => 'selected_cartons_si',
+                'description'  => 'Log all inspected cartons with size, color, and sample quantity per carton.',
+                'section_type' => 'cartons',
+                'icon'         => 'feather-package',
+                'sort_order'   => 20,
+                'default_data' => [
+                    'cartons' => [
+                        ['box_number' => '', 'size' => '', 'color' => '', 'qty_inspected' => ''],
+                    ],
+                ],
+            ],
+            [
+                'name'         => 'Packing Check SI',
+                'slug'         => 'packing_check_si',
+                'description'  => 'Verify box and packaging quality against specifications.',
+                'section_type' => 'task_list',
+                'icon'         => 'feather-box',
+                'sort_order'   => 30,
+                'default_data' => [
+                    'tasks' => [
+                        [
+                            'key'             => 'box_check',
+                            'label'           => 'Box Checking',
+                            'options'         => ['Yes', 'No', 'Acceptable'],
+                            'has_attachments' => true,
+                            'has_comment'     => true,
+                        ],
+                    ],
+                ],
+            ],
+            [
+                'name'         => 'Packing Check (CE) SI',
+                'slug'         => 'packing_check_ce_si',
+                'description'  => 'CE-specific packing and user manual verification.',
+                'section_type' => 'task_list',
+                'icon'         => 'feather-box',
+                'sort_order'   => 40,
+                'default_data' => [
+                    'tasks' => [
+                        [
+                            'key'             => 'packing_check',
+                            'label'           => 'Packing Check',
+                            'options'         => ['Yes', 'No', 'Derogated'],
+                            'has_attachments' => true,
+                            'has_comment'     => true,
+                        ],
+                        [
+                            'key'             => 'ce_user_manual',
+                            'label'           => 'CE User Manual Check',
+                            'options'         => ['Yes', 'No'],
+                            'has_attachments' => true,
+                            'has_comment'     => true,
+                        ],
+                    ],
+                ],
+            ],
+            [
+                'name'         => 'Cover Photo',
+                'slug'         => 'cover_photo',
+                'description'  => 'Upload the main cover photo for this inspection.',
+                'section_type' => 'cover_photo',
+                'icon'         => 'feather-camera',
+                'sort_order'   => 50,
+                'default_data' => [],
+            ],
+            [
+                'name'         => 'Labels Check (CE) SI',
+                'slug'         => 'labels_check_ce_si',
+                'description'  => 'Verify label conformity against CE requirements.',
+                'section_type' => 'task_list',
+                'icon'         => 'feather-tag',
+                'sort_order'   => 60,
+                'default_data' => [
+                    'tasks' => [
+                        [
+                            'key'             => 'label_conformity',
+                            'label'           => 'Label Conformity',
+                            'options'         => ['Yes', 'No'],
+                            'has_attachments' => true,
+                            'has_comment'     => true,
+                        ],
+                    ],
+                ],
+            ],
+            [
+                'name'         => 'Textile – Sample Conformity Check',
+                'slug'         => 'textile_sample_conformity',
+                'description'  => 'Check textile sample against approved references and quality standards.',
+                'section_type' => 'task_list',
+                'icon'         => 'feather-layers',
+                'sort_order'   => 70,
+                'default_data' => [
+                    'tasks' => [
+                        [
+                            'key'             => 'approved_sample',
+                            'label'           => 'Approved Sample Check',
+                            'options'         => ['Yes', 'No'],
+                            'has_attachments' => true,
+                            'has_comment'     => true,
+                        ],
+                        [
+                            'key'             => 'protector_pockets',
+                            'label'           => 'Protector Pockets',
+                            'options'         => ['Yes', 'No'],
+                            'has_attachments' => true,
+                            'has_comment'     => true,
+                        ],
+                        [
+                            'key'             => 'oda_quality',
+                            'label'           => 'ODA & Protectors Quality Check',
+                            'options'         => ['Yes', 'No'],
+                            'has_attachments' => true,
+                            'has_comment'     => true,
+                        ],
+                    ],
+                ],
+            ],
+            [
+                'name'         => 'Marking Check SI',
+                'slug'         => 'marking_check_si',
+                'description'  => 'Verify shipping marks and carton marking against packing list.',
+                'section_type' => 'task_list',
+                'icon'         => 'feather-edit-2',
+                'sort_order'   => 80,
+                'default_data' => [
+                    'tasks' => [
+                        [
+                            'key'             => 'marking_check',
+                            'label'           => 'Marking Check',
+                            'options'         => ['Yes', 'No'],
+                            'has_attachments' => true,
+                            'has_comment'     => true,
+                        ],
+                    ],
+                ],
+            ],
+            [
+                'name'         => 'Textile & Leather Functional',
+                'slug'         => 'textile_leather_functional',
+                'description'  => 'Functional tests for textile and leather accessories.',
+                'section_type' => 'task_list',
+                'icon'         => 'feather-settings',
+                'sort_order'   => 90,
+                'default_data' => [
+                    'tasks' => [
+                        [
+                            'key'             => 'zippers',
+                            'label'           => 'Functionality Zippers',
+                            'options'         => ['Yes', 'No'],
+                            'has_attachments' => true,
+                            'has_comment'     => true,
+                        ],
+                        [
+                            'key'             => 'velcro',
+                            'label'           => 'Velcro',
+                            'options'         => ['Yes', 'No'],
+                            'has_attachments' => true,
+                            'has_comment'     => true,
+                        ],
+                        [
+                            'key'             => 'lining',
+                            'label'           => 'Lining',
+                            'options'         => ['Yes', 'No'],
+                            'has_attachments' => true,
+                            'has_comment'     => true,
+                        ],
+                        [
+                            'key'             => 'other_accessories',
+                            'label'           => 'Other Accessories',
+                            'options'         => ['Yes', 'No'],
+                            'has_attachments' => true,
+                            'has_comment'     => true,
+                        ],
+                        [
+                            'key'             => 'protectors_availability',
+                            'label'           => 'Protectors Availability and Direction',
+                            'options'         => ['Yes', 'No'],
+                            'has_attachments' => true,
+                            'has_comment'     => true,
+                        ],
+                        [
+                            'key'             => 'hand_pockets',
+                            'label'           => 'Hand Pockets',
+                            'options'         => ['Yes', 'No'],
+                            'has_attachments' => true,
+                            'has_comment'     => true,
+                        ],
+                    ],
+                ],
+            ],
+            [
+                'name'         => 'Files To Review',
+                'slug'         => 'files_to_review',
+                'description'  => 'Attach reference PDFs and documents for inspector review.',
+                'section_type' => 'files_review',
+                'icon'         => 'feather-file-text',
+                'sort_order'   => 100,
+                'default_data' => [
+                    'acknowledged' => false,
+                    'notes'        => '',
+                ],
+            ],
+            [
+                'name'         => 'Measurements Check SI',
+                'slug'         => 'measurements_check_si',
+                'description'  => 'Verify product measurements and symmetry against specifications.',
+                'section_type' => 'task_list',
+                'icon'         => 'feather-maximize-2',
+                'sort_order'   => 110,
+                'default_data' => [
+                    'tasks' => [
+                        [
+                            'key'             => 'measurement_check',
+                            'label'           => 'Measurement Check',
+                            'options'         => ['Yes', 'No'],
+                            'has_attachments' => true,
+                            'has_comment'     => true,
+                        ],
+                        [
+                            'key'             => 'symmetry_check',
+                            'label'           => 'Symmetry Check',
+                            'options'         => ['Yes', 'No'],
+                            'has_attachments' => true,
+                            'has_comment'     => true,
+                        ],
+                    ],
+                ],
+            ],
+            [
+                'name'         => 'Denim & Textile Defects',
+                'slug'         => 'denim_textile_defects',
+                'description'  => 'Record all defects found with severity classification and photos.',
+                'section_type' => 'defects',
+                'icon'         => 'feather-alert-triangle',
+                'sort_order'   => 120,
+                'default_data' => [],
+            ],
+            [
+                'name'         => 'Finish Inspection',
+                'slug'         => 'finish_inspection',
+                'description'  => 'Final comments and close the inspection run.',
+                'section_type' => 'finish',
+                'icon'         => 'feather-check-circle',
+                'sort_order'   => 130,
+                'default_data' => [
+                    'comments' => '',
+                    'finished' => false,
+                ],
+            ],
         ];
 
         foreach ($sections as $sec) {
