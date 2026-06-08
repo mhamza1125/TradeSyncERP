@@ -62,7 +62,7 @@ class InspectionTypeController extends Controller
     {
         $inspectionType->load(['sectionDefaults.section', 'sectionDefaults.category']);
 
-        $sections   = InspectionSection::where('is_active', true)->orderBy('sort_order')->orderBy('name')->get();
+        $sections   = InspectionSection::where('is_active', true)->orderBy('name')->get();
         $categories = ProductCategory::orderBy('category_name')->get();
 
         return view('masters.inspection-types.sections', compact('inspectionType', 'sections', 'categories'));

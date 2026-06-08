@@ -227,13 +227,6 @@
                             <a class="nxl-link" href="{{ route('masters.inspection-types.create') }}">New Type</a>
                         </li>
                         @endcan
-                        @can('inspection-types.edit')
-                        <li class="nxl-item {{ $is('masters.inspection-types.sections') ? 'active' : '' }}">
-                            <a class="nxl-link" href="{{ route('masters.inspection-types.index') }}">
-                                <i class="feather-layers me-1 fs-12"></i>Section Assignments
-                            </a>
-                        </li>
-                        @endcan
                     </ul>
                 </li>
                 @endcan

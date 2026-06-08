@@ -210,7 +210,12 @@ class InspectionRunController extends Controller
 
             // ── 4. Handle finish flag ─────────────────────────────────────────
             if ($request->boolean('finish_run')) {
-                $run->update(['completed_at' => now()]);
+                $run->update([
+                    'completed_at' => now(),
+                    'verdict'      => $this->resolveRunVerdict($run),
+                ]);
+
+                $this->syncInspectionStatus($inspection);
             }
 
             return redirect()->route('inspections.runs.edit', [$inspection, $run])
@@ -357,6 +362,69 @@ class InspectionRunController extends Controller
         );
 
         return response()->json($plan);
+    }
+
+    // ── Determine a run's final verdict from its Final Review section / AQL ───
+
+    private function resolveRunVerdict(InspectionRun $run): string
+    {
+        $sections = $run->runSections()->with('section')->get();
+
+        // 1. Explicit verdict chosen by the inspector in Final Review
+        $finalReview = $sections->first(fn($rs) => $rs->section?->slug === 'final_review');
+        $selected    = $finalReview->data['overall_verdict'] ?? null;
+
+        $map = [
+            'Pass'                   => 'Pass',
+            'Fail'                   => 'Fail',
+            'Conditional Pass'       => 'Conditional',
+            'Re-Inspection Required' => 'Conditional',
+        ];
+
+        if ($selected && isset($map[$selected])) {
+            return $map[$selected];
+        }
+
+        // 2. AQL sampling verdict, when the run includes an AQL plan
+        $aqlVerdict = $run->aql()->value('verdict');
+        if ($aqlVerdict && $aqlVerdict !== 'Pending') {
+            return $aqlVerdict;
+        }
+
+        // 3. Derive from recorded defects (Critical/Major => Fail, Minor only => Conditional, none => Pass)
+        $defectSection = $sections->first(fn($rs) => $rs->section?->slug === 'defect_recording');
+        if ($defectSection) {
+            $severities = collect($defectSection->data['selections'] ?? [])
+                ->filter(fn($s) => !empty($s['selected']) && !empty($s['defect_id']))
+                ->pluck('severity');
+
+            if ($severities->isEmpty()) {
+                return 'Pass';
+            }
+
+            return $severities->intersect(['Critical', 'Major'])->isNotEmpty() ? 'Fail' : 'Conditional';
+        }
+
+        return 'Pending';
+    }
+
+    // ── Recalculate the parent inspection's overall status from its runs ─────
+
+    private function syncInspectionStatus(Inspection $inspection): void
+    {
+        $runs = $inspection->runs()->get(['id', 'verdict', 'completed_at']);
+
+        if ($runs->isEmpty() || $runs->contains(fn($r) => is_null($r->completed_at))) {
+            $status = 'Pending';
+        } elseif ($runs->contains(fn($r) => $r->verdict === 'Fail')) {
+            $status = 'Fail';
+        } else {
+            $status = 'Pass';
+        }
+
+        if ($inspection->overall_status !== $status) {
+            $inspection->update(['overall_status' => $status]);
+        }
     }
 
     // ── Auto-resolve sections ─────────────────────────────────────────────────
