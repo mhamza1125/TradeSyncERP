@@ -26,137 +26,110 @@ class InspectionTypeSectionDefaultSeeder extends Seeder
         $categories = ProductCategory::all()->keyBy('category_name');
 
         // Format: 'Type name fragment' => [ ['slug', 'required', 'category' (optional)] ]
+        // This map reflects the standardized 7-type inspection structure — each type
+        // carries only the sections defined in its authoritative spec (section 4).
         $map = [
-            'Sample Check' => [
-                ['slug' => 'product_screening',      'required' => false, 'category' => null],
-                ['slug' => 'sample_conformity',      'required' => true,  'category' => null],
-                ['slug' => 'workmanship_check',      'required' => true,  'category' => null],
-                ['slug' => 'measurement_check',      'required' => false, 'category' => null],
-                ['slug' => 'carton_dimensions_weight','required' => false, 'category' => null],
-                ['slug' => 'article_results_table',  'required' => false, 'category' => null],
-                ['slug' => 'variations_techpack',    'required' => false, 'category' => null],
-                ['slug' => 'defect_recording',       'required' => false, 'category' => null],
-                ['slug' => 'final_review',           'required' => false, 'category' => null],
-            ],
-            'Pre-Production' => [
-                ['slug' => 'factory_readiness',        'required' => true,  'category' => null],
-                ['slug' => 'raw_material_check',       'required' => true,  'category' => null],
-                ['slug' => 'pre_production_checklist', 'required' => true,  'category' => null],
+            'SMS (Sample Inspection)' => [
+                ['slug' => 'product_screening',        'required' => true,  'category' => null],
                 ['slug' => 'sample_conformity',        'required' => false, 'category' => null],
-                ['slug' => 'defect_recording',         'required' => false, 'category' => null],
+                ['slug' => 'workmanship_check',        'required' => true,  'category' => null],
+                ['slug' => 'measurement_check',        'required' => true,  'category' => null],
+                ['slug' => 'carton_dimensions_weight', 'required' => true,  'category' => null],
+                ['slug' => 'article_results_table',    'required' => true,  'category' => null],
+                ['slug' => 'defect_recording',         'required' => true,  'category' => null],
+                ['slug' => 'variations_techpack',      'required' => true,  'category' => null],
+                ['slug' => 'final_review',             'required' => true,  'category' => null],
             ],
-            'Inline' => [
-                ['slug' => 'product_screening',     'required' => false, 'category' => null],
-                ['slug' => 'production_status',     'required' => true,  'category' => null],
-                ['slug' => 'workmanship_check',     'required' => true,  'category' => null],
-                ['slug' => 'defect_recording',      'required' => true,  'category' => null],
-                ['slug' => 'measurement_check',     'required' => true,  'category' => null],
-                ['slug' => 'variations_sample',     'required' => true,  'category' => null],
-                ['slug' => 'packing_check',         'required' => false, 'category' => null],
-                ['slug' => 'final_review',          'required' => true,  'category' => null],
+            'PPS (Pre-Production Inspection)' => [
+                ['slug' => 'factory_readiness',         'required' => true,  'category' => null],
+                ['slug' => 'raw_material_check',        'required' => true,  'category' => null],
+                ['slug' => 'pre_production_checklist',  'required' => true,  'category' => null],
+                ['slug' => 'defect_recording',          'required' => true,  'category' => null],
+                ['slug' => 'product_screening',         'required' => false, 'category' => null],
             ],
-            'Final Quality' => [
-                // Global sections — applied to every sample category
-                ['slug' => 'general_information',     'required' => true,  'category' => null],
-                ['slug' => 'product_screening',       'required' => false, 'category' => null],
-                ['slug' => 'workmanship_check',       'required' => true,  'category' => null],
-                ['slug' => 'aql_sampling',            'required' => true,  'category' => null],
-                ['slug' => 'measurement_check',       'required' => true,  'category' => null],
-                ['slug' => 'packing_check',           'required' => true,  'category' => null],
-                ['slug' => 'carton_dimensions_weight','required' => true,  'category' => null],
-                ['slug' => 'labels_check',            'required' => true,  'category' => null],
-                ['slug' => 'marking_check',           'required' => false, 'category' => null],
-                ['slug' => 'barcode_testing',         'required' => true,  'category' => null],
-                ['slug' => 'article_results_table',   'required' => true,  'category' => null],
-                ['slug' => 'defect_recording',        'required' => true,  'category' => null],
-                ['slug' => 'variations_sample',       'required' => true,  'category' => null],
-                ['slug' => 'variations_techpack',     'required' => true,  'category' => null],
-                ['slug' => 'overall_article_result',  'required' => true,  'category' => null],
-                ['slug' => 'final_review',            'required' => false, 'category' => null],
-                // Category-specific sections — only when sample is Garments
-                ['slug' => 'functional_test',         'required' => false, 'category' => 'Garments'],
-                // Category-specific sections — only when sample is Electronics
-                ['slug' => 'functional_test',         'required' => true,  'category' => 'Electronics'],
-                ['slug' => 'barcode_testing',         'required' => false, 'category' => 'Electronics'],
+            'Inline Inspection (DUPRO)' => [
+                ['slug' => 'production_status',     'required' => true, 'category' => null],
+                ['slug' => 'workmanship_check',     'required' => true, 'category' => null],
+                ['slug' => 'defect_recording',      'required' => true, 'category' => null],
+                ['slug' => 'measurement_check',     'required' => true, 'category' => null],
+                ['slug' => 'variations_sample',     'required' => true, 'category' => null],
+                ['slug' => 'packing_check',         'required' => true, 'category' => null],
+                ['slug' => 'final_review',          'required' => true, 'category' => null],
+            ],
+            'Final Inspection (AQL / Percentage Based)' => [
+                ['slug' => 'general_information',      'required' => true, 'category' => null],
+                ['slug' => 'product_screening',        'required' => true, 'category' => null],
+                ['slug' => 'aql_sampling',             'required' => true, 'category' => null],
+                ['slug' => 'workmanship_check',        'required' => true, 'category' => null],
+                ['slug' => 'measurement_check',        'required' => true, 'category' => null],
+                ['slug' => 'packing_check',            'required' => true, 'category' => null],
+                ['slug' => 'carton_dimensions_weight', 'required' => true, 'category' => null],
+                ['slug' => 'labels_check',             'required' => true, 'category' => null],
+                ['slug' => 'marking_check',            'required' => true, 'category' => null],
+                ['slug' => 'barcode_testing',          'required' => true, 'category' => null],
+                ['slug' => 'article_results_table',    'required' => true, 'category' => null],
+                ['slug' => 'defect_recording',         'required' => true, 'category' => null],
+                ['slug' => 'variations_sample',        'required' => true, 'category' => null],
+                ['slug' => 'variations_techpack',      'required' => true, 'category' => null],
+                ['slug' => 'overall_article_result',   'required' => true, 'category' => null],
+            ],
+            'Final Inspection (100%)' => [
+                ['slug' => 'article_results_table', 'required' => true, 'category' => null],
+                ['slug' => 'defect_recording',      'required' => true, 'category' => null],
+                ['slug' => 'final_review',          'required' => true, 'category' => null],
             ],
             'Re-Inspection' => [
-                ['slug' => 'general_information',    'required' => true,  'category' => null],
-                ['slug' => 'workmanship_check',      'required' => true,  'category' => null],
-                ['slug' => 'aql_sampling',           'required' => true,  'category' => null],
-                ['slug' => 'packing_check',          'required' => true,  'category' => null],
-                ['slug' => 'article_results_table',  'required' => true,  'category' => null],
-                ['slug' => 'defect_recording',       'required' => true,  'category' => null],
-                ['slug' => 'final_review',           'required' => true,  'category' => null],
+                ['slug' => 'general_information',   'required' => true, 'category' => null],
+                ['slug' => 'workmanship_check',     'required' => true, 'category' => null],
+                ['slug' => 'aql_sampling',          'required' => true, 'category' => null],
+                ['slug' => 'packing_check',         'required' => true, 'category' => null],
+                ['slug' => 'article_results_table', 'required' => true, 'category' => null],
+                ['slug' => 'defect_recording',      'required' => true, 'category' => null],
+                ['slug' => 'final_review',          'required' => true, 'category' => null],
             ],
-            'Container Loading' => [
-                ['slug' => 'product_screening',       'required' => false, 'category' => null],
-                ['slug' => 'carton_verification',     'required' => true,  'category' => null],
-                ['slug' => 'selected_cartons_si',     'required' => true,  'category' => null],
-                ['slug' => 'carton_dimensions_weight','required' => false, 'category' => null],
-                ['slug' => 'packaging_check',         'required' => false, 'category' => null],
-                ['slug' => 'labels_check',            'required' => false, 'category' => null],
-                ['slug' => 'container_details',       'required' => true,  'category' => null],
-                ['slug' => 'seal_verification',       'required' => true,  'category' => null],
-                ['slug' => 'shipment_verification',   'required' => true,  'category' => null],
-            ],
-
-            // ── New independent report-format-specific types ──────────────────────
-            'SMS Inspection' => [
-                ['slug' => 'general_information',     'required' => true, 'category' => null],
-                ['slug' => 'product_screening',       'required' => true, 'category' => null],
-                ['slug' => 'packing_check',           'required' => true, 'category' => null], // Cartons & Packaging
-                ['slug' => 'carton_dimensions_weight','required' => true, 'category' => null], // Carton Dimensions & Weight
-                ['slug' => 'barcode_testing',         'required' => true, 'category' => null], // Barcodes
-                ['slug' => 'article_results_table',   'required' => true, 'category' => null],
-                ['slug' => 'defect_recording',        'required' => true, 'category' => null], // Errors
-                ['slug' => 'variations_sample',       'required' => true, 'category' => null],
-                ['slug' => 'variations_techpack',     'required' => true, 'category' => null],
-                ['slug' => 'overall_article_result',  'required' => true, 'category' => null],
-            ],
-            'PPS Inspection' => [
-                ['slug' => 'general_information',     'required' => true, 'category' => null],
-                ['slug' => 'product_screening',       'required' => true, 'category' => null],
-                ['slug' => 'barcode_testing',         'required' => true, 'category' => null], // Barcodes
-                ['slug' => 'article_results_table',   'required' => true, 'category' => null],
-                ['slug' => 'defect_recording',        'required' => true, 'category' => null], // Errors
-                ['slug' => 'variations_sample',       'required' => true, 'category' => null],
-                ['slug' => 'variations_techpack',     'required' => true, 'category' => null],
-                ['slug' => 'overall_article_result',  'required' => true, 'category' => null],
-            ],
-            'Final Inspection (100' => [
-                ['slug' => 'article_results_table',   'required' => true, 'category' => null],
-                ['slug' => 'defect_recording',        'required' => true, 'category' => null], // Errors
-                ['slug' => 'final_review',            'required' => true, 'category' => null],
+            'Container Loading Inspection (CLI)' => [
+                ['slug' => 'carton_verification',             'required' => true, 'category' => null],
+                ['slug' => 'selected_cartons_si',             'required' => true, 'category' => null],
+                ['slug' => 'carton_dimensions_weight',        'required' => true, 'category' => null],
+                ['slug' => 'packaging_check',                 'required' => true, 'category' => null],
+                ['slug' => 'labels_check',                    'required' => true, 'category' => null],
+                ['slug' => 'container_details',               'required' => true, 'category' => null],
+                ['slug' => 'seal_verification',               'required' => true, 'category' => null],
+                ['slug' => 'shipment_verification',           'required' => true, 'category' => null],
+                ['slug' => 'order_quantity_vs_packing_list',  'required' => true, 'category' => null],
+                ['slug' => 'loading_schedule_and_timing',     'required' => true, 'category' => null],
+                ['slug' => 'inner_conditions_of_container',   'required' => true, 'category' => null],
+                ['slug' => 'number_of_cartons_loaded',        'required' => true, 'category' => null],
+                ['slug' => 'quantity_per_carton',             'required' => true, 'category' => null],
+                ['slug' => 'overall_carton_condition',        'required' => true, 'category' => null],
             ],
         ];
 
-        // ── Cleanup: the legacy combined "Sample Check P1&P2 (SMS, PPS)" type previously
-        // had every inspection section in the system attached to it (data entry mistake).
-        // Prune it back down to the section set actually defined for it below.
-        $sampleCheckType = InspectionType::where('name', 'like', '%Sample Check%')->first();
-        if ($sampleCheckType) {
-            $keepIds = $sections->only(collect($map['Sample Check'])->pluck('slug')->all())->pluck('id');
-            InspectionTypeSectionDefault::where('inspection_type_id', $sampleCheckType->id)
+        // ── Cleanup: drop any pre-existing type-default assignments for the standardized types that
+        // fall outside the authoritative map above which have been merged into / replaced by Final Review.
+        foreach (array_keys($map) as $typeName) {
+            $type = InspectionType::where('name', $typeName)->first();
+            if (! $type) {
+                continue;
+            }
+
+            $keepIds = $sections->only(collect($map[$typeName])->pluck('slug')->all())->pluck('id');
+            InspectionTypeSectionDefault::where('inspection_type_id', $type->id)
                 ->whereNotIn('inspection_section_id', $keepIds)
                 ->delete();
         }
 
-        // ── Cleanup: Conclusion / Finish Inspection / Corrective Action have been
-        // merged into / replaced by "Final Review & Approval" — drop their
-        // type-default assignments so new runs no longer get these sections.
-        // The master inspection_sections rows and partials remain so existing
-        // runs that already carry these sections keep rendering them.
         $removedSlugIds = $sections->whereIn('slug', [
                 'inspection_conclusion', 'finish_inspection', 'corrective_action',
-                'textile_sample_conformity', 'denim_textile_defects',
+                'textile_sample_conformity', 'denim_textile_defects', 'functional_test',
             ])
             ->pluck('id');
         if ($removedSlugIds->isNotEmpty()) {
             InspectionTypeSectionDefault::whereIn('inspection_section_id', $removedSlugIds)->delete();
         }
 
-        foreach ($map as $typeNameFragment => $sectionList) {
-            $type = InspectionType::where('name', 'like', "%{$typeNameFragment}%")->first();
+        foreach ($map as $typeName => $sectionList) {
+            $type = InspectionType::where('name', $typeName)->first();
             if (! $type) {
                 continue;
             }
