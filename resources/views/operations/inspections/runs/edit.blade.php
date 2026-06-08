@@ -188,14 +188,36 @@ $typeColors = [
     'files_review'      => 'secondary',
     'defects'           => 'danger',
     'finish'            => 'success',
+    'article_results'   => 'info',
+    'conclusion'        => 'success',
+    'general_info'      => 'primary',
 ];
 
-$totalSecs    = $run->runSections->count();
-$completeSecs = $run->runSections->where('status', 'complete')->count();
+// Slugs whose own section partial already renders a notes/remarks/comments field —
+// the generic header notes field is hidden for these to avoid duplicate note inputs.
+$selfNotedSlugs = [
+    'product_screening', 'container_details', 'final_review', 'files_to_review',
+    'seal_verification', 'shipment_verification', 'overall_article_result',
+    'protector_evaluation', 'sample_conformity', 'measurement_check',
+    'variations_techpack', 'production_status',
+];
+
+// Slugs that are no longer rendered as their own card (merged into / replaced
+// by another section) — old runs may still carry these rows, so filter them
+// out of the sidebar nav and progress counts as well.
+$hiddenSlugs = [
+    'corrective_action', 'inspection_conclusion', 'finish_inspection',
+    'textile_sample_conformity', 'denim_textile_defects',
+];
+
+$visibleRunSections = $run->runSections->whereNotIn('section.slug', $hiddenSlugs)->values();
+
+$totalSecs    = $visibleRunSections->count();
+$completeSecs = $visibleRunSections->where('status', 'complete')->count();
 $progressPct  = $totalSecs > 0 ? round($completeSecs / $totalSecs * 100) : 0;
 
 $sectionSaveUrls = [];
-foreach ($run->runSections as $rs) {
+foreach ($visibleRunSections as $rs) {
     $sectionSaveUrls[$rs->id] = route('inspections.runs.sections.save', [$inspection, $run, $rs]);
 }
 @endphp
@@ -252,10 +274,10 @@ foreach ($run->runSections as $rs) {
             Sections
         </div>
 
-        @if($run->runSections->isEmpty())
+        @if($visibleRunSections->isEmpty())
             <p class="text-muted fs-12 px-2">No sections found.</p>
         @else
-            @foreach($run->runSections as $rs)
+            @foreach($visibleRunSections as $rs)
             @php
                 $sec   = $rs->section;
                 $sColor = $typeColors[$sec->section_type] ?? 'secondary';
@@ -407,7 +429,7 @@ foreach ($run->runSections as $rs) {
             </div>
 
             {{-- ── Sections accordion ───────────────────────────────────── --}}
-            @if($run->runSections->isEmpty())
+            @if($visibleRunSections->isEmpty())
             <div class="card mb-4">
                 <div class="card-body text-center py-5 text-muted">
                     <i class="feather-layers" style="font-size:2rem;opacity:.3"></i>
@@ -417,10 +439,13 @@ foreach ($run->runSections as $rs) {
             </div>
             @else
             <div id="sectionsAccordion">
-                @foreach($run->runSections as $loopIdx => $runSection)
+                @foreach($visibleRunSections as $loopIdx => $runSection)
                 @php
                     $sec     = $runSection->section;
                     $secSlug = $sec->slug;
+                @endphp
+
+                @php
                     $accId   = 'sec-' . $runSection->id;
 
                     // Compute task progress for display
@@ -479,34 +504,15 @@ foreach ($run->runSections as $rs) {
                          class="collapse {{ $startOpen ? 'show' : '' }}">
                         <div class="card-body border-top">
 
-                            {{-- Section-level status + notes (shown for legacy/checklist types) --}}
-                            @if(in_array($sec->section_type, ['workmanship','aql','checklist','container','verification','review','images']))
-                            <div class="row g-3 mb-4">
-                                <div class="col-auto">
-                                    <label class="form-label fw-semibold fs-12">Section Status</label>
-                                    <select name="sections[{{ $runSection->id }}][status]"
-                                            class="form-select form-select-sm section-status-select"
-                                            data-section-id="{{ $runSection->id }}"
-                                            style="width:140px">
-                                        <option value="pending"  @selected($runSection->status === 'pending')>Pending</option>
-                                        <option value="complete" @selected($runSection->status === 'complete')>Complete</option>
-                                        <option value="na"       @selected($runSection->status === 'na')>N/A</option>
-                                    </select>
-                                </div>
-                                <div class="col">
-                                    <label class="form-label fw-semibold fs-12">Section Notes</label>
-                                    <input type="text"
-                                           name="sections[{{ $runSection->id }}][notes]"
-                                           class="form-control form-control-sm"
-                                           value="{{ old("sections.{$runSection->id}.notes", $runSection->notes) }}"
-                                           placeholder="Optional notes…">
-                                </div>
-                            </div>
-                            @else
-                            {{-- Hidden status/notes for new task-based sections --}}
+                            {{-- Status is controlled solely by the "Mark as Complete" action bar below —
+                                 no separate Section Status selector (it would duplicate that control). --}}
                             <input type="hidden" name="sections[{{ $runSection->id }}][status]"
                                    class="section-hidden-status" value="{{ $runSection->status }}" id="hidden-status-{{ $runSection->id }}">
-                            <input type="hidden" name="sections[{{ $runSection->id }}][notes]" value="{{ $runSection->notes }}">
+
+                            @if(in_array($secSlug, $selfNotedSlugs))
+                                {{-- This section's own partial already provides a notes/remarks field —
+                                     keep its value flowing through the same hidden input to avoid a duplicate. --}}
+                                <input type="hidden" name="sections[{{ $runSection->id }}][notes]" value="{{ $runSection->notes }}">
                             @endif
 
                             {{-- Section-specific content --}}
@@ -537,13 +543,13 @@ foreach ($run->runSections as $rs) {
                                 @case('files_to_review')
                                     @include('operations.inspections.runs.sections._files_review', [
                                         'runSection'  => $runSection,
-                                        'uploadUrl'   => $uploadUrl,
                                         'inspection'  => $inspection,
                                         'run'         => $run,
                                     ])
                                 @break
 
                                 @case('denim_textile_defects')
+                                @case('defect_recording')
                                     @include('operations.inspections.runs.sections._defects_check', [
                                         'runSection'  => $runSection,
                                         'defects'     => $defects,
@@ -557,6 +563,39 @@ foreach ($run->runSections as $rs) {
                                     @include('operations.inspections.runs.sections._finish_inspection', [
                                         'runSection'  => $runSection,
                                         'run'         => $run,
+                                    ])
+                                @break
+
+                                @case('sample_conformity')
+                                    @include('operations.inspections.runs.sections._sample_conformity', [
+                                        'runSection'  => $runSection,
+                                        'uploadUrl'   => $uploadUrl,
+                                        'inspection'  => $inspection,
+                                        'run'         => $run,
+                                    ])
+                                @break
+
+                                @case('measurement_check')
+                                    @include('operations.inspections.runs.sections._measurement_check', [
+                                        'runSection'  => $runSection,
+                                        'uploadUrl'   => $uploadUrl,
+                                        'inspection'  => $inspection,
+                                        'run'         => $run,
+                                    ])
+                                @break
+
+                                @case('variations_techpack')
+                                    @include('operations.inspections.runs.sections._variation_techpack', [
+                                        'runSection'  => $runSection,
+                                        'uploadUrl'   => $uploadUrl,
+                                        'inspection'  => $inspection,
+                                        'run'         => $run,
+                                    ])
+                                @break
+
+                                @case('production_status')
+                                    @include('operations.inspections.runs.sections._production_status', [
+                                        'runSection'  => $runSection,
                                     ])
                                 @break
 
@@ -581,26 +620,58 @@ foreach ($run->runSections as $rs) {
                                         ])
                                     @elseif($sec->section_type === 'images')
                                         @include('operations.inspections.runs.sections._product_screening', [
-                                            'runSection' => $runSection,
+                                            'runSection'  => $runSection,
+                                            'uploadUrl'   => $uploadUrl,
+                                            'inspection'  => $inspection,
+                                            'run'         => $run,
                                         ])
                                     @elseif($sec->section_type === 'container')
                                         @include('operations.inspections.runs.sections._container_details', [
-                                            'runSection' => $runSection,
+                                            'runSection'  => $runSection,
+                                            'uploadUrl'   => $uploadUrl,
+                                            'inspection'  => $inspection,
+                                            'run'         => $run,
                                         ])
                                     @elseif($sec->section_type === 'verification')
                                         @include('operations.inspections.runs.sections._verification', [
-                                            'runSection' => $runSection,
+                                            'runSection'  => $runSection,
+                                            'uploadUrl'   => $uploadUrl,
+                                            'inspection'  => $inspection,
+                                            'run'         => $run,
                                         ])
                                     @elseif($sec->section_type === 'review')
                                         @if($secSlug === 'corrective_action')
                                             @include('operations.inspections.runs.sections._corrective_action', ['runSection' => $runSection])
+                                        @elseif($secSlug === 'overall_article_result')
+                                            @include('operations.inspections.runs.sections._overall_article_result', ['runSection' => $runSection])
                                         @else
-                                            @include('operations.inspections.runs.sections._final_review', ['runSection' => $runSection])
+                                            @include('operations.inspections.runs.sections._final_review', [
+                                                'runSection'  => $runSection,
+                                                'sectionMap'  => $sectionMap,
+                                                'inspection'  => $inspection,
+                                                'run'         => $run,
+                                            ])
                                         @endif
+                                    @elseif($sec->section_type === 'general_info')
+                                        @include('operations.inspections.runs.sections._general_information', ['runSection' => $runSection])
                                     @elseif($secSlug === 'barcode_testing')
-                                        @include('operations.inspections.runs.sections._barcode_testing', ['runSection' => $runSection])
+                                        @include('operations.inspections.runs.sections._barcode_testing', [
+                                            'runSection'  => $runSection,
+                                            'uploadUrl'   => $uploadUrl,
+                                            'inspection'  => $inspection,
+                                            'run'         => $run,
+                                        ])
                                     @elseif($secSlug === 'protector_evaluation')
-                                        @include('operations.inspections.runs.sections._protector_evaluation', ['runSection' => $runSection])
+                                        @include('operations.inspections.runs.sections._protector_evaluation', [
+                                            'runSection'  => $runSection,
+                                            'uploadUrl'   => $uploadUrl,
+                                            'inspection'  => $inspection,
+                                            'run'         => $run,
+                                        ])
+                                    @elseif($sec->section_type === 'article_results')
+                                        @include('operations.inspections.runs.sections._article_results', ['runSection' => $runSection])
+                                    @elseif($sec->section_type === 'conclusion')
+                                        @include('operations.inspections.runs.sections._conclusion', ['runSection' => $runSection])
                                     @else
                                         @include('operations.inspections.runs.sections._checklist', [
                                             'runSection' => $runSection,
@@ -610,6 +681,19 @@ foreach ($run->runSections as $rs) {
                                 @break
 
                             @endswitch
+
+                            @unless(in_array($secSlug, $selfNotedSlugs))
+                            {{-- Single optional notes field, kept at the bottom of every section --}}
+                            <div class="row g-3 mt-1">
+                                <div class="col-12">
+                                    <label class="form-label fw-semibold fs-12">Optional Notes</label>
+                                    <textarea name="sections[{{ $runSection->id }}][notes]"
+                                              rows="2"
+                                              class="form-control form-control-sm"
+                                              placeholder="Optional notes for this section…">{{ old("sections.{$runSection->id}.notes", $runSection->notes) }}</textarea>
+                                </div>
+                            </div>
+                            @endunless
 
                             {{-- Subsection completion action bar --}}
                             @unless($run->completed_at)
@@ -866,9 +950,6 @@ foreach ($run->runSections as $rs) {
         const hidden = document.getElementById('hidden-status-' + rsId);
         if (hidden) hidden.value = status;
 
-        const select = document.querySelector(`.section-status-select[data-section-id="${rsId}"]`);
-        if (select) select.value = status;
-
         const completeBtn = document.querySelector(`.subsection-complete-btn[data-section-id="${rsId}"]`);
         if (completeBtn) {
             completeBtn.dataset.currentStatus = status;
@@ -934,8 +1015,7 @@ foreach ($run->runSections as $rs) {
         btn.addEventListener('click', function () {
             const rsId   = this.dataset.sectionId;
             const hidden = document.getElementById('hidden-status-' + rsId);
-            const select = document.querySelector(`.section-status-select[data-section-id="${rsId}"]`);
-            const currentStatus = (select && select.value) || (hidden && hidden.value) || 'pending';
+            const currentStatus = (hidden && hidden.value) || 'pending';
             saveSection(rsId, currentStatus, this, 'Saved.');
         });
     });
@@ -945,13 +1025,6 @@ foreach ($run->runSections as $rs) {
             const rsId = this.dataset.sectionId;
             const target = this.dataset.currentStatus === 'complete' ? 'pending' : 'complete';
             saveSection(rsId, target, this, target === 'complete' ? 'Marked as complete.' : 'Reopened — marked as pending.');
-        });
-    });
-
-    // Status dropdown (legacy section types) now persists immediately too
-    document.querySelectorAll('.section-status-select').forEach(function (sel) {
-        sel.addEventListener('change', function () {
-            saveSection(this.dataset.sectionId, this.value, null, 'Status updated.');
         });
     });
 
@@ -1066,6 +1139,10 @@ foreach ($run->runSections as $rs) {
 
     document.querySelectorAll('.attachment-area').forEach(initAttachmentArea);
 
+    // Exposed so dynamically-inserted attachment areas (e.g. Defects Recording rows
+    // added after page load via the searchable picker) can be wired up too.
+    window.initAttachmentArea = initAttachmentArea;
+
     // ═══════════════════════════════════════════════════════════════
     // 2.  TASK RADIO → progress badge + sidebar dot update
     // ═══════════════════════════════════════════════════════════════
@@ -1114,9 +1191,6 @@ foreach ($run->runSections as $rs) {
         });
         updateTaskProgress(sectionId);
     });
-
-    // Note: section-status-select changes are persisted immediately by the
-    // "SUBSECTION-LEVEL SAVE / COMPLETE" handlers above (saveSection → applyStatusEverywhere).
 
     // ═══════════════════════════════════════════════════════════════
     // 4.  Finish inspection — validate incomplete sections first

@@ -35,6 +35,18 @@
                class="form-control form-control-sm"
                value="{{ $v('loading_date') }}">
     </div>
+    <div class="col-lg-2 col-md-6">
+        <label class="form-label fw-semibold fs-12">Loading Start Time</label>
+        <input type="time" name="sections[{{ $secId }}][data][loading_start_time]"
+               class="form-control form-control-sm"
+               value="{{ $v('loading_start_time') }}">
+    </div>
+    <div class="col-lg-2 col-md-6">
+        <label class="form-label fw-semibold fs-12">Loading End Time</label>
+        <input type="time" name="sections[{{ $secId }}][data][loading_end_time]"
+               class="form-control form-control-sm"
+               value="{{ $v('loading_end_time') }}">
+    </div>
 
     <div class="col-lg-3 col-md-6">
         <label class="form-label fw-semibold fs-12">Loading Port</label>
@@ -65,7 +77,7 @@
                min="0" placeholder="0">
     </div>
     <div class="col-lg-2 col-md-4">
-        <label class="form-label fw-semibold fs-12">Container Condition</label>
+        <label class="form-label fw-semibold fs-12">Container Condition (Exterior)</label>
         <select name="sections[{{ $secId }}][data][container_condition]" class="form-select form-select-sm">
             <option value="">— Select —</option>
             <option value="Good"     @selected($v('container_condition') === 'Good')>Good</option>
@@ -73,14 +85,33 @@
             <option value="Damaged"  @selected($v('container_condition') === 'Damaged')>Damaged</option>
         </select>
     </div>
+    <div class="col-lg-2 col-md-4">
+        <label class="form-label fw-semibold fs-12">Inner Condition</label>
+        <select name="sections[{{ $secId }}][data][inner_condition]" class="form-select form-select-sm">
+            <option value="">— Select —</option>
+            <option value="Clean & Dry" @selected($v('inner_condition') === 'Clean & Dry')>Clean &amp; Dry</option>
+            <option value="Odor"        @selected($v('inner_condition') === 'Odor')>Odor Present</option>
+            <option value="Damp"        @selected($v('inner_condition') === 'Damp')>Damp / Wet</option>
+            <option value="Damaged"     @selected($v('inner_condition') === 'Damaged')>Damaged / Holes</option>
+        </select>
+    </div>
 </div>
 
-<div class="mb-0">
-    <label class="form-label fw-semibold fs-12">Container Notes</label>
-    <textarea name="sections[{{ $secId }}][data][notes]"
-              rows="2"
-              class="form-control form-control-sm"
-              placeholder="Additional notes about the container loading…">{{ $v('notes') }}</textarea>
+<div class="row g-3 mb-0">
+    <div class="col-lg-6">
+        <label class="form-label fw-semibold fs-12">Inner Condition Notes</label>
+        <textarea name="sections[{{ $secId }}][data][inner_condition_notes]"
+                  rows="2"
+                  class="form-control form-control-sm"
+                  placeholder="Notes about the inner condition of the container (cleanliness, odor, damage, water marks…)">{{ $v('inner_condition_notes') }}</textarea>
+    </div>
+    <div class="col-lg-6">
+        <label class="form-label fw-semibold fs-12">Container Notes</label>
+        <textarea name="sections[{{ $secId }}][data][notes]"
+                  rows="2"
+                  class="form-control form-control-sm"
+                  placeholder="Additional notes about the container loading…">{{ $v('notes') }}</textarea>
+    </div>
 </div>
 
 {{-- Photo uploads --}}
@@ -88,4 +119,10 @@
 <h6 class="fw-semibold mb-2 fs-13">
     <i class="feather-camera me-1 text-muted"></i>Container / Loading Photos
 </h6>
-@include('operations.inspections.runs.sections._photo_upload', ['runSection' => $runSection])
+@include('operations.inspections.runs.sections._photo_upload', [
+    'runSection' => $runSection,
+    'uploadUrl'  => $uploadUrl,
+    'inspection' => $inspection,
+    'run'        => $run,
+    'taskKey'    => 'container_photos',
+])

@@ -1,5 +1,5 @@
-{{-- Files To Review Section --}}
-{{-- Expects: $runSection, $uploadUrl, $inspection, $run --}}
+{{-- Files To Review Section — admin uploads documents at run creation; inspector reviews read-only --}}
+{{-- Expects: $runSection, $inspection, $run --}}
 @php
     $d            = $runSection->data ?? [];
     $acknowledged = (bool) ($d['acknowledged'] ?? false);
@@ -10,46 +10,36 @@
 
 <div data-section-wrapper="{{ $rsId }}">
 
-    {{-- Document attachment area --}}
+    {{-- Read-only reference documents — uploaded by admin at run creation --}}
     <div class="mb-4">
         <h6 class="fw-semibold mb-1">Reference Documents</h6>
         <p class="text-muted fs-13 mb-3">
-            Attach PDFs, specifications, or reference documents that the inspector needs to review before proceeding.
+            Documents attached by the admin for you to review before proceeding with this inspection.
         </p>
 
-        <div class="attachment-area" data-upload-url="{{ $uploadUrl }}" data-task-key="review_files">
-            <div class="att-previews d-flex flex-wrap gap-2 mb-2">
-                @forelse($existingFiles as $att)
-                <div class="att-thumb position-relative d-inline-block" id="att-{{ $att->id }}">
-                    @if($att->isImage())
+        <div class="d-flex flex-wrap gap-2 mb-2">
+            @forelse($existingFiles as $att)
+            <div class="d-inline-block">
+                @if($att->isImage())
+                    <a href="{{ $att->url }}" target="_blank">
                         <img src="{{ $att->url }}" class="rounded border"
                              style="width:72px;height:72px;object-fit:cover" alt="">
-                    @else
-                        <a href="{{ $att->url }}" target="_blank"
-                           class="d-flex flex-column align-items-center justify-content-center border rounded text-decoration-none bg-light"
-                           style="width:72px;height:72px">
-                            <i class="feather-file-text text-danger" style="font-size:22px"></i>
-                            <small class="text-muted mt-1 text-center"
-                                   style="font-size:9px;max-width:68px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">
-                                {{ $att->file_name }}
-                            </small>
-                        </a>
-                    @endif
-                    <button type="button"
-                            class="att-delete-btn btn btn-danger btn-sm p-0 position-absolute top-0 end-0 d-flex align-items-center justify-content-center"
-                            style="width:18px;height:18px;font-size:10px;border-radius:50%;margin:-4px;z-index:1;"
-                            data-delete-url="{{ route('inspections.runs.attachments.delete', [$inspection, $run, $att]) }}"
-                            data-thumb-id="att-{{ $att->id }}">×</button>
-                </div>
-                @empty
-                <p class="text-muted fs-13 fst-italic">No documents attached yet.</p>
-                @endforelse
+                    </a>
+                @else
+                    <a href="{{ $att->url }}" target="_blank"
+                       class="d-flex flex-column align-items-center justify-content-center border rounded text-decoration-none bg-light"
+                       style="width:72px;height:72px">
+                        <i class="feather-file-text text-danger" style="font-size:22px"></i>
+                        <small class="text-muted mt-1 text-center"
+                               style="font-size:9px;max-width:68px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">
+                            {{ $att->file_name }}
+                        </small>
+                    </a>
+                @endif
             </div>
-            <button type="button" class="add-files-btn btn btn-sm btn-outline-primary">
-                <i class="feather-upload me-1"></i>Attach Documents / PDFs
-            </button>
-            <input type="file" class="att-file-input d-none" multiple
-                   accept=".pdf,.doc,.docx,.xls,.xlsx,image/*">
+            @empty
+            <p class="text-muted fs-13 fst-italic">No documents attached for this run.</p>
+            @endforelse
         </div>
     </div>
 

@@ -48,7 +48,9 @@ class InspectionRunController extends Controller
     public function store(Request $request, Inspection $inspection)
     {
         $request->validate([
-            'sample_id' => ['required', 'exists:samples,id'],
+            'sample_id'        => ['required', 'exists:samples,id'],
+            'review_files'     => ['nullable', 'array', 'max:20'],
+            'review_files.*'   => ['nullable', 'file', 'max:20480', 'mimes:jpg,jpeg,png,gif,webp,pdf,doc,docx,xls,xlsx'],
         ]);
 
         return DB::transaction(function () use ($request, $inspection) {
@@ -62,6 +64,19 @@ class InspectionRunController extends Controller
             ]);
 
             $this->resolveRunSections($run, $request->sample_id, $inspection->inspection_type_id);
+
+            $reviewFiles = $request->file('review_files', []);
+            if (!empty($reviewFiles)) {
+                $filesToReview = $run->runSections()
+                    ->whereHas('section', fn($q) => $q->where('slug', 'files_to_review'))
+                    ->first();
+
+                if ($filesToReview) {
+                    foreach ($reviewFiles as $file) {
+                        $this->storeSectionAttachment($filesToReview, $file, 'review_files');
+                    }
+                }
+            }
 
             return redirect()->route('inspections.runs.edit', [$inspection, $run])
                 ->with('success', "Run #{$runNumber} created. Complete the sections below.");
@@ -240,17 +255,7 @@ class InspectionRunController extends Controller
         $result  = [];
 
         foreach ($request->file('files') as $file) {
-            $path = $file->store("inspection-sections/{$runSection->id}", 'public');
-            $att  = $runSection->attachments()->create([
-                'title'           => pathinfo($file->getClientOriginalName(), PATHINFO_FILENAME),
-                'file_name'       => $file->getClientOriginalName(),
-                'file_path'       => $path,
-                'mime_type'       => $file->getMimeType(),
-                'file_size'       => $file->getSize(),
-                'attachment_type' => str_starts_with($file->getMimeType(), 'image/') ? 'image' : 'document',
-                'task_key'        => $taskKey,
-                'uploaded_by'     => auth()->id(),
-            ]);
+            $att = $this->storeSectionAttachment($runSection, $file, $taskKey);
 
             $result[] = [
                 'id'         => $att->id,
@@ -262,6 +267,24 @@ class InspectionRunController extends Controller
         }
 
         return response()->json(['attachments' => $result]);
+    }
+
+    // ── Shared: store an uploaded file as a polymorphic attachment on a run section ──
+
+    private function storeSectionAttachment(InspectionRunSection $runSection, $file, ?string $taskKey): Attachment
+    {
+        $path = $file->store("inspection-sections/{$runSection->id}", 'public');
+
+        return $runSection->attachments()->create([
+            'title'           => pathinfo($file->getClientOriginalName(), PATHINFO_FILENAME),
+            'file_name'       => $file->getClientOriginalName(),
+            'file_path'       => $path,
+            'mime_type'       => $file->getMimeType(),
+            'file_size'       => $file->getSize(),
+            'attachment_type' => str_starts_with($file->getMimeType(), 'image/') ? 'gallery' : 'document',
+            'task_key'        => $taskKey,
+            'uploaded_by'     => auth()->id(),
+        ]);
     }
 
     // ── AJAX: delete a run-section attachment ─────────────────────────────────

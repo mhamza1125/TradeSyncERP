@@ -1,8 +1,10 @@
-{{-- Final Review & Approval --}}
+{{-- Final Review & Approval — merged with Conclusion + Finish Inspection --}}
+{{-- Expects: $runSection, $run, $inspection (for the Finish block) --}}
 @php
-    $data  = $runSection->data ?? $runSection->section->default_data ?? [];
-    $secId = $runSection->id;
-    $v     = fn(string $key) => old("sections.{$secId}.data.{$key}", $data[$key] ?? '');
+    $data       = $runSection->data ?? $runSection->section->default_data ?? [];
+    $secId      = $runSection->id;
+    $v          = fn(string $key) => old("sections.{$secId}.data.{$key}", $data[$key] ?? '');
+    $isFinished = (bool) $run->completed_at;
 @endphp
 
 <div class="row g-4 mb-4">
@@ -55,18 +57,56 @@
     </div>
 
     <div class="col-12">
-        <label class="form-label fw-semibold">QC Remarks</label>
-        <textarea name="sections[{{ $secId }}][data][qc_remarks]"
+        <label class="form-label fw-semibold fs-12">Optional Notes</label>
+        <textarea name="sections[{{ $secId }}][data][notes]"
                   rows="3"
                   class="form-control form-control-sm"
-                  placeholder="Overall inspection remarks, observations, and conclusions…">{{ $v('qc_remarks') }}</textarea>
+                  placeholder="Optional notes for this section…">{{ $v('notes') }}</textarea>
     </div>
+</div>
 
-    <div class="col-12">
-        <label class="form-label fw-semibold">Action Required</label>
-        <textarea name="sections[{{ $secId }}][data][action_required]"
-                  rows="2"
-                  class="form-control form-control-sm"
-                  placeholder="Actions the supplier / buyer must take before shipment can proceed…">{{ $v('action_required') }}</textarea>
+<hr class="my-4">
+
+{{-- Finish Inspection --}}
+<div class="text-center py-2">
+    @if($isFinished)
+    <div class="d-flex flex-column align-items-center gap-3 mb-4">
+        <div class="d-flex align-items-center justify-content-center bg-soft-success text-success rounded-circle"
+             style="width:72px;height:72px">
+            <i class="feather-check-circle" style="font-size:36px"></i>
+        </div>
+        <div>
+            <h5 class="fw-bold text-success mb-1">Inspection Finished</h5>
+            <p class="text-muted mb-0 fs-13">
+                Completed on {{ $run->completed_at->format('d M Y \a\t H:i') }}
+            </p>
+        </div>
     </div>
+    @else
+    <div class="d-flex flex-column align-items-center gap-2 mb-4">
+        <div class="d-flex align-items-center justify-content-center bg-soft-secondary text-muted rounded-circle"
+             style="width:72px;height:72px">
+            <i class="feather-flag" style="font-size:36px"></i>
+        </div>
+        <div>
+            <h5 class="fw-semibold mb-1">Ready to Finish?</h5>
+            <p class="text-muted fs-13 mb-0">
+                Review all sections above, then click <strong>Finish Inspection</strong> to close this run.
+            </p>
+        </div>
+    </div>
+    @endif
+
+    @if(!$isFinished)
+    <div class="d-flex justify-content-center gap-3">
+        <button type="button" id="finish-inspection-btn" class="btn btn-success btn-lg px-5">
+            <i class="feather-check-circle me-2"></i>Finish Inspection
+        </button>
+    </div>
+    <p class="text-muted fs-12 mt-2">Finishing will lock this run and mark it as complete.</p>
+    @else
+    <a href="{{ route('inspections.edit', $inspection) }}" class="btn btn-outline-primary">
+        <i class="feather-arrow-left me-2"></i>Back to Inspection
+    </a>
+    @endif
 </div>

@@ -16,6 +16,11 @@ class InspectionTypeSeeder extends Seeder
             ['name' => 'Final Quality Check (AQL / 100% / % Based)', 'description' => 'Final quality check before shipment using AQL, 100%, or percentage-based sampling'],
             ['name' => 'Re-Inspection (Re-QC)',                   'description' => 'Re-inspection after previous QC failure'],
             ['name' => 'Container Loading Inspection (CLI)',       'description' => 'Inspection during container loading to verify shipment integrity'],
+
+            // ── Independent report-format-specific types (added alongside the combined types above) ──
+            ['name' => 'SMS Inspection',                          'description' => 'Specialized shipment / product verification template (SMS report format)'],
+            ['name' => 'PPS Inspection',                          'description' => 'Pre-production sample (PPS) approval inspection'],
+            ['name' => 'Final Inspection (100% Check)',           'description' => 'Full quantity (100%) final inspection before shipment'],
         ];
 
         foreach ($types as $type) {

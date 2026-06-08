@@ -1,7 +1,8 @@
 {{-- Protector Evaluation Section --}}
 @php
     $data        = old("sections.{$runSection->id}.data", $runSection->data ?? []);
-    $result      = $data['evaluation_result']  ?? 'pending';
+    $result      = $data['evaluation_result']  ?? null;
+    $result      = $result === 'pending' ? null : $result;
     $impact      = $data['impact_notes']       ?? '';
     $flexibility = $data['flexibility_notes']  ?? '';
 @endphp
@@ -9,13 +10,15 @@
 <div class="row g-3">
     <div class="col-lg-4">
         <label class="form-label fw-semibold">Evaluation Result <span class="text-danger">*</span></label>
-        <select name="sections[{{ $runSection->id }}][data][evaluation_result]" class="form-select">
-            <option value="pending" @selected($result === 'pending')>Pending</option>
-            <option value="pass"    @selected($result === 'pass')>Pass</option>
-            <option value="fail"    @selected($result === 'fail')>Fail</option>
-            <option value="partial" @selected($result === 'partial')>Partial</option>
-        </select>
-        <small class="text-muted">Overall protective gear evaluation outcome.</small>
+        <div>
+            @include('operations.inspections.runs.sections._result_toggle', [
+                'name'    => "sections[{$runSection->id}][data][evaluation_result]",
+                'value'   => $result,
+                'options' => ['pass' => 'success', 'fail' => 'danger', 'partial' => 'warning'],
+                'labels'  => ['pass' => 'Pass', 'fail' => 'Fail', 'partial' => 'Partial'],
+            ])
+        </div>
+        <small class="text-muted d-block mt-1">Overall protective gear evaluation outcome.</small>
     </div>
 
     <div class="col-lg-4">
@@ -39,5 +42,11 @@
 
 <div class="mt-4">
     <label class="form-label fw-semibold">Attachments <small class="text-muted">(photos / videos)</small></label>
-    @include('operations.inspections.runs.sections._photo_upload', ['runSection' => $runSection])
+    @include('operations.inspections.runs.sections._photo_upload', [
+        'runSection' => $runSection,
+        'uploadUrl'  => $uploadUrl,
+        'inspection' => $inspection,
+        'run'        => $run,
+        'taskKey'    => 'evaluation_photos',
+    ])
 </div>

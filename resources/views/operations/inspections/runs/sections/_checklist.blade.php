@@ -4,13 +4,49 @@
     $data  = $runSection->data ?? $runSection->section->default_data ?? [];
     $items = $data['items'] ?? [];
     $secId = $runSection->id;
-    $isMeasurement = $runSection->section->slug === 'measurement_check';
+    $slug  = $runSection->section->slug;
+    $isMeasurement = $slug === 'measurement_check';
+    $isCartonVerification = $slug === 'carton_verification';
+    $cartonKeys = ['total_qty_ordered', 'total_qty_loaded', 'total_cartons_ordered', 'total_cartons_loaded'];
+    $cv = fn(string $key) => old("sections.{$secId}.data.{$key}", $data[$key] ?? '');
 @endphp
 
 {{-- Extra top-level fields (e.g. spec_reference for measurement, factory_name for factory readiness) --}}
 @php
     $topFields = collect($data)->except('items');
+    if ($isCartonVerification) {
+        $topFields = $topFields->except($cartonKeys);
+    }
 @endphp
+
+@if($isCartonVerification)
+<div class="row g-3 mb-3">
+    <div class="col-md-6">
+        <label class="form-label fw-semibold fs-12">Total Quantity Ordered</label>
+        <input type="number" name="sections[{{ $secId }}][data][total_qty_ordered]"
+               class="form-control form-control-sm" min="0" placeholder="0"
+               value="{{ $cv('total_qty_ordered') }}">
+    </div>
+    <div class="col-md-6">
+        <label class="form-label fw-semibold fs-12">Total Loaded Quantity</label>
+        <input type="number" name="sections[{{ $secId }}][data][total_qty_loaded]"
+               class="form-control form-control-sm" min="0" placeholder="0"
+               value="{{ $cv('total_qty_loaded') }}">
+    </div>
+    <div class="col-md-6">
+        <label class="form-label fw-semibold fs-12">Total Cartons Ordered</label>
+        <input type="number" name="sections[{{ $secId }}][data][total_cartons_ordered]"
+               class="form-control form-control-sm" min="0" placeholder="0"
+               value="{{ $cv('total_cartons_ordered') }}">
+    </div>
+    <div class="col-md-6">
+        <label class="form-label fw-semibold fs-12">Total Cartons Loaded</label>
+        <input type="number" name="sections[{{ $secId }}][data][total_cartons_loaded]"
+               class="form-control form-control-sm" min="0" placeholder="0"
+               value="{{ $cv('total_cartons_loaded') }}">
+    </div>
+</div>
+@endif
 
 @if($topFields->isNotEmpty())
 <div class="row g-3 mb-4">
@@ -36,13 +72,12 @@
     <table class="table table-sm table-bordered align-middle mb-0">
         <thead class="table-light">
             <tr>
-                <th class="ps-3" style="width:{{ $isMeasurement ? '160px' : '260px' }}">Checkpoint</th>
+                <th class="ps-3">Checkpoint</th>
                 @if($isMeasurement)
                     <th style="width:110px">Spec</th>
                     <th style="width:110px">Actual</th>
                 @endif
-                <th style="width:120px">Result</th>
-                <th>Remarks</th>
+                <th style="width:240px">Result</th>
             </tr>
         </thead>
         <tbody>
@@ -79,21 +114,10 @@
             </td>
             @endif
             <td>
-                <select name="sections[{{ $secId }}][data][items][{{ $idx }}][result]"
-                        class="form-select form-select-sm checklist-result"
-                        onchange="updateChecklistRow(this)">
-                    <option value="">— Select —</option>
-                    <option value="Pass" @selected($result === 'Pass')>Pass</option>
-                    <option value="Fail" @selected($result === 'Fail')>Fail</option>
-                    <option value="N/A"  @selected($result === 'N/A')>N/A</option>
-                </select>
-            </td>
-            <td>
-                <input type="text"
-                       name="sections[{{ $secId }}][data][items][{{ $idx }}][remarks]"
-                       class="form-control form-control-sm"
-                       value="{{ old("sections.{$secId}.data.items.{$idx}.remarks", $item['remarks'] ?? '') }}"
-                       placeholder="Remarks…">
+                @include('operations.inspections.runs.sections._result_toggle', [
+                    'name'  => "sections[{$secId}][data][items][{$idx}][result]",
+                    'value' => $result,
+                ])
             </td>
         </tr>
         @endforeach
@@ -103,13 +127,3 @@
 @else
 <p class="text-muted fst-italic">No checklist items defined for this section.</p>
 @endif
-
-<script>
-function updateChecklistRow(sel) {
-    const row = sel.closest('tr');
-    row.classList.remove('table-success','table-danger','table-light','text-muted');
-    if      (sel.value === 'Pass') row.classList.add('table-success');
-    else if (sel.value === 'Fail') row.classList.add('table-danger');
-    else if (sel.value === 'N/A')  { row.classList.add('table-light'); row.classList.add('text-muted'); }
-}
-</script>

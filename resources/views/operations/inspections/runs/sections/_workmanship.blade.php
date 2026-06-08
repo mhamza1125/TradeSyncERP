@@ -36,17 +36,14 @@
             <tr>
                 <th class="ps-3">#</th>
                 <th>Inspection Item</th>
-                <th style="width:140px">Result</th>
-                <th>Notes</th>
+                <th style="width:240px">Result</th>
             </tr>
         </thead>
         <tbody>
             @foreach($items as $idx => $item)
             @php
-                $itemStatus = old("sections.{$runSection->id}.data.items.{$idx}.status",
-                    $item['status'] ?? 'Pending');
-                $itemNote   = old("sections.{$runSection->id}.data.items.{$idx}.note",
-                    $item['note'] ?? '');
+                $itemResult = old("sections.{$runSection->id}.data.items.{$idx}.status",
+                    $item['status'] ?? null);
             @endphp
             <tr>
                 <td class="text-muted ps-3">{{ $idx + 1 }}</td>
@@ -60,12 +57,10 @@
                     @endif
                 </td>
                 <td>
-                    <select name="sections[{{ $runSection->id }}][data][items][{{ $idx }}][status]"
-                            class="form-select form-select-sm">
-                        @foreach(['Pending', 'Pass', 'Fail'] as $s)
-                            <option value="{{ $s }}" @selected($itemStatus === $s)>{{ $s }}</option>
-                        @endforeach
-                    </select>
+                    @include('operations.inspections.runs.sections._result_toggle', [
+                        'name'  => "sections[{$runSection->id}][data][items][{$idx}][status]",
+                        'value' => $itemResult,
+                    ])
                     {{-- Preserve item name/required through form submission --}}
                     <input type="hidden" name="sections[{{ $runSection->id }}][data][items][{{ $idx }}][name]"
                            value="{{ $item['name'] ?? '' }}">
@@ -77,13 +72,6 @@
                     <input type="hidden" name="sections[{{ $runSection->id }}][data][items][{{ $idx }}][description]"
                            value="{{ $item['description'] }}">
                     @endif
-                </td>
-                <td>
-                    <input type="text"
-                           name="sections[{{ $runSection->id }}][data][items][{{ $idx }}][note]"
-                           class="form-control form-control-sm"
-                           value="{{ $itemNote }}"
-                           placeholder="Observation…">
                 </td>
             </tr>
             @endforeach

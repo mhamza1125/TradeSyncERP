@@ -35,7 +35,7 @@
 
         <div class="row justify-content-center">
             <div class="col-lg-7">
-                <form id="createRunForm" action="{{ route('inspections.runs.store', $inspection) }}" method="POST">
+                <form id="createRunForm" action="{{ route('inspections.runs.store', $inspection) }}" method="POST" enctype="multipart/form-data">
                     @csrf
 
                     <div class="card">
@@ -72,6 +72,26 @@
                                 @enderror
                             </div>
 
+                            <div class="mb-0">
+                                <label class="form-label fw-semibold">
+                                    Files To Review <span class="text-muted fw-normal">(optional)</span>
+                                </label>
+                                <small class="text-muted d-block mb-2">
+                                    Attach reference documents, specs, or PDFs for the inspector to review before
+                                    starting this run. Visible to the inspector as read-only.
+                                </small>
+                                <input type="file"
+                                       id="reviewFilesInput"
+                                       name="review_files[]"
+                                       class="form-control @error('review_files') is-invalid @enderror"
+                                       multiple
+                                       accept=".pdf,.doc,.docx,.xls,.xlsx,image/*">
+                                @error('review_files')
+                                    <div class="invalid-feedback">{{ $message }}</div>
+                                @enderror
+                                <ul id="reviewFilesList" class="list-unstyled mt-2 mb-0 fs-13"></ul>
+                            </div>
+
                             @if(!$inspection->inspection_type_id)
                             <div class="alert alert-warning d-flex align-items-center gap-2 py-2 mb-0 mt-3">
                                 <i class="feather-alert-triangle flex-shrink-0"></i>
@@ -99,6 +119,16 @@ new TomSelect('#sampleSelect', {
     placeholder: '— Search and select a sample —',
     create: false,
     dropdownParent: 'body',
+});
+
+document.getElementById('reviewFilesInput')?.addEventListener('change', function () {
+    const list = document.getElementById('reviewFilesList');
+    list.innerHTML = '';
+    [...this.files].forEach(f => {
+        const li = document.createElement('li');
+        li.innerHTML = '<i class="feather-file me-1 text-muted"></i>' + f.name;
+        list.appendChild(li);
+    });
 });
 </script>
 @endpush

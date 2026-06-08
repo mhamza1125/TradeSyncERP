@@ -19,19 +19,19 @@
     </div>
     <div class="col-lg-2 col-md-3">
         <label class="form-label fw-semibold fs-12">Seal Intact?</label>
-        <select name="sections[{{ $secId }}][data][seal_intact]" class="form-select form-select-sm">
-            <option value="">— Select —</option>
-            <option value="Yes" @selected(old("sections.{$secId}.data.seal_intact", $data['seal_intact'] ?? '') === 'Yes')>Yes</option>
-            <option value="No"  @selected(old("sections.{$secId}.data.seal_intact", $data['seal_intact'] ?? '') === 'No')>No</option>
-        </select>
+        @include('operations.inspections.runs.sections._result_toggle', [
+            'name'    => "sections[{$secId}][data][seal_intact]",
+            'value'   => old("sections.{$secId}.data.seal_intact", $data['seal_intact'] ?? ''),
+            'options' => ['Yes' => 'success', 'No' => 'danger'],
+        ])
     </div>
     <div class="col-lg-2 col-md-3">
         <label class="form-label fw-semibold fs-12">Photo Taken?</label>
-        <select name="sections[{{ $secId }}][data][seal_photo_taken]" class="form-select form-select-sm">
-            <option value="">— Select —</option>
-            <option value="Yes" @selected(old("sections.{$secId}.data.seal_photo_taken", $data['seal_photo_taken'] ?? '') === 'Yes')>Yes</option>
-            <option value="No"  @selected(old("sections.{$secId}.data.seal_photo_taken", $data['seal_photo_taken'] ?? '') === 'No')>No</option>
-        </select>
+        @include('operations.inspections.runs.sections._result_toggle', [
+            'name'    => "sections[{$secId}][data][seal_photo_taken]",
+            'value'   => old("sections.{$secId}.data.seal_photo_taken", $data['seal_photo_taken'] ?? ''),
+            'options' => ['Yes' => 'success', 'No' => 'danger'],
+        ])
     </div>
     <div class="col-lg-3 col-md-6">
         <label class="form-label fw-semibold fs-12">Verified By</label>
@@ -59,8 +59,7 @@
         <thead class="table-light">
             <tr>
                 <th class="ps-3">Checkpoint</th>
-                <th style="width:120px">Result</th>
-                <th>Remarks</th>
+                <th style="width:240px">Result</th>
             </tr>
         </thead>
         <tbody>
@@ -81,21 +80,10 @@
                 {{ $item['label'] ?? '' }}
             </td>
             <td>
-                <select name="sections[{{ $secId }}][data][items][{{ $idx }}][result]"
-                        class="form-select form-select-sm checklist-result"
-                        onchange="updateChecklistRow(this)">
-                    <option value="">— Select —</option>
-                    <option value="Pass" @selected($result === 'Pass')>Pass</option>
-                    <option value="Fail" @selected($result === 'Fail')>Fail</option>
-                    <option value="N/A"  @selected($result === 'N/A')>N/A</option>
-                </select>
-            </td>
-            <td>
-                <input type="text"
-                       name="sections[{{ $secId }}][data][items][{{ $idx }}][remarks]"
-                       class="form-control form-control-sm"
-                       value="{{ old("sections.{$secId}.data.items.{$idx}.remarks", $item['remarks'] ?? '') }}"
-                       placeholder="Remarks…">
+                @include('operations.inspections.runs.sections._result_toggle', [
+                    'name'  => "sections[{$secId}][data][items][{$idx}][result]",
+                    'value' => $result,
+                ])
             </td>
         </tr>
         @endforeach
@@ -105,4 +93,10 @@
 @endif
 
 {{-- Photos --}}
-@include('operations.inspections.runs.sections._photo_upload', ['runSection' => $runSection])
+@include('operations.inspections.runs.sections._photo_upload', [
+    'runSection' => $runSection,
+    'uploadUrl'  => $uploadUrl,
+    'inspection' => $inspection,
+    'run'        => $run,
+    'taskKey'    => 'verification_photos',
+])
