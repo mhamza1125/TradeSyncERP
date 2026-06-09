@@ -15,7 +15,7 @@
 @endphp
 
 @push('styles')
-<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/tom-select@2.3.1/dist/css/tom-select.bootstrap5.min.css">
+<link rel="stylesheet" href="{{ asset('assets/vendor/tom-select/tom-select.bootstrap5.min.css') }}">
 <style>
     .ts-wrapper.form-control { padding: 0; border: 0; }
     .ts-wrapper .ts-control { border-radius: 0.375rem; }
@@ -139,7 +139,7 @@
 </div>
 
 @push('scripts')
-<script src="https://cdn.jsdelivr.net/npm/tom-select@2.3.1/dist/js/tom-select.complete.min.js"></script>
+<script src="{{ asset('assets/vendor/tom-select/tom-select.complete.min.js') }}"></script>
 <script>
 const EMPLOYEES_MAP = @json($employeesMap);
 const SAVED_INSPECTOR_IDS = @json(array_values(old('inspector_ids', $savedInspectors)));

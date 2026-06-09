@@ -212,24 +212,20 @@
                 @endcan
 
                 @can('inspection-types.index')
-                <li class="nxl-item nxl-hasmenu {{ $is('masters.inspection-types.*') ? 'active' : '' }}">
-                    <a href="javascript:void(0);" class="nxl-link">
+                <li class="nxl-item {{ $is('masters.inspection-types.*') ? 'active' : '' }}">
+                    <a href="{{ route('masters.inspection-types.index') }}" class="nxl-link">
                         <span class="nxl-micon"><i class="feather-check-square"></i></span>
                         <span class="nxl-mtext">Inspection Types</span>
-                        <span class="nxl-arrow"><i class="feather-chevron-right"></i></span>
                     </a>
-                    <ul class="nxl-submenu">
-                        <li class="nxl-item {{ $is('masters.inspection-types.index') ? 'active' : '' }}">
-                            <a class="nxl-link" href="{{ route('masters.inspection-types.index') }}">All Types</a>
-                        </li>
-                        @can('inspection-types.create')
-                        <li class="nxl-item {{ $is('masters.inspection-types.create') ? 'active' : '' }}">
-                            <a class="nxl-link" href="{{ route('masters.inspection-types.create') }}">New Type</a>
-                        </li>
-                        @endcan
-                    </ul>
                 </li>
                 @endcan
+
+                <li class="nxl-item {{ $is('masters.defects.*') ? 'active' : '' }}">
+                    <a href="{{ route('masters.defects.index') }}" class="nxl-link">
+                        <span class="nxl-micon"><i class="feather-alert-triangle"></i></span>
+                        <span class="nxl-mtext">Defects</span>
+                    </a>
+                </li>
                 @endcanany
 
                 {{-- ─── Tools ──────────────────────────────────────────────────── --}}

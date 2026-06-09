@@ -14,7 +14,6 @@ class DatabaseSeeder extends Seeder
             AccountsSeeder::class,
             ExpenseHeadsSeeder::class,
             InspectionTypeSeeder::class,
-            DefectCategorySeeder::class,          // must run before DefectsSeeder (FK)
             DefectsSeeder::class,
             InspectionSectionSeeder::class,
             InspectionTypeSectionDefaultSeeder::class,

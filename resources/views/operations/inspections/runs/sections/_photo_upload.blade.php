@@ -12,17 +12,20 @@
         @foreach($attsHere as $att)
         <div class="att-thumb position-relative d-inline-block" id="att-{{ $att->id }}">
             @if($att->isImage())
-                <img src="{{ $att->url }}" class="rounded border"
-                     style="width:64px;height:64px;object-fit:cover" alt="">
+                <a href="{{ $att->url }}" target="_blank" rel="noopener noreferrer">
+                    <img src="{{ $att->url }}" class="rounded border"
+                         style="width:64px;height:64px;object-fit:cover" alt="">
+                </a>
             @else
-                <div class="d-flex flex-column align-items-center justify-content-center border rounded bg-light"
-                     style="width:64px;height:64px">
+                <a href="{{ $att->url }}" target="_blank" rel="noopener noreferrer"
+                   class="d-flex flex-column align-items-center justify-content-center border rounded bg-light text-decoration-none"
+                   style="width:64px;height:64px">
                     <i class="feather-file text-muted" style="font-size:20px"></i>
                     <small class="text-muted mt-1"
                            style="font-size:9px;max-width:60px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">
                         {{ $att->file_name }}
                     </small>
-                </div>
+                </a>
             @endif
             <button type="button"
                     class="att-delete-btn btn btn-danger btn-sm p-0 position-absolute top-0 end-0 d-flex align-items-center justify-content-center"

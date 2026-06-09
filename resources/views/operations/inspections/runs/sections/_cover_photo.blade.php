@@ -58,46 +58,86 @@
 @push('scripts')
 <script>
 (function () {
-    const rsId      = {{ $rsId }};
-    const CSRF      = document.querySelector('meta[name="csrf-token"]').content;
-    const fileInput = document.getElementById('cover-input-' + rsId);
-    const uploadUrl = fileInput?.dataset.uploadUrl;
-    const spinner   = document.getElementById('cover-uploading-' + rsId);
+    const rsId     = {{ $rsId }};
+    const CSRF     = document.querySelector('meta[name="csrf-token"]').content;
+    const uploadUrl = @json($uploadUrl);
 
-    function bindTrigger(btnId) {
-        document.getElementById(btnId)?.addEventListener('click', () => fileInput?.click());
+    function getWrap()    { return document.getElementById('cover-photo-' + rsId); }
+    function getSpinner() { return document.getElementById('cover-uploading-' + rsId); }
+
+    function bindInput(input) {
+        if (!input) return;
+        input.addEventListener('change', async function () {
+            const file = this.files[0];
+            if (!file) return;
+
+            const spinner = getSpinner();
+            if (spinner) spinner.classList.remove('d-none');
+            input.disabled = true;
+
+            const fd = new FormData();
+            fd.append('files[]', file);
+            fd.append('task_key', 'cover');
+
+            try {
+                const res = await fetch(uploadUrl, {
+                    method: 'POST',
+                    headers: { 'X-CSRF-TOKEN': CSRF, 'Accept': 'application/json' },
+                    body: fd,
+                });
+                if (!res.ok) throw new Error('Upload failed');
+                const { attachments } = await res.json();
+                const att = attachments?.[0];
+                if (!att) throw new Error('No attachment');
+
+                const wrap = getWrap();
+                if (wrap) {
+                    wrap.innerHTML = `
+                        <div class="text-center mb-4">
+                            <div class="d-inline-block position-relative">
+                                <img src="${att.url}"
+                                     class="rounded border shadow-sm"
+                                     style="max-width:320px;max-height:320px;object-fit:contain"
+                                     alt="Cover Photo">
+                                <button type="button"
+                                        class="btn btn-danger btn-sm position-absolute top-0 end-0 m-2"
+                                        data-delete-url="${att.delete_url}"
+                                        onclick="deleteCoverPhoto${rsId}(this)">
+                                    <i class="feather-trash-2 me-1"></i>Remove Photo
+                                </button>
+                            </div>
+                        </div>
+                        <div class="text-center">
+                            <button type="button" class="btn btn-outline-primary btn-sm" id="cover-change-${rsId}">
+                                <i class="feather-refresh-cw me-1"></i>Change Photo
+                            </button>
+                        </div>
+                        <input type="file" class="att-file-input d-none" id="cover-input-${rsId}"
+                               accept="image/*">
+                        <div id="cover-uploading-${rsId}" class="text-center mt-3 d-none">
+                            <span class="spinner-border spinner-border-sm me-2"></span>Uploading photo…
+                        </div>`;
+                    const newInput = document.getElementById('cover-input-' + rsId);
+                    document.getElementById('cover-change-' + rsId)
+                        ?.addEventListener('click', () => newInput?.click());
+                    bindInput(newInput);
+                }
+            } catch (e) {
+                alert('Photo upload failed. Please try again.');
+            } finally {
+                const sp = getSpinner();
+                if (sp) sp.classList.add('d-none');
+                input.disabled = false;
+                this.value = '';
+            }
+        });
     }
-    bindTrigger('cover-upload-btn-' + rsId);
-    bindTrigger('cover-change-' + rsId);
 
-    fileInput?.addEventListener('change', async function () {
-        const file = this.files[0];
-        if (!file) return;
-
-        if (spinner) spinner.classList.remove('d-none');
-        if (fileInput) fileInput.disabled = true;
-
-        const formData = new FormData();
-        formData.append('files[]', file);
-        formData.append('task_key', 'cover');
-
-        try {
-            const res = await fetch(uploadUrl, {
-                method: 'POST',
-                headers: { 'X-CSRF-TOKEN': CSRF, 'Accept': 'application/json' },
-                body: formData,
-            });
-            if (!res.ok) throw new Error('Upload failed');
-            // Reload the page to show new photo
-            location.reload();
-        } catch (e) {
-            alert('Photo upload failed. Please try again.');
-        } finally {
-            if (spinner) spinner.classList.add('d-none');
-            if (fileInput) fileInput.disabled = false;
-            this.value = '';
-        }
-    });
+    bindInput(document.getElementById('cover-input-' + rsId));
+    document.getElementById('cover-upload-btn-' + rsId)
+        ?.addEventListener('click', () => document.getElementById('cover-input-' + rsId)?.click());
+    document.getElementById('cover-change-' + rsId)
+        ?.addEventListener('click', () => document.getElementById('cover-input-' + rsId)?.click());
 })();
 
 function deleteCoverPhoto{{ $rsId }}(btn) {
@@ -107,9 +147,30 @@ function deleteCoverPhoto{{ $rsId }}(btn) {
         method: 'DELETE',
         headers: { 'X-CSRF-TOKEN': CSRF, 'Accept': 'application/json' },
     }).then(r => {
-        if (r.ok) location.reload();
-        else alert('Could not remove photo.');
-    });
+        if (!r.ok) { alert('Could not remove photo.'); return; }
+        const wrap = document.getElementById('cover-photo-{{ $rsId }}');
+        if (wrap) {
+            wrap.innerHTML = `
+                <div class="border border-dashed rounded p-5 text-center bg-light-subtle">
+                    <i class="feather-camera fs-1 text-muted d-block mb-3"></i>
+                    <p class="fw-semibold mb-1">Upload Cover Photo</p>
+                    <p class="text-muted fs-13 mb-3">Select a single image to use as the cover for this inspection run</p>
+                    <button type="button" class="btn btn-primary" id="cover-upload-btn-{{ $rsId }}">
+                        <i class="feather-upload me-2"></i>Select Photo
+                    </button>
+                </div>
+                <input type="file" class="att-file-input d-none" id="cover-input-{{ $rsId }}"
+                       accept="image/*">
+                <div id="cover-uploading-{{ $rsId }}" class="text-center mt-3 d-none">
+                    <span class="spinner-border spinner-border-sm me-2"></span>Uploading photo…
+                </div>`;
+            // Re-wire the new upload button
+            const newInput = document.getElementById('cover-input-{{ $rsId }}');
+            document.getElementById('cover-upload-btn-{{ $rsId }}')
+                ?.addEventListener('click', () => newInput?.click());
+            if (window._bindCoverInput) window._bindCoverInput(newInput);
+        }
+    }).catch(() => alert('Network error.'));
 }
 </script>
 @endpush

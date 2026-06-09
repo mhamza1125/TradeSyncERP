@@ -38,7 +38,7 @@
 </div>
 
 <div>
-    <label class="form-label fw-semibold fs-12">Notes <span class="text-muted fw-normal">(optional)</span></label>
+    <label class="form-label fw-semibold fs-12">Remarks</label>
     <textarea name="sections[{{ $secId }}][data][notes]"
               rows="3"
               class="form-control form-control-sm"

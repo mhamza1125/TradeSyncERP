@@ -200,6 +200,7 @@ $selfNotedSlugs = [
     'seal_verification', 'shipment_verification', 'overall_article_result',
     'protector_evaluation', 'sample_conformity', 'measurement_check',
     'variations_techpack', 'production_status',
+    'number_of_cartons_loaded', 'overall_carton_condition',
 ];
 
 // Slugs that are no longer rendered as their own card (merged into / replaced
@@ -208,6 +209,7 @@ $selfNotedSlugs = [
 $hiddenSlugs = [
     'corrective_action', 'inspection_conclusion', 'finish_inspection',
     'textile_sample_conformity', 'denim_textile_defects',
+    'cover_photo', 'workmanship_check',
 ];
 
 $visibleRunSections = $run->runSections->whereNotIn('section.slug', $hiddenSlugs)->values();
@@ -518,6 +520,45 @@ foreach ($visibleRunSections as $rs) {
                             {{-- Section-specific content --}}
                             @switch($secSlug)
 
+                                @case('carton_dimensions_weight')
+                                    @include('operations.inspections.runs.sections._carton_dimensions_weight', [
+                                        'runSection' => $runSection,
+                                    ])
+                                @break
+
+                                @case('factory_readiness')
+                                    @include('operations.inspections.runs.sections._factory_readiness', [
+                                        'runSection' => $runSection,
+                                    ])
+                                @break
+
+                                @case('loading_schedule_and_timing')
+                                    @include('operations.inspections.runs.sections._loading_schedule', [
+                                        'runSection' => $runSection,
+                                    ])
+                                @break
+
+                                @case('number_of_cartons_loaded')
+                                    @include('operations.inspections.runs.sections._number_of_cartons_loaded', [
+                                        'runSection' => $runSection,
+                                    ])
+                                @break
+
+                                @case('quantity_per_carton')
+                                    @include('operations.inspections.runs.sections._quantity_per_carton', [
+                                        'runSection' => $runSection,
+                                    ])
+                                @break
+
+                                @case('overall_carton_condition')
+                                    @include('operations.inspections.runs.sections._overall_carton_condition', [
+                                        'runSection' => $runSection,
+                                        'uploadUrl'  => $uploadUrl,
+                                        'inspection' => $inspection,
+                                        'run'        => $run,
+                                    ])
+                                @break
+
                                 @case('quantity_sampling')
                                     @include('operations.inspections.runs.sections._quantity_sampling', [
                                         'runSection' => $runSection,
@@ -613,11 +654,6 @@ foreach ($visibleRunSections as $rs) {
                                             'aql'        => $run->aql,
                                             'aqlJsData'  => $aqlJsData,
                                         ])
-                                    @elseif($sec->section_type === 'workmanship')
-                                        @include('operations.inspections.runs.sections._workmanship', [
-                                            'runSection' => $runSection,
-                                            'run'        => $run,
-                                        ])
                                     @elseif($sec->section_type === 'images')
                                         @include('operations.inspections.runs.sections._product_screening', [
                                             'runSection'  => $runSection,
@@ -675,7 +711,9 @@ foreach ($visibleRunSections as $rs) {
                                     @else
                                         @include('operations.inspections.runs.sections._checklist', [
                                             'runSection' => $runSection,
-                                            'defects'    => $defects,
+                                            'uploadUrl'  => $uploadUrl,
+                                            'inspection' => $inspection,
+                                            'run'        => $run,
                                         ])
                                     @endif
                                 @break
@@ -683,14 +721,14 @@ foreach ($visibleRunSections as $rs) {
                             @endswitch
 
                             @unless(in_array($secSlug, $selfNotedSlugs))
-                            {{-- Single optional notes field, kept at the bottom of every section --}}
+                            {{-- Generic remarks field at the bottom of every section (skipped for self-noted slugs) --}}
                             <div class="row g-3 mt-1">
                                 <div class="col-12">
-                                    <label class="form-label fw-semibold fs-12">Optional Notes</label>
+                                    <label class="form-label fw-semibold fs-12">Remarks</label>
                                     <textarea name="sections[{{ $runSection->id }}][notes]"
                                               rows="2"
                                               class="form-control form-control-sm"
-                                              placeholder="Optional notes for this section…">{{ old("sections.{$runSection->id}.notes", $runSection->notes) }}</textarea>
+                                              placeholder="Remarks for this section…">{{ old("sections.{$runSection->id}.notes", $runSection->notes) }}</textarea>
                                 </div>
                             </div>
                             @endunless
@@ -1106,13 +1144,13 @@ foreach ($visibleRunSections as $rs) {
         div.id = id;
 
         if (att.is_image) {
-            div.innerHTML = `<img src="${att.url}" class="rounded border" style="width:64px;height:64px;object-fit:cover" alt="">`;
+            div.innerHTML = `<a href="${att.url}" target="_blank" rel="noopener noreferrer"><img src="${att.url}" class="rounded border" style="width:64px;height:64px;object-fit:cover" alt=""></a>`;
         } else {
             div.innerHTML = `
-                <div class="d-flex flex-column align-items-center justify-content-center border rounded bg-light" style="width:64px;height:64px">
+                <a href="${att.url}" target="_blank" rel="noopener noreferrer" class="d-flex flex-column align-items-center justify-content-center border rounded bg-light text-decoration-none" style="width:64px;height:64px">
                     <i class="feather-file text-muted" style="font-size:20px"></i>
                     <small class="text-muted mt-1" style="font-size:9px;max-width:60px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${att.name}</small>
-                </div>`;
+                </a>`;
         }
 
         const delBtn = document.createElement('button');

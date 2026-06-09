@@ -9,16 +9,16 @@
     $attsByTask = $runSection->attachments->groupBy(fn($a) => $a->task_key ?? '__none__');
 
     $colorFor = fn($opt) => match (strtolower($opt)) {
-        'yes', 'acceptable' => 'success',
-        'no'                => 'danger',
-        'n/a'               => 'secondary',
-        default             => 'warning',
+        'yes', 'pass', 'acceptable' => 'success',
+        'no', 'fail'                => 'danger',
+        'n/a'                       => 'secondary',
+        default                     => 'warning',
     };
     $rowClassFor = fn($opt) => match (strtolower((string) $opt)) {
-        'yes', 'acceptable' => 'table-success',
-        'no'                => 'table-danger',
-        'n/a'               => 'table-light text-muted',
-        default             => '',
+        'yes', 'pass', 'acceptable' => 'table-success',
+        'no', 'fail'                => 'table-danger',
+        'n/a'                       => 'table-light text-muted',
+        default                     => '',
     };
 @endphp
 
@@ -81,13 +81,16 @@
                         @foreach($taskAtts as $att)
                         <div class="att-thumb position-relative d-inline-block" id="att-{{ $att->id }}">
                             @if($att->isImage())
-                                <img src="{{ $att->url }}" class="rounded border"
-                                     style="width:40px;height:40px;object-fit:cover" alt="">
+                                <a href="{{ $att->url }}" target="_blank" rel="noopener noreferrer">
+                                    <img src="{{ $att->url }}" class="rounded border"
+                                         style="width:40px;height:40px;object-fit:cover" alt="">
+                                </a>
                             @else
-                                <div class="d-flex align-items-center justify-content-center border rounded bg-light"
-                                     style="width:40px;height:40px">
+                                <a href="{{ $att->url }}" target="_blank" rel="noopener noreferrer"
+                                   class="d-flex align-items-center justify-content-center border rounded bg-light text-decoration-none"
+                                   style="width:40px;height:40px">
                                     <i class="feather-file text-muted" style="font-size:14px"></i>
-                                </div>
+                                </a>
                             @endif
                             <button type="button"
                                     class="att-delete-btn btn btn-danger btn-sm p-0 position-absolute top-0 end-0 d-flex align-items-center justify-content-center"

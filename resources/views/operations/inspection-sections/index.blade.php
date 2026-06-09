@@ -117,8 +117,8 @@
                                         {{ $section->section_type }}
                                     </span>
                                 </td>
-                                <td class="text-muted fs-12" style="max-width:280px">
-                                    {{ Str::limit($section->description, 80) ?? '—' }}
+                                <td class="text-muted fs-12 text-truncate-1-line" style="max-width:280px">
+                                    {{ $section->description ?? '—' }}
                                 </td>
                                 <td class="text-center text-muted">{{ $section->sort_order }}</td>
                                 <td class="text-center">

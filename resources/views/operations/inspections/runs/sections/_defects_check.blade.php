@@ -8,13 +8,13 @@
     $defectsMap = $defects->mapWithKeys(fn($def) => [
         $def->id => [
             'name'     => $def->defect_name,
-            'category' => $def->category?->name ?? 'General',
+            'severity' => $def->severity ?? 'minor',
         ],
     ]);
     $deleteUrlTpl = route('inspections.runs.attachments.delete', [$inspection, $run, '__ATT__']);
     $savedSelections = $selections->map(fn($s) => [
         'defect_id' => (int) $s['defect_id'],
-        'severity'  => $s['severity'] ?? '',
+        'quantity'  => (int) ($s['quantity'] ?? 1),
         'comment'   => $s['comment'] ?? '',
         'attachments' => $attsByTask->get('defect_' . $s['defect_id'], collect())->map(fn($a) => [
             'id'      => $a->id,
@@ -52,10 +52,10 @@
             <tr>
                 <th style="width:36px">#</th>
                 <th>Defect</th>
-                <th style="width:130px">Category</th>
-                <th style="width:130px">Severity</th>
+                <th style="width:100px">Severity</th>
+                <th style="width:90px">Qty Affected</th>
                 <th style="width:220px">Comment</th>
-                <th style="width:220px">Photos</th>
+                <th style="width:200px">Photos</th>
                 <th style="width:40px"></th>
             </tr>
         </thead>
@@ -69,10 +69,10 @@
 
 @once
 @push('styles')
-<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/tom-select@2.3.1/dist/css/tom-select.bootstrap5.min.css">
+<link rel="stylesheet" href="{{ asset('assets/vendor/tom-select/tom-select.bootstrap5.min.css') }}">
 @endpush
 @push('scripts')
-<script src="https://cdn.jsdelivr.net/npm/tom-select@2.3.1/dist/js/tom-select.complete.min.js"></script>
+<script src="{{ asset('assets/vendor/tom-select/tom-select.complete.min.js') }}"></script>
 @endpush
 @endonce
 
@@ -88,9 +88,11 @@
     let addedDefects = new Set();
     let rowNum = 0;
 
+    const SEVERITY_COLORS = { critical: 'danger', major: 'warning', minor: 'info', functional: 'secondary' };
+
     const defectOptions = Object.entries(DEFECTS_MAP).map(([id, def]) => ({
         value: String(id),
-        text:  def.name + ' (' + def.category + ')',
+        text:  def.name + ' [' + (def.severity ?? 'unknown').charAt(0).toUpperCase() + (def.severity ?? 'unknown').slice(1) + ']',
     }));
 
     const defectDropdown = new TomSelect('#defectAddDropdown-' + rsId, {
@@ -119,8 +121,8 @@
 
     function attachmentThumbHtml(att) {
         const inner = att.isImage
-            ? `<img src="${att.url}" class="rounded border" style="width:40px;height:40px;object-fit:cover" alt="">`
-            : `<div class="d-flex align-items-center justify-content-center border rounded bg-light" style="width:40px;height:40px"><i class="feather-file text-muted" style="font-size:13px"></i></div>`;
+            ? `<a href="${att.url}" target="_blank" rel="noopener noreferrer"><img src="${att.url}" class="rounded border" style="width:40px;height:40px;object-fit:cover" alt=""></a>`
+            : `<a href="${att.url}" target="_blank" rel="noopener noreferrer" class="d-flex align-items-center justify-content-center border rounded bg-light text-decoration-none" style="width:40px;height:40px"><i class="feather-file text-muted" style="font-size:13px"></i></a>`;
         return `<div class="att-thumb position-relative d-inline-block" id="att-${att.id}">
             ${inner}
             <button type="button" class="att-delete-btn btn btn-danger btn-sm p-0 position-absolute top-0 end-0 d-flex align-items-center justify-content-center"
@@ -143,6 +145,10 @@
         const taskKey  = 'defect_' + id;
         const previews = (saved.attachments || []).map(attachmentThumbHtml).join('');
 
+        const sev      = def.severity ?? 'minor';
+        const sevColor = SEVERITY_COLORS[sev] ?? 'secondary';
+        const sevLabel = sev.charAt(0).toUpperCase() + sev.slice(1);
+
         const tr = document.createElement('tr');
         tr.dataset.defectId = id;
         tr.innerHTML = `
@@ -151,15 +157,15 @@
                 ${escHtml(def.name)}
                 <input type="hidden" name="sections[${rsId}][data][selections][${idx}][defect_id]" value="${id}">
                 <input type="hidden" name="sections[${rsId}][data][selections][${idx}][selected]" value="1">
+                <input type="hidden" name="sections[${rsId}][data][selections][${idx}][severity]" value="${sev}">
             </td>
-            <td class="text-muted fs-12">${escHtml(def.category)}</td>
             <td>
-                <select name="sections[${rsId}][data][selections][${idx}][severity]" class="form-select form-select-sm">
-                    <option value="">— Severity —</option>
-                    <option value="Critical" ${saved.severity === 'Critical' ? 'selected' : ''}>Critical</option>
-                    <option value="Major" ${saved.severity === 'Major' ? 'selected' : ''}>Major</option>
-                    <option value="Minor" ${saved.severity === 'Minor' ? 'selected' : ''}>Minor</option>
-                </select>
+                <span class="badge bg-soft-${sevColor} text-${sevColor}">${sevLabel}</span>
+            </td>
+            <td>
+                <input type="number" name="sections[${rsId}][data][selections][${idx}][quantity]"
+                       class="form-control form-control-sm text-center"
+                       value="${saved.quantity || 1}" min="1" placeholder="1">
             </td>
             <td>
                 <input type="text" name="sections[${rsId}][data][selections][${idx}][comment]"
@@ -226,7 +232,11 @@
         if (btn) removeDefectRow(btn.dataset.id);
     });
 
-    SAVED_SELECTIONS.forEach(sel => addDefectRow(sel.defect_id, sel));
+    SAVED_SELECTIONS.forEach(sel => addDefectRow(sel.defect_id, {
+        quantity: sel.quantity,
+        comment:  sel.comment,
+        attachments: sel.attachments,
+    }));
     hiddenWrap.remove();
 })();
 </script>

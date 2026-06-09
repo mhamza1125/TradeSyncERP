@@ -26,7 +26,7 @@ class InspectionSectionController extends Controller
                 $q->where('section_type', $request->type))
             ->when($request->status !== null && $request->status !== '', fn($q) =>
                 $q->where('is_active', $request->status))
-            ->orderBy('name')
+            ->orderBy('sort_order')->orderBy('name')
             ->paginate(20)
             ->withQueryString();
 

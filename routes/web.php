@@ -19,6 +19,7 @@ use App\Http\Controllers\Masters\InspectionTypeController;
 use App\Http\Controllers\Masters\ProductCategoryController;
 use App\Http\Controllers\Masters\SizeController;
 use App\Http\Controllers\Masters\SupplierController;
+use App\Http\Controllers\Masters\DefectController;
 use App\Http\Controllers\ActivityController;
 use App\Http\Controllers\Operations\CustomerOrderController;
 use App\Http\Controllers\Operations\InspectionController;
@@ -64,6 +65,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::resource('banks',             BankController::class);
         Route::resource('colors',            ColorController::class);
         Route::resource('sizes',             SizeController::class);
+        Route::resource('defects',           DefectController::class);
     });
 
     // ─── Sample Operations ───────────────────────────────────────────────────────

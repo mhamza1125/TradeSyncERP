@@ -98,7 +98,6 @@ class InspectionRunController extends Controller
         ]);
 
         $defects = Defect::where('status', true)
-            ->with('category')
             ->orderBy('defect_name')
             ->get();
 
@@ -394,15 +393,20 @@ class InspectionRunController extends Controller
         // 3. Derive from recorded defects (Critical/Major => Fail, Minor only => Conditional, none => Pass)
         $defectSection = $sections->first(fn($rs) => $rs->section?->slug === 'defect_recording');
         if ($defectSection) {
-            $severities = collect($defectSection->data['selections'] ?? [])
+            $defectIds = collect($defectSection->data['selections'] ?? [])
                 ->filter(fn($s) => !empty($s['selected']) && !empty($s['defect_id']))
-                ->pluck('severity');
+                ->pluck('defect_id')
+                ->map(fn($id) => (int) $id);
 
-            if ($severities->isEmpty()) {
+            if ($defectIds->isEmpty()) {
                 return 'Pass';
             }
 
-            return $severities->intersect(['Critical', 'Major'])->isNotEmpty() ? 'Fail' : 'Conditional';
+            $hasCriticalOrMajor = \App\Models\Defect::whereIn('id', $defectIds)
+                ->whereIn('severity', ['critical', 'major'])
+                ->exists();
+
+            return $hasCriticalOrMajor ? 'Fail' : 'Conditional';
         }
 
         return 'Pending';
@@ -465,6 +469,25 @@ class InspectionRunController extends Controller
                 'data'                  => $default->section->default_data,
                 'status'                => 'pending',
             ]);
+        }
+
+        // Always ensure final_review is the last section (sort_order=9999)
+        $hasFinalReview = $run->runSections()
+            ->whereHas('section', fn($q) => $q->where('slug', 'final_review'))
+            ->exists();
+        if (! $hasFinalReview) {
+            $finalReviewSection = \App\Models\Operations\InspectionSection::where('slug', 'final_review')
+                ->where('is_active', true)
+                ->first();
+            if ($finalReviewSection) {
+                InspectionRunSection::create([
+                    'inspection_run_id'     => $run->id,
+                    'inspection_section_id' => $finalReviewSection->id,
+                    'sort_order'            => 9999,
+                    'data'                  => $finalReviewSection->default_data,
+                    'status'                => 'pending',
+                ]);
+            }
         }
 
         // Create AQL record if aql_sampling section is included and none exists yet

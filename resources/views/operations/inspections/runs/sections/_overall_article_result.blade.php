@@ -24,10 +24,10 @@
         </div>
     </div>
     <div class="col-12">
-        <label class="form-label fw-semibold fs-12">Optional Notes</label>
+        <label class="form-label fw-semibold fs-12">Remarks</label>
         <textarea name="sections[{{ $secId }}][data][remarks]"
                   rows="3"
                   class="form-control form-control-sm"
-                  placeholder="Optional notes for this section…">{{ $remarks }}</textarea>
+                  placeholder="Remarks about the overall article result…">{{ $remarks }}</textarea>
     </div>
 </div>

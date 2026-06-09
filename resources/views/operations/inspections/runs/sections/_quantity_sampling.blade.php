@@ -37,27 +37,6 @@
                min="0">
     </div>
 
-    <div class="col-md-6">
-        <label class="form-label fw-semibold">AQL Inspection Level</label>
-        <select name="sections[{{ $rsId }}][data][aql_level]" class="form-select">
-            <option value="">— Select Level —</option>
-            @foreach(['Level I','Level II','Level III','S1','S2','S3','S4'] as $lvl)
-                <option value="{{ $lvl }}"
-                        @selected(old("sections.{$rsId}.data.aql_level", $d['aql_level'] ?? '') === $lvl)>
-                    {{ $lvl }}
-                </option>
-            @endforeach
-        </select>
-    </div>
-
-    <div class="col-md-6">
-        <label class="form-label fw-semibold">AQL Notes</label>
-        <input type="text"
-               name="sections[{{ $rsId }}][data][aql_notes]"
-               class="form-control"
-               value="{{ old("sections.{$rsId}.data.aql_notes", $d['aql_notes'] ?? '') }}"
-               placeholder="Optional sampling notes…">
-    </div>
 
 </div>
 

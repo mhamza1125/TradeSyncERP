@@ -3,7 +3,7 @@
 @section('title', 'Add Run — ' . $inspection->report_number . ' — TradeSyncERP')
 
 @push('styles')
-<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/tom-select@2.3.1/dist/css/tom-select.bootstrap5.min.css">
+<link rel="stylesheet" href="{{ asset('assets/vendor/tom-select/tom-select.bootstrap5.min.css') }}">
 @endpush
 
 @section('content')
@@ -112,7 +112,7 @@
 @endsection
 
 @push('scripts')
-<script src="https://cdn.jsdelivr.net/npm/tom-select@2.3.1/dist/js/tom-select.complete.min.js"></script>
+<script src="{{ asset('assets/vendor/tom-select/tom-select.complete.min.js') }}"></script>
 <script>
 new TomSelect('#sampleSelect', {
     maxOptions: null,
