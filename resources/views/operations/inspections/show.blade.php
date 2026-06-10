@@ -18,6 +18,14 @@
                 <a href="{{ route('inspections.index') }}" class="btn btn-icon btn-light-brand">
                     <i class="feather-arrow-left"></i>
                 </a>
+                @if($inspection->runs->count())
+                <a href="{{ route('inspections.bulk-export-pdf', $inspection) }}"
+                   class="btn btn-outline-secondary"
+                   target="_blank"
+                   title="Export all runs as one PDF">
+                    <i class="feather-download me-2"></i>Export All PDF
+                </a>
+                @endif
                 @can('inspections.edit')
                 <a href="{{ route('inspections.runs.create', $inspection) }}" class="btn btn-primary">
                     <i class="feather-plus me-2"></i>Add Run
@@ -112,6 +120,12 @@
                             </span>
                         </div>
                         <div class="ms-auto d-flex gap-2">
+                            <a href="{{ route('inspections.runs.export-pdf', [$inspection, $run]) }}"
+                               class="btn btn-sm btn-outline-secondary"
+                               target="_blank"
+                               title="Export Run PDF">
+                                <i class="feather-download"></i>
+                            </a>
                             @can('inspections.edit')
                             <a href="{{ route('inspections.runs.edit', [$inspection, $run]) }}"
                                class="btn btn-sm btn-primary">

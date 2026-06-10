@@ -122,13 +122,18 @@ class InspectionRunController extends Controller
             'aql.lot_size'                       => ['nullable', 'integer', 'min:1'],
             'aql.inspection_level'               => ['nullable', 'in:I,II,III,S1,S2,S3,S4'],
             'aql.sample_size'                    => ['nullable', 'integer', 'min:1'],
-            'aql.aql_critical'                   => ['nullable', 'numeric'],
-            'aql.aql_major'                      => ['nullable', 'numeric'],
-            'aql.aql_minor'                      => ['nullable', 'numeric'],
+            'aql.aql_critical'                   => ['nullable', 'string'],
+            'aql.aql_major'                      => ['nullable', 'string'],
+            'aql.aql_minor'                      => ['nullable', 'string'],
             'aql.found_critical'                 => ['nullable', 'integer', 'min:0'],
             'aql.found_major'                    => ['nullable', 'integer', 'min:0'],
             'aql.found_minor'                    => ['nullable', 'integer', 'min:0'],
             'aql.notes'                          => ['nullable', 'string', 'max:2000'],
+            'aql.variations'                     => ['nullable', 'array'],
+            'aql.variations.*.color'             => ['nullable', 'string', 'max:100'],
+            'aql.variations.*.size'              => ['nullable', 'string', 'max:100'],
+            'aql.variations.*.order_qty'         => ['nullable', 'integer', 'min:0'],
+            'aql.variations.*.inspect_qty'       => ['nullable', 'integer', 'min:0'],
 
             // Dynamic sections
             'sections'          => ['nullable', 'array'],
@@ -144,13 +149,40 @@ class InspectionRunController extends Controller
             if ($request->filled('aql.lot_size')) {
                 $aqlInput = $request->input('aql', []);
 
-                $lotSize     = (int) ($aqlInput['lot_size'] ?? 0);
-                $level       = $aqlInput['inspection_level'] ?? 'II';
-                $aqlCritical = isset($aqlInput['aql_critical']) ? (float) $aqlInput['aql_critical'] : null;
-                $aqlMajor    = isset($aqlInput['aql_major'])    ? (float) $aqlInput['aql_major']    : null;
-                $aqlMinor    = isset($aqlInput['aql_minor'])    ? (float) $aqlInput['aql_minor']    : null;
+                // Recalculate lot_size from variations if present
+                $variations = array_values(array_filter($aqlInput['variations'] ?? [], fn($v) => !empty($v['order_qty']) || !empty($v['color']) || !empty($v['size'])));
+                if (!empty($variations)) {
+                    $variationsTotal = array_sum(array_column($variations, 'order_qty'));
+                    $lotSize = $variationsTotal > 0 ? $variationsTotal : (int) ($aqlInput['lot_size'] ?? 0);
+                } else {
+                    $lotSize = (int) ($aqlInput['lot_size'] ?? 0);
+                    $variations = null;
+                }
+
+                $level = $aqlInput['inspection_level'] ?? 'II';
+
+                // Resolve AQL levels — support "not_allowed" string
+                $aqlCriticalRaw = $aqlInput['aql_critical'] ?? null;
+                $aqlMajorRaw    = $aqlInput['aql_major']    ?? null;
+                $aqlMinorRaw    = $aqlInput['aql_minor']    ?? null;
+
+                $notAllowedCritical = ($aqlCriticalRaw === 'not_allowed');
+                $notAllowedMajor    = ($aqlMajorRaw    === 'not_allowed');
+                $notAllowedMinor    = ($aqlMinorRaw    === 'not_allowed');
+
+                $aqlCritical = $notAllowedCritical ? null : (is_numeric($aqlCriticalRaw) ? (float) $aqlCriticalRaw : null);
+                $aqlMajor    = $notAllowedMajor    ? null : (is_numeric($aqlMajorRaw)    ? (float) $aqlMajorRaw    : null);
+                $aqlMinor    = $notAllowedMinor    ? null : (is_numeric($aqlMinorRaw)    ? (float) $aqlMinorRaw    : null);
 
                 $plan = $this->aql->calculate($lotSize, $level, $aqlCritical, $aqlMajor, $aqlMinor);
+
+                // "Not Allowed" → Ac=0, Re=1 (any defect fails)
+                $acCritical = $notAllowedCritical ? 0 : ($plan['critical']['ac'] ?? null);
+                $reCritical = $notAllowedCritical ? 1 : ($plan['critical']['re'] ?? null);
+                $acMajor    = $notAllowedMajor    ? 0 : ($plan['major']['ac']    ?? null);
+                $reMajor    = $notAllowedMajor    ? 1 : ($plan['major']['re']    ?? null);
+                $acMinor    = $notAllowedMinor    ? 0 : ($plan['minor']['ac']    ?? null);
+                $reMinor    = $notAllowedMinor    ? 1 : ($plan['minor']['re']    ?? null);
 
                 $foundCritical = (int) ($aqlInput['found_critical'] ?? 0);
                 $foundMajor    = (int) ($aqlInput['found_major']    ?? 0);
@@ -158,10 +190,13 @@ class InspectionRunController extends Controller
 
                 $verdict = $this->aql->verdict(
                     $foundCritical, $foundMajor, $foundMinor,
-                    $plan['critical']['ac'] ?? null,
-                    $plan['major']['ac']    ?? null,
-                    $plan['minor']['ac']    ?? null,
+                    $acCritical, $acMajor, $acMinor,
                 );
+
+                // Store "not_allowed" as a special sentinel float (-1) so it round-trips
+                $storeAqlCritical = $notAllowedCritical ? -1.0 : $aqlCritical;
+                $storeAqlMajor    = $notAllowedMajor    ? -1.0 : $aqlMajor;
+                $storeAqlMinor    = $notAllowedMinor    ? -1.0 : $aqlMinor;
 
                 InspectionRunAql::updateOrCreate(
                     ['inspection_run_id' => $run->id],
@@ -170,20 +205,21 @@ class InspectionRunController extends Controller
                         'inspection_level' => $level,
                         'code_letter'      => $plan['code_letter'],
                         'sample_size'      => $plan['sample_size'],
-                        'aql_critical'     => $aqlCritical,
-                        'aql_major'        => $aqlMajor,
-                        'aql_minor'        => $aqlMinor,
-                        'ac_critical'      => $plan['critical']['ac'] ?? null,
-                        're_critical'      => $plan['critical']['re'] ?? null,
-                        'ac_major'         => $plan['major']['ac']    ?? null,
-                        're_major'         => $plan['major']['re']    ?? null,
-                        'ac_minor'         => $plan['minor']['ac']    ?? null,
-                        're_minor'         => $plan['minor']['re']    ?? null,
+                        'aql_critical'     => $storeAqlCritical,
+                        'aql_major'        => $storeAqlMajor,
+                        'aql_minor'        => $storeAqlMinor,
+                        'ac_critical'      => $acCritical,
+                        're_critical'      => $reCritical,
+                        'ac_major'         => $acMajor,
+                        're_major'         => $reMajor,
+                        'ac_minor'         => $acMinor,
+                        're_minor'         => $reMinor,
                         'found_critical'   => $foundCritical,
                         'found_major'      => $foundMajor,
                         'found_minor'      => $foundMinor,
                         'verdict'          => $verdict,
                         'notes'            => $aqlInput['notes'] ?? null,
+                        'variations'       => $variations,
                     ]
                 );
             }
@@ -476,7 +512,7 @@ class InspectionRunController extends Controller
             ->whereHas('section', fn($q) => $q->where('slug', 'final_review'))
             ->exists();
         if (! $hasFinalReview) {
-            $finalReviewSection = \App\Models\Operations\InspectionSection::where('slug', 'final_review')
+            $finalReviewSection = \App\Models\InspectionSection::where('slug', 'final_review')
                 ->where('is_active', true)
                 ->first();
             if ($finalReviewSection) {

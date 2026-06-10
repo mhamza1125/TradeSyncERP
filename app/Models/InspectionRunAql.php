@@ -16,7 +16,7 @@ class InspectionRunAql extends Model
         'ac_major',    're_major',
         'ac_minor',    're_minor',
         'found_critical', 'found_major', 'found_minor',
-        'verdict', 'notes',
+        'verdict', 'notes', 'variations',
     ];
 
     protected $casts = [
@@ -28,6 +28,7 @@ class InspectionRunAql extends Model
         'found_critical' => 'integer',
         'found_major'    => 'integer',
         'found_minor'    => 'integer',
+        'variations'     => 'array',
     ];
 
     public function run()

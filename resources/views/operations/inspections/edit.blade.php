@@ -46,9 +46,19 @@
                         and the sample's category.
                     </small>
                 </div>
-                <a href="{{ route('inspections.runs.create', $inspection) }}" class="btn btn-sm btn-primary">
-                    <i class="feather-plus me-1"></i>Add Run
-                </a>
+                <div class="d-flex gap-2">
+                    @if(!$inspection->runs->isEmpty())
+                    <a href="{{ route('inspections.bulk-export-pdf', $inspection) }}"
+                       class="btn btn-sm btn-outline-secondary"
+                       target="_blank"
+                       title="Export all runs as one PDF">
+                        <i class="feather-download me-1"></i>Export All PDF
+                    </a>
+                    @endif
+                    <a href="{{ route('inspections.runs.create', $inspection) }}" class="btn btn-sm btn-primary">
+                        <i class="feather-plus me-1"></i>Add Run
+                    </a>
+                </div>
             </div>
 
             @if($inspection->runs->isEmpty())
@@ -109,6 +119,12 @@
                                 </td>
                                 <td class="text-end pe-4">
                                     <div class="d-flex justify-content-end gap-2">
+                                        <a href="{{ route('inspections.runs.export-pdf', [$inspection, $run]) }}"
+                                           class="btn btn-sm btn-outline-secondary"
+                                           target="_blank"
+                                           title="Export Run PDF">
+                                            <i class="feather-download"></i>
+                                        </a>
                                         <a href="{{ route('inspections.runs.edit', [$inspection, $run]) }}"
                                            class="btn btn-sm btn-light-brand">
                                             <i class="feather-edit-3 me-1"></i>Edit

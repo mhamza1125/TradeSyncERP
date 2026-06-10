@@ -23,6 +23,7 @@ use App\Http\Controllers\Masters\DefectController;
 use App\Http\Controllers\ActivityController;
 use App\Http\Controllers\Operations\CustomerOrderController;
 use App\Http\Controllers\Operations\InspectionController;
+use App\Http\Controllers\Operations\InspectionExportController;
 use App\Http\Controllers\Operations\InspectionRunController;
 use App\Http\Controllers\Operations\InspectionSectionController;
 use App\Http\Controllers\Operations\MovementController;
@@ -103,7 +104,13 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::delete('{run}/attachments/{attachment}',    [InspectionRunController::class, 'deleteAttachment'])->name('attachments.delete');
         // AJAX: per-section (subsection) status + data persistence
         Route::post('{run}/sections/{runSection}/save',    [InspectionRunController::class, 'saveSection'])->name('sections.save');
+        // PDF export
+        Route::get('{run}/export-pdf',  [InspectionExportController::class, 'exportRun'])->name('export-pdf');
     });
+
+    // Bulk PDF export for all/selected runs of an inspection
+    Route::get('inspections/{inspection}/bulk-export-pdf', [InspectionExportController::class, 'bulkExport'])
+        ->name('inspections.bulk-export-pdf');
 
     // AQL plan calculator (AJAX)
     Route::post('inspections/aql-calculate', [InspectionRunController::class, 'aqlCalculate'])

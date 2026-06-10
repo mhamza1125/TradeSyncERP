@@ -352,6 +352,12 @@ foreach ($visibleRunSections as $rs) {
         </div>
         <div class="page-header-right ms-auto">
             <div class="d-flex align-items-center gap-2">
+                <a href="{{ route('inspections.runs.export-pdf', [$inspection, $run]) }}"
+                   class="btn btn-outline-secondary"
+                   target="_blank"
+                   title="Export this run as PDF">
+                    <i class="feather-download me-2"></i>Export PDF
+                </a>
                 <a href="{{ route('inspections.edit', $inspection) }}" class="btn btn-light-brand">
                     <i class="feather-arrow-left me-2"></i>Back
                 </a>
@@ -1259,84 +1265,8 @@ foreach ($visibleRunSections as $rs) {
     });
 
     // ═══════════════════════════════════════════════════════════════
-    // 5.  AQL calculator
+    // 5.  AQL calculator — handled by inline script in _aql_sampling.blade.php
     // ═══════════════════════════════════════════════════════════════
-
-    const calculateBtn = document.getElementById('aql-calculate-btn');
-    if (calculateBtn) {
-        calculateBtn.addEventListener('click', function () {
-            const lotSize = document.getElementById('aql_lot_size')?.value;
-            const level   = document.getElementById('aql_inspection_level')?.value;
-            const aqlCrit = document.getElementById('aql_aql_critical')?.value;
-            const aqlMaj  = document.getElementById('aql_aql_major')?.value;
-            const aqlMin  = document.getElementById('aql_aql_minor')?.value;
-
-            if (!lotSize) { alert('Enter lot size first.'); return; }
-
-            this.disabled = true;
-            this.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span>Calculating…';
-
-            fetch('{{ route("inspections.aql.calculate") }}', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'X-CSRF-TOKEN': CSRF,
-                    'Accept': 'application/json',
-                },
-                body: JSON.stringify({
-                    lot_size:         parseInt(lotSize),
-                    inspection_level: level,
-                    aql_critical:     parseFloat(aqlCrit) || 0.065,
-                    aql_major:        parseFloat(aqlMaj)  || 2.5,
-                    aql_minor:        parseFloat(aqlMin)  || 4.0,
-                }),
-            })
-            .then(r => r.json())
-            .then(data => {
-                const set = (id, val) => { const el = document.getElementById(id); if (el) el.value = val ?? ''; };
-                set('aql_code_letter', data.code_letter);
-                set('aql_sample_size', data.sample_size);
-                set('aql_ac_critical', data.critical?.ac);
-                set('aql_re_critical', data.critical?.re);
-                set('aql_ac_major',    data.major?.ac);
-                set('aql_re_major',    data.major?.re);
-                set('aql_ac_minor',    data.minor?.ac);
-                set('aql_re_minor',    data.minor?.re);
-                document.getElementById('aql-result-row')?.classList.remove('d-none');
-            })
-            .catch(() => alert('AQL calculation failed.'))
-            .finally(() => {
-                this.disabled = false;
-                this.innerHTML = '<i class="feather-cpu me-1"></i>Calculate';
-            });
-        });
-
-        ['aql_found_critical','aql_found_major','aql_found_minor'].forEach(id => {
-            document.getElementById(id)?.addEventListener('input', updateAqlVerdict);
-        });
-
-        function updateAqlVerdict() {
-            const foundCrit = parseInt(document.getElementById('aql_found_critical')?.value) || 0;
-            const foundMaj  = parseInt(document.getElementById('aql_found_major')?.value)    || 0;
-            const foundMin  = parseInt(document.getElementById('aql_found_minor')?.value)    || 0;
-            const acCrit    = parseInt(document.getElementById('aql_ac_critical')?.value);
-            const acMaj     = parseInt(document.getElementById('aql_ac_major')?.value);
-            const acMin     = parseInt(document.getElementById('aql_ac_minor')?.value);
-            const verdictEl = document.getElementById('aql_verdict_display');
-            if (!verdictEl) return;
-            if (foundCrit + foundMaj + foundMin === 0) {
-                verdictEl.className = 'badge bg-soft-secondary text-secondary fs-13 px-3 py-2';
-                verdictEl.textContent = 'Pending';
-                return;
-            }
-            const fail = (!isNaN(acCrit) && foundCrit > acCrit) ||
-                         (!isNaN(acMaj)  && foundMaj  > acMaj)  ||
-                         (!isNaN(acMin)  && foundMin  > acMin);
-            verdictEl.className = fail ? 'badge bg-soft-danger text-danger fs-13 px-3 py-2'
-                                       : 'badge bg-soft-success text-success fs-13 px-3 py-2';
-            verdictEl.textContent = fail ? 'FAIL' : 'PASS';
-        }
-    }
 
     // ═══════════════════════════════════════════════════════════════
     // 6.  Defect card toggle
