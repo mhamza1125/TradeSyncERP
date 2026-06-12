@@ -456,8 +456,9 @@
             {{-- Recent Activity --}}
             <div class="{{ auth()->user()->can('customer-orders.index') ? 'col-xl-6' : 'col-xl-12' }}">
                 <div class="card stretch stretch-full">
-                    <div class="card-header">
+                    <div class="card-header d-flex justify-content-between align-items-center">
                         <h5 class="card-title mb-0">Recent Activity</h5>
+                        <a href="{{ route('activities.index') }}" class="btn btn-sm btn-light-brand">View All</a>
                     </div>
                     <div class="card-body p-0">
                         <div class="table-responsive">

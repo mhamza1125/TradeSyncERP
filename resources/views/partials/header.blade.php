@@ -58,16 +58,41 @@
                 <div class="dropdown nxl-h-item d-none d-sm-flex me-1">
                     <a href="javascript:void(0);" class="nxl-head-link me-0" data-bs-toggle="dropdown">
                         <i class="feather-bell"></i>
-                        <span class="badge bg-danger nxl-h-badge">0</span>
+                        @if($headerActivityCount > 0)
+                            <span class="badge bg-danger nxl-h-badge">{{ $headerActivityCount > 9 ? '9+' : $headerActivityCount }}</span>
+                        @endif
                     </a>
-                    <div class="dropdown-menu dropdown-menu-end nxl-h-dropdown">
-                        <div class="d-flex align-items-center justify-content-between notifications-head">
-                            <h6 class="fw-bold text-dark mb-0">Notifications</h6>
+                    <div class="dropdown-menu dropdown-menu-end nxl-h-dropdown" style="width:340px;max-height:420px;overflow-y:auto;">
+                        <div class="d-flex align-items-center justify-content-between notifications-head px-3 py-2 border-bottom">
+                            <h6 class="fw-bold text-dark mb-0">Recent Activity</h6>
+                            @if($headerActivityCount > 0)
+                                <span class="badge bg-soft-danger text-danger fs-10">{{ $headerActivityCount }} new today</span>
+                            @endif
                         </div>
-                        <div class="text-center py-4 text-muted">
-                            <i class="feather-bell-off fs-2 d-block mb-2"></i>
-                            <small>No new notifications</small>
-                        </div>
+                        @forelse($headerActivities as $activity)
+                            @php
+                                $modelName = class_basename($activity->subject_type ?? '');
+                                $event = $activity->event ?? $activity->description;
+                                $icons = ['created' => 'feather-plus-circle text-success', 'updated' => 'feather-edit-2 text-warning', 'deleted' => 'feather-trash-2 text-danger'];
+                                $iconClass = $icons[$event] ?? 'feather-activity text-primary';
+                            @endphp
+                            <div class="d-flex align-items-start gap-3 px-3 py-2 border-bottom">
+                                <div class="mt-1">
+                                    <i class="{{ $iconClass }} fs-16"></i>
+                                </div>
+                                <div class="flex-1 overflow-hidden">
+                                    <div class="fw-semibold fs-13 text-dark text-truncate">
+                                        {{ ucfirst($event) }} {{ $modelName }}
+                                    </div>
+                                    <div class="fs-11 text-muted">{{ $activity->created_at->diffForHumans() }}</div>
+                                </div>
+                            </div>
+                        @empty
+                            <div class="text-center py-4 text-muted">
+                                <i class="feather-bell-off fs-2 d-block mb-2"></i>
+                                <small>No recent activity</small>
+                            </div>
+                        @endforelse
                     </div>
                 </div>
 

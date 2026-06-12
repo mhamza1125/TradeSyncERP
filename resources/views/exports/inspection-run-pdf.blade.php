@@ -5,386 +5,520 @@
 <meta http-equiv="Content-Type" content="text/html; charset=utf-8"/>
 <title>Inspection Report — {{ $inspection->report_number }}</title>
 <style>
-    * { box-sizing: border-box; margin: 0; padding: 0; }
 
-    body {
-        font-family: sans-serif;
-        font-size: 9pt;
-        color: #1a1a1a;
-        line-height: 1.4;
-    }
+* { box-sizing: border-box; margin: 0; padding: 0; }
 
-    /* ── Page setup ───────────────────────────────── */
-    @page {
-        margin: 15mm 12mm 18mm 12mm;
-    }
+body {
+    font-family: DejaVu Sans, sans-serif;
+    font-size: 8.5pt;
+    color: #111827;
+    line-height: 1.5;
+}
 
-    /* ── Page break ───────────────────────────────── */
-    .page-break { page-break-after: always; }
-    .no-break   { page-break-inside: avoid; }
+@page {
+    size: A4 portrait;
+    margin: 20mm 14mm 22mm 14mm;
+}
 
-    /* ── Header ───────────────────────────────────── */
-    .report-header {
-        border-bottom: 2px solid #1a3a5c;
-        padding-bottom: 8px;
-        margin-bottom: 12px;
-    }
-    .report-header table { width: 100%; }
-    .report-title {
-        font-size: 15pt;
-        font-weight: bold;
-        color: #1a3a5c;
-    }
-    .report-subtitle {
-        font-size: 8pt;
-        color: #555;
-        margin-top: 2px;
-    }
-    .report-number {
-        font-size: 10pt;
-        font-weight: bold;
-        color: #1a3a5c;
-        text-align: right;
-    }
-    .report-date {
-        font-size: 8pt;
-        color: #555;
-        text-align: right;
-    }
+.page-break { page-break-after: always; }
+.no-break   { page-break-inside: avoid; }
 
-    /* ── Page footer ──────────────────────────────── */
-    .pdf-footer {
-        position: fixed;
-        bottom: -12mm;
-        left: 0; right: 0;
-        font-size: 7pt;
-        color: #999;
-        border-top: 1px solid #ddd;
-        padding-top: 3px;
-    }
-    .pdf-footer table { width: 100%; }
+/* ── Fixed footer ──────────────────────────────────────────────────────── */
+.pdf-footer {
+    position: fixed;
+    bottom: -18mm;
+    left: -14mm; right: -14mm;
+    border-top: 2px solid #1a3a5c;
+    padding: 4px 14mm 0;
+    font-size: 7pt;
+    color: #6b7280;
+    background: #ffffff;
+}
+.pdf-footer table { width: 100%; }
+.pdf-footer .fn-center { text-align: center; color: #1a3a5c; font-weight: bold; font-size: 7.5pt; }
+.pdf-footer .fn-right  { text-align: right; }
+.pdf-footer .fn-right:after { content: "Page " counter(page) " of " counter(pages); }
 
-    /* ── Section blocks ───────────────────────────── */
-    .section-block {
-        margin-bottom: 14px;
-        border: 1px solid #d0d7df;
-        border-radius: 3px;
-        page-break-inside: avoid;
-    }
-    .section-header {
-        background: #f0f4f8;
-        padding: 5px 9px;
-        border-bottom: 1px solid #d0d7df;
-    }
-    .section-title {
-        font-size: 9.5pt;
-        font-weight: bold;
-        color: #1a3a5c;
-        display: inline;
-    }
-    .section-status {
-        float: right;
-        font-size: 7.5pt;
-        padding: 1px 6px;
-        border-radius: 3px;
-        font-weight: bold;
-    }
-    .status-complete  { background: #d4edda; color: #155724; }
-    .status-pending   { background: #fff3cd; color: #856404; }
-    .status-na        { background: #e2e3e5; color: #383d41; }
-    .section-body  { padding: 8px 9px; }
-    .section-notes {
-        margin-top: 6px;
-        padding: 5px 7px;
-        background: #fafbfc;
-        border: 1px solid #e8ecf0;
-        border-radius: 2px;
-        font-style: italic;
-        font-size: 8pt;
-        color: #555;
-    }
+/* ── Cover banner ──────────────────────────────────────────────────────── */
+.cover-banner {
+    background: #1a3a5c;
+    color: #ffffff;
+    padding: 14px 16px;
+    margin-bottom: 0;
+    border-radius: 3px 3px 0 0;
+}
+.cover-banner table { width: 100%; }
+.cb-system-label {
+    font-size: 7pt;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    color: #93c5fd;
+    margin-bottom: 2px;
+}
+.cb-company { font-size: 15pt; font-weight: bold; letter-spacing: 0.5px; }
+.cb-tagline { font-size: 7.5pt; color: #bfdbfe; margin-top: 2px; }
+.cb-repnum  { font-size: 10pt; font-weight: bold; text-align: right; }
+.cb-date    { font-size: 8pt; color: #bfdbfe; text-align: right; margin-top: 2px; }
 
-    /* ── Meta / KV table ──────────────────────────── */
-    .meta-table { width: 100%; border-collapse: collapse; }
-    .meta-table td {
-        padding: 3px 6px;
-        font-size: 8.5pt;
-        border-bottom: 1px solid #eef1f4;
-        vertical-align: top;
-    }
-    .meta-table .kv-key {
-        width: 34%;
-        font-weight: bold;
-        color: #444;
-        white-space: nowrap;
-    }
-    .meta-table .kv-val { color: #1a1a1a; }
+/* ── Cover title strip ─────────────────────────────────────────────────── */
+.cover-title-strip {
+    background: #f0f4f8;
+    border-left: 4px solid #c8951a;
+    border-bottom: 1px solid #d1d8e0;
+    padding: 10px 16px;
+    margin-bottom: 16px;
+}
+.cover-main-title {
+    font-size: 20pt;
+    font-weight: bold;
+    color: #1a3a5c;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+}
+.cover-main-subtitle {
+    font-size: 9.5pt;
+    color: #4b5563;
+    margin-top: 2px;
+}
 
-    /* ── Checklist table ──────────────────────────── */
-    .check-table { width: 100%; border-collapse: collapse; }
-    .check-table th {
-        background: #eef2f7;
-        padding: 4px 6px;
-        text-align: left;
-        font-size: 8pt;
-        border: 1px solid #d4dce6;
-    }
-    .check-table td {
-        padding: 3px 6px;
-        font-size: 8pt;
-        border: 1px solid #e0e6ed;
-        vertical-align: top;
-    }
-    .check-table tr:nth-child(even) td { background: #f8fafc; }
+/* ── Info panels ───────────────────────────────────────────────────────── */
+.info-panel {
+    border: 1px solid #d1d8e0;
+    border-top: 3px solid #1a3a5c;
+    border-radius: 2px;
+    margin-bottom: 12px;
+}
+.info-panel-header {
+    background: #f8fafc;
+    padding: 5px 12px;
+    border-bottom: 1px solid #d1d8e0;
+    font-size: 7pt;
+    font-weight: bold;
+    text-transform: uppercase;
+    letter-spacing: 1.5px;
+    color: #6b7280;
+}
+.info-panel-body { padding: 8px 12px; }
 
-    .result-pass { color: #155724; font-weight: bold; }
-    .result-fail { color: #721c24; font-weight: bold; }
-    .result-na   { color: #6c757d; }
+.cover-kv { width: 100%; border-collapse: collapse; }
+.cover-kv td { padding: 3.5px 0; font-size: 8.5pt; border-bottom: 1px solid #f3f4f6; }
+.cover-kv .ck { color: #6b7280; width: 44%; font-size: 8pt; }
+.cover-kv .cv { color: #111827; font-weight: 500; }
+.cover-kv tr:last-child td { border-bottom: none; }
 
-    /* ── AQL table ────────────────────────────────── */
-    .aql-table { width: 100%; border-collapse: collapse; margin-top: 4px; }
-    .aql-table th {
-        background: #1a3a5c;
-        color: #fff;
-        padding: 4px 6px;
-        font-size: 8pt;
-        text-align: center;
-    }
-    .aql-table td {
-        padding: 3px 6px;
-        font-size: 8pt;
-        border: 1px solid #d4dce6;
-        text-align: center;
-    }
-    .aql-verdict-pass { background: #d4edda; color: #155724; font-weight: bold; font-size: 10pt; text-align: center; padding: 4px; }
-    .aql-verdict-fail { background: #f8d7da; color: #721c24; font-weight: bold; font-size: 10pt; text-align: center; padding: 4px; }
-    .aql-verdict-pending { background: #fff3cd; color: #856404; font-weight: bold; font-size: 10pt; text-align: center; padding: 4px; }
+/* ── Verdict panel ─────────────────────────────────────────────────────── */
+.verdict-badge-lg {
+    display: block;
+    padding: 11px 0;
+    font-size: 17pt;
+    font-weight: bold;
+    letter-spacing: 3px;
+    border-radius: 3px;
+    text-align: center;
+    margin-bottom: 12px;
+}
+.vb-pass        { background: #dcfce7; color: #166534; border: 2px solid #16a34a; }
+.vb-fail        { background: #fee2e2; color: #991b1b; border: 2px solid #dc2626; }
+.vb-conditional { background: #fef3c7; color: #92400e; border: 2px solid #d97706; }
+.vb-pending     { background: #f3f4f6; color: #4b5563; border: 2px solid #9ca3af; }
 
-    /* ── Image gallery ────────────────────────────── */
-    .img-gallery { margin-top: 4px; }
-    .img-gallery table { width: 100%; }
-    .img-gallery td { padding: 3px; vertical-align: top; text-align: center; }
-    .img-thumb {
-        width: 85px;
-        height: 85px;
-        object-fit: cover;
-        border: 1px solid #ccc;
-        border-radius: 2px;
-        display: block;
-        margin: 0 auto 3px auto;
-    }
-    .img-label { font-size: 7pt; color: #666; word-break: break-all; }
+.defect-pill-row { width: 100%; border-collapse: collapse; }
+.defect-pill-row td { text-align: center; padding: 3px 3px; }
+.dp-box { border-radius: 3px; padding: 5px 4px; display: block; }
+.dp-critical { background: #fee2e2; }
+.dp-major    { background: #fef3c7; }
+.dp-minor    { background: #dbeafe; }
+.dp-num { font-size: 13pt; font-weight: bold; display: block; }
+.dp-crit-num { color: #991b1b; }
+.dp-maj-num  { color: #92400e; }
+.dp-min-num  { color: #1e40af; }
+.dp-lbl { font-size: 6.5pt; text-transform: uppercase; letter-spacing: 1px; color: #6b7280; display: block; margin-top: 1px; }
 
-    /* ── Defect table ─────────────────────────────── */
-    .defect-table { width: 100%; border-collapse: collapse; }
-    .defect-table th {
-        background: #dc3545;
-        color: #fff;
-        padding: 4px 6px;
-        font-size: 8pt;
-        text-align: left;
-    }
-    .defect-table td {
-        padding: 3px 6px;
-        font-size: 8pt;
-        border: 1px solid #f0d0d3;
-        vertical-align: top;
-    }
-    .defect-table tr:nth-child(even) td { background: #fdf5f5; }
-    .sev-critical { background: #f8d7da; color: #721c24; font-weight: bold; padding: 1px 4px; border-radius: 2px; font-size: 7.5pt; }
-    .sev-major    { background: #fff3cd; color: #856404; font-weight: bold; padding: 1px 4px; border-radius: 2px; font-size: 7.5pt; }
-    .sev-minor    { background: #d1ecf1; color: #0c5460; font-weight: bold; padding: 1px 4px; border-radius: 2px; font-size: 7.5pt; }
-    .sev-functional { background: #e2e3e5; color: #383d41; font-weight: bold; padding: 1px 4px; border-radius: 2px; font-size: 7.5pt; }
+/* ── Runs summary box ──────────────────────────────────────────────────── */
+.runs-box { border: 1px solid #d1d8e0; border-radius: 2px; margin-top: 14px; }
+.runs-box-hdr {
+    background: #f0f4f8;
+    padding: 5px 12px;
+    border-bottom: 1px solid #d1d8e0;
+    font-size: 7pt;
+    font-weight: bold;
+    text-transform: uppercase;
+    letter-spacing: 1.5px;
+    color: #374151;
+}
 
-    /* ── Run separator ─────────────────────────────── */
-    .run-header-block {
-        background: #1a3a5c;
-        color: #fff;
-        padding: 8px 12px;
-        margin-bottom: 12px;
-        border-radius: 3px;
-    }
-    .run-title { font-size: 12pt; font-weight: bold; }
-    .run-meta  { font-size: 8pt; margin-top: 3px; opacity: 0.85; }
-    .run-verdict {
-        float: right;
-        font-size: 10pt;
-        font-weight: bold;
-        padding: 3px 10px;
-        border-radius: 3px;
-        margin-top: 3px;
-    }
-    .verdict-pass        { background: #d4edda; color: #155724; }
-    .verdict-fail        { background: #f8d7da; color: #721c24; }
-    .verdict-conditional { background: #fff3cd; color: #856404; }
-    .verdict-pending     { background: #e2e3e5; color: #383d41; }
+/* ── Disclaimer ────────────────────────────────────────────────────────── */
+.disclaimer {
+    margin-top: 16px;
+    padding: 8px 12px;
+    background: #f9fafb;
+    border: 1px solid #e5e7eb;
+    border-left: 3px solid #9ca3af;
+    font-size: 7pt;
+    color: #6b7280;
+    border-radius: 0 2px 2px 0;
+}
 
-    /* ── Cover / Summary ──────────────────────────── */
-    .cover-block {
-        border: 2px solid #1a3a5c;
-        padding: 18px;
-        margin-bottom: 18px;
-        border-radius: 4px;
-    }
-    .cover-title {
-        font-size: 18pt;
-        font-weight: bold;
-        color: #1a3a5c;
-        margin-bottom: 4px;
-    }
-    .cover-divider {
-        border: none;
-        border-top: 2px solid #1a3a5c;
-        margin: 12px 0;
-    }
+/* ── Run page header ───────────────────────────────────────────────────── */
+.run-page-header {
+    background: #1a3a5c;
+    color: #ffffff;
+    padding: 10px 14px;
+    border-radius: 3px;
+    margin-bottom: 14px;
+}
+.run-page-header table { width: 100%; }
+.rph-label { font-size: 7pt; letter-spacing: 2px; text-transform: uppercase; color: #93c5fd; }
+.rph-title { font-size: 13pt; font-weight: bold; margin-top: 1px; }
+.rph-meta  { font-size: 7.5pt; color: #bfdbfe; margin-top: 3px; }
+.rph-verdict-cell { text-align: right; vertical-align: middle; width: 140px; }
+.rph-verdict-badge {
+    display: inline-block;
+    padding: 6px 14px;
+    font-size: 10pt;
+    font-weight: bold;
+    border-radius: 3px;
+    letter-spacing: 1px;
+}
 
-    /* ── Verdict box ──────────────────────────────── */
-    .verdict-box {
-        padding: 8px 14px;
-        border-radius: 4px;
-        font-size: 12pt;
-        font-weight: bold;
-        text-align: center;
-        margin-top: 8px;
-        display: inline-block;
-    }
+/* ── Section blocks ────────────────────────────────────────────────────── */
+.section-block {
+    margin-bottom: 11px;
+    border: 1px solid #d1d8e0;
+    border-left: 3px solid #1a3a5c;
+    border-radius: 0 2px 2px 0;
+    page-break-inside: avoid;
+}
+.section-hdr {
+    background: #f8fafc;
+    padding: 5px 10px;
+    border-bottom: 1px solid #d1d8e0;
+}
+.section-hdr table { width: 100%; }
+.sec-num {
+    background: #1a3a5c;
+    color: #ffffff;
+    font-size: 7pt;
+    font-weight: bold;
+    padding: 1px 6px;
+    border-radius: 2px;
+    margin-right: 5px;
+    display: inline-block;
+}
+.sec-name { font-size: 9.5pt; font-weight: bold; color: #1a3a5c; }
 
-    .info-grid-2 { width: 100%; }
-    .info-grid-2 td { width: 50%; vertical-align: top; padding-right: 8px; }
+.sec-badge {
+    display: inline-block;
+    font-size: 7pt;
+    font-weight: bold;
+    padding: 1px 8px;
+    border-radius: 10px;
+}
+.sb-complete { background: #dcfce7; color: #166534; }
+.sb-pending  { background: #fef3c7; color: #92400e; }
+.sb-na       { background: #f3f4f6; color: #4b5563; }
+
+.section-body { padding: 10px 12px; }
+
+.section-note {
+    margin-top: 8px;
+    padding: 6px 10px;
+    background: #fffbeb;
+    border-left: 3px solid #fbbf24;
+    font-size: 8pt;
+    color: #78350f;
+    border-radius: 0 2px 2px 0;
+}
+
+.sub-heading {
+    font-size: 7.5pt;
+    font-weight: bold;
+    text-transform: uppercase;
+    letter-spacing: 0.8px;
+    color: #374151;
+    margin: 10px 0 5px;
+    padding-bottom: 3px;
+    border-bottom: 1px solid #e5e7eb;
+}
+
+/* ── Meta table ────────────────────────────────────────────────────────── */
+.meta-table { width: 100%; border-collapse: collapse; }
+.meta-table td {
+    padding: 4px 8px;
+    font-size: 8.5pt;
+    border-bottom: 1px solid #f3f4f6;
+    vertical-align: top;
+}
+.meta-table .mk { width: 36%; font-weight: bold; color: #374151; white-space: nowrap; }
+.meta-table .mv { color: #111827; }
+.meta-table tr:last-child td { border-bottom: none; }
+
+/* ── Data / checklist table ────────────────────────────────────────────── */
+.data-table { width: 100%; border-collapse: collapse; }
+.data-table th {
+    background: #1a3a5c;
+    color: #ffffff;
+    padding: 5px 8px;
+    font-size: 7.5pt;
+    font-weight: bold;
+    text-align: left;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+.data-table td {
+    padding: 4px 8px;
+    font-size: 8.5pt;
+    border-bottom: 1px solid #f0f4f8;
+    vertical-align: top;
+}
+.data-table tbody tr:nth-child(even) td { background: #f8fafc; }
+.data-table tbody tr:last-child td { border-bottom: none; }
+
+/* ── Result badges ─────────────────────────────────────────────────────── */
+.rb-pass { color: #166534; font-weight: bold; background: #dcfce7; padding: 1px 7px; border-radius: 3px; font-size: 7.5pt; }
+.rb-fail { color: #991b1b; font-weight: bold; background: #fee2e2; padding: 1px 7px; border-radius: 3px; font-size: 7.5pt; }
+.rb-na   { color: #4b5563; background: #f3f4f6; padding: 1px 7px; border-radius: 3px; font-size: 7.5pt; }
+.rb-def  { color: #4b5563; font-size: 7.5pt; }
+
+/* ── AQL table ─────────────────────────────────────────────────────────── */
+.aql-table { width: 100%; border-collapse: collapse; margin-top: 4px; }
+.aql-table th {
+    background: #152c4a;
+    color: #ffffff;
+    padding: 5px 8px;
+    font-size: 7.5pt;
+    text-align: center;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+.aql-table td {
+    padding: 5px 8px;
+    font-size: 8.5pt;
+    border: 1px solid #d1d8e0;
+    text-align: center;
+}
+.aql-table tbody tr:nth-child(even) td { background: #f8fafc; }
+.aql-cat { font-weight: bold; text-align: left !important; }
+
+.aql-verdict-block {
+    margin-top: 10px;
+    padding: 8px 14px;
+    border-radius: 3px;
+    font-size: 10.5pt;
+    font-weight: bold;
+    text-align: center;
+}
+.avb-pass    { background: #dcfce7; color: #166534; border: 1px solid #16a34a; }
+.avb-fail    { background: #fee2e2; color: #991b1b; border: 1px solid #dc2626; }
+.avb-pending { background: #f3f4f6; color: #4b5563; border: 1px solid #d1d8e0; }
+
+/* ── Defect table ──────────────────────────────────────────────────────── */
+.defect-table { width: 100%; border-collapse: collapse; }
+.defect-table th {
+    background: #7f1d1d;
+    color: #ffffff;
+    padding: 5px 8px;
+    font-size: 7.5pt;
+    text-align: left;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+.defect-table td {
+    padding: 4px 8px;
+    font-size: 8.5pt;
+    border-bottom: 1px solid #fee2e2;
+    vertical-align: top;
+}
+.defect-table tbody tr:nth-child(even) td { background: #fff7f7; }
+.defect-table tbody tr:last-child td { border-bottom: none; }
+
+.sev-critical { background: #fee2e2; color: #991b1b; font-weight: bold; padding: 1px 6px; border-radius: 3px; font-size: 7.5pt; }
+.sev-major    { background: #fef3c7; color: #92400e; font-weight: bold; padding: 1px 6px; border-radius: 3px; font-size: 7.5pt; }
+.sev-minor    { background: #dbeafe; color: #1e40af; font-weight: bold; padding: 1px 6px; border-radius: 3px; font-size: 7.5pt; }
+.sev-functional { background: #f3f4f6; color: #374151; font-weight: bold; padding: 1px 6px; border-radius: 3px; font-size: 7.5pt; }
+
+/* ── Image gallery ─────────────────────────────────────────────────────── */
+.img-gallery-table { width: 100%; border-collapse: collapse; }
+.img-gallery-table td { padding: 4px; vertical-align: top; text-align: center; }
+.img-thumb {
+    width: 112px;
+    height: 112px;
+    object-fit: cover;
+    border: 2px solid #d1d8e0;
+    border-radius: 2px;
+    display: block;
+    margin: 0 auto 4px;
+}
+.img-label { font-size: 7pt; color: #6b7280; word-break: break-word; }
+
+/* ── Verdict review box ────────────────────────────────────────────────── */
+.review-verdict-box {
+    display: inline-block;
+    padding: 3px 12px;
+    border-radius: 3px;
+    font-size: 10pt;
+    font-weight: bold;
+}
+
+/* ── Empty state ───────────────────────────────────────────────────────── */
+.empty-state {
+    text-align: center;
+    padding: 18px;
+    color: #6b7280;
+    font-size: 8pt;
+    font-style: italic;
+}
+
 </style>
 </head>
 <body>
 
-{{-- ═══════════════════════════════════════════════════════════════════════════ --}}
-{{-- FIXED FOOTER (appears on every page)                                       --}}
-{{-- ═══════════════════════════════════════════════════════════════════════════ --}}
+{{-- ═══════════════════════════════════════════ FIXED FOOTER ═══════════════ --}}
 <div class="pdf-footer">
     <table>
         <tr>
-            <td>TradeSyncERP &mdash; Confidential Inspection Report</td>
-            <td style="text-align:center">{{ $inspection->report_number }}</td>
-            <td style="text-align:right">Generated: {{ now()->format('d M Y H:i') }}</td>
+            <td style="color:#6b7280">Confidential &mdash; For Authorized Recipients Only &mdash; TradeSyncERP</td>
+            <td class="fn-center">{{ $inspection->report_number }}</td>
+            <td class="fn-right"></td>
         </tr>
     </table>
 </div>
 
-{{-- ═══════════════════════════════════════════════════════════════════════════ --}}
-{{-- REPORT HEADER                                                               --}}
-{{-- ═══════════════════════════════════════════════════════════════════════════ --}}
-<div class="report-header">
-    <table>
-        <tr>
-            <td style="vertical-align:top">
-                <div class="report-title">Inspection Report</div>
-                <div class="report-subtitle">{{ $inspection->inspectionType?->name ?? 'Quality Inspection' }}</div>
-            </td>
-            <td style="vertical-align:top; text-align:right">
-                <div class="report-number">{{ $inspection->report_number }}</div>
-                <div class="report-date">{{ $inspection->inspection_date?->format('d M Y') ?? now()->format('d M Y') }}</div>
-            </td>
-        </tr>
-    </table>
-</div>
+{{-- ═══════════════════════════════════════════ COVER PAGE ════════════════ --}}
 
-{{-- ═══════════════════════════════════════════════════════════════════════════ --}}
-{{-- COVER BLOCK — Inspection summary                                            --}}
-{{-- ═══════════════════════════════════════════════════════════════════════════ --}}
 @php
-    $overallColor = match($inspection->overall_status) {
-        'Pass'    => 'verdict-pass',
-        'Fail'    => 'verdict-fail',
-        default   => 'verdict-pending',
+    $coverVerdictClass = match($inspection->overall_status) {
+        'Pass'             => 'vb-pass',
+        'Fail'             => 'vb-fail',
+        'Conditional Pass' => 'vb-conditional',
+        default            => 'vb-pending',
     };
+
+    // Aggregate defect counts across all runs
+    $defCritical = 0; $defMajor = 0; $defMinor = 0;
+    foreach ($runs as $_r) {
+        foreach ($_r->runSections as $_rs) {
+            if ($_rs->section && (in_array($_rs->section->section_type, ['defects']) || $_rs->section->slug === 'defect_recording')) {
+                $sels = collect($_rs->data['selections'] ?? [])->filter(fn($s) => !empty($s['selected']));
+                $defCritical += $sels->where('severity', 'critical')->count();
+                $defMajor    += $sels->where('severity', 'major')->count();
+                $defMinor    += $sels->where('severity', 'minor')->count();
+            }
+        }
+    }
 @endphp
 
-<div class="cover-block no-break">
-    <div class="cover-title">{{ $inspection->inspectionType?->name ?? 'Inspection' }}</div>
-
-    <hr class="cover-divider">
-
-    <table class="info-grid-2">
+{{-- Cover Banner --}}
+<div class="cover-banner">
+    <table>
         <tr>
-            <td>
-                <table class="meta-table">
-                    <tr>
-                        <td class="kv-key">Report Number</td>
-                        <td class="kv-val">{{ $inspection->report_number }}</td>
-                    </tr>
-                    <tr>
-                        <td class="kv-key">Inspection Type</td>
-                        <td class="kv-val">{{ $inspection->inspectionType?->name ?? '—' }}</td>
-                    </tr>
-                    <tr>
-                        <td class="kv-key">Inspection Date</td>
-                        <td class="kv-val">{{ $inspection->inspection_date?->format('d M Y') ?? '—' }}</td>
-                    </tr>
-                    <tr>
-                        <td class="kv-key">Overall Status</td>
-                        <td class="kv-val"><strong>{{ $inspection->overall_status ?? 'Pending' }}</strong></td>
-                    </tr>
-                </table>
+            <td style="vertical-align: bottom">
+                <div class="cb-system-label">Quality Assurance &amp; Inspection Management</div>
+                <div class="cb-company">TradeSyncERP</div>
+                <div class="cb-tagline">Inspection &amp; Quality Control System</div>
             </td>
-            <td>
-                <table class="meta-table">
-                    <tr>
-                        <td class="kv-key">Total Runs</td>
-                        <td class="kv-val">{{ $runs->count() }}</td>
-                    </tr>
-                    <tr>
-                        <td class="kv-key">Inspectors</td>
-                        <td class="kv-val">{{ $inspection->inspectors->pluck('employee_name')->implode(', ') ?: '—' }}</td>
-                    </tr>
-                    <tr>
-                        <td class="kv-key">Customer Orders</td>
-                        <td class="kv-val">{{ $inspection->customerOrders->count() > 0 ? $inspection->customerOrders->count() . ' order(s)' : '—' }}</td>
-                    </tr>
-                    @if($inspection->remarks)
-                    <tr>
-                        <td class="kv-key">Remarks</td>
-                        <td class="kv-val">{{ $inspection->remarks }}</td>
-                    </tr>
-                    @endif
-                </table>
+            <td style="vertical-align: bottom">
+                <div class="cb-repnum">{{ $inspection->report_number }}</div>
+                <div class="cb-date">{{ $inspection->inspection_date?->format('d F Y') ?? now()->format('d F Y') }}</div>
             </td>
         </tr>
     </table>
-
-    {{-- Runs summary table --}}
-    @if($runs->count() > 1)
-    <div style="margin-top: 12px;">
-        <strong style="font-size:9pt">Inspection Runs Summary</strong>
-        <table class="check-table" style="margin-top:5px">
-            <thead>
-                <tr>
-                    <th style="width:40px">Run #</th>
-                    <th>Sample</th>
-                    <th>Product</th>
-                    <th style="width:80px; text-align:center">Verdict</th>
-                    <th style="width:90px">Completed</th>
-                </tr>
-            </thead>
-            <tbody>
-                @foreach($runs as $r)
-                <tr>
-                    <td style="text-align:center">{{ $r->run_number }}</td>
-                    <td>{{ $r->sample?->sample_code ?? '—' }}</td>
-                    <td>{{ $r->sample?->product_name ?? '—' }}</td>
-                    <td style="text-align:center">
-                        @php $vc = match($r->verdict) { 'Pass' => 'result-pass', 'Fail' => 'result-fail', default => 'result-na' }; @endphp
-                        <span class="{{ $vc }}">{{ $r->verdict }}</span>
-                    </td>
-                    <td>{{ $r->completed_at?->format('d M Y') ?? 'In Progress' }}</td>
-                </tr>
-                @endforeach
-            </tbody>
-        </table>
-    </div>
-    @endif
 </div>
 
-{{-- ═══════════════════════════════════════════════════════════════════════════ --}}
-{{-- RUNS DETAIL                                                                 --}}
-{{-- ═══════════════════════════════════════════════════════════════════════════ --}}
+{{-- Title Strip --}}
+<div class="cover-title-strip">
+    <div class="cover-main-title">Inspection Report</div>
+    <div class="cover-main-subtitle">{{ $inspection->inspectionType?->name ?? 'Quality Inspection' }}</div>
+</div>
+
+{{-- Two-column info layout --}}
+<table style="width:100%; border-collapse:collapse">
+    <tr>
+        <td style="width:58%; padding-right:10px; vertical-align:top">
+            <div class="info-panel">
+                <div class="info-panel-header">Report Information</div>
+                <div class="info-panel-body">
+                    <table class="cover-kv">
+                        <tr><td class="ck">Report Number</td><td class="cv">{{ $inspection->report_number }}</td></tr>
+                        <tr><td class="ck">Inspection Type</td><td class="cv">{{ $inspection->inspectionType?->name ?? '—' }}</td></tr>
+                        <tr><td class="ck">Inspection Date</td><td class="cv">{{ $inspection->inspection_date?->format('d F Y') ?? '—' }}</td></tr>
+                        <tr><td class="ck">Inspector(s)</td><td class="cv">{{ $inspection->inspectors->pluck('employee_name')->implode(', ') ?: '—' }}</td></tr>
+                        <tr><td class="ck">Customer Orders</td><td class="cv">{{ $inspection->customerOrders->count() > 0 ? $inspection->customerOrders->count().' order(s)' : '—' }}</td></tr>
+                        <tr><td class="ck">Total Runs</td><td class="cv">{{ $runs->count() }}</td></tr>
+                        <tr><td class="ck">Date Generated</td><td class="cv">{{ now()->format('d F Y, H:i') }}</td></tr>
+                        @if($inspection->remarks)
+                        <tr><td class="ck">Remarks</td><td class="cv">{{ $inspection->remarks }}</td></tr>
+                        @endif
+                    </table>
+                </div>
+            </div>
+        </td>
+        <td style="width:42%; vertical-align:top">
+            <div class="info-panel">
+                <div class="info-panel-header">Overall Verdict</div>
+                <div class="info-panel-body">
+                    <div class="verdict-badge-lg {{ $coverVerdictClass }}">
+                        {{ strtoupper($inspection->overall_status ?? 'PENDING') }}
+                    </div>
+                    <div style="font-size:7.5pt; font-weight:bold; text-transform:uppercase; letter-spacing:1px; color:#6b7280; margin-bottom:6px">Defect Summary</div>
+                    <table class="defect-pill-row">
+                        <tr>
+                            <td><div class="dp-box dp-critical"><span class="dp-num dp-crit-num">{{ $defCritical }}</span><span class="dp-lbl">Critical</span></div></td>
+                            <td><div class="dp-box dp-major"><span class="dp-num dp-maj-num">{{ $defMajor }}</span><span class="dp-lbl">Major</span></div></td>
+                            <td><div class="dp-box dp-minor"><span class="dp-num dp-min-num">{{ $defMinor }}</span><span class="dp-lbl">Minor</span></div></td>
+                        </tr>
+                    </table>
+                </div>
+            </div>
+        </td>
+    </tr>
+</table>
+
+{{-- Runs Summary --}}
+<div class="runs-box no-break">
+    <div class="runs-box-hdr">Inspection Runs Overview</div>
+    <table class="data-table" style="border:none">
+        <thead>
+            <tr>
+                <th style="width:50px; text-align:center">Run #</th>
+                <th>Sample Code</th>
+                <th>Product / Description</th>
+                <th>Customer</th>
+                <th style="width:100px; text-align:center">Verdict</th>
+                <th style="width:90px">Completed</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach($runs as $r)
+            @php
+                $rvc = match($r->verdict) {
+                    'Pass'        => 'rb-pass',
+                    'Fail'        => 'rb-fail',
+                    'Conditional' => 'rb-na',
+                    default       => 'rb-def',
+                };
+            @endphp
+            <tr>
+                <td style="text-align:center; font-weight:bold; color:#1a3a5c">{{ $r->run_number }}</td>
+                <td style="font-weight:500">{{ $r->sample?->sample_code ?? '—' }}</td>
+                <td>{{ $r->sample?->product_name ?? '—' }}</td>
+                <td style="color:#4b5563">{{ $r->sample?->customer?->customer_name ?? '—' }}</td>
+                <td style="text-align:center"><span class="{{ $rvc }}">{{ $r->verdict ?? 'Pending' }}</span></td>
+                <td style="font-size:8pt; color:#6b7280">{{ $r->completed_at?->format('d M Y') ?? 'In Progress' }}</td>
+            </tr>
+            @endforeach
+        </tbody>
+    </table>
+</div>
+
+<div class="disclaimer">
+    <strong style="color:#374151">Confidentiality Notice:</strong>
+    This inspection report is intended solely for the use of the named recipient and contains confidential quality control information.
+    Any unauthorized review, disclosure, copying, distribution, or use of this report is strictly prohibited.
+    Generated by TradeSyncERP &mdash; {{ now()->format('d F Y \a\t H:i') }}.
+</div>
+
+{{-- ═══════════════════════════════════════════ RUNS DETAIL ════════════════ --}}
 
 @php
 $hiddenSlugs = [
@@ -396,161 +530,164 @@ $hiddenSlugs = [
 
 @foreach($runs as $runIndex => $run)
 
-@if($runIndex > 0 || $runs->count() > 1)
 <div class="page-break"></div>
-@endif
 
-{{-- Run header --}}
 @php
-    $vClass = match($run->verdict) {
-        'Pass'        => 'verdict-pass',
-        'Fail'        => 'verdict-fail',
-        'Conditional' => 'verdict-conditional',
-        default       => 'verdict-pending',
+    $runVerdictClass = match($run->verdict) {
+        'Pass'        => 'vb-pass',
+        'Fail'        => 'vb-fail',
+        'Conditional' => 'vb-conditional',
+        default       => 'vb-pending',
     };
+    $visibleSections = $run->runSections->filter(
+        fn($rs) => $rs->section && !in_array($rs->section->slug, $hiddenSlugs)
+    )->values();
+    $secIdx = 0;
 @endphp
 
-<div class="run-header-block">
-    <span class="run-verdict {{ $vClass }}">{{ $run->verdict }}</span>
-    <div class="run-title">Run #{{ $run->run_number }}</div>
-    <div class="run-meta">
-        @if($run->sample)
-            Sample: {{ $run->sample->sample_code }}
-            @if($run->sample->product_name) &mdash; {{ $run->sample->product_name }} @endif
-            @if($run->sample->customer) &nbsp;|&nbsp; Customer: {{ $run->sample->customer->customer_name }} @endif
-            @if($run->sample->category) &nbsp;|&nbsp; Category: {{ $run->sample->category->category_name }} @endif
-        @endif
-        @if($run->completed_at)
-            &nbsp;|&nbsp; Completed: {{ $run->completed_at->format('d M Y H:i') }}
-        @endif
-    </div>
+{{-- Run Header --}}
+<div class="run-page-header">
+    <table>
+        <tr>
+            <td style="vertical-align:middle">
+                <div class="rph-label">Inspection Run &mdash; {{ $inspection->report_number }}</div>
+                <div class="rph-title">
+                    Run #{{ $run->run_number }}
+                    @if($run->sample?->product_name) &mdash; {{ $run->sample->product_name }} @endif
+                </div>
+                <div class="rph-meta">
+                    @if($run->sample)
+                        Sample: {{ $run->sample->sample_code }}
+                        @if($run->sample->customer) &nbsp;&bull;&nbsp; Customer: {{ $run->sample->customer->customer_name }} @endif
+                        @if($run->sample->category) &nbsp;&bull;&nbsp; Category: {{ $run->sample->category->category_name }} @endif
+                    @endif
+                    @if($run->completed_at) &nbsp;&bull;&nbsp; Completed: {{ $run->completed_at->format('d M Y H:i') }} @endif
+                </div>
+            </td>
+            <td class="rph-verdict-cell">
+                <div style="font-size:7pt; text-transform:uppercase; letter-spacing:1.5px; color:#93c5fd; margin-bottom:4px">Verdict</div>
+                <div class="rph-verdict-badge {{ $runVerdictClass }}">{{ $run->verdict ?? 'Pending' }}</div>
+            </td>
+        </tr>
+    </table>
 </div>
 
 @if($run->remarks)
-<div class="section-notes" style="margin-bottom:10px">
+<div class="section-note" style="margin-bottom:12px">
     <strong>Run Remarks:</strong> {{ $run->remarks }}
 </div>
 @endif
 
-{{-- ── Sections ──────────────────────────────────────────────────────────── --}}
-@php
-    $visibleSections = $run->runSections->filter(
-        fn($rs) => $rs->section && !in_array($rs->section->slug, $hiddenSlugs)
-    )->values();
-@endphp
-
+{{-- ─────────────────────────── SECTIONS ────────────────────────────────── --}}
 @foreach($visibleSections as $rs)
 @php
+    $secIdx++;
     $sec     = $rs->section;
     $secType = $sec->section_type;
     $slug    = $sec->slug;
     $data    = $rs->data ?? [];
 
-    $statusLabel = match($rs->status) {
-        'complete' => 'Complete',
-        'na'       => 'N/A',
-        default    => 'Pending',
-    };
-    $statusClass = match($rs->status) {
-        'complete' => 'status-complete',
-        'na'       => 'status-na',
-        default    => 'status-pending',
-    };
+    $statusLabel = match($rs->status) { 'complete' => 'Complete', 'na' => 'N/A', default => 'Pending' };
+    $statusClass = match($rs->status) { 'complete' => 'sb-complete', 'na' => 'sb-na', default => 'sb-pending' };
 
     $images = $rs->attachments->filter(fn($a) => $a->isImage())->values();
     $docs   = $rs->attachments->filter(fn($a) => !$a->isImage())->values();
 @endphp
 
 <div class="section-block no-break">
-    <div class="section-header">
-        <span class="section-status {{ $statusClass }}">{{ $statusLabel }}</span>
-        <span class="section-title">{{ $sec->name }}</span>
+    <div class="section-hdr">
+        <table>
+            <tr>
+                <td style="vertical-align:middle">
+                    <span class="sec-num">{{ $secIdx }}</span>
+                    <span class="sec-name">{{ $sec->name }}</span>
+                </td>
+                <td style="text-align:right; vertical-align:middle; width:90px">
+                    <span class="sec-badge {{ $statusClass }}">{{ $statusLabel }}</span>
+                </td>
+            </tr>
+        </table>
     </div>
     <div class="section-body">
 
-        {{-- ════════════════════════════════════════════════════════════════ --}}
-        {{-- GENERAL INFO                                                      --}}
-        {{-- ════════════════════════════════════════════════════════════════ --}}
+        {{-- ════════════ GENERAL INFO ════════════ --}}
         @if($secType === 'general_info')
         @php
-            $genFields = [
-                'Buyer / Client'       => $data['buyer_name'] ?? null,
-                'Factory / Supplier'   => $data['factory_name'] ?? null,
-                'PO / Order Number'    => $data['po_number'] ?? null,
-                'Style / Article No.'  => $data['style_article_no'] ?? null,
-                'Product Description'  => $data['product_description'] ?? null,
-                'Order Quantity'       => $data['order_quantity'] ?? null,
-                'Inspection Date'      => $data['inspection_date'] ?? null,
-                'Inspector Name'       => $data['inspector_name'] ?? null,
-                'Inspection Location'  => $data['inspection_location'] ?? null,
-            ];
-            $genFields = array_filter($genFields, fn($v) => $v !== null && $v !== '');
+            $genFields = array_filter([
+                'Buyer / Client'      => $data['buyer_name'] ?? null,
+                'Factory / Supplier'  => $data['factory_name'] ?? null,
+                'PO / Order Number'   => $data['po_number'] ?? null,
+                'Style / Article No.' => $data['style_article_no'] ?? null,
+                'Product Description' => $data['product_description'] ?? null,
+                'Order Quantity'      => $data['order_quantity'] ?? null,
+                'Inspection Date'     => $data['inspection_date'] ?? null,
+                'Inspector Name'      => $data['inspector_name'] ?? null,
+                'Inspection Location' => $data['inspection_location'] ?? null,
+            ], fn($v) => $v !== null && $v !== '');
         @endphp
         @if(!empty($genFields))
-        <table class="meta-table">
-            @foreach($genFields as $label => $value)
+        <table style="width:100%; border-collapse:collapse">
             <tr>
-                <td class="kv-key">{{ $label }}</td>
-                <td class="kv-val">{{ $value }}</td>
+                <td style="width:50%; padding-right:8px; vertical-align:top">
+                    <table class="meta-table">
+                        @foreach(array_slice($genFields, 0, (int)ceil(count($genFields)/2)) as $label => $value)
+                        <tr><td class="mk">{{ $label }}</td><td class="mv">{{ $value }}</td></tr>
+                        @endforeach
+                    </table>
+                </td>
+                <td style="width:50%; vertical-align:top">
+                    <table class="meta-table">
+                        @foreach(array_slice($genFields, (int)ceil(count($genFields)/2)) as $label => $value)
+                        <tr><td class="mk">{{ $label }}</td><td class="mv">{{ $value }}</td></tr>
+                        @endforeach
+                    </table>
+                </td>
             </tr>
-            @endforeach
         </table>
         @endif
 
-        {{-- ════════════════════════════════════════════════════════════════ --}}
-        {{-- CHECKLIST (packing check, carton verification, packaging, etc.)  --}}
-        {{-- ════════════════════════════════════════════════════════════════ --}}
+        {{-- ════════════ CHECKLIST ════════════ --}}
         @elseif($secType === 'checklist')
         @php
             $items = $data['items'] ?? [];
-            // Extra top-level fields (carton verification totals, etc.) — skip arrays
             $extra = collect($data)->except('items')->filter(fn($v) => $v !== null && $v !== '' && !is_array($v));
         @endphp
         @if($extra->isNotEmpty())
-        <table class="meta-table" style="margin-bottom:8px">
+        <table class="meta-table" style="margin-bottom:10px">
             @foreach($extra as $k => $v)
-            <tr>
-                <td class="kv-key">{{ ucwords(str_replace('_', ' ', $k)) }}</td>
-                <td class="kv-val">{{ $v }}</td>
-            </tr>
+            <tr><td class="mk">{{ ucwords(str_replace('_', ' ', $k)) }}</td><td class="mv">{{ $v }}</td></tr>
             @endforeach
         </table>
         @endif
         @if(!empty($items))
-        <table class="check-table">
+        <table class="data-table">
             <thead>
                 <tr>
-                    <th style="width:40%">Checkpoint</th>
-                    <th style="width:15%; text-align:center">Result</th>
+                    <th style="width:4%; text-align:center">#</th>
+                    <th style="width:42%">Checkpoint</th>
+                    <th style="width:14%; text-align:center">Result</th>
                     <th>Remarks</th>
-                    @if($images->isNotEmpty()) <th style="width:80px">Photos</th> @endif
+                    @if($images->isNotEmpty())<th style="width:65px; text-align:center">Photos</th>@endif
                 </tr>
             </thead>
             <tbody>
                 @foreach($items as $idx => $item)
                 @php
-                    $resultClass = match(strtolower($item['result'] ?? '')) {
-                        'pass'         => 'result-pass',
-                        'fail'         => 'result-fail',
-                        'n/a', 'na'    => 'result-na',
-                        default        => '',
+                    $rClass = match(strtolower($item['result'] ?? '')) {
+                        'pass' => 'rb-pass', 'fail' => 'rb-fail', 'n/a','na' => 'rb-na', default => 'rb-def'
                     };
-                    $resultLabel = $item['result'] ?? '—';
-                    // Per-item images (task_key = item_{idx})
-                    $itemKey = 'item_' . $idx;
-                    $itemImgs = $images->filter(fn($a) => $a->task_key === $itemKey)->values();
+                    $itemImgs = $images->filter(fn($a) => $a->task_key === 'item_'.$idx)->values();
                 @endphp
                 <tr>
+                    <td style="text-align:center; color:#9ca3af; font-size:8pt">{{ $idx+1 }}</td>
                     <td>{{ $item['label'] ?? '' }}</td>
-                    <td style="text-align:center"><span class="{{ $resultClass }}">{{ $resultLabel }}</span></td>
-                    <td>{{ $item['remarks'] ?? '' }}</td>
+                    <td style="text-align:center"><span class="{{ $rClass }}">{{ $item['result'] ?? '—' }}</span></td>
+                    <td style="color:#4b5563; font-size:8pt">{{ $item['remarks'] ?? '' }}</td>
                     @if($images->isNotEmpty())
-                    <td>
+                    <td style="text-align:center">
                         @foreach($itemImgs->take(2) as $img)
                         @php $b64 = $imgBase64($img->file_path); @endphp
-                        @if($b64)
-                            <img src="{{ $b64 }}" style="width:40px;height:40px;object-fit:cover;border:1px solid #ccc;margin:1px">
-                        @endif
+                        @if($b64)<img src="{{ $b64 }}" style="width:36px;height:36px;object-fit:cover;border:1px solid #d1d8e0;margin:1px;border-radius:1px">@endif
                         @endforeach
                     </td>
                     @endif
@@ -560,48 +697,69 @@ $hiddenSlugs = [
         </table>
         @endif
 
-        {{-- ════════════════════════════════════════════════════════════════ --}}
-        {{-- DEFECT RECORDING                                                  --}}
-        {{-- ════════════════════════════════════════════════════════════════ --}}
+        {{-- ════════════ DEFECT RECORDING ════════════ --}}
         @elseif($secType === 'defects' || $slug === 'defect_recording')
         @php
             $selections = collect($data['selections'] ?? [])->filter(
                 fn($s) => !empty($s['selected']) && !empty($s['defect_id'])
             )->values();
+            $dCrit = $selections->where('severity', 'critical')->count();
+            $dMaj  = $selections->where('severity', 'major')->count();
+            $dMin  = $selections->where('severity', 'minor')->count();
         @endphp
         @if($selections->isEmpty())
-            <em style="color:#888;font-size:8pt">No defects recorded.</em>
+        <div class="empty-state">No defects recorded for this inspection run.</div>
         @else
+        {{-- Defect stats bar --}}
+        <table style="width:100%; margin-bottom:10px; border-collapse:collapse">
+            <tr>
+                <td style="width:33%; padding:0 4px 0 0">
+                    <div style="background:#fee2e2; border-radius:3px; padding:6px 8px; text-align:center">
+                        <div style="font-size:16pt; font-weight:bold; color:#991b1b">{{ $dCrit }}</div>
+                        <div style="font-size:6.5pt; color:#b91c1c; text-transform:uppercase; letter-spacing:1px">Critical</div>
+                    </div>
+                </td>
+                <td style="width:33%; padding:0 4px">
+                    <div style="background:#fef3c7; border-radius:3px; padding:6px 8px; text-align:center">
+                        <div style="font-size:16pt; font-weight:bold; color:#92400e">{{ $dMaj }}</div>
+                        <div style="font-size:6.5pt; color:#b45309; text-transform:uppercase; letter-spacing:1px">Major</div>
+                    </div>
+                </td>
+                <td style="width:33%; padding:0 0 0 4px">
+                    <div style="background:#dbeafe; border-radius:3px; padding:6px 8px; text-align:center">
+                        <div style="font-size:16pt; font-weight:bold; color:#1e40af">{{ $dMin }}</div>
+                        <div style="font-size:6.5pt; color:#2563eb; text-transform:uppercase; letter-spacing:1px">Minor</div>
+                    </div>
+                </td>
+            </tr>
+        </table>
         <table class="defect-table">
             <thead>
                 <tr>
-                    <th style="width:30px">#</th>
-                    <th>Defect</th>
-                    <th style="width:80px; text-align:center">Severity</th>
-                    <th style="width:70px; text-align:center">Qty</th>
-                    <th>Comment</th>
-                    <th style="width:100px">Photos</th>
+                    <th style="width:28px; text-align:center">#</th>
+                    <th style="width:36%">Defect Description</th>
+                    <th style="width:88px; text-align:center">Severity</th>
+                    <th style="width:48px; text-align:center">Qty</th>
+                    <th>Comment / Location</th>
+                    <th style="width:80px; text-align:center">Photos</th>
                 </tr>
             </thead>
             <tbody>
                 @foreach($selections as $i => $sel)
                 @php
                     $sev = $sel['severity'] ?? 'minor';
-                    $sevClass = 'sev-' . $sev;
-                    $defectImages = $images->filter(fn($a) => $a->task_key === 'defect_' . $sel['defect_id'])->values();
+                    $defImgs = $images->filter(fn($a) => $a->task_key === 'defect_'.$sel['defect_id'])->values();
                 @endphp
                 <tr>
-                    <td style="text-align:center">{{ $i + 1 }}</td>
-                    <td><strong>{{ $sel['defect_name'] ?? ('Defect #' . $sel['defect_id']) }}</strong></td>
-                    <td style="text-align:center"><span class="{{ $sevClass }}">{{ ucfirst($sev) }}</span></td>
-                    <td style="text-align:center">{{ $sel['quantity'] ?? 1 }}</td>
-                    <td>{{ $sel['comment'] ?? '' }}</td>
-                    <td>
-                        @foreach($defectImages->take(3) as $img)
+                    <td style="text-align:center; color:#9ca3af; font-size:8pt">{{ $i+1 }}</td>
+                    <td><strong>{{ $sel['defect_name'] ?? ('Defect #'.$sel['defect_id']) }}</strong></td>
+                    <td style="text-align:center"><span class="sev-{{ $sev }}">{{ ucfirst($sev) }}</span></td>
+                    <td style="text-align:center; font-weight:bold">{{ $sel['quantity'] ?? 1 }}</td>
+                    <td style="color:#4b5563; font-size:8pt">{{ $sel['comment'] ?? '' }}</td>
+                    <td style="text-align:center">
+                        @foreach($defImgs->take(3) as $img)
                         @php $b64 = $imgBase64($img->file_path); @endphp
-                        @if($b64)
-                            <img src="{{ $b64 }}" style="width:30px;height:30px;object-fit:cover;border:1px solid #ccc;margin:1px">
-                        @endif
+                        @if($b64)<img src="{{ $b64 }}" style="width:26px;height:26px;object-fit:cover;border:1px solid #fca5a5;margin:1px;border-radius:1px">@endif
                         @endforeach
                     </td>
                 </tr>
@@ -610,30 +768,30 @@ $hiddenSlugs = [
         </table>
         @endif
 
-        {{-- ════════════════════════════════════════════════════════════════ --}}
-        {{-- AQL SAMPLING                                                      --}}
-        {{-- ════════════════════════════════════════════════════════════════ --}}
+        {{-- ════════════ AQL SAMPLING ════════════ --}}
         @elseif($secType === 'aql')
         @php $aql = $run->aql; @endphp
         @if($aql)
-        <table class="meta-table" style="margin-bottom:8px">
+        <table style="width:100%; margin-bottom:10px; border-collapse:collapse">
             <tr>
-                <td class="kv-key">Lot Size</td>
-                <td class="kv-val">{{ number_format($aql->lot_size ?? 0) }}</td>
-                <td class="kv-key">Inspection Level</td>
-                <td class="kv-val">{{ $aql->inspection_level ?? '—' }}</td>
-            </tr>
-            <tr>
-                <td class="kv-key">Code Letter</td>
-                <td class="kv-val">{{ $aql->code_letter ?? '—' }}</td>
-                <td class="kv-key">Sample Size</td>
-                <td class="kv-val">{{ $aql->sample_size ?? '—' }}</td>
+                <td style="width:50%; padding-right:8px; vertical-align:top">
+                    <table class="meta-table">
+                        <tr><td class="mk">Lot Size</td><td class="mv">{{ number_format($aql->lot_size ?? 0) }} units</td></tr>
+                        <tr><td class="mk">Inspection Level</td><td class="mv">{{ $aql->inspection_level ?? '—' }}</td></tr>
+                    </table>
+                </td>
+                <td style="width:50%; vertical-align:top">
+                    <table class="meta-table">
+                        <tr><td class="mk">Code Letter</td><td class="mv">{{ $aql->code_letter ?? '—' }}</td></tr>
+                        <tr><td class="mk">Sample Size</td><td class="mv">{{ $aql->sample_size ?? '—' }} units</td></tr>
+                    </table>
+                </td>
             </tr>
         </table>
         <table class="aql-table">
             <thead>
                 <tr>
-                    <th>Category</th>
+                    <th style="text-align:left; width:22%">Defect Category</th>
                     <th>AQL Level</th>
                     <th>Accept (Ac)</th>
                     <th>Reject (Re)</th>
@@ -644,46 +802,46 @@ $hiddenSlugs = [
             <tbody>
                 @foreach(['critical' => 'Critical', 'major' => 'Major', 'minor' => 'Minor'] as $key => $label)
                 @php
-                    $aqlLevel  = $aql->{"aql_{$key}"};
-                    $ac        = $aql->{"ac_{$key}"};
-                    $re        = $aql->{"re_{$key}"};
-                    $found     = $aql->{"found_{$key}"} ?? 0;
-                    $rowResult = ($ac !== null && $found > $ac) ? 'FAIL' : (($found > 0 || $ac !== null) ? 'PASS' : '—');
-                    $rowClass  = $rowResult === 'FAIL' ? 'result-fail' : ($rowResult === 'PASS' ? 'result-pass' : '');
+                    $aqlLevel = $aql->{"aql_{$key}"};
+                    $ac       = $aql->{"ac_{$key}"};
+                    $re       = $aql->{"re_{$key}"};
+                    $found    = $aql->{"found_{$key}"} ?? 0;
+                    $rowRes   = ($ac !== null && $found > $ac) ? 'FAIL' : (($found > 0 || $ac !== null) ? 'PASS' : '—');
+                    $rowCls   = $rowRes === 'FAIL' ? 'rb-fail' : ($rowRes === 'PASS' ? 'rb-pass' : '');
                 @endphp
                 <tr>
-                    <td>{{ $label }}</td>
-                    <td>{{ $aqlLevel !== null ? $aqlLevel . '%' : '—' }}</td>
+                    <td class="aql-cat">{{ $label }}</td>
+                    <td>{{ $aqlLevel !== null ? $aqlLevel.'%' : '—' }}</td>
                     <td>{{ $ac ?? '—' }}</td>
                     <td>{{ $re ?? '—' }}</td>
-                    <td>{{ $found }}</td>
-                    <td><span class="{{ $rowClass }}">{{ $rowResult }}</span></td>
+                    <td style="font-weight:bold">{{ $found }}</td>
+                    <td><span class="{{ $rowCls }}">{{ $rowRes }}</span></td>
                 </tr>
                 @endforeach
             </tbody>
         </table>
-        <div class="aql-verdict-{{ strtolower($aql->verdict ?? 'pending') }}" style="margin-top:6px">
-            AQL Verdict: {{ $aql->verdict ?? 'Pending' }}
+        @php
+            $avbClass = match(strtolower($aql->verdict ?? '')) {
+                'pass' => 'avb-pass', 'fail' => 'avb-fail', default => 'avb-pending'
+            };
+        @endphp
+        <div class="aql-verdict-block {{ $avbClass }}">
+            AQL Sampling Verdict: {{ strtoupper($aql->verdict ?? 'Pending') }}
         </div>
         @if($aql->notes)
-            <div class="section-notes" style="margin-top:6px">{{ $aql->notes }}</div>
+        <div class="section-note" style="margin-top:8px">{{ $aql->notes }}</div>
         @endif
         @else
-            <em style="color:#888;font-size:8pt">No AQL data recorded.</em>
+        <div class="empty-state">No AQL sampling data recorded.</div>
         @endif
 
-        {{-- ════════════════════════════════════════════════════════════════ --}}
-        {{-- IMAGES / PRODUCT SCREENING                                        --}}
-        {{-- ════════════════════════════════════════════════════════════════ --}}
+        {{-- ════════════ IMAGES / PRODUCT SCREENING ════════════ --}}
         @elseif($secType === 'images')
         @if($images->isEmpty())
-            <em style="color:#888;font-size:8pt">No images uploaded.</em>
+        <div class="empty-state">No product images uploaded.</div>
         @else
-        @php
-            $imgChunks = $images->chunk(4);
-        @endphp
-        @foreach($imgChunks as $chunk)
-        <table class="img-gallery" style="margin-bottom:4px">
+        @foreach($images->chunk(4) as $chunk)
+        <table class="img-gallery-table" style="margin-bottom:6px">
             <tr>
                 @foreach($chunk as $img)
                 @php $b64 = $imgBase64($img->file_path); @endphp
@@ -692,7 +850,7 @@ $hiddenSlugs = [
                         <img src="{{ $b64 }}" class="img-thumb">
                         <div class="img-label">{{ $img->title ?: $img->file_name }}</div>
                     @else
-                        <div style="width:85px;height:85px;border:1px dashed #ccc;text-align:center;line-height:85px;color:#999;font-size:7pt">No image</div>
+                        <div style="width:112px;height:112px;border:2px dashed #d1d8e0;display:block;margin:0 auto;background:#f9fafb;text-align:center;font-size:7pt;color:#9ca3af;padding-top:48px">No Image</div>
                     @endif
                 </td>
                 @endforeach
@@ -702,86 +860,85 @@ $hiddenSlugs = [
         @endforeach
         @endif
         @if(!empty($data['notes']))
-            <div class="section-notes">{{ $data['notes'] }}</div>
+        <div class="section-note">{{ $data['notes'] }}</div>
         @endif
 
-        {{-- ════════════════════════════════════════════════════════════════ --}}
-        {{-- CONTAINER DETAILS                                                 --}}
-        {{-- ════════════════════════════════════════════════════════════════ --}}
+        {{-- ════════════ CONTAINER DETAILS ════════════ --}}
         @elseif($secType === 'container')
         @php
-            $containerFields = [
-                'Container Number'   => $data['container_number'] ?? null,
-                'Container Type'     => $data['container_type'] ?? null,
-                'Seal Number'        => $data['seal_number'] ?? null,
-                'Loading Date'       => $data['loading_date'] ?? null,
-                'Loading Port'       => $data['loading_port'] ?? null,
-                'Discharge Port'     => $data['discharge_port'] ?? null,
-                'Total Cartons'      => $data['total_cartons_loaded'] ?? null,
-                'Total Quantity'     => $data['total_qty_loaded'] ?? null,
-                'Container Condition'=> $data['container_condition'] ?? null,
-            ];
-            $containerFields = array_filter($containerFields, fn($v) => $v !== null && $v !== '');
+            $cf = array_filter([
+                'Container Number'    => $data['container_number'] ?? null,
+                'Container Type'      => $data['container_type'] ?? null,
+                'Seal Number'         => $data['seal_number'] ?? null,
+                'Loading Date'        => $data['loading_date'] ?? null,
+                'Loading Port'        => $data['loading_port'] ?? null,
+                'Discharge Port'      => $data['discharge_port'] ?? null,
+                'Total Cartons'       => $data['total_cartons_loaded'] ?? null,
+                'Total Quantity'      => $data['total_qty_loaded'] ?? null,
+                'Container Condition' => $data['container_condition'] ?? null,
+            ], fn($v) => $v !== null && $v !== '');
+            $cfHalf = (int) ceil(count($cf) / 2);
         @endphp
-        <table class="meta-table">
-            @foreach($containerFields as $label => $value)
+        <table style="width:100%; border-collapse:collapse">
             <tr>
-                <td class="kv-key">{{ $label }}</td>
-                <td class="kv-val">{{ $value }}</td>
+                <td style="width:50%; padding-right:8px; vertical-align:top">
+                    <table class="meta-table">
+                        @foreach(array_slice($cf, 0, $cfHalf) as $label => $value)
+                        <tr><td class="mk">{{ $label }}</td><td class="mv">{{ $value }}</td></tr>
+                        @endforeach
+                    </table>
+                </td>
+                <td style="width:50%; vertical-align:top">
+                    <table class="meta-table">
+                        @foreach(array_slice($cf, $cfHalf) as $label => $value)
+                        <tr><td class="mk">{{ $label }}</td><td class="mv">{{ $value }}</td></tr>
+                        @endforeach
+                    </table>
+                </td>
             </tr>
-            @endforeach
         </table>
         @if($images->isNotEmpty())
-        <div style="margin-top:8px">
-            <strong style="font-size:8pt">Container Photos</strong>
-            <table class="img-gallery" style="margin-top:4px">
-                <tr>
-                    @foreach($images->take(4) as $img)
-                    @php $b64 = $imgBase64($img->file_path); @endphp
-                    <td style="width:25%">
-                        @if($b64)
-                            <img src="{{ $b64 }}" class="img-thumb">
-                        @endif
-                    </td>
-                    @endforeach
-                    @for($p = min($images->count(), 4); $p < 4; $p++)<td></td>@endfor
-                </tr>
-            </table>
-        </div>
+        <div class="sub-heading">Container Photos</div>
+        <table class="img-gallery-table">
+            <tr>
+                @foreach($images->take(4) as $img)
+                @php $b64 = $imgBase64($img->file_path); @endphp
+                <td style="width:25%">
+                    @if($b64)<img src="{{ $b64 }}" class="img-thumb"><div class="img-label">{{ $img->title ?: $img->file_name }}</div>@endif
+                </td>
+                @endforeach
+                @for($p = min($images->count(), 4); $p < 4; $p++)<td></td>@endfor
+            </tr>
+        </table>
         @endif
 
-        {{-- ════════════════════════════════════════════════════════════════ --}}
-        {{-- FINAL REVIEW / CONCLUSION                                         --}}
-        {{-- ════════════════════════════════════════════════════════════════ --}}
+        {{-- ════════════ FINAL REVIEW / CONCLUSION ════════════ --}}
         @elseif($secType === 'review' || $secType === 'conclusion' || $slug === 'final_review')
         @php
-            $reviewFields = [
+            $rf = array_filter([
                 'Overall QC Verdict' => $data['overall_verdict'] ?? null,
                 'Inspector Name'     => $data['inspector_name'] ?? null,
                 'Follow-up Date'     => $data['follow_up_date'] ?? null,
-                'Notes / Remarks'    => $data['notes'] ?? null,
                 'Conclusion'         => $data['conclusion'] ?? null,
                 'Summary'            => $data['summary'] ?? null,
-            ];
-            $reviewFields = array_filter($reviewFields, fn($v) => $v !== null && $v !== '');
+                'Notes / Remarks'    => $data['notes'] ?? null,
+            ], fn($v) => $v !== null && $v !== '');
         @endphp
-        @if(!empty($reviewFields))
+        @if(!empty($rf))
         <table class="meta-table">
-            @foreach($reviewFields as $label => $value)
+            @foreach($rf as $label => $value)
             <tr>
-                <td class="kv-key">{{ $label }}</td>
-                <td class="kv-val">
+                <td class="mk">{{ $label }}</td>
+                <td class="mv">
                     @if($label === 'Overall QC Verdict')
-                        @php
-                            $vc = match($value) {
-                                'Pass'                   => 'verdict-pass',
-                                'Fail'                   => 'verdict-fail',
-                                'Conditional Pass'       => 'verdict-conditional',
-                                'Re-Inspection Required' => 'verdict-conditional',
-                                default                  => 'verdict-pending',
-                            };
-                        @endphp
-                        <span class="verdict-box {{ $vc }}" style="font-size:9pt;padding:2px 8px">{{ $value }}</span>
+                    @php $vc = match($value) {
+                        'Pass'                   => 'vb-pass',
+                        'Fail'                   => 'vb-fail',
+                        'Conditional Pass'       => 'vb-conditional',
+                        'Re-Inspection Required' => 'vb-conditional',
+                        default                  => 'vb-pending',
+                    }; @endphp
+                    <span class="review-verdict-box {{ $vc }}">{{ $value }}</span>
                     @else
                         {{ $value }}
                     @endif
@@ -791,46 +948,44 @@ $hiddenSlugs = [
         </table>
         @endif
 
-        {{-- ════════════════════════════════════════════════════════════════ --}}
-        {{-- TASK LIST                                                         --}}
-        {{-- ════════════════════════════════════════════════════════════════ --}}
+        {{-- ════════════ TASK LIST ════════════ --}}
         @elseif($secType === 'task_list')
         @php
-            $taskDefs  = $sec->default_data['tasks'] ?? [];
-            $taskData  = $data['tasks'] ?? [];
+            $taskDefs = $sec->default_data['tasks'] ?? [];
+            $taskData = $data['tasks'] ?? [];
         @endphp
         @if(!empty($taskDefs))
-        <table class="check-table">
+        <table class="data-table">
             <thead>
                 <tr>
-                    <th style="width:35%">Task</th>
-                    <th style="width:15%; text-align:center">Result</th>
+                    <th style="width:4%; text-align:center">#</th>
+                    <th style="width:40%">Task / Checkpoint</th>
+                    <th style="width:14%; text-align:center">Result</th>
                     <th>Notes</th>
-                    <th style="width:80px">Photos</th>
+                    <th style="width:65px; text-align:center">Photos</th>
                 </tr>
             </thead>
             <tbody>
-                @foreach($taskDefs as $taskDef)
+                @foreach($taskDefs as $tIdx => $taskDef)
                 @php
-                    $tKey    = $taskDef['key'] ?? '';
-                    $tEntry  = $taskData[$tKey] ?? [];
-                    $tResult = $tEntry['selected'] ?? '—';
-                    $tNotes  = $tEntry['notes'] ?? ($tEntry['comments'] ?? '');
-                    $tImgs   = $images->filter(fn($a) => $a->task_key === $tKey)->values();
-                    $resultClass = match(strtolower((string)$tResult)) {
-                        'pass' => 'result-pass', 'fail' => 'result-fail', 'n/a', 'na' => 'result-na', default => '',
+                    $tKey   = $taskDef['key'] ?? '';
+                    $tEntry = $taskData[$tKey] ?? [];
+                    $tRes   = $tEntry['selected'] ?? '—';
+                    $tNotes = $tEntry['notes'] ?? ($tEntry['comments'] ?? '');
+                    $tImgs  = $images->filter(fn($a) => $a->task_key === $tKey)->values();
+                    $tCls   = match(strtolower((string)$tRes)) {
+                        'pass' => 'rb-pass', 'fail' => 'rb-fail', 'n/a','na' => 'rb-na', default => 'rb-def'
                     };
                 @endphp
                 <tr>
+                    <td style="text-align:center; color:#9ca3af; font-size:8pt">{{ $tIdx+1 }}</td>
                     <td>{{ $taskDef['label'] ?? $tKey }}</td>
-                    <td style="text-align:center"><span class="{{ $resultClass }}">{{ $tResult ?: '—' }}</span></td>
-                    <td>{{ $tNotes }}</td>
-                    <td>
+                    <td style="text-align:center"><span class="{{ $tCls }}">{{ $tRes ?: '—' }}</span></td>
+                    <td style="color:#4b5563; font-size:8pt">{{ $tNotes }}</td>
+                    <td style="text-align:center">
                         @foreach($tImgs->take(2) as $img)
                         @php $b64 = $imgBase64($img->file_path); @endphp
-                        @if($b64)
-                            <img src="{{ $b64 }}" style="width:35px;height:35px;object-fit:cover;border:1px solid #ccc;margin:1px">
-                        @endif
+                        @if($b64)<img src="{{ $b64 }}" style="width:32px;height:32px;object-fit:cover;border:1px solid #d1d8e0;margin:1px;border-radius:1px">@endif
                         @endforeach
                     </td>
                 </tr>
@@ -839,12 +994,10 @@ $hiddenSlugs = [
         </table>
         @endif
 
-        {{-- ════════════════════════════════════════════════════════════════ --}}
-        {{-- CARTON DIMENSIONS & WEIGHT                                        --}}
-        {{-- ════════════════════════════════════════════════════════════════ --}}
+        {{-- ════════════ CARTON DIMENSIONS & WEIGHT ════════════ --}}
         @elseif($secType === 'cartons' || $slug === 'carton_dimensions_weight')
         @php
-            $cartonFields = [
+            $cstd = array_filter([
                 'Length (cm)'        => $data['length'] ?? null,
                 'Width (cm)'         => $data['width'] ?? null,
                 'Height (cm)'        => $data['height'] ?? null,
@@ -852,22 +1005,34 @@ $hiddenSlugs = [
                 'Net Weight (kg)'    => $data['net_weight'] ?? null,
                 'CBM'                => $data['cbm'] ?? null,
                 'Cartons per Pallet' => $data['cartons_per_pallet'] ?? null,
-            ];
-            $cartonFields = array_filter($cartonFields, fn($v) => $v !== null && $v !== '');
-            $cartonItems  = $data['items'] ?? [];
+            ], fn($v) => $v !== null && $v !== '');
+            $cstdHalf  = (int) ceil(count($cstd) / 2);
+            $cartonRows = $data['items'] ?? [];
         @endphp
-        @if(!empty($cartonFields))
-        <table class="meta-table" style="margin-bottom:8px">
-            @foreach($cartonFields as $label => $value)
+        @if(!empty($cstd))
+        <div class="sub-heading" style="margin-top:0">Standard Specifications</div>
+        <table style="width:100%; margin-bottom:12px; border-collapse:collapse">
             <tr>
-                <td class="kv-key">{{ $label }}</td>
-                <td class="kv-val">{{ $value }}</td>
+                <td style="width:50%; padding-right:8px; vertical-align:top">
+                    <table class="meta-table">
+                        @foreach(array_slice($cstd, 0, $cstdHalf) as $label => $value)
+                        <tr><td class="mk">{{ $label }}</td><td class="mv">{{ $value }}</td></tr>
+                        @endforeach
+                    </table>
+                </td>
+                <td style="width:50%; vertical-align:top">
+                    <table class="meta-table">
+                        @foreach(array_slice($cstd, $cstdHalf) as $label => $value)
+                        <tr><td class="mk">{{ $label }}</td><td class="mv">{{ $value }}</td></tr>
+                        @endforeach
+                    </table>
+                </td>
             </tr>
-            @endforeach
         </table>
         @endif
-        @if(!empty($cartonItems))
-        <table class="check-table">
+        @if(!empty($cartonRows))
+        <div class="sub-heading">Measured Cartons</div>
+        <table class="data-table">
             <thead>
                 <tr>
                     <th>Carton No.</th>
@@ -880,258 +1045,237 @@ $hiddenSlugs = [
                 </tr>
             </thead>
             <tbody>
-                @foreach($cartonItems as $ci)
+                @foreach($cartonRows as $ci)
                 @php
-                    $ciRes   = $ci['result'] ?? '—';
-                    $ciClass = match(strtolower((string)$ciRes)) {
-                        'pass' => 'result-pass', 'fail' => 'result-fail', default => ''
-                    };
+                    $ciRes = $ci['result'] ?? '—';
+                    $ciCls = match(strtolower((string)$ciRes)) { 'pass' => 'rb-pass', 'fail' => 'rb-fail', default => 'rb-def' };
                 @endphp
                 <tr>
-                    <td>{{ $ci['carton_no'] ?? ($loop->index + 1) }}</td>
+                    <td style="font-weight:bold">{{ $ci['carton_no'] ?? ($loop->index+1) }}</td>
                     <td style="text-align:center">{{ $ci['length'] ?? '—' }}</td>
                     <td style="text-align:center">{{ $ci['width'] ?? '—' }}</td>
                     <td style="text-align:center">{{ $ci['height'] ?? '—' }}</td>
                     <td style="text-align:center">{{ $ci['gross_weight'] ?? '—' }}</td>
                     <td style="text-align:center">{{ $ci['net_weight'] ?? '—' }}</td>
-                    <td style="text-align:center"><span class="{{ $ciClass }}">{{ $ciRes }}</span></td>
+                    <td style="text-align:center"><span class="{{ $ciCls }}">{{ $ciRes }}</span></td>
                 </tr>
                 @endforeach
             </tbody>
         </table>
         @endif
 
-        {{-- ════════════════════════════════════════════════════════════════ --}}
-        {{-- VERIFICATION sections                                             --}}
-        {{-- ════════════════════════════════════════════════════════════════ --}}
+        {{-- ════════════ VERIFICATION ════════════ --}}
         @elseif($secType === 'verification')
         @php
             $verItems = $data['items'] ?? [];
             $verExtra = collect($data)->except('items')->filter(fn($v) => $v !== null && $v !== '' && !is_array($v));
         @endphp
         @if($verExtra->isNotEmpty())
-        <table class="meta-table" style="margin-bottom:8px">
+        <table class="meta-table" style="margin-bottom:10px">
             @foreach($verExtra as $k => $v)
-            <tr>
-                <td class="kv-key">{{ ucwords(str_replace('_', ' ', $k)) }}</td>
-                <td class="kv-val">{{ $v }}</td>
-            </tr>
+            <tr><td class="mk">{{ ucwords(str_replace('_', ' ', $k)) }}</td><td class="mv">{{ $v }}</td></tr>
             @endforeach
         </table>
         @endif
         @if(!empty($verItems))
-        <table class="check-table">
+        <table class="data-table">
             <thead>
                 <tr>
-                    <th style="width:50%">Item</th>
-                    <th style="width:20%; text-align:center">Result</th>
+                    <th style="width:4%; text-align:center">#</th>
+                    <th style="width:50%">Verification Item</th>
+                    <th style="width:18%; text-align:center">Result</th>
                     <th>Remarks</th>
                 </tr>
             </thead>
             <tbody>
-                @foreach($verItems as $vi)
+                @foreach($verItems as $vIdx => $vi)
                 @php
-                    $viRes   = $vi['result'] ?? '—';
-                    $viClass = match(strtolower((string)$viRes)) {
-                        'pass' => 'result-pass', 'fail' => 'result-fail', 'n/a', 'na' => 'result-na', default => ''
-                    };
+                    $viRes = $vi['result'] ?? '—';
+                    $viCls = match(strtolower((string)$viRes)) { 'pass' => 'rb-pass', 'fail' => 'rb-fail', 'n/a','na' => 'rb-na', default => 'rb-def' };
                 @endphp
                 <tr>
+                    <td style="text-align:center; color:#9ca3af; font-size:8pt">{{ $vIdx+1 }}</td>
                     <td>{{ $vi['label'] ?? '' }}</td>
-                    <td style="text-align:center"><span class="{{ $viClass }}">{{ $viRes }}</span></td>
-                    <td>{{ $vi['remarks'] ?? '' }}</td>
+                    <td style="text-align:center"><span class="{{ $viCls }}">{{ $viRes }}</span></td>
+                    <td style="color:#4b5563; font-size:8pt">{{ $vi['remarks'] ?? '' }}</td>
                 </tr>
                 @endforeach
             </tbody>
         </table>
         @endif
 
-        {{-- ════════════════════════════════════════════════════════════════ --}}
-        {{-- ARTICLE RESULTS                                                   --}}
-        {{-- ════════════════════════════════════════════════════════════════ --}}
+        {{-- ════════════ ARTICLE RESULTS ════════════ --}}
         @elseif($secType === 'article_results')
         @php
             $artItems = $data['items'] ?? [];
             $artExtra = collect($data)->except('items')->filter(fn($v) => $v !== null && $v !== '' && !is_array($v));
         @endphp
         @if($artExtra->isNotEmpty())
-        <table class="meta-table" style="margin-bottom:8px">
+        <table class="meta-table" style="margin-bottom:10px">
             @foreach($artExtra as $k => $v)
-            <tr>
-                <td class="kv-key">{{ ucwords(str_replace('_', ' ', $k)) }}</td>
-                <td class="kv-val">{{ $v }}</td>
-            </tr>
+            <tr><td class="mk">{{ ucwords(str_replace('_', ' ', $k)) }}</td><td class="mv">{{ $v }}</td></tr>
             @endforeach
         </table>
         @endif
         @if(!empty($artItems))
-        <table class="check-table">
+        <table class="data-table">
             <thead>
                 <tr>
-                    <th style="width:40%">Parameter</th>
-                    <th style="width:20%; text-align:center">Result</th>
+                    <th style="width:4%; text-align:center">#</th>
+                    <th style="width:45%">Parameter</th>
+                    <th style="width:18%; text-align:center">Result</th>
                     <th>Remarks</th>
                 </tr>
             </thead>
             <tbody>
-                @foreach($artItems as $ai)
+                @foreach($artItems as $aIdx => $ai)
                 @php
-                    $aiRes   = $ai['result'] ?? '—';
-                    $aiClass = match(strtolower((string)$aiRes)) {
-                        'pass' => 'result-pass', 'fail' => 'result-fail', 'n/a', 'na' => 'result-na', default => ''
-                    };
+                    $aiRes = $ai['result'] ?? '—';
+                    $aiCls = match(strtolower((string)$aiRes)) { 'pass' => 'rb-pass', 'fail' => 'rb-fail', 'n/a','na' => 'rb-na', default => 'rb-def' };
                 @endphp
                 <tr>
+                    <td style="text-align:center; color:#9ca3af; font-size:8pt">{{ $aIdx+1 }}</td>
                     <td>{{ $ai['label'] ?? $ai['parameter'] ?? '' }}</td>
-                    <td style="text-align:center"><span class="{{ $aiClass }}">{{ $aiRes }}</span></td>
-                    <td>{{ $ai['remarks'] ?? '' }}</td>
+                    <td style="text-align:center"><span class="{{ $aiCls }}">{{ $aiRes }}</span></td>
+                    <td style="color:#4b5563; font-size:8pt">{{ $ai['remarks'] ?? '' }}</td>
                 </tr>
                 @endforeach
             </tbody>
         </table>
         @endif
 
-        {{-- ════════════════════════════════════════════════════════════════ --}}
-        {{-- MEASUREMENT CHECK                                                 --}}
-        {{-- ════════════════════════════════════════════════════════════════ --}}
+        {{-- ════════════ MEASUREMENT CHECK ════════════ --}}
         @elseif($slug === 'measurement_check')
         @php $measurements = $data['measurements'] ?? []; @endphp
         @if(!empty($measurements))
-        <table class="check-table">
+        <table class="data-table">
             <thead>
                 <tr>
-                    <th style="width:35%">Measurement Point</th>
-                    <th style="width:15%; text-align:center">Spec</th>
-                    <th style="width:15%; text-align:center">Tolerance</th>
-                    <th style="width:15%; text-align:center">Measured</th>
-                    <th style="width:10%; text-align:center">Result</th>
+                    <th style="width:4%; text-align:center">#</th>
+                    <th style="width:34%">Measurement Point</th>
+                    <th style="width:14%; text-align:center">Spec</th>
+                    <th style="width:14%; text-align:center">Tolerance</th>
+                    <th style="width:14%; text-align:center">Measured</th>
+                    <th style="width:12%; text-align:center">Result</th>
                 </tr>
             </thead>
             <tbody>
-                @foreach($measurements as $m)
+                @foreach($measurements as $mIdx => $m)
                 @php
-                    $mRes   = $m['result'] ?? '—';
-                    $mClass = match(strtolower((string)$mRes)) { 'pass' => 'result-pass', 'fail' => 'result-fail', default => '' };
+                    $mRes = $m['result'] ?? '—';
+                    $mCls = match(strtolower((string)$mRes)) { 'pass' => 'rb-pass', 'fail' => 'rb-fail', default => 'rb-def' };
                 @endphp
                 <tr>
+                    <td style="text-align:center; color:#9ca3af; font-size:8pt">{{ $mIdx+1 }}</td>
                     <td>{{ $m['point'] ?? '' }}</td>
                     <td style="text-align:center">{{ $m['spec'] ?? '—' }}</td>
-                    <td style="text-align:center">{{ $m['tolerance'] ?? '—' }}</td>
-                    <td style="text-align:center">{{ $m['measured'] ?? '—' }}</td>
-                    <td style="text-align:center"><span class="{{ $mClass }}">{{ $mRes }}</span></td>
+                    <td style="text-align:center; color:#6b7280">{{ $m['tolerance'] ?? '—' }}</td>
+                    <td style="text-align:center; font-weight:bold">{{ $m['measured'] ?? '—' }}</td>
+                    <td style="text-align:center"><span class="{{ $mCls }}">{{ $mRes }}</span></td>
                 </tr>
                 @endforeach
             </tbody>
         </table>
         @endif
         @if(!empty($data['notes']))
-            <div class="section-notes" style="margin-top:6px">{{ $data['notes'] }}</div>
+        <div class="section-note" style="margin-top:8px">{{ $data['notes'] }}</div>
         @endif
 
-        {{-- ════════════════════════════════════════════════════════════════ --}}
-        {{-- FINISH / GENERIC KEY-VALUE FALLBACK                              --}}
-        {{-- ════════════════════════════════════════════════════════════════ --}}
+        {{-- ════════════ GENERIC FALLBACK ════════════ --}}
         @else
         @php
-            $fallbackData = collect($data)->except('items')->filter(fn($v) => $v !== null && $v !== '' && !is_array($v));
-            $fallbackItems = $data['items'] ?? [];
+            $fbData  = collect($data)->except('items')->filter(fn($v) => $v !== null && $v !== '' && !is_array($v));
+            $fbItems = $data['items'] ?? [];
         @endphp
-        @if($fallbackData->isNotEmpty())
-        <table class="meta-table" style="margin-bottom:8px">
-            @foreach($fallbackData as $k => $v)
-            <tr>
-                <td class="kv-key">{{ ucwords(str_replace('_', ' ', $k)) }}</td>
-                <td class="kv-val">{{ $v }}</td>
-            </tr>
+        @if($fbData->isNotEmpty())
+        <table class="meta-table" style="margin-bottom:10px">
+            @foreach($fbData as $k => $v)
+            <tr><td class="mk">{{ ucwords(str_replace('_', ' ', $k)) }}</td><td class="mv">{{ $v }}</td></tr>
             @endforeach
         </table>
         @endif
-        @if(!empty($fallbackItems))
-        <table class="check-table">
+        @if(!empty($fbItems))
+        <table class="data-table">
             <thead>
                 <tr>
+                    <th style="width:4%; text-align:center">#</th>
                     <th style="width:50%">Item</th>
-                    <th style="width:20%; text-align:center">Result</th>
+                    <th style="width:18%; text-align:center">Result</th>
                     <th>Remarks</th>
                 </tr>
             </thead>
             <tbody>
-                @foreach($fallbackItems as $fi)
+                @foreach($fbItems as $fIdx => $fi)
                 @php
-                    $fiRes   = $fi['result'] ?? '—';
-                    $fiClass = match(strtolower((string)$fiRes)) {
-                        'pass' => 'result-pass', 'fail' => 'result-fail', 'n/a', 'na' => 'result-na', default => ''
-                    };
+                    $fiRes = $fi['result'] ?? '—';
+                    $fiCls = match(strtolower((string)$fiRes)) { 'pass' => 'rb-pass', 'fail' => 'rb-fail', 'n/a','na' => 'rb-na', default => 'rb-def' };
                 @endphp
                 <tr>
+                    <td style="text-align:center; color:#9ca3af; font-size:8pt">{{ $fIdx+1 }}</td>
                     <td>{{ $fi['label'] ?? '' }}</td>
-                    <td style="text-align:center"><span class="{{ $fiClass }}">{{ $fiRes }}</span></td>
-                    <td>{{ $fi['remarks'] ?? '' }}</td>
+                    <td style="text-align:center"><span class="{{ $fiCls }}">{{ $fiRes }}</span></td>
+                    <td style="color:#4b5563; font-size:8pt">{{ $fi['remarks'] ?? '' }}</td>
                 </tr>
                 @endforeach
             </tbody>
         </table>
         @endif
-        @if($images->isEmpty() && $fallbackData->isEmpty() && empty($fallbackItems))
-            <em style="color:#888;font-size:8pt">No data recorded for this section.</em>
+        @if($images->isEmpty() && $fbData->isEmpty() && empty($fbItems))
+        <div class="empty-state">No data recorded for this section.</div>
         @endif
         @endif
 
-        {{-- ── General images gallery (non-task images at section level) ─── --}}
-        @php
-            $generalImages = $images->filter(fn($a) => empty($a->task_key))->values();
-        @endphp
-        @if($generalImages->isNotEmpty() && !in_array($secType, ['images']))
-        <div style="margin-top:8px">
-            <strong style="font-size:8pt">Attached Photos</strong>
-            <table style="width:100%;margin-top:4px">
-                <tr>
-                    @foreach($generalImages->take(4) as $img)
-                    @php $b64 = $imgBase64($img->file_path); @endphp
-                    <td style="width:25%;padding:2px;text-align:center;vertical-align:top">
-                        @if($b64)
-                            <img src="{{ $b64 }}" class="img-thumb">
-                            <div class="img-label">{{ $img->title ?: $img->file_name }}</div>
-                        @endif
-                    </td>
-                    @endforeach
-                    @for($p = min($generalImages->count(), 4); $p < 4; $p++)<td></td>@endfor
-                </tr>
-            </table>
-            @if($generalImages->count() > 4)
-                <div style="font-size:7.5pt;color:#666;margin-top:3px">+ {{ $generalImages->count() - 4 }} more photo(s)</div>
-            @endif
+        {{-- ── General section-level images (non-task-keyed) ─────────────── --}}
+        @php $generalImages = $images->filter(fn($a) => empty($a->task_key))->values(); @endphp
+        @if($generalImages->isNotEmpty() && $secType !== 'images')
+        <div class="sub-heading">Attached Photos</div>
+        <table class="img-gallery-table">
+            <tr>
+                @foreach($generalImages->take(4) as $img)
+                @php $b64 = $imgBase64($img->file_path); @endphp
+                <td style="width:25%">
+                    @if($b64)
+                        <img src="{{ $b64 }}" class="img-thumb">
+                        <div class="img-label">{{ $img->title ?: $img->file_name }}</div>
+                    @endif
+                </td>
+                @endforeach
+                @for($p = min($generalImages->count(), 4); $p < 4; $p++)<td></td>@endfor
+            </tr>
+        </table>
+        @if($generalImages->count() > 4)
+        <div style="font-size:7.5pt; color:#6b7280; margin-top:3px">
+            + {{ $generalImages->count() - 4 }} more photo(s) not shown
         </div>
+        @endif
         @endif
 
         {{-- ── Documents ──────────────────────────────────────────────────── --}}
         @if($docs->isNotEmpty())
-        <div style="margin-top:6px">
-            <strong style="font-size:8pt">Attached Documents</strong>
-            <table class="meta-table" style="margin-top:3px">
-                @foreach($docs as $doc)
-                <tr>
-                    <td class="kv-key">{{ $doc->title ?: $doc->file_name }}</td>
-                    <td class="kv-val" style="color:#666">{{ $doc->file_name }} ({{ $doc->humanFileSize() }})</td>
-                </tr>
-                @endforeach
-            </table>
-        </div>
+        <div class="sub-heading">Attached Documents</div>
+        <table class="meta-table" style="margin-top:4px">
+            @foreach($docs as $doc)
+            <tr>
+                <td class="mk">{{ $doc->title ?: $doc->file_name }}</td>
+                <td class="mv" style="color:#6b7280; font-size:8pt">{{ $doc->file_name }} ({{ $doc->humanFileSize() }})</td>
+            </tr>
+            @endforeach
+        </table>
         @endif
 
-        {{-- ── Section notes ───────────────────────────────────────────────── --}}
+        {{-- ── Section notes ──────────────────────────────────────────────── --}}
         @if($rs->notes)
-        <div class="section-notes" style="margin-top:6px">
+        <div class="section-note" style="margin-top:8px">
             <strong>Notes:</strong> {{ $rs->notes }}
         </div>
         @endif
 
-    </div>{{-- end .section-body --}}
-</div>{{-- end .section-block --}}
+    </div>{{-- /.section-body --}}
+</div>{{-- /.section-block --}}
 
-@endforeach {{-- end sections loop --}}
+@endforeach {{-- sections --}}
 
-@endforeach {{-- end runs loop --}}
+@endforeach {{-- runs --}}
 
 </body>
 </html>

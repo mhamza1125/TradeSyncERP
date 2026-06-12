@@ -73,7 +73,7 @@ class DashboardController extends Controller
         // ── Recent activity ────────────────────────────────────────────────────
         $recentActivity = Activity::with('causer')
             ->latest()
-            ->limit(10)
+            ->limit(5)
             ->get();
 
         // ── Currently active users (session active within last 30 minutes) ────
