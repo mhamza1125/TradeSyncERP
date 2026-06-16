@@ -54,7 +54,7 @@
 
 {{-- Checklist items (shipment_verification, or any verification with items) --}}
 @if(!empty($items))
-<div class="table-responsive mb-3">
+<div class="table-responsive mb-3" data-checklist-wrapper="{{ $secId }}">
     <table class="table table-sm table-bordered align-middle mb-0">
         <thead class="table-light">
             <tr>
@@ -73,7 +73,7 @@
                 default => '',
             };
         @endphp
-        <tr class="{{ $rowClass }}" style="--bs-table-bg-type: transparent;">
+        <tr class="{{ $rowClass }}" data-result-row style="--bs-table-bg-type: transparent;">
             <td class="ps-3 fw-semibold fs-13">
                 <input type="hidden" name="sections[{{ $secId }}][data][items][{{ $idx }}][label]"
                        value="{{ $item['label'] ?? '' }}">

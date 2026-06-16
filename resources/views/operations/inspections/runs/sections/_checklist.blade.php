@@ -72,7 +72,7 @@
 
 {{-- Checkpoint table --}}
 @if(!empty($items))
-<div class="table-responsive mb-3">
+<div class="table-responsive mb-3" data-checklist-wrapper="{{ $rsId }}">
     <table class="table table-sm table-bordered align-middle mb-0">
         <thead class="table-light">
             <tr>

@@ -28,14 +28,14 @@ class InspectionTypeSectionDefaultSeeder extends Seeder
         // Format: 'Type name' => [ ['slug', 'required', 'category' (optional)] ]
         // Sections are listed in display order (array index drives sort_order via ($i+1)*10).
         // finish_inspection is always the last section for every type.
-        // inspection_conclusion is used wherever a Conclusion section is required.
         $map = [
             'SMS (Sample Inspection)' => [
                 ['slug' => 'general_information',      'required' => true, 'category' => null],
-                ['slug' => 'packing_check',            'required' => true, 'category' => null],
+                ['slug' => 'packing_check_si',         'required' => true, 'category' => null],
                 ['slug' => 'carton_dimensions_weight', 'required' => true, 'category' => null],
                 ['slug' => 'product_screening',        'required' => true, 'category' => null],
                 ['slug' => 'barcode_testing',          'required' => true, 'category' => null],
+                ['slug' => 'functional_test',          'required' => false, 'category' => null],
                 ['slug' => 'article_results_table',    'required' => true, 'category' => null],
                 ['slug' => 'defect_recording',         'required' => true, 'category' => null],
                 ['slug' => 'variations_sample',        'required' => true, 'category' => null],
@@ -47,6 +47,7 @@ class InspectionTypeSectionDefaultSeeder extends Seeder
                 ['slug' => 'general_information',    'required' => true, 'category' => null],
                 ['slug' => 'product_screening',      'required' => true, 'category' => null],
                 ['slug' => 'barcode_testing',        'required' => true, 'category' => null],
+                ['slug' => 'functional_test',        'required' => false, 'category' => null],
                 ['slug' => 'article_results_table',  'required' => true, 'category' => null],
                 ['slug' => 'defect_recording',       'required' => true, 'category' => null],
                 ['slug' => 'variations_sample',      'required' => true, 'category' => null],
@@ -55,19 +56,20 @@ class InspectionTypeSectionDefaultSeeder extends Seeder
                 ['slug' => 'finish_inspection',      'required' => true, 'category' => null],
             ],
             'Inline Inspection (DUPRO)' => [
-                ['slug' => 'production_status',     'required' => true, 'category' => null],
-                ['slug' => 'defect_recording',      'required' => true, 'category' => null],
-                ['slug' => 'measurement_check',     'required' => true, 'category' => null],
-                ['slug' => 'variations_sample',     'required' => true, 'category' => null],
-                ['slug' => 'inspection_conclusion', 'required' => true, 'category' => null],
-                ['slug' => 'finish_inspection',     'required' => true, 'category' => null],
+                ['slug' => 'production_status',      'required' => true, 'category' => null],
+                ['slug' => 'defect_recording',       'required' => true, 'category' => null],
+                ['slug' => 'measurements_check_si',  'required' => true, 'category' => null],
+                ['slug' => 'variations_sample',      'required' => true, 'category' => null],
+                ['slug' => 'inspection_conclusion',  'required' => true, 'category' => null],
+                ['slug' => 'finish_inspection',      'required' => true, 'category' => null],
             ],
             'Final Inspection (AQL / Percentage Based)' => [
                 ['slug' => 'general_information',      'required' => true, 'category' => null],
-                ['slug' => 'packing_check',            'required' => true, 'category' => null],
+                ['slug' => 'packing_check_si',         'required' => true, 'category' => null],
                 ['slug' => 'carton_dimensions_weight', 'required' => true, 'category' => null],
                 ['slug' => 'product_screening',        'required' => true, 'category' => null],
                 ['slug' => 'barcode_testing',          'required' => true, 'category' => null],
+                ['slug' => 'functional_test',          'required' => false, 'category' => null],
                 ['slug' => 'aql_sampling',             'required' => true, 'category' => null],
                 ['slug' => 'article_results_table',    'required' => true, 'category' => null],
                 ['slug' => 'defect_recording',         'required' => true, 'category' => null],
@@ -85,7 +87,7 @@ class InspectionTypeSectionDefaultSeeder extends Seeder
             ],
             'Re-Inspection' => [
                 ['slug' => 'general_information',    'required' => true, 'category' => null],
-                ['slug' => 'packing_check',          'required' => true, 'category' => null],
+                ['slug' => 'packing_check_si',       'required' => true, 'category' => null],
                 ['slug' => 'aql_sampling',           'required' => true, 'category' => null],
                 ['slug' => 'article_results_table',  'required' => true, 'category' => null],
                 ['slug' => 'overall_article_result', 'required' => true, 'category' => null],
@@ -101,18 +103,15 @@ class InspectionTypeSectionDefaultSeeder extends Seeder
                 // Ch. 3 — Container Details (admin) + Container Condition (assessment)
                 ['slug' => 'container_details',              'required' => true, 'category' => null],
                 ['slug' => 'inner_conditions_of_container',  'required' => true, 'category' => null],
-                // Ch. 4 — Cartons Loaded
-                ['slug' => 'number_of_cartons_loaded',       'required' => true, 'category' => null],
-                // Ch. 5 — Quantity per Carton
-                ['slug' => 'quantity_per_carton',            'required' => true, 'category' => null],
-                // Ch. 6 — Overall Carton Condition (final verdict)
+                // Ch. 4 — Carton counts + quantity per carton (consolidated in carton_verification)
+                ['slug' => 'carton_verification',            'required' => true, 'category' => null],
+                // Ch. 5 — Overall Carton Condition (final verdict)
                 ['slug' => 'overall_carton_condition',       'required' => true, 'category' => null],
                 ['slug' => 'finish_inspection',              'required' => true, 'category' => null],
             ],
         ];
 
-        // ── Cleanup: drop any pre-existing type-default assignments for the standardized types that
-        // fall outside the authoritative map above which have been merged into / replaced by Final Review.
+        // ── Cleanup: drop any pre-existing type-default assignments outside the map ─
         foreach (array_keys($map) as $typeName) {
             $type = InspectionType::where('name', $typeName)->first();
             if (! $type) {
@@ -125,12 +124,16 @@ class InspectionTypeSectionDefaultSeeder extends Seeder
                 ->delete();
         }
 
-        // inspection_conclusion and finish_inspection are active sections used across types.
+        // ── Remove all type assignments for deprecated / removed sections ──────────
         $removedSlugIds = $sections->whereIn('slug', [
-                'corrective_action', 'textile_sample_conformity',
-                'denim_textile_defects', 'functional_test',
-            ])
-            ->pluck('id');
+            'corrective_action',          'textile_sample_conformity',
+            'denim_textile_defects',      'textile_leather_functional',
+            'sample_conformity',          'marking_check',
+            'measurement_check',          'packing_check',
+            'protector_evaluation',       'number_of_cartons_loaded',
+            'quantity_per_carton',
+        ])->pluck('id');
+
         if ($removedSlugIds->isNotEmpty()) {
             InspectionTypeSectionDefault::whereIn('inspection_section_id', $removedSlugIds)->delete();
         }
@@ -151,7 +154,7 @@ class InspectionTypeSectionDefaultSeeder extends Seeder
                 if (! empty($entry['category'])) {
                     $cat = $categories->get($entry['category']);
                     if (! $cat) {
-                        continue; // skip if the category doesn't exist yet
+                        continue;
                     }
                     $categoryId = $cat->id;
                 }

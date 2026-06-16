@@ -182,6 +182,8 @@ $typeColors = [
     'verification'      => 'warning',
     'review'            => 'secondary',
     'task_list'         => 'primary',
+    'checkpoint'        => 'primary',
+    'production_stages' => 'info',
     'quantity_sampling' => 'info',
     'cartons'           => 'warning',
     'cover_photo'       => 'purple',
@@ -199,8 +201,8 @@ $selfNotedSlugs = [
     'product_screening', 'container_details', 'final_review', 'files_to_review',
     'seal_verification', 'shipment_verification', 'overall_article_result',
     'protector_evaluation', 'sample_conformity', 'measurement_check',
-    'variations_techpack', 'production_status',
-    'number_of_cartons_loaded', 'overall_carton_condition',
+    'variations_techpack', 'variations_sample', 'production_status',
+    'number_of_cartons_loaded', 'overall_carton_condition', 'carton_dimensions_weight',
 ];
 
 // Slugs that are no longer rendered as their own card (merged into / replaced
@@ -456,14 +458,26 @@ foreach ($visibleRunSections as $rs) {
                 @php
                     $accId   = 'sec-' . $runSection->id;
 
-                    // Compute task progress for display
-                    $taskDefs   = $sec->default_data['tasks'] ?? [];
-                    $taskCount  = count($taskDefs);
-                    $taskData   = $runSection->data['tasks'] ?? [];
-                    $tasksDone  = 0;
+                    // --- task-based (checkpoint / task_list sections) ---
+                    $taskDefs  = $sec->default_data['tasks'] ?? [];
+                    $taskData  = $runSection->data['tasks'] ?? [];
+                    $tasksDone = 0;
                     foreach ($taskDefs as $td) {
                         if (!empty($taskData[$td['key']]['selected'])) $tasksDone++;
                     }
+
+                    // --- item-based (checklist / verification sections with items array) ---
+                    $itemDefs  = $sec->default_data['items'] ?? [];
+                    $itemsData = $runSection->data['items'] ?? [];
+                    $itemsDone = collect($itemsData)->filter(fn($cd) => !empty($cd['result']))->count();
+
+                    // --- single-field virtual checkpoints (e.g. overall_carton_condition) ---
+                    $virtualCount = in_array($secSlug, ['overall_carton_condition']) ? 1 : 0;
+                    $virtualDone  = ($virtualCount > 0 && !empty($runSection->data['overall_condition'] ?? null)) ? 1 : 0;
+
+                    // Unified count used for the header badge
+                    $checkpointCount = count($taskDefs) ?: (count($itemDefs) ?: $virtualCount);
+                    $checkpointsDone = count($taskDefs) ? $tasksDone : (count($itemDefs) ? $itemsDone : $virtualDone);
 
                     $color     = $typeColors[$sec->section_type] ?? 'secondary';
                     $startOpen = $loopIdx === 0;
@@ -493,10 +507,10 @@ foreach ($visibleRunSections as $rs) {
                                 @endif
                             </div>
                             <div class="d-flex align-items-center gap-2 flex-shrink-0">
-                                @if($taskCount > 0)
+                                @if($checkpointCount > 0)
                                     <span class="badge bg-soft-{{ $color }} text-{{ explode(' ',$color)[0] }} fs-11"
                                           id="task-progress-{{ $runSection->id }}">
-                                        {{ $tasksDone }}/{{ $taskCount }} Tasks
+                                        {{ $checkpointsDone }}/{{ $checkpointCount }} Checkpoints
                                     </span>
                                 @endif
                                 <span class="badge bg-soft-{{ $statusColors[$runSection->status] ?? 'secondary' }} text-{{ explode(' ', $statusColors[$runSection->status] ?? 'secondary')[0] }} fs-11"
@@ -529,6 +543,9 @@ foreach ($visibleRunSections as $rs) {
                                 @case('carton_dimensions_weight')
                                     @include('operations.inspections.runs.sections._carton_dimensions_weight', [
                                         'runSection' => $runSection,
+                                        'uploadUrl'  => $uploadUrl,
+                                        'inspection' => $inspection,
+                                        'run'        => $run,
                                     ])
                                 @break
 
@@ -643,11 +660,23 @@ foreach ($visibleRunSections as $rs) {
                                 @case('production_status')
                                     @include('operations.inspections.runs.sections._production_status', [
                                         'runSection'  => $runSection,
+                                        'uploadUrl'   => $uploadUrl,
+                                        'inspection'  => $inspection,
+                                        'run'         => $run,
+                                    ])
+                                @break
+
+                                @case('variations_sample')
+                                    @include('operations.inspections.runs.sections._variations_sample', [
+                                        'runSection'  => $runSection,
+                                        'uploadUrl'   => $uploadUrl,
+                                        'inspection'  => $inspection,
+                                        'run'         => $run,
                                     ])
                                 @break
 
                                 @default
-                                    @if($sec->section_type === 'task_list')
+                                    @if($sec->section_type === 'task_list' || $sec->section_type === 'checkpoint')
                                         @include('operations.inspections.runs.sections._task_list', [
                                             'runSection'  => $runSection,
                                             'uploadUrl'   => $uploadUrl,
@@ -766,6 +795,46 @@ foreach ($visibleRunSections as $rs) {
                 @endforeach
             </div>
             @endif
+
+            {{-- ── Finish Inspection footer (always visible, not a section) ─── --}}
+            <div class="card shadow-sm mt-4 border-0">
+                <div class="card-body text-center py-4">
+                    @if($run->completed_at)
+                    <div class="d-flex flex-column align-items-center gap-3">
+                        <div class="d-flex align-items-center justify-content-center bg-soft-success text-success rounded-circle"
+                             style="width:72px;height:72px">
+                            <i class="feather-check-circle" style="font-size:36px"></i>
+                        </div>
+                        <div>
+                            <h5 class="fw-bold text-success mb-1">Inspection Finished</h5>
+                            <p class="text-muted mb-0 fs-13">
+                                Completed on {{ $run->completed_at->format('d M Y \a\t H:i') }}
+                            </p>
+                        </div>
+                        <a href="{{ route('inspections.show', $inspection) }}" class="btn btn-outline-primary mt-1">
+                            <i class="feather-arrow-left me-2"></i>Back to Inspection
+                        </a>
+                    </div>
+                    @else
+                    <div class="d-flex flex-column align-items-center gap-2">
+                        <div class="d-flex align-items-center justify-content-center bg-soft-secondary text-muted rounded-circle"
+                             style="width:72px;height:72px">
+                            <i class="feather-flag" style="font-size:36px"></i>
+                        </div>
+                        <div>
+                            <h5 class="fw-semibold mb-1">Ready to Finish?</h5>
+                            <p class="text-muted fs-13 mb-3">
+                                Review all sections above, then click <strong>Finish Inspection</strong> to close this run.
+                            </p>
+                        </div>
+                        <button type="button" id="finish-inspection-btn" class="btn btn-success btn-lg px-5">
+                            <i class="feather-check-circle me-2"></i>Finish Inspection
+                        </button>
+                        <p class="text-muted fs-12 mb-0 mt-2">Finishing will lock this run and mark it as complete.</p>
+                    </div>
+                    @endif
+                </div>
+            </div>
 
         </form>
     </div>
@@ -1192,22 +1261,26 @@ foreach ($visibleRunSections as $rs) {
     // ═══════════════════════════════════════════════════════════════
 
     function updateTaskProgress(sectionId) {
-        const card    = document.querySelector(`[data-section-id="${sectionId}"]`);
-        if (!card) return;
+        // Look up the section wrapper — this is the element that owns [data-task-key] rows.
+        // (NOT [data-section-id], which is on the save/complete buttons.)
+        const wrapper = document.querySelector(`[data-section-wrapper="${sectionId}"]`);
+        if (!wrapper) return;
 
-        const taskCards = card.querySelectorAll('[data-task-key]');
-        if (!taskCards.length) return;
+        // Use tr[data-task-key] to count only checkpoint rows, not the nested
+        // attachment-area divs that also carry data-task-key on the same key.
+        const taskRows = wrapper.querySelectorAll('tr[data-task-key]');
+        if (!taskRows.length) return;
 
         let done  = 0;
-        const total = taskCards.length;
+        const total = taskRows.length;
 
-        taskCards.forEach(tc => {
-            const radios = tc.querySelectorAll('.task-radio');
+        taskRows.forEach(tr => {
+            const radios = tr.querySelectorAll('.task-radio');
             if ([...radios].some(r => r.checked)) done++;
         });
 
         const badge = document.getElementById('task-progress-' + sectionId);
-        if (badge) badge.textContent = done + '/' + total + ' Tasks';
+        if (badge) badge.textContent = done + '/' + total + ' Checkpoints';
 
         const newStatus = (done === total && total > 0) ? 'complete' : 'pending';
 
@@ -1234,6 +1307,38 @@ foreach ($visibleRunSections as $rs) {
             radio.addEventListener('change', () => updateTaskProgress(sectionId));
         });
         updateTaskProgress(sectionId);
+    });
+
+    // ═══════════════════════════════════════════════════════════════
+    // 3.  RESULT-TOGGLE RADIO → progress badge for checklist sections
+    //     (checklist / verification / review sections that use items[])
+    // ═══════════════════════════════════════════════════════════════
+
+    function updateChecklistProgress(sectionId) {
+        const wrapper = document.querySelector(`[data-checklist-wrapper="${sectionId}"]`);
+        if (!wrapper) return;
+
+        const rows = wrapper.querySelectorAll('tr[data-result-row]');
+        if (!rows.length) return;
+
+        let done = 0;
+        const total = rows.length;
+
+        rows.forEach(tr => {
+            const radios = tr.querySelectorAll('.result-toggle-radio');
+            if ([...radios].some(r => r.checked)) done++;
+        });
+
+        const badge = document.getElementById('task-progress-' + sectionId);
+        if (badge) badge.textContent = done + '/' + total + ' Checkpoints';
+    }
+
+    document.querySelectorAll('[data-checklist-wrapper]').forEach(wrapper => {
+        const sectionId = wrapper.dataset.checklistWrapper;
+        wrapper.querySelectorAll('.result-toggle-radio').forEach(radio => {
+            radio.addEventListener('change', () => updateChecklistProgress(sectionId));
+        });
+        updateChecklistProgress(sectionId);
     });
 
     // ═══════════════════════════════════════════════════════════════

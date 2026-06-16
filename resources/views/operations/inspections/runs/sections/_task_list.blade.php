@@ -1,4 +1,4 @@
-{{-- Generic Task List Section --}}
+{{-- Generic Checkpoint Section --}}
 {{-- Expects: $runSection, $uploadUrl, $inspection, $run --}}
 @php
     $tasks    = $runSection->section->default_data['tasks'] ?? [];
@@ -25,8 +25,8 @@
 @if(empty($tasks))
 <div class="text-center py-4 text-muted">
     <i class="feather-sliders fs-2 d-block mb-2 opacity-50"></i>
-    <p class="mb-0 fs-13">No tasks defined for this section.</p>
-    <small>Edit the section template to add tasks.</small>
+    <p class="mb-0 fs-13">No checkpoints defined for this section.</p>
+    <small>Edit the section template to add checkpoints.</small>
 </div>
 @else
 <div class="table-responsive" data-section-wrapper="{{ $rsId }}">
@@ -34,7 +34,7 @@
         <thead class="table-light">
             <tr>
                 <th class="ps-3" style="width:36px">#</th>
-                <th>Task</th>
+                <th>Checkpoint</th>
                 <th style="width:240px">Status</th>
                 <th style="width:280px">Attachments</th>
             </tr>

@@ -203,14 +203,10 @@ class InspectionExportTestSeeder extends Seeder
             'completed_at'  => now()->subHours(1),
         ]);
 
-        // Resolve sections from inspection type defaults (same logic as controller)
         $this->resolveSectionsForRun($run, $sample, $type);
 
-        // Load run sections
         $run->load('runSections.section');
-        $sectionMap = $run->runSections->mapWithKeys(fn($rs) => [$rs->section?->slug => $rs]);
 
-        // Populate each section
         foreach ($run->runSections as $rs) {
             if (!$rs->section) {
                 continue;
@@ -338,7 +334,6 @@ class InspectionExportTestSeeder extends Seeder
 
             // ─ Defect Recording ────────────────────────────────────────────
             case $slug === 'defect_recording':
-            case $slug === 'denim_textile_defects':
                 $this->populateDefects($rs, $defects, $verdict, $user);
                 break;
 
@@ -348,12 +343,7 @@ class InspectionExportTestSeeder extends Seeder
                 $rs->update(['status' => 'complete']);
                 break;
 
-            // ─ Packing Check ───────────────────────────────────────────────
-            case $slug === 'packing_check':
-                $this->populateChecklist($rs, $verdict);
-                break;
-
-            // ─ Carton Verification ─────────────────────────────────────────
+            // ─ Carton Verification (consolidated: counts + qty per carton) ─
             case $slug === 'carton_verification':
                 $rs->update([
                     'status' => 'complete',
@@ -378,25 +368,15 @@ class InspectionExportTestSeeder extends Seeder
                 $rs->update([
                     'status' => 'complete',
                     'data'   => [
-                        'length'       => 62,
-                        'width'        => 42,
-                        'height'       => 38,
-                        'gross_weight' => 14.5,
-                        'net_weight'   => 13.2,
-                        'cbm'          => '0.099',
-                        'items'        => [
-                            ['carton_no' => 'C-001', 'length' => 62, 'width' => 42, 'height' => 38, 'gross_weight' => 14.5, 'net_weight' => 13.2, 'result' => 'Pass'],
-                            ['carton_no' => 'C-002', 'length' => 62, 'width' => 42, 'height' => 38, 'gross_weight' => 14.6, 'net_weight' => 13.3, 'result' => 'Pass'],
-                            ['carton_no' => 'C-003', 'length' => 62, 'width' => 42, 'height' => 38, 'gross_weight' => 14.4, 'net_weight' => 13.1, 'result' => 'Pass'],
-                            ['carton_no' => 'C-004', 'length' => 62, 'width' => 42, 'height' => 38, 'gross_weight' => 14.8, 'net_weight' => 13.5, 'result' => $verdict === 'Fail' ? 'Fail' : 'Pass'],
+                        'dim_unit'    => 'cm',
+                        'weight_unit' => 'kg',
+                        'cartons'     => [
+                            ['carton_type' => 'Master Carton',  'length' => 62, 'width' => 42, 'height' => 38, 'gross_weight' => 14.5, 'net_weight' => 13.2, 'remarks' => ''],
+                            ['carton_type' => 'Inner Carton',   'length' => 32, 'width' => 22, 'height' => 19, 'gross_weight' => 7.2,  'net_weight' => 6.5,  'remarks' => $verdict === 'Fail' ? 'Weight slightly over spec.' : ''],
                         ],
                     ],
                 ]);
-                break;
-
-            // ─ Measurement Check ───────────────────────────────────────────
-            case $slug === 'measurement_check':
-                $this->populateMeasurements($rs, $verdict, $user);
+                $this->attachImages($rs, $user, 'carton_dim_0', 1);
                 break;
 
             // ─ Container Details ───────────────────────────────────────────
@@ -405,17 +385,19 @@ class InspectionExportTestSeeder extends Seeder
                     'status' => 'complete',
                     'notes'  => 'Container inspected before loading. Clean and dry interior.',
                     'data'   => [
-                        'container_number'   => 'ABCD' . rand(1000000, 9999999),
-                        'container_type'     => "40'HC",
-                        'seal_number'        => 'SEAL-' . rand(100000, 999999),
-                        'loading_date'       => now()->subDays(1)->toDateString(),
-                        'loading_start_time' => '08:00',
-                        'loading_end_time'   => '16:30',
-                        'loading_port'       => 'Karachi, Pakistan',
-                        'discharge_port'     => 'Rotterdam, Netherlands',
-                        'total_cartons_loaded' => 250,
-                        'total_qty_loaded'   => 5000,
-                        'container_condition'=> 'Good — No damage, rust, or odour.',
+                        'container_number'         => 'ABCD' . rand(1000000, 9999999),
+                        'container_type'           => "40'HC",
+                        'seal_number'              => 'SEAL-' . rand(100000, 999999),
+                        'loading_date'             => now()->subDays(1)->toDateString(),
+                        'loading_start_time'       => '08:00',
+                        'loading_end_time'         => '16:30',
+                        'loading_port'             => 'Karachi, Pakistan',
+                        'discharge_port'           => 'Rotterdam, Netherlands',
+                        'total_cartons_loaded'     => 250,
+                        'total_qty_loaded'         => 5000,
+                        'container_condition'      => 'Good — No damage, rust, or odour.',
+                        'container_condition_note' => '',
+                        'notes'                    => 'Container pre-inspected. No issues found.',
                     ],
                 ]);
                 $this->attachImages($rs, $user, null, 3);
@@ -437,42 +419,13 @@ class InspectionExportTestSeeder extends Seeder
                 ]);
                 break;
 
-            // ─ Cartons Loaded / Qty per Carton ────────────────────────────
-            case $slug === 'number_of_cartons_loaded':
-            case $slug === 'cartons_loaded':
-                $rs->update([
-                    'status' => 'complete',
-                    'data'   => [
-                        'cartons_loaded'       => 250,
-                        'total_qty'            => 5000,
-                        'cartons_verified'     => 'Pass',
-                        'remarks'              => 'All 250 cartons loaded and verified.',
-                    ],
-                ]);
-                $this->attachImages($rs, $user, null, 2);
-                break;
-
-            case $slug === 'quantity_per_carton':
-            case $slug === 'qty_per_carton':
-                $rs->update([
-                    'status' => 'complete',
-                    'data'   => [
-                        'qty_per_carton' => 20,
-                        'result'         => 'Pass',
-                        'remarks'        => 'Verified — 20 pcs per carton across all sampled cartons.',
-                    ],
-                ]);
-                break;
-
             // ─ Overall Carton Condition ────────────────────────────────────
             case $slug === 'overall_carton_condition':
-            case $slug === 'overall_condition':
                 $rs->update([
                     'status' => 'complete',
                     'data'   => [
-                        'condition' => $verdict === 'Fail' ? 'Fail' : 'Good',
-                        'result'    => $verdict === 'Fail' ? 'Fail' : 'Pass',
-                        'remarks'   => $verdict === 'Fail'
+                        'overall_condition' => $verdict === 'Fail' ? 'Fail' : 'Good',
+                        'remarks'           => $verdict === 'Fail'
                             ? 'Some cartons showed minor corner damage.'
                             : 'All cartons in good condition. No damage or moisture issues.',
                     ],
@@ -552,12 +505,12 @@ class InspectionExportTestSeeder extends Seeder
                 $rs->update([
                     'status' => 'complete',
                     'data'   => ['items' => [
-                        ['label' => 'Construction & Workmanship',    'result' => 'Pass', 'remarks' => 'Stitching uniform and secure.'],
-                        ['label' => 'Colour & Appearance',           'result' => 'Pass', 'remarks' => 'Matches approved sample.'],
-                        ['label' => 'Labels & Tags',                 'result' => $verdict === 'Fail' ? 'Fail' : 'Pass', 'remarks' => $verdict === 'Fail' ? 'Size label missing on 2 units.' : ''],
-                        ['label' => 'Packaging',                     'result' => 'Pass', 'remarks' => ''],
-                        ['label' => 'Dimensions & Measurements',     'result' => 'Pass', 'remarks' => 'Within ±2% tolerance.'],
-                        ['label' => 'Functional Tests',              'result' => 'Pass', 'remarks' => 'Zips, snaps, and closures all functional.'],
+                        ['label' => 'Construction & Workmanship', 'result' => 'Pass',                              'remarks' => 'Stitching uniform and secure.'],
+                        ['label' => 'Colour & Appearance',        'result' => 'Pass',                              'remarks' => 'Matches approved sample.'],
+                        ['label' => 'Labels & Tags',              'result' => $verdict === 'Fail' ? 'Fail' : 'Pass','remarks' => $verdict === 'Fail' ? 'Size label missing on 2 units.' : ''],
+                        ['label' => 'Packaging',                  'result' => 'Pass',                              'remarks' => ''],
+                        ['label' => 'Dimensions & Measurements',  'result' => 'Pass',                              'remarks' => 'Within ±2% tolerance.'],
+                        ['label' => 'Functional Tests',           'result' => 'Pass',                              'remarks' => 'Zips, snaps, and closures all functional.'],
                     ]],
                 ]);
                 break;
@@ -567,15 +520,15 @@ class InspectionExportTestSeeder extends Seeder
                 $rs->update([
                     'status' => 'complete',
                     'data'   => [
-                        'production_stage'        => 'Cutting',
-                        'qty_cut'                 => 5200,
-                        'qty_sewn'                => 4800,
-                        'qty_finished'            => 5000,
-                        'qty_packed'              => 5000,
-                        'expected_completion_date'=> now()->addDays(5)->toDateString(),
-                        'remarks'                 => 'Production on schedule. No delays reported.',
+                        'selections' => [
+                            ['stage' => 'AT CUTTING STAGE',    'percentage' => 100, 'quantity' => '5200', 'comment' => 'Cutting fully completed.'],
+                            ['stage' => 'AT STITCHING STAGE',  'percentage' => 92,  'quantity' => '4800', 'comment' => 'Stitching in progress, on schedule.'],
+                            ['stage' => 'AT PACKING STAGE',    'percentage' => 85,  'quantity' => '5000', 'comment' => $verdict === 'Fail' ? 'Packing delayed — rework required.' : 'Packing underway, no issues.'],
+                        ],
+                        'notes' => 'Production on schedule. No delays reported.',
                     ],
                 ]);
+                $this->attachImages($rs, $user, 'ps_at_cutting_stage', 1);
                 break;
 
             // ─ Inner Conditions / Seal Verification / generic verification ──
@@ -583,8 +536,8 @@ class InspectionExportTestSeeder extends Seeder
                 $rs->update([
                     'status' => 'complete',
                     'data'   => ['items' => [
-                        ['label' => 'Cleanliness inside container',     'result' => 'Pass', 'remarks' => 'Clean and dry.'],
-                        ['label' => 'No signs of pest infestation',     'result' => 'Pass', 'remarks' => ''],
+                        ['label' => 'Cleanliness inside container',      'result' => 'Pass', 'remarks' => 'Clean and dry.'],
+                        ['label' => 'No signs of pest infestation',      'result' => 'Pass', 'remarks' => ''],
                         ['label' => 'No structural damage to container', 'result' => 'Pass', 'remarks' => ''],
                         ['label' => 'Dunnage bags in place',             'result' => 'Pass', 'remarks' => ''],
                     ]],
@@ -593,14 +546,15 @@ class InspectionExportTestSeeder extends Seeder
                 break;
 
             // ─ Order Qty vs Packing List ────────────────────────────────────
-            case $slug === 'order_qty_vs_packing':
+            case $slug === 'order_quantity_vs_packing_list':
                 $rs->update([
                     'status' => 'complete',
                     'data'   => [
+                        'order_quantity'        => 5000,
+                        'packing_list_quantity' => 5000,
                         'items' => [
-                            ['label' => 'Total order quantity matches packing list', 'result' => 'Pass', 'remarks' => '5,000 pcs confirmed.'],
-                            ['label' => 'Carton count matches packing list',         'result' => 'Pass', 'remarks' => '250 cartons confirmed.'],
-                            ['label' => 'Sku / article numbers correct',             'result' => 'Pass', 'remarks' => ''],
+                            ['label' => 'Packing list quantity matches order quantity',  'result' => 'Pass', 'remarks' => '5,000 pcs confirmed.'],
+                            ['label' => 'Packing list matches actual cartons presented', 'result' => 'Pass', 'remarks' => '250 cartons confirmed.'],
                         ],
                     ],
                 ]);
@@ -623,9 +577,9 @@ class InspectionExportTestSeeder extends Seeder
                 ]);
                 break;
 
-            // ─ Task list (generic) ─────────────────────────────────────────
-            case $type === 'task_list':
-                $this->populateTaskList($rs, $verdict, $user);
+            // ─ Checkpoint sections (packing_check_si, marking_check_si, etc.) ─
+            case $type === 'checkpoint':
+                $this->populateCheckpoint($rs, $verdict, $user);
                 break;
 
             // ─ Generic checklist fallback ──────────────────────────────────
@@ -643,17 +597,15 @@ class InspectionExportTestSeeder extends Seeder
 
     private function populateDefects(InspectionRunSection $rs, $defects, string $verdict, ?User $user): void
     {
-        $selectedDefects = [];
-
         if ($defects->isEmpty()) {
             $rs->update(['status' => 'complete', 'data' => ['selections' => []]]);
             return;
         }
 
-        $defectList  = $defects->shuffle()->take($verdict === 'Fail' ? 4 : 2);
-        $selections  = [];
+        $defectList = $defects->shuffle()->take($verdict === 'Fail' ? 4 : 2);
+        $selections = [];
 
-        foreach ($defectList as $i => $defect) {
+        foreach ($defectList as $defect) {
             $selections[] = [
                 'defect_id'   => $defect->id,
                 'defect_name' => $defect->defect_name,
@@ -663,7 +615,6 @@ class InspectionExportTestSeeder extends Seeder
                 'selected'    => 1,
             ];
 
-            // Attach 1–2 defect images
             $this->attachImages($rs, $user, 'defect_' . $defect->id, rand(1, 2));
         }
 
@@ -682,10 +633,6 @@ class InspectionExportTestSeeder extends Seeder
             return;
         }
 
-        $foundCritical = $verdict === 'Fail' ? 2 : 0;
-        $foundMajor    = $verdict === 'Fail' ? 4 : 1;
-        $foundMinor    = rand(2, 8);
-
         $aql->update([
             'lot_size'         => 5000,
             'inspection_level' => 'II',
@@ -700,9 +647,9 @@ class InspectionExportTestSeeder extends Seeder
             're_major'         => 11,
             'ac_minor'         => 14,
             're_minor'         => 15,
-            'found_critical'   => $foundCritical,
-            'found_major'      => $foundMajor,
-            'found_minor'      => $foundMinor,
+            'found_critical'   => $verdict === 'Fail' ? 2 : 0,
+            'found_major'      => $verdict === 'Fail' ? 4 : 1,
+            'found_minor'      => rand(2, 8),
             'verdict'          => $verdict,
             'notes'            => "Lot of 5000 pcs. Sample size 200 pcs inspected per ISO 2859-1 Level II.",
         ]);
@@ -723,7 +670,7 @@ class InspectionExportTestSeeder extends Seeder
         $failIdx = $verdict === 'Fail' ? rand(0, count($items) - 1) : -1;
 
         foreach ($items as $i => &$item) {
-            $result = ($i === $failIdx) ? 'Fail' : 'Pass';
+            $result          = ($i === $failIdx) ? 'Fail' : 'Pass';
             $item['result']  = $result;
             $item['remarks'] = $result === 'Fail' ? 'Non-conformance found — action required.' : '';
         }
@@ -737,29 +684,9 @@ class InspectionExportTestSeeder extends Seeder
         ]);
     }
 
-    // ── Populate measurement check ────────────────────────────────────────────
+    // ── Populate checkpoint section (all SI checkpoint types) ─────────────────
 
-    private function populateMeasurements(InspectionRunSection $rs, string $verdict, ?User $user): void
-    {
-        $measurements = [
-            ['point' => 'Chest Width (HPS)', 'spec' => '56 cm', 'tolerance' => '±1 cm', 'measured' => '55.8 cm', 'result' => 'Pass'],
-            ['point' => 'Body Length (HPS)', 'spec' => '72 cm', 'tolerance' => '±1 cm', 'measured' => '72.2 cm', 'result' => 'Pass'],
-            ['point' => 'Sleeve Length',     'spec' => '65 cm', 'tolerance' => '±1 cm', 'measured' => $verdict === 'Fail' ? '63.0 cm' : '64.8 cm', 'result' => $verdict === 'Fail' ? 'Fail' : 'Pass'],
-            ['point' => 'Shoulder Width',    'spec' => '46 cm', 'tolerance' => '±1 cm', 'measured' => '46.1 cm', 'result' => 'Pass'],
-            ['point' => 'Bottom Opening',    'spec' => '52 cm', 'tolerance' => '±1 cm', 'measured' => '52.5 cm', 'result' => 'Pass'],
-        ];
-
-        $rs->update([
-            'status' => 'complete',
-            'data'   => ['measurements' => $measurements, 'notes' => 'Measurements taken on 5 randomly selected units.'],
-        ]);
-
-        $this->attachImages($rs, $user, null, 2);
-    }
-
-    // ── Populate task list section ────────────────────────────────────────────
-
-    private function populateTaskList(InspectionRunSection $rs, string $verdict, ?User $user): void
+    private function populateCheckpoint(InspectionRunSection $rs, string $verdict, ?User $user): void
     {
         $taskDefs = $rs->section->default_data['tasks'] ?? [];
 
@@ -768,8 +695,8 @@ class InspectionExportTestSeeder extends Seeder
             return;
         }
 
-        $tasks    = [];
-        $failIdx  = $verdict === 'Fail' ? 0 : -1;
+        $tasks   = [];
+        $failIdx = $verdict === 'Fail' ? 0 : -1;
 
         foreach ($taskDefs as $i => $td) {
             $key    = $td['key'] ?? "task_{$i}";
@@ -833,7 +760,6 @@ class InspectionExportTestSeeder extends Seeder
     {
         $paths = [];
 
-        // Try configured banners directory first
         $bannersDir = public_path('assets/images/banners');
         if (is_dir($bannersDir)) {
             for ($i = 1; $i <= 6; $i++) {
@@ -846,7 +772,6 @@ class InspectionExportTestSeeder extends Seeder
             }
         }
 
-        // Fall back to avatar images (always present)
         if (empty($paths)) {
             $avatarDir = public_path('assets/images/avatar');
             if (is_dir($avatarDir)) {
@@ -883,7 +808,6 @@ class InspectionExportTestSeeder extends Seeder
 
     private function clearPreviousSeederData(): void
     {
-        // Find inspections created by this seeder
         $existingNumbers = ['INS-PDF-2026-001', 'INS-PDF-2026-002', 'INS-PDF-2026-003'];
         $inspections     = Inspection::whereIn('report_number', $existingNumbers)->get();
 
@@ -902,7 +826,6 @@ class InspectionExportTestSeeder extends Seeder
             $inspection->delete();
         }
 
-        // Remove test samples
         Sample::whereIn('sample_code', ['SMP-PDF-001', 'SMP-PDF-002', 'SMP-PDF-003'])->forceDelete();
     }
 }

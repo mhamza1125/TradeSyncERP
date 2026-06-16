@@ -35,7 +35,7 @@
 
 {{-- Checklist items --}}
 @if(!empty($items))
-<div class="table-responsive">
+<div class="table-responsive" data-checklist-wrapper="{{ $secId }}">
     <table class="table table-sm table-bordered align-middle mb-0">
         <thead class="table-light">
             <tr>
