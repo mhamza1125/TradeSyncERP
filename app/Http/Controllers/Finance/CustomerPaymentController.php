@@ -3,10 +3,12 @@
 namespace App\Http\Controllers\Finance;
 
 use App\Http\Controllers\Controller;
+use App\Http\Controllers\Finance\CustomerInvoiceController;
 use App\Http\Requests\Finance\StoreCustomerPaymentRequest;
 use App\Http\Requests\Finance\UpdateCustomerPaymentRequest;
 use App\Models\Account;
 use App\Models\Customer;
+use App\Models\CustomerInvoice;
 use App\Models\CustomerPayment;
 use App\Models\Transaction;
 use Illuminate\Http\Request;
@@ -36,11 +38,18 @@ class CustomerPaymentController extends Controller
         return view('finance.customer-payments.index', compact('payments', 'customers'));
     }
 
-    public function create()
+    public function create(Request $request)
     {
-        $customers = Customer::with('currency')->where('status', true)->orderBy('customer_name')->get();
-        $accounts  = Account::where('status', true)->whereIn('account_type', ['Cash', 'Bank'])->get();
-        return view('finance.customer-payments.create', compact('customers', 'accounts'));
+        $customers   = Customer::with('currency')->where('status', true)->orderBy('customer_name')->get();
+        $accounts    = Account::where('status', true)->whereIn('account_type', ['Cash', 'Bank'])->get();
+        $fromInvoice = null;
+
+        if ($request->filled('from_invoice')) {
+            $fromInvoice = CustomerInvoice::with('customer.currency')
+                ->find($request->integer('from_invoice'));
+        }
+
+        return view('finance.customer-payments.create', compact('customers', 'accounts', 'fromInvoice'));
     }
 
     public function store(StoreCustomerPaymentRequest $request)
@@ -71,6 +80,8 @@ class CustomerPaymentController extends Controller
             $payment = CustomerPayment::create($data);
 
             $transaction->update(['reference_id' => $payment->id]);
+
+            CustomerInvoiceController::syncInvoiceStatus($payment->invoice_reference);
 
             if ($request->wantsJson()) {
                 return response()->json(['success' => true, 'payment' => $payment]);
@@ -107,6 +118,7 @@ class CustomerPaymentController extends Controller
             $data['account_id']    = $data['debit_account_id'];
             unset($data['debit_account_id']);
 
+            $oldInvoiceRef = $customerPayment->invoice_reference;
             $customerPayment->update($data);
 
             if ($customerPayment->transaction) {
@@ -117,6 +129,12 @@ class CustomerPaymentController extends Controller
                     'amount'            => $data['actual_pkr_received'],
                     'remarks'           => $data['remarks'] ?? null,
                 ]);
+            }
+
+            // Sync both old and new invoice references in case invoice ref changed
+            CustomerInvoiceController::syncInvoiceStatus($oldInvoiceRef);
+            if ($data['invoice_reference'] !== $oldInvoiceRef) {
+                CustomerInvoiceController::syncInvoiceStatus($data['invoice_reference'] ?? null);
             }
 
             if ($request->wantsJson()) {
@@ -130,7 +148,10 @@ class CustomerPaymentController extends Controller
 
     public function destroy(CustomerPayment $customerPayment)
     {
+        $invoiceRef = $customerPayment->invoice_reference;
         $customerPayment->delete();
+
+        CustomerInvoiceController::syncInvoiceStatus($invoiceRef);
 
         if (request()->wantsJson()) {
             return response()->json(['success' => true]);

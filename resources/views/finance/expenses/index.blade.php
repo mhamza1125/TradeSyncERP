@@ -23,6 +23,11 @@
                     <a href="javascript:void(0);" class="btn btn-icon btn-light-brand" data-bs-toggle="collapse" data-bs-target="#collapseFilters">
                         <i class="feather-filter"></i>
                     </a>
+                    @can('expenses.index')
+                    <a href="{{ route('expenses.export-pdf', request()->query()) }}" class="btn btn-light-brand" title="Export PDF">
+                        <i class="feather-download me-2"></i><span>Export PDF</span>
+                    </a>
+                    @endcan
                     @can('expenses.create')
                     <a href="{{ route('expenses.create') }}" class="btn btn-primary">
                         <i class="feather-plus me-2"></i><span>Add Expense</span>

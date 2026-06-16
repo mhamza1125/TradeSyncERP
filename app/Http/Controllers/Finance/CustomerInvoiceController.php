@@ -7,6 +7,7 @@ use App\Http\Requests\Finance\StoreCustomerInvoiceRequest;
 use App\Http\Requests\Finance\UpdateCustomerInvoiceRequest;
 use App\Models\Customer;
 use App\Models\CustomerInvoice;
+use App\Models\CustomerPayment;
 use App\Models\InspectionType;
 use App\Models\Supplier;
 use Illuminate\Http\Request;
@@ -16,7 +17,7 @@ class CustomerInvoiceController extends Controller
 {
     public function __construct()
     {
-        $this->middleware('permission:customer-invoices.index')->only(['index', 'show']);
+        $this->middleware('permission:customer-invoices.index')->only(['index', 'show', 'byCustomer']);
         $this->middleware('permission:customer-invoices.create')->only(['create', 'store']);
         $this->middleware('permission:customer-invoices.edit')->only(['edit', 'update']);
         $this->middleware('permission:customer-invoices.delete')->only('destroy');
@@ -122,6 +123,46 @@ class CustomerInvoiceController extends Controller
         $customerInvoice->delete();
         return redirect()->route('customer-invoices.index')
             ->with('success', 'Invoice deleted successfully.');
+    }
+
+    public function byCustomer(Request $request)
+    {
+        $request->validate(['customer_id' => 'required|integer']);
+
+        $invoices = CustomerInvoice::where('customer_id', $request->customer_id)
+            ->where(function ($q) {
+                $q->whereIn('status', ['Draft', 'Sent', 'Partial', 'Overdue'])
+                  ->orWhere('amount_due', '>', 0);
+            })
+            ->orderBy('invoice_date', 'desc')
+            ->get(['id', 'invoice_number', 'total_amount', 'amount_paid', 'amount_due', 'status']);
+
+        return response()->json($invoices);
+    }
+
+    public static function syncInvoiceStatus(?string $invoiceNumber): void
+    {
+        if (blank($invoiceNumber)) {
+            return;
+        }
+
+        $invoice = CustomerInvoice::where('invoice_number', $invoiceNumber)->first();
+        if (!$invoice) {
+            return;
+        }
+
+        $totalPaid = CustomerPayment::where('invoice_reference', $invoiceNumber)->sum('received_fc');
+
+        $invoice->amount_paid = $totalPaid;
+        $invoice->amount_due  = max(0, $invoice->total_amount - $totalPaid);
+
+        if ($invoice->amount_due <= 0) {
+            $invoice->status = 'Paid';
+        } elseif ($totalPaid > 0) {
+            $invoice->status = 'Partial';
+        }
+
+        $invoice->save();
     }
 
     private function generateInvoiceNumber(): string

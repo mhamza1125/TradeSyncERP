@@ -8,6 +8,7 @@ use App\Models\Account;
 use App\Models\Expense;
 use App\Models\ExpenseHead;
 use App\Models\Transaction;
+use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 
@@ -99,5 +100,43 @@ class ExpenseController extends Controller
         }
 
         return redirect()->route('expenses.index')->with('success', 'Expense deleted.');
+    }
+
+    public function exportPdf(Request $request)
+    {
+        $expenses = Expense::with(['expenseHead', 'account', 'transaction.createdBy'])
+            ->when($request->expense_head_id, fn ($q) => $q->where('expense_head_id', $request->expense_head_id))
+            ->when($request->account_id,      fn ($q) => $q->where('account_id', $request->account_id))
+            ->when($request->from_date,       fn ($q) => $q->where('expense_date', '>=', $request->from_date))
+            ->when($request->to_date,         fn ($q) => $q->where('expense_date', '<=', $request->to_date))
+            ->latest('expense_date')
+            ->get();
+
+        $filters = array_filter([
+            'Expense Head' => $request->expense_head_id
+                ? optional(ExpenseHead::find($request->expense_head_id))->expense_name
+                : null,
+            'Account'   => $request->account_id
+                ? optional(Account::find($request->account_id))->account_name
+                : null,
+            'From Date' => $request->from_date
+                ? \Carbon\Carbon::parse($request->from_date)->format('d M Y')
+                : null,
+            'To Date'   => $request->to_date
+                ? \Carbon\Carbon::parse($request->to_date)->format('d M Y')
+                : null,
+        ]);
+
+        $total = $expenses->sum('amount');
+
+        $pdf = Pdf::loadView('exports.expenses-pdf', compact('expenses', 'filters', 'total'))
+            ->setPaper('a4', 'portrait')
+            ->setOption('isHtml5ParserEnabled', true)
+            ->setOption('isRemoteEnabled', false)
+            ->setOption('defaultFont', 'sans-serif');
+
+        $filename = 'Expenses-' . now()->format('Y-m-d') . '.pdf';
+
+        return $pdf->download($filename);
     }
 }

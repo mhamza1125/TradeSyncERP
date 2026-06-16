@@ -33,7 +33,7 @@
                 </li>
 
                 {{-- ─── Operations (Core Work) ─────────────────────────────────── --}}
-                @canany(['customer-orders.index','samples.index','sample-movements.index','inspections.index','inspection-sections.index'])
+                @canany(['customer-orders.index','samples.index','sample-movements.index','inspections.index'])
                 <li class="nxl-item nxl-caption">
                     <label>Operations (Core Work)</label>
                 </li>
@@ -118,14 +118,6 @@
                 </li>
                 @endcan
 
-                @can('inspection-sections.index')
-                <li class="nxl-item {{ $is('inspection-sections.*') ? 'active' : '' }}">
-                    <a href="{{ route('inspection-sections.index') }}" class="nxl-link">
-                        <span class="nxl-micon"><i class="feather-layers"></i></span>
-                        <span class="nxl-mtext">Inspection Sections</span>
-                    </a>
-                </li>
-                @endcan
                 @endcanany
 
                 {{-- ─── Finance ─────────────────────────────────────────────────── --}}
@@ -179,7 +171,7 @@
                 @endcanany
 
                 {{-- ─── Master Data ─────────────────────────────────────────────── --}}
-                @canany(['customers.index','suppliers.index','employees.index','inspection-types.index'])
+                @canany(['customers.index','suppliers.index','employees.index','inspection-types.index','inspection-sections.index','defects.index'])
                 <li class="nxl-item nxl-caption">
                     <label>Master Data</label>
                 </li>
@@ -220,12 +212,23 @@
                 </li>
                 @endcan
 
+                @can('inspection-sections.index')
+                <li class="nxl-item {{ $is('inspection-sections.*') ? 'active' : '' }}">
+                    <a href="{{ route('inspection-sections.index') }}" class="nxl-link">
+                        <span class="nxl-micon"><i class="feather-layers"></i></span>
+                        <span class="nxl-mtext">Inspection Sections</span>
+                    </a>
+                </li>
+                @endcan
+
+                @can('defects.index')
                 <li class="nxl-item {{ $is('masters.defects.*') ? 'active' : '' }}">
                     <a href="{{ route('masters.defects.index') }}" class="nxl-link">
                         <span class="nxl-micon"><i class="feather-alert-triangle"></i></span>
                         <span class="nxl-mtext">Defects</span>
                     </a>
                 </li>
+                @endcan
                 @endcanany
 
                 {{-- ─── Tools ──────────────────────────────────────────────────── --}}

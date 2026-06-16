@@ -88,7 +88,7 @@
 
                             <div id="samplesTableWrap" class="border rounded insp-table-wrap" style="display:none">
                                 <table class="table table-sm table-hover mb-0">
-                                    <thead class="table-light sticky-top">
+                                    <thead class="table-light">
                                         <tr>
                                             <th style="width:36px">#</th>
                                             <th>Sample</th>
@@ -166,7 +166,7 @@
 
                             <div id="employeesTableWrap" class="border rounded insp-table-wrap" style="display:none">
                                 <table class="table table-sm table-hover mb-0">
-                                    <thead class="table-light sticky-top">
+                                    <thead class="table-light">
                                         <tr>
                                             <th style="width:36px">#</th>
                                             <th>Employee</th>

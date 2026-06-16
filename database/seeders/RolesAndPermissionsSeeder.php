@@ -26,6 +26,7 @@ class RolesAndPermissionsSeeder extends Seeder
             'banks.index', 'banks.create', 'banks.edit', 'banks.delete', 'banks.view',
             'colors.index', 'colors.create', 'colors.edit', 'colors.delete', 'colors.view',
             'sizes.index', 'sizes.create', 'sizes.edit', 'sizes.delete', 'sizes.view',
+            'defects.index', 'defects.create', 'defects.edit', 'defects.delete', 'defects.view',
 
             // Operations
             'samples.index', 'samples.create', 'samples.edit', 'samples.delete', 'samples.view',
@@ -67,11 +68,12 @@ class RolesAndPermissionsSeeder extends Seeder
             'inspection-types.index', 'inspection-types.create', 'inspection-types.edit', 'inspection-types.view',
             'colors.index', 'colors.create', 'colors.edit', 'colors.view',
             'sizes.index', 'sizes.create', 'sizes.edit', 'sizes.view',
+            'defects.index', 'defects.create', 'defects.edit', 'defects.delete', 'defects.view',
             'customer-orders.index', 'customer-orders.create', 'customer-orders.edit', 'customer-orders.delete', 'customer-orders.view',
             'samples.index', 'samples.create', 'samples.edit', 'samples.delete', 'samples.view',
             'sample-movements.index', 'sample-movements.create', 'sample-movements.edit', 'sample-movements.delete', 'sample-movements.view',
             'inspections.index', 'inspections.create', 'inspections.edit', 'inspections.delete', 'inspections.view',
-            'inspection-sections.index', 'inspection-sections.create', 'inspection-sections.edit',
+            'inspection-sections.index', 'inspection-sections.create', 'inspection-sections.edit', 'inspection-sections.delete',
             'expenses.index', 'expenses.view',
             'salary.index', 'salary.view',
             'customer-payments.index', 'customer-payments.view',
@@ -88,9 +90,11 @@ class RolesAndPermissionsSeeder extends Seeder
             'expense-heads.index', 'expense-heads.create', 'expense-heads.edit', 'expense-heads.view',
             'currencies.index', 'currencies.create', 'currencies.edit', 'currencies.view',
             'banks.index', 'banks.create', 'banks.edit', 'banks.view',
+            'defects.index', 'defects.view',
             'customer-orders.index', 'customer-orders.view',
             'samples.index', 'samples.view',
             'inspections.index', 'inspections.view',
+            'inspection-sections.index',
             'expenses.index', 'expenses.create', 'expenses.edit', 'expenses.delete', 'expenses.view',
             'salary.index', 'salary.create', 'salary.edit', 'salary.delete', 'salary.pay', 'salary.view',
             'customer-payments.index', 'customer-payments.create', 'customer-payments.edit', 'customer-payments.delete', 'customer-payments.view',
@@ -106,6 +110,7 @@ class RolesAndPermissionsSeeder extends Seeder
             'samples.index', 'samples.view',
             'sample-movements.index', 'sample-movements.view',
             'inspections.index', 'inspections.view',
+            'defects.index', 'defects.view',
         ]);
     }
 }

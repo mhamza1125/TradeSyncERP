@@ -119,7 +119,7 @@
         <div id="inspectorsTableWrap" class="border rounded insp-table-wrap"
              style="{{ count(old('inspector_ids', $savedInspectors)) ? '' : 'display:none' }}">
             <table class="table table-sm table-hover mb-0">
-                <thead class="table-light sticky-top">
+                <thead class="table-light">
                     <tr>
                         <th>#</th>
                         <th>Inspector</th>

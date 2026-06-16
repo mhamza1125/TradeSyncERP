@@ -139,11 +139,30 @@
                                             <i class="feather feather-eye"></i>
                                         </a>
                                         @endcan
+                                        @can('customer-payments.create')
+                                        @if(!in_array($invoice->status, ['Paid','Cancelled']) && $invoice->amount_due > 0)
+                                        <a href="{{ route('customer-payments.create', ['from_invoice' => $invoice->id]) }}"
+                                           class="avatar-text avatar-md text-success" data-bs-toggle="tooltip" title="Receive Payment">
+                                            <i class="feather feather-dollar-sign"></i>
+                                        </a>
+                                        @endif
+                                        @endcan
                                         <div class="dropdown">
                                             <a href="javascript:void(0)" class="avatar-text avatar-md" data-bs-toggle="dropdown" data-bs-offset="0,21">
                                                 <i class="feather feather-more-horizontal"></i>
                                             </a>
                                             <ul class="dropdown-menu">
+                                                @can('customer-payments.create')
+                                                @if(!in_array($invoice->status, ['Paid','Cancelled']) && $invoice->amount_due > 0)
+                                                <li>
+                                                    <a class="dropdown-item text-success"
+                                                       href="{{ route('customer-payments.create', ['from_invoice' => $invoice->id]) }}">
+                                                        <i class="feather feather-dollar-sign me-3"></i><span>Receive Payment</span>
+                                                    </a>
+                                                </li>
+                                                <li class="dropdown-divider"></li>
+                                                @endif
+                                                @endcan
                                                 @can('customer-invoices.edit')
                                                 <li>
                                                     <a class="dropdown-item" href="{{ route('customer-invoices.edit', $invoice) }}">

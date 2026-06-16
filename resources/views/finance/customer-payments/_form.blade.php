@@ -1,4 +1,8 @@
 {{-- Reusable customer-payment form partial --}}
+@push('styles')
+<link rel="stylesheet" href="{{ asset('assets/vendor/tom-select/tom-select.bootstrap5.min.css') }}">
+@endpush
+
 <div class="row justify-content-center">
     <div class="col-xl-12">
         <div class="card stretch stretch-full">
@@ -14,7 +18,7 @@
                             @foreach($customers as $c)
                             <option value="{{ $c->id }}"
                                 data-currency="{{ optional($c->currency)->currency_code }}"
-                                @selected(old('customer_id', $customerPayment->customer_id ?? '') == $c->id)>{{ $c->customer_name }}</option>
+                                @selected(old('customer_id', $fromInvoice->customer_id ?? $customerPayment->customer_id ?? '') == $c->id)>{{ $c->customer_name }}</option>
                             @endforeach
                         </select>
                         @error('customer_id')<div class="invalid-feedback">{{ $message }}</div>@enderror
@@ -27,9 +31,18 @@
                     </div>
                     <div class="col-lg-6 mb-4">
                         <label class="form-label">Invoice Reference</label>
-                        <input type="text" name="invoice_reference" class="form-control @error('invoice_reference') is-invalid @enderror"
-                               placeholder="Invoice # or reference" value="{{ old('invoice_reference', $customerPayment->invoice_reference ?? '') }}">
+                        <select name="invoice_reference" id="invoiceRefSelect"
+                                class="form-select @error('invoice_reference') is-invalid @enderror">
+                            <option value="">— Select Invoice (optional) —</option>
+                        </select>
                         @error('invoice_reference')<div class="invalid-feedback">{{ $message }}</div>@enderror
+                        <div id="invoiceSummary" class="mt-2 d-none">
+                            <div class="d-flex gap-3 small">
+                                <span class="text-muted">Invoice Total: <strong id="invTotal"></strong></span>
+                                <span class="text-muted">Paid: <strong id="invPaid"></strong></span>
+                                <span class="text-success">Outstanding: <strong id="invDue"></strong></span>
+                            </div>
+                        </div>
                     </div>
                     <div class="col-lg-6 mb-4">
                         <label class="form-label">Deposit Account <span class="text-danger">*</span></label>
@@ -67,14 +80,14 @@
                         <label class="form-label">Invoiced Amount (FC) <span class="text-danger">*</span></label>
                         <input type="number" step="0.01" name="invoiced_amount_fc" id="invoicedAmountFc"
                                class="form-control @error('invoiced_amount_fc') is-invalid @enderror"
-                               placeholder="0.00" value="{{ old('invoiced_amount_fc', $customerPayment->invoiced_amount_fc ?? '') }}">
+                               placeholder="0.00" value="{{ old('invoiced_amount_fc', $fromInvoice->amount_due ?? $customerPayment->invoiced_amount_fc ?? '') }}">
                         @error('invoiced_amount_fc')<div class="invalid-feedback">{{ $message }}</div>@enderror
                     </div>
                     <div class="col-lg-6 mb-4">
                         <label class="form-label">Received (FC) <span class="text-danger">*</span></label>
                         <input type="number" step="0.01" name="received_fc" id="receivedFc"
                                class="form-control @error('received_fc') is-invalid @enderror"
-                               placeholder="0.00" value="{{ old('received_fc', $customerPayment->received_fc ?? '') }}">
+                               placeholder="0.00" value="{{ old('received_fc', $fromInvoice->amount_due ?? $customerPayment->received_fc ?? '') }}">
                         @error('received_fc')<div class="invalid-feedback">{{ $message }}</div>@enderror
                     </div>
                     <div class="col-lg-6 mb-4">
@@ -105,15 +118,101 @@
 </div>
 
 @push('scripts')
+<script src="{{ asset('assets/vendor/tom-select/tom-select.complete.min.js') }}"></script>
 <script>
 (function () {
-    const customerSelect  = document.getElementById('customerSelect');
-    const foreignCurrency = document.getElementById('foreignCurrency');
-    const currencyDisplay = document.getElementById('currencyDisplay');
-    const receivedFc      = document.getElementById('receivedFc');
-    const exchangeRate    = document.getElementById('exchangeRate');
-    const actualPkr       = document.getElementById('actualPkr');
+    const INVOICE_URL       = @json(route('customer-invoices.by-customer'));
+    const PREFILL_INV_REF   = @json(old('invoice_reference', $fromInvoice->invoice_number ?? $customerPayment->invoice_reference ?? null));
+    const PREFILL_CUSTOMER  = @json(old('customer_id', $fromInvoice->customer_id ?? $customerPayment->customer_id ?? null));
 
+    const customerSelect   = document.getElementById('customerSelect');
+    const foreignCurrency  = document.getElementById('foreignCurrency');
+    const currencyDisplay  = document.getElementById('currencyDisplay');
+    const receivedFc       = document.getElementById('receivedFc');
+    const exchangeRate     = document.getElementById('exchangeRate');
+    const actualPkr        = document.getElementById('actualPkr');
+    const invoicedAmountFc = document.getElementById('invoicedAmountFc');
+    const invoiceSummary   = document.getElementById('invoiceSummary');
+    const invTotal         = document.getElementById('invTotal');
+    const invPaid          = document.getElementById('invPaid');
+    const invDue           = document.getElementById('invDue');
+
+    // ── Tom Select for invoice dropdown ───────────────────────────────────────
+    const invoiceTs = new TomSelect('#invoiceRefSelect', {
+        valueField:  'value',
+        labelField:  'text',
+        searchField: ['text'],
+        placeholder: '— Select Invoice (optional) —',
+        maxOptions:  null,
+        create:      false,
+        onChange(val) {
+            if (!val) {
+                invoiceSummary.classList.add('d-none');
+                return;
+            }
+            const opt = invoiceTs.options[val];
+            if (opt && opt.total !== undefined) {
+                invoicedAmountFc.value = parseFloat(opt.due).toFixed(2);
+                receivedFc.value       = parseFloat(opt.due).toFixed(2);
+                invTotal.textContent   = parseFloat(opt.total).toFixed(2);
+                invPaid.textContent    = parseFloat(opt.paid).toFixed(2);
+                invDue.textContent     = parseFloat(opt.due).toFixed(2);
+                invoiceSummary.classList.remove('d-none');
+                calcActualPkr();
+            }
+        },
+    });
+
+    // ── Load invoices for a customer via AJAX ─────────────────────────────────
+    function loadInvoices(customerId, preselectRef) {
+        if (!customerId) {
+            invoiceTs.clearOptions();
+            invoiceTs.clear();
+            invoiceSummary.classList.add('d-none');
+            return;
+        }
+
+        fetch(INVOICE_URL + '?customer_id=' + customerId, {
+            headers: { 'X-Requested-With': 'XMLHttpRequest' }
+        })
+        .then(r => r.json())
+        .then(invoices => {
+            invoiceTs.clearOptions();
+            invoiceTs.clear(true);
+
+            const opts = invoices.map(inv => ({
+                value: inv.invoice_number,
+                text:  inv.invoice_number + ' — Due: ' + parseFloat(inv.amount_due).toFixed(2)
+                       + ' (' + inv.status + ')',
+                total: inv.total_amount,
+                paid:  inv.amount_paid,
+                due:   inv.amount_due,
+            }));
+
+            invoiceTs.addOptions(opts);
+
+            if (preselectRef) {
+                // If there's no matching option (e.g., old fully-paid invoice), add a placeholder
+                const exists = opts.some(o => o.value === preselectRef);
+                if (!exists) {
+                    invoiceTs.addOption({ value: preselectRef, text: preselectRef });
+                }
+                invoiceTs.setValue(preselectRef, true);
+
+                // Show summary if the option carries data
+                const opt = invoiceTs.options[preselectRef];
+                if (opt && opt.total !== undefined) {
+                    invTotal.textContent = parseFloat(opt.total).toFixed(2);
+                    invPaid.textContent  = parseFloat(opt.paid).toFixed(2);
+                    invDue.textContent   = parseFloat(opt.due).toFixed(2);
+                    invoiceSummary.classList.remove('d-none');
+                }
+            }
+        })
+        .catch(() => {});
+    }
+
+    // ── Currency auto-set ─────────────────────────────────────────────────────
     function setCurrency(code) {
         foreignCurrency.value       = code || '';
         currencyDisplay.textContent = code || '—';
@@ -121,14 +220,14 @@
 
     customerSelect.addEventListener('change', function () {
         setCurrency(this.options[this.selectedIndex].dataset.currency || '');
+        loadInvoices(this.value, null);
     });
 
-    // On edit, the hidden field already has the stored value; only override from
-    // the customer dropdown when the field is blank (e.g. fresh create form).
     if (customerSelect.value && !foreignCurrency.value) {
         setCurrency(customerSelect.options[customerSelect.selectedIndex].dataset.currency || '');
     }
 
+    // ── PKR calculation ───────────────────────────────────────────────────────
     function calcActualPkr() {
         const fc   = parseFloat(receivedFc.value);
         const rate = parseFloat(exchangeRate.value);
@@ -144,6 +243,11 @@
     receivedFc.addEventListener('input', calcActualPkr);
     exchangeRate.addEventListener('input', calcActualPkr);
     actualPkr.addEventListener('input', calcExchangeRate);
+
+    // ── On page load: if customer is pre-selected, fetch invoices ─────────────
+    if (PREFILL_CUSTOMER) {
+        loadInvoices(PREFILL_CUSTOMER, PREFILL_INV_REF);
+    }
 })();
 </script>
 @endpush

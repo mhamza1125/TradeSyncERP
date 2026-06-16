@@ -117,8 +117,10 @@ Route::middleware(['auth', 'verified'])->group(function () {
         ->name('inspections.aql.calculate');
 
     // ─── Finance ─────────────────────────────────────────────────────────────────
+    Route::get('customer-invoices/by-customer', [CustomerInvoiceController::class, 'byCustomer'])->name('customer-invoices.by-customer');
     Route::resource('customer-invoices', CustomerInvoiceController::class)->parameters(['customer-invoices' => 'customerInvoice']);
 
+    Route::get('expenses/export-pdf', [ExpenseController::class, 'exportPdf'])->name('expenses.export-pdf');
     Route::resource('expenses', ExpenseController::class)->only(['index', 'create', 'store', 'show', 'destroy']);
 
     Route::resource('salary', SalaryRunController::class)->parameters(['salary' => 'salaryRun'])
