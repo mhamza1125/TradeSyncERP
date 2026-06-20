@@ -104,7 +104,7 @@ class ExpenseController extends Controller
 
     public function exportPdf(Request $request)
     {
-        $expenses = Expense::with(['expenseHead', 'account', 'transaction.createdBy'])
+        $expenses = Expense::with(['expenseHead', 'account', 'transaction.creator'])
             ->when($request->expense_head_id, fn ($q) => $q->where('expense_head_id', $request->expense_head_id))
             ->when($request->account_id,      fn ($q) => $q->where('account_id', $request->account_id))
             ->when($request->from_date,       fn ($q) => $q->where('expense_date', '>=', $request->from_date))

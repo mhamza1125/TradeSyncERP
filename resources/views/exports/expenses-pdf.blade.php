@@ -81,7 +81,7 @@
                 <td>{{ $expense->account->account_name }}</td>
                 <td class="amount">{{ number_format($expense->amount, 2) }}</td>
                 <td class="text-muted">{{ $expense->description ?? '—' }}</td>
-                <td>{{ $expense->transaction?->createdBy?->name ?? '—' }}</td>
+                <td>{{ $expense->transaction?->creator?->name ?? '—' }}</td>
             </tr>
             @empty
             <tr>
