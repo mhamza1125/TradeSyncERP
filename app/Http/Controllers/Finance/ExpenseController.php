@@ -16,7 +16,7 @@ class ExpenseController extends Controller
 {
     public function __construct()
     {
-        $this->middleware('permission:expenses.index')->only(['index', 'show']);
+        $this->middleware('permission:expenses.index')->only(['index', 'show', 'exportPdf', 'exportSinglePdf']);
         $this->middleware('permission:expenses.create')->only(['create', 'store']);
         $this->middleware('permission:expenses.delete')->only('destroy');
     }
@@ -100,6 +100,19 @@ class ExpenseController extends Controller
         }
 
         return redirect()->route('expenses.index')->with('success', 'Expense deleted.');
+    }
+
+    public function exportSinglePdf(Expense $expense)
+    {
+        $expense->load(['expenseHead', 'account', 'transaction.creator']);
+
+        $pdf = Pdf::loadView('exports.expense-single-pdf', compact('expense'))
+            ->setPaper('a4', 'portrait')
+            ->setOption('isHtml5ParserEnabled', true)
+            ->setOption('isRemoteEnabled', false)
+            ->setOption('defaultFont', 'DejaVu Sans');
+
+        return $pdf->download("Expense-{$expense->id}.pdf");
     }
 
     public function exportPdf(Request $request)

@@ -23,6 +23,11 @@
                         <a href="javascript:void(0);" class="btn btn-icon btn-light-brand" data-bs-toggle="collapse" data-bs-target="#collapseFilters">
                             <i class="feather-filter"></i>
                         </a>
+                        @can('categories.index')
+                        <a href="{{ route('masters.categories.export-pdf', request()->query()) }}" class="btn btn-light-brand" target="_blank">
+                            <i class="feather-download me-2"></i><span>Export PDF</span>
+                        </a>
+                        @endcan
                         @can('categories.create')
                         <a href="{{ route('masters.categories.create') }}" class="btn btn-primary">
                             <i class="feather-plus me-2"></i><span>Add Category</span>

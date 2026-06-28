@@ -53,6 +53,22 @@ Route::middleware(['auth', 'verified'])->group(function () {
 
     // ─── Master Data ────────────────────────────────────────────────────────────
     Route::prefix('masters')->name('masters.')->group(function () {
+        // PDF exports (must be before resource routes to avoid route-model binding conflicts)
+        Route::get('customers/export-pdf',             [CustomerController::class, 'exportPdf'])->name('customers.export-pdf');
+        Route::get('customers/{customer}/export-pdf',  [CustomerController::class, 'exportSinglePdf'])->name('customers.export-single-pdf');
+        Route::get('suppliers/export-pdf',             [SupplierController::class, 'exportPdf'])->name('suppliers.export-pdf');
+        Route::get('suppliers/{supplier}/export-pdf',  [SupplierController::class, 'exportSinglePdf'])->name('suppliers.export-single-pdf');
+        Route::get('employees/export-pdf',             [EmployeeController::class, 'exportPdf'])->name('employees.export-pdf');
+        Route::get('employees/{employee}/export-pdf',  [EmployeeController::class, 'exportSinglePdf'])->name('employees.export-single-pdf');
+        Route::get('defects/export-pdf',               [DefectController::class, 'exportPdf'])->name('defects.export-pdf');
+        Route::get('categories/export-pdf',            [ProductCategoryController::class, 'exportPdf'])->name('categories.export-pdf');
+        Route::get('currencies/export-pdf',            [CurrencyController::class, 'exportPdf'])->name('currencies.export-pdf');
+        Route::get('expense-heads/export-pdf',         [ExpenseHeadController::class, 'exportPdf'])->name('expense-heads.export-pdf');
+        Route::get('accounts/export-pdf',              [AccountController::class, 'exportPdf'])->name('accounts.export-pdf');
+        Route::get('banks/export-pdf',                 [BankController::class, 'exportPdf'])->name('banks.export-pdf');
+        Route::get('colors/export-pdf',                [ColorController::class, 'exportPdf'])->name('colors.export-pdf');
+        Route::get('sizes/export-pdf',                 [SizeController::class, 'exportPdf'])->name('sizes.export-pdf');
+
         Route::resource('customers',         CustomerController::class);
         Route::resource('categories',        ProductCategoryController::class);
         Route::resource('employees',         EmployeeController::class);
@@ -70,11 +86,17 @@ Route::middleware(['auth', 'verified'])->group(function () {
     });
 
     // ─── Sample Operations ───────────────────────────────────────────────────────
+    Route::get('customer-orders/export-pdf',                 [CustomerOrderController::class, 'exportListPdf'])->name('customer-orders.export-list-pdf');
+    Route::get('customer-orders/{customerOrder}/export-pdf', [CustomerOrderController::class, 'exportPdf'])->name('customer-orders.export-pdf');
     Route::resource('customer-orders', CustomerOrderController::class)->parameters(['customer-orders' => 'customerOrder']);
 
+    Route::get('samples/export-pdf',          [SampleController::class, 'exportListPdf'])->name('samples.export-list-pdf');
+    Route::get('samples/{sample}/export-pdf', [SampleController::class, 'exportPdf'])->name('samples.export-pdf');
     Route::resource('samples', SampleController::class);
 
     // Grouped movement system (new)
+    Route::get('movements/export-pdf',                 [MovementController::class, 'exportListPdf'])->name('movements.export-list-pdf');
+    Route::get('movements/{movement}/export-pdf',      [MovementController::class, 'exportSinglePdf'])->name('movements.export-pdf');
     Route::get('movements',                  [MovementController::class, 'index'])->name('movements.index');
     Route::get('movements/create',           [MovementController::class, 'create'])->name('movements.create');
     Route::post('movements',                 [MovementController::class, 'store'])->name('movements.store');
@@ -118,16 +140,23 @@ Route::middleware(['auth', 'verified'])->group(function () {
 
     // ─── Finance ─────────────────────────────────────────────────────────────────
     Route::get('customer-invoices/by-customer', [CustomerInvoiceController::class, 'byCustomer'])->name('customer-invoices.by-customer');
+    Route::get('customer-invoices/export-pdf',                           [CustomerInvoiceController::class, 'exportListPdf'])->name('customer-invoices.export-list-pdf');
+    Route::get('customer-invoices/{customerInvoice}/export-pdf',         [CustomerInvoiceController::class, 'exportPdf'])->name('customer-invoices.export-pdf');
     Route::resource('customer-invoices', CustomerInvoiceController::class)->parameters(['customer-invoices' => 'customerInvoice']);
 
     Route::get('expenses/export-pdf', [ExpenseController::class, 'exportPdf'])->name('expenses.export-pdf');
+    Route::get('expenses/{expense}/export-pdf', [ExpenseController::class, 'exportSinglePdf'])->name('expenses.export-single-pdf');
     Route::resource('expenses', ExpenseController::class)->only(['index', 'create', 'store', 'show', 'destroy']);
 
+    Route::get('salary/export-pdf',             [SalaryRunController::class, 'exportListPdf'])->name('salary.export-list-pdf');
+    Route::get('salary/{salaryRun}/export-pdf', [SalaryRunController::class, 'exportPdf'])->name('salary.export-pdf');
     Route::resource('salary', SalaryRunController::class)->parameters(['salary' => 'salaryRun'])
         ->only(['index', 'create', 'store', 'show', 'edit', 'update']);
     Route::put('salary/{salaryRun}/lines',  [SalaryRunController::class, 'updateLines'])->name('salary.lines.update');
     Route::post('salary/{salaryRun}/pay',   [SalaryRunController::class, 'pay'])->name('salary.pay');
 
+    Route::get('customer-payments/export-pdf',                           [CustomerPaymentController::class, 'exportListPdf'])->name('customer-payments.export-list-pdf');
+    Route::get('customer-payments/{customerPayment}/export-pdf',         [CustomerPaymentController::class, 'exportPdf'])->name('customer-payments.export-pdf');
     Route::resource('customer-payments', CustomerPaymentController::class)->parameters(['customer-payments' => 'customerPayment'])
         ->only(['index', 'create', 'store', 'show', 'edit', 'update', 'destroy']);
 
@@ -153,9 +182,12 @@ Route::middleware(['auth', 'verified'])->group(function () {
 
     // ─── Ledgers & Reports ───────────────────────────────────────────────────────
     Route::prefix('ledger')->name('ledger.')->group(function () {
-        Route::get('cash',                 [LedgerController::class, 'cash'])->name('cash');
-        Route::get('bank',                 [LedgerController::class, 'bank'])->name('bank');
-        Route::get('customers/{customer}', [LedgerController::class, 'customer'])->name('customer');
+        Route::get('cash',                        [LedgerController::class, 'cash'])->name('cash');
+        Route::get('cash/export-pdf',             [LedgerController::class, 'exportCash'])->name('cash.export-pdf');
+        Route::get('bank',                        [LedgerController::class, 'bank'])->name('bank');
+        Route::get('bank/export-pdf',             [LedgerController::class, 'exportBank'])->name('bank.export-pdf');
+        Route::get('customers/{customer}',        [LedgerController::class, 'customer'])->name('customer');
+        Route::get('customers/{customer}/export-pdf', [LedgerController::class, 'exportCustomer'])->name('customer.export-pdf');
     });
 });
 

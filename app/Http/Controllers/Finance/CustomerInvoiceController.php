@@ -10,6 +10,7 @@ use App\Models\CustomerInvoice;
 use App\Models\CustomerPayment;
 use App\Models\InspectionType;
 use App\Models\Supplier;
+use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 
@@ -17,7 +18,7 @@ class CustomerInvoiceController extends Controller
 {
     public function __construct()
     {
-        $this->middleware('permission:customer-invoices.index')->only(['index', 'show', 'byCustomer']);
+        $this->middleware('permission:customer-invoices.index')->only(['index', 'show', 'byCustomer', 'exportPdf', 'exportListPdf']);
         $this->middleware('permission:customer-invoices.create')->only(['create', 'store']);
         $this->middleware('permission:customer-invoices.edit')->only(['edit', 'update']);
         $this->middleware('permission:customer-invoices.delete')->only('destroy');
@@ -138,6 +139,38 @@ class CustomerInvoiceController extends Controller
             ->get(['id', 'invoice_number', 'total_amount', 'amount_paid', 'amount_due', 'status']);
 
         return response()->json($invoices);
+    }
+
+    public function exportListPdf(Request $request)
+    {
+        $invoices = CustomerInvoice::with('customer')
+            ->when($request->customer_id, fn ($q) => $q->where('customer_id', $request->customer_id))
+            ->when($request->status, fn ($q) => $q->where('status', $request->status))
+            ->when($request->from_date, fn ($q) => $q->where('invoice_date', '>=', $request->from_date))
+            ->when($request->to_date, fn ($q) => $q->where('invoice_date', '<=', $request->to_date))
+            ->latest('invoice_date')
+            ->get();
+
+        $pdf = Pdf::loadView('exports.customer-invoices-list-pdf', compact('invoices'))
+            ->setPaper('a4', 'portrait')
+            ->setOption('isHtml5ParserEnabled', true)
+            ->setOption('isRemoteEnabled', false)
+            ->setOption('defaultFont', 'DejaVu Sans');
+
+        return $pdf->download('CustomerInvoices-' . now()->format('Y-m-d') . '.pdf');
+    }
+
+    public function exportPdf(CustomerInvoice $customerInvoice)
+    {
+        $customerInvoice->load(['customer.currency', 'items.supplier', 'items.inspectionType']);
+
+        $pdf = Pdf::loadView('exports.customer-invoice-pdf', ['invoice' => $customerInvoice])
+            ->setPaper('a4', 'portrait')
+            ->setOption('isHtml5ParserEnabled', true)
+            ->setOption('isRemoteEnabled', false)
+            ->setOption('defaultFont', 'DejaVu Sans');
+
+        return $pdf->download("Invoice-{$customerInvoice->invoice_number}.pdf");
     }
 
     public static function syncInvoiceStatus(?string $invoiceNumber): void

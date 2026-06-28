@@ -6,13 +6,14 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\Masters\StoreSupplierRequest;
 use App\Http\Requests\Masters\UpdateSupplierRequest;
 use App\Models\Supplier;
+use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Http\Request;
 
 class SupplierController extends Controller
 {
     public function __construct()
     {
-        $this->middleware('permission:suppliers.index')->only(['index', 'show']);
+        $this->middleware('permission:suppliers.index')->only(['index', 'show', 'exportPdf', 'exportSinglePdf']);
         $this->middleware('permission:suppliers.create')->only(['create', 'store']);
         $this->middleware('permission:suppliers.edit')->only(['edit', 'update']);
         $this->middleware('permission:suppliers.delete')->only('destroy');
@@ -69,6 +70,36 @@ class SupplierController extends Controller
 
         return redirect()->route('masters.suppliers.index')
             ->with('success', 'Supplier updated successfully.');
+    }
+
+    public function exportPdf(Request $request)
+    {
+        $suppliers = Supplier::query()
+            ->when($request->search, fn ($q, $s) => $q->where('name', 'like', "%{$s}%"))
+            ->when($request->status !== null && $request->status !== '', fn ($q) => $q->where('status', $request->status))
+            ->orderBy('name')
+            ->get();
+
+        $pdf = Pdf::loadView('exports.suppliers-list-pdf', compact('suppliers'))
+            ->setPaper('a4', 'portrait')
+            ->setOption('isHtml5ParserEnabled', true)
+            ->setOption('isRemoteEnabled', false)
+            ->setOption('defaultFont', 'DejaVu Sans');
+
+        return $pdf->download('Suppliers-' . now()->format('Y-m-d') . '.pdf');
+    }
+
+    public function exportSinglePdf(Supplier $supplier)
+    {
+        $supplier->load(['samples', 'customers']);
+
+        $pdf = Pdf::loadView('exports.supplier-profile-pdf', compact('supplier'))
+            ->setPaper('a4', 'portrait')
+            ->setOption('isHtml5ParserEnabled', true)
+            ->setOption('isRemoteEnabled', false)
+            ->setOption('defaultFont', 'DejaVu Sans');
+
+        return $pdf->download("Supplier-{$supplier->name}.pdf");
     }
 
     public function destroy(Supplier $supplier)

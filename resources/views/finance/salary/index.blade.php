@@ -20,6 +20,11 @@
                     </a>
                 </div>
                 <div class="d-flex align-items-center gap-2 page-header-right-items-wrapper">
+                    @can('salary.index')
+                    <a href="{{ route('salary.export-list-pdf', request()->query()) }}" class="btn btn-light-brand" target="_blank">
+                        <i class="feather-download me-2"></i><span>Export PDF</span>
+                    </a>
+                    @endcan
                     @can('salary.create')
                     <a href="{{ route('salary.create') }}" class="btn btn-primary">
                         <i class="feather-plus me-2"></i><span>Generate Salary Run</span>

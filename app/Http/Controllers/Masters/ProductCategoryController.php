@@ -6,13 +6,14 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\Masters\StoreProductCategoryRequest;
 use App\Http\Requests\Masters\UpdateProductCategoryRequest;
 use App\Models\ProductCategory;
+use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Http\Request;
 
 class ProductCategoryController extends Controller
 {
     public function __construct()
     {
-        $this->middleware('permission:categories.index')->only(['index', 'show']);
+        $this->middleware('permission:categories.index')->only(['index', 'show', 'exportPdf']);
         $this->middleware('permission:categories.create')->only(['create', 'store']);
         $this->middleware('permission:categories.edit')->only(['edit', 'update']);
         $this->middleware('permission:categories.delete')->only('destroy');
@@ -80,5 +81,21 @@ class ProductCategoryController extends Controller
 
         return redirect()->route('masters.categories.index')
             ->with('success', 'Category deactivated successfully.');
+    }
+
+    public function exportPdf(Request $request)
+    {
+        $categories = ProductCategory::query()
+            ->when($request->search, fn ($q, $s) => $q->where('category_name', 'like', "%{$s}%"))
+            ->orderBy('category_name')
+            ->get();
+
+        $pdf = Pdf::loadView('exports.categories-list-pdf', compact('categories'))
+            ->setPaper('a4', 'portrait')
+            ->setOption('isHtml5ParserEnabled', true)
+            ->setOption('isRemoteEnabled', false)
+            ->setOption('defaultFont', 'DejaVu Sans');
+
+        return $pdf->download('Categories-' . now()->format('Y-m-d') . '.pdf');
     }
 }

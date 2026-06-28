@@ -6,13 +6,14 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\Masters\StoreBankRequest;
 use App\Http\Requests\Masters\UpdateBankRequest;
 use App\Models\Bank;
+use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Http\Request;
 
 class BankController extends Controller
 {
     public function __construct()
     {
-        $this->middleware('permission:banks.index')->only(['index', 'show']);
+        $this->middleware('permission:banks.index')->only(['index', 'show', 'exportPdf']);
         $this->middleware('permission:banks.create')->only(['create', 'store']);
         $this->middleware('permission:banks.edit')->only(['edit', 'update']);
         $this->middleware('permission:banks.delete')->only('destroy');
@@ -81,5 +82,21 @@ class BankController extends Controller
 
         return redirect()->route('masters.banks.index')
             ->with('success', 'Bank deactivated successfully.');
+    }
+
+    public function exportPdf(Request $request)
+    {
+        $banks = Bank::query()
+            ->when($request->search, fn ($q, $s) => $q->where('bank_name', 'like', "%{$s}%"))
+            ->orderBy('bank_name')
+            ->get();
+
+        $pdf = Pdf::loadView('exports.banks-list-pdf', compact('banks'))
+            ->setPaper('a4', 'portrait')
+            ->setOption('isHtml5ParserEnabled', true)
+            ->setOption('isRemoteEnabled', false)
+            ->setOption('defaultFont', 'DejaVu Sans');
+
+        return $pdf->download('Banks-' . now()->format('Y-m-d') . '.pdf');
     }
 }

@@ -27,6 +27,9 @@
                     <a href="{{ route('masters.customers.index') }}" class="btn btn-light-brand">
                         <i class="feather-arrow-left me-2"></i><span>Back</span>
                     </a>
+                    <a href="{{ route('masters.customers.export-single-pdf', $customer) }}" class="btn btn-light-brand" target="_blank">
+                        <i class="feather-download me-2"></i><span>Export PDF</span>
+                    </a>
                     @can('customers.edit')
                     <a href="{{ route('masters.customers.edit', $customer) }}" class="btn btn-primary">
                         <i class="feather-edit me-2"></i><span>Edit</span>

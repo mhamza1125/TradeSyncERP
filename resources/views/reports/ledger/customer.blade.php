@@ -24,9 +24,9 @@
                     <a href="javascript:void(0);" class="btn btn-icon btn-light-brand" data-bs-toggle="collapse" data-bs-target="#collapseFilters">
                         <i class="feather-filter"></i>
                     </a>
-                    <button onclick="window.print()" class="btn btn-light-brand">
-                        <i class="feather-printer me-2"></i>Print
-                    </button>
+                    <a href="{{ route('ledger.customer.export-pdf', array_merge(['customer' => $customer->id], request()->only('from_date', 'to_date'))) }}" class="btn btn-light-brand" target="_blank">
+                        <i class="feather-download me-2"></i>Export PDF
+                    </a>
                     <a href="{{ route('masters.customers.show', $customer) }}" class="btn btn-light-brand">
                         <i class="feather-user me-2"></i>Customer Profile
                     </a>

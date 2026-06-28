@@ -8,6 +8,7 @@ use App\Http\Requests\Masters\UpdateEmployeeRequest;
 use App\Models\Employee;
 use App\Models\EmployeeExperience;
 use App\Models\Transaction;
+use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 
@@ -15,7 +16,7 @@ class EmployeeController extends Controller
 {
     public function __construct()
     {
-        $this->middleware('permission:employees.index')->only(['index', 'show']);
+        $this->middleware('permission:employees.index')->only(['index', 'show', 'exportPdf', 'exportSinglePdf']);
         $this->middleware('permission:employees.create')->only(['create', 'store']);
         $this->middleware('permission:employees.edit')->only(['edit', 'update']);
         $this->middleware('permission:employees.delete')->only('destroy');
@@ -111,6 +112,41 @@ class EmployeeController extends Controller
             return redirect()->route('masters.employees.index')
                 ->with('success', 'Employee updated successfully.');
         });
+    }
+
+    public function exportPdf(Request $request)
+    {
+        $employees = Employee::query()
+            ->when($request->search, fn ($q, $s) => $q->where('employee_name', 'like', "%{$s}%"))
+            ->when($request->status !== null && $request->status !== '', fn ($q) => $q->where('status', $request->status))
+            ->orderBy('employee_name')
+            ->get();
+
+        $pdf = Pdf::loadView('exports.employees-list-pdf', compact('employees'))
+            ->setPaper('a4', 'portrait')
+            ->setOption('isHtml5ParserEnabled', true)
+            ->setOption('isRemoteEnabled', false)
+            ->setOption('defaultFont', 'DejaVu Sans');
+
+        return $pdf->download('Employees-' . now()->format('Y-m-d') . '.pdf');
+    }
+
+    public function exportSinglePdf(Employee $employee)
+    {
+        $employee->load('experiences');
+
+        $salaryHistory = $employee->salaryRunLines()
+            ->with('salaryRun')
+            ->orderByDesc('id')
+            ->get();
+
+        $pdf = Pdf::loadView('exports.employee-profile-pdf', compact('employee', 'salaryHistory'))
+            ->setPaper('a4', 'portrait')
+            ->setOption('isHtml5ParserEnabled', true)
+            ->setOption('isRemoteEnabled', false)
+            ->setOption('defaultFont', 'DejaVu Sans');
+
+        return $pdf->download("Employee-{$employee->employee_name}.pdf");
     }
 
     public function destroy(Employee $employee)

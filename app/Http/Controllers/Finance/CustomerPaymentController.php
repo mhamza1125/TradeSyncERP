@@ -11,6 +11,7 @@ use App\Models\Customer;
 use App\Models\CustomerInvoice;
 use App\Models\CustomerPayment;
 use App\Models\Transaction;
+use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 
@@ -18,7 +19,7 @@ class CustomerPaymentController extends Controller
 {
     public function __construct()
     {
-        $this->middleware('permission:customer-payments.index')->only(['index', 'show']);
+        $this->middleware('permission:customer-payments.index')->only(['index', 'show', 'exportPdf', 'exportListPdf']);
         $this->middleware('permission:customer-payments.create')->only(['create', 'store']);
         $this->middleware('permission:customer-payments.edit')->only(['edit', 'update']);
         $this->middleware('permission:customer-payments.delete')->only('destroy');
@@ -144,6 +145,37 @@ class CustomerPaymentController extends Controller
             return redirect()->route('customer-payments.show', $customerPayment)
                 ->with('success', 'Payment updated successfully.');
         });
+    }
+
+    public function exportListPdf(Request $request)
+    {
+        $payments = CustomerPayment::with(['customer', 'account'])
+            ->when($request->customer_id, fn ($q) => $q->where('customer_id', $request->customer_id))
+            ->when($request->from_date, fn ($q) => $q->where('payment_date', '>=', $request->from_date))
+            ->when($request->to_date, fn ($q) => $q->where('payment_date', '<=', $request->to_date))
+            ->latest('payment_date')
+            ->get();
+
+        $pdf = Pdf::loadView('exports.customer-payments-list-pdf', compact('payments'))
+            ->setPaper('a4', 'portrait')
+            ->setOption('isHtml5ParserEnabled', true)
+            ->setOption('isRemoteEnabled', false)
+            ->setOption('defaultFont', 'DejaVu Sans');
+
+        return $pdf->download('CustomerPayments-' . now()->format('Y-m-d') . '.pdf');
+    }
+
+    public function exportPdf(CustomerPayment $customerPayment)
+    {
+        $customerPayment->load(['customer', 'account']);
+
+        $pdf = Pdf::loadView('exports.customer-payment-pdf', ['payment' => $customerPayment])
+            ->setPaper('a4', 'portrait')
+            ->setOption('isHtml5ParserEnabled', true)
+            ->setOption('isRemoteEnabled', false)
+            ->setOption('defaultFont', 'DejaVu Sans');
+
+        return $pdf->download("PaymentReceipt-{$customerPayment->id}.pdf");
     }
 
     public function destroy(CustomerPayment $customerPayment)

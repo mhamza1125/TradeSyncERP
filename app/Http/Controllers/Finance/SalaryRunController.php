@@ -11,6 +11,7 @@ use App\Models\Employee;
 use App\Models\SalaryRun;
 use App\Models\SalaryRunLineAllowance;
 use App\Models\Transaction;
+use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 
@@ -18,7 +19,7 @@ class SalaryRunController extends Controller
 {
     public function __construct()
     {
-        $this->middleware('permission:salary.index')->only(['index', 'show']);
+        $this->middleware('permission:salary.index')->only(['index', 'show', 'exportPdf', 'exportListPdf']);
         $this->middleware('permission:salary.create')->only(['create', 'store']);
         $this->middleware('permission:salary.edit')->only(['edit', 'update', 'updateLines']);
         $this->middleware('permission:salary.pay')->only('pay');
@@ -187,6 +188,36 @@ class SalaryRunController extends Controller
             return redirect()->route('salary.show', $salaryRun)
                 ->with('success', 'Salary lines updated.');
         });
+    }
+
+    public function exportListPdf(Request $request)
+    {
+        $salaryRuns = SalaryRun::with(['account'])
+            ->when($request->status, fn ($q) => $q->where('status', $request->status))
+            ->withCount('lines')
+            ->orderByDesc('month')
+            ->get();
+
+        $pdf = Pdf::loadView('exports.salary-runs-list-pdf', compact('salaryRuns'))
+            ->setPaper('a4', 'portrait')
+            ->setOption('isHtml5ParserEnabled', true)
+            ->setOption('isRemoteEnabled', false)
+            ->setOption('defaultFont', 'DejaVu Sans');
+
+        return $pdf->download('SalaryRuns-' . now()->format('Y-m-d') . '.pdf');
+    }
+
+    public function exportPdf(SalaryRun $salaryRun)
+    {
+        $salaryRun->load(['lines.employee', 'lines.lineAllowances.allowanceType', 'account', 'processedBy']);
+
+        $pdf = Pdf::loadView('exports.salary-run-pdf', compact('salaryRun'))
+            ->setPaper('a4', 'landscape')
+            ->setOption('isHtml5ParserEnabled', true)
+            ->setOption('isRemoteEnabled', false)
+            ->setOption('defaultFont', 'DejaVu Sans');
+
+        return $pdf->download("SalaryRun-{$salaryRun->month}.pdf");
     }
 
     public function pay(Request $request, SalaryRun $salaryRun)

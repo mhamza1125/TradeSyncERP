@@ -24,6 +24,9 @@
                     <a href="{{ route('samples.index') }}" class="btn btn-light-brand">
                         <i class="feather-arrow-left me-2"></i><span>Back</span>
                     </a>
+                    <a href="{{ route('samples.export-pdf', $sample) }}" class="btn btn-light-brand" target="_blank">
+                        <i class="feather-download me-2"></i><span>Export PDF</span>
+                    </a>
                     @can('samples.edit')
                     <a href="{{ route('samples.edit', $sample) }}" class="btn btn-primary">
                         <i class="feather-edit me-2"></i><span>Edit</span>

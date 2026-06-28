@@ -19,6 +19,9 @@
                     <a href="{{ route('customer-invoices.index') }}" class="btn btn-light-brand">
                         <i class="feather-arrow-left me-2"></i> Back
                     </a>
+                    <a href="{{ route('customer-invoices.export-pdf', $customerInvoice) }}" class="btn btn-light-brand" target="_blank">
+                        <i class="feather-download me-2"></i> Export PDF
+                    </a>
                     @can('customer-invoices.edit')
                     <a href="{{ route('customer-invoices.edit', $customerInvoice) }}" class="btn btn-primary">
                         <i class="feather-edit-2 me-2"></i> Edit

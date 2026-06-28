@@ -23,6 +23,11 @@
                     <a href="javascript:void(0);" class="btn btn-icon btn-light-brand" data-bs-toggle="collapse" data-bs-target="#collapseFilters">
                         <i class="feather-filter"></i>
                     </a>
+                    @can('samples.index')
+                    <a href="{{ route('samples.export-list-pdf', request()->query()) }}" class="btn btn-light-brand" target="_blank">
+                        <i class="feather-download me-2"></i><span>Export PDF</span>
+                    </a>
+                    @endcan
                     @can('samples.create')
                     <a href="{{ route('samples.create') }}" class="btn btn-primary">
                         <i class="feather-plus me-2"></i><span>New Sample</span>

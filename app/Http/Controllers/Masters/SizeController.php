@@ -4,13 +4,14 @@ namespace App\Http\Controllers\Masters;
 
 use App\Http\Controllers\Controller;
 use App\Models\SampleSize;
+use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Http\Request;
 
 class SizeController extends Controller
 {
     public function __construct()
     {
-        $this->middleware('permission:sizes.index')->only(['index', 'show']);
+        $this->middleware('permission:sizes.index')->only(['index', 'show', 'exportPdf']);
         $this->middleware('permission:sizes.create')->only(['create', 'store']);
         $this->middleware('permission:sizes.edit')->only(['edit', 'update']);
         $this->middleware('permission:sizes.delete')->only('destroy');
@@ -79,5 +80,21 @@ class SizeController extends Controller
 
         return redirect()->route('masters.sizes.index')
             ->with('success', 'Size deleted successfully.');
+    }
+
+    public function exportPdf(Request $request)
+    {
+        $sizes = SampleSize::query()
+            ->when($request->search, fn ($q, $s) => $q->where('name', 'like', "%{$s}%"))
+            ->orderBy('name')
+            ->get();
+
+        $pdf = Pdf::loadView('exports.sizes-list-pdf', compact('sizes'))
+            ->setPaper('a4', 'portrait')
+            ->setOption('isHtml5ParserEnabled', true)
+            ->setOption('isRemoteEnabled', false)
+            ->setOption('defaultFont', 'DejaVu Sans');
+
+        return $pdf->download('Sizes-' . now()->format('Y-m-d') . '.pdf');
     }
 }

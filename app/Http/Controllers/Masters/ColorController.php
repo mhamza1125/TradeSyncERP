@@ -4,13 +4,14 @@ namespace App\Http\Controllers\Masters;
 
 use App\Http\Controllers\Controller;
 use App\Models\SampleColor;
+use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Http\Request;
 
 class ColorController extends Controller
 {
     public function __construct()
     {
-        $this->middleware('permission:colors.index')->only(['index', 'show']);
+        $this->middleware('permission:colors.index')->only(['index', 'show', 'exportPdf']);
         $this->middleware('permission:colors.create')->only(['create', 'store']);
         $this->middleware('permission:colors.edit')->only(['edit', 'update']);
         $this->middleware('permission:colors.delete')->only('destroy');
@@ -79,5 +80,21 @@ class ColorController extends Controller
 
         return redirect()->route('masters.colors.index')
             ->with('success', 'Color deleted successfully.');
+    }
+
+    public function exportPdf(Request $request)
+    {
+        $colors = SampleColor::query()
+            ->when($request->search, fn ($q, $s) => $q->where('name', 'like', "%{$s}%"))
+            ->orderBy('name')
+            ->get();
+
+        $pdf = Pdf::loadView('exports.colors-list-pdf', compact('colors'))
+            ->setPaper('a4', 'portrait')
+            ->setOption('isHtml5ParserEnabled', true)
+            ->setOption('isRemoteEnabled', false)
+            ->setOption('defaultFont', 'DejaVu Sans');
+
+        return $pdf->download('Colors-' . now()->format('Y-m-d') . '.pdf');
     }
 }

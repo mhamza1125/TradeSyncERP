@@ -24,9 +24,9 @@
                     <a href="javascript:void(0);" class="btn btn-icon btn-light-brand" data-bs-toggle="collapse" data-bs-target="#collapseFilters">
                         <i class="feather-filter"></i>
                     </a>
-                    <button onclick="window.print()" class="btn btn-light-brand">
-                        <i class="feather-printer me-2"></i>Print
-                    </button>
+                    <a href="{{ route('ledger.cash.export-pdf', request()->query()) }}" class="btn btn-light-brand" target="_blank">
+                        <i class="feather-download me-2"></i>Export PDF
+                    </a>
                     @can('transfers.create')
                     <a href="{{ route('transfers.create') }}" class="btn btn-primary">
                         <i class="feather-repeat me-2"></i>Transfer Funds

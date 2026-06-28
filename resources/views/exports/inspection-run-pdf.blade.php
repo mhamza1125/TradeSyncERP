@@ -17,7 +17,7 @@ body {
 
 @page {
     size: A4 portrait;
-    margin: 20mm 15mm 22mm 15mm;
+    margin: 22mm 15mm 22mm 15mm;
 }
 
 .page-break { page-break-after: always; }
@@ -40,6 +40,22 @@ body {
 .pdf-footer .fn-right  { text-align: right; }
 .pdf-footer .fn-right:after { content: "Page " counter(page) " of " counter(pages); }
 
+/* ── Fixed running header (every page) ─────────────────────────────── */
+.pdf-header {
+    position: fixed;
+    top: -18mm;
+    left: -15mm; right: -15mm;
+    border-bottom: 1px solid #DEE2E6;
+    padding: 4px 15mm;
+    font-size: 6.5pt;
+    color: #546E7A;
+    background: #ffffff;
+}
+.pdf-header table { width: 100%; }
+.ph-left   { font-weight: bold; color: #1A3560; font-size: 7pt; white-space: nowrap; }
+.ph-center { text-align: center; color: #757575; }
+.ph-right  { text-align: right; white-space: nowrap; }
+
 /* ── Cover banner ──────────────────────────────────────────────────── */
 .cover-banner {
     background: #0D2B4E;
@@ -51,7 +67,7 @@ body {
 .cover-banner table { width: 100%; }
 .cb-system-label {
     font-size: 6.5pt;
-    letter-spacing: 2px;
+    letter-spacing: 0.5px;
     text-transform: uppercase;
     color: #7FB3D3;
     margin-bottom: 3px;
@@ -61,7 +77,7 @@ body {
 .cb-right   { text-align: right; vertical-align: bottom; }
 .cb-repnum  { font-size: 11pt; font-weight: bold; }
 .cb-date    { font-size: 7.5pt; color: #B0C4D8; margin-top: 3px; }
-.cb-type    { font-size: 6.5pt; color: #7FB3D3; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 3px; }
+.cb-type    { font-size: 6.5pt; color: #7FB3D3; text-transform: uppercase; margin-bottom: 3px; }
 
 /* ── Cover title strip ─────────────────────────────────────────────── */
 .cover-title-strip {
@@ -76,7 +92,7 @@ body {
     font-weight: bold;
     color: #0D2B4E;
     text-transform: uppercase;
-    letter-spacing: 1.5px;
+    letter-spacing: 0.3px;
 }
 .cover-main-subtitle {
     font-size: 9pt;
@@ -95,10 +111,8 @@ body {
     background: #F5F7FA;
     padding: 6px 12px;
     border-bottom: 1px solid #DEE2E6;
-    font-size: 6.5pt;
+    font-size: 7pt;
     font-weight: bold;
-    text-transform: uppercase;
-    letter-spacing: 1.5px;
     color: #546E7A;
 }
 .info-panel-body { padding: 10px 12px; }
@@ -115,7 +129,6 @@ body {
     padding: 12px 0;
     font-size: 18pt;
     font-weight: bold;
-    letter-spacing: 3px;
     border-radius: 4px;
     text-align: center;
     margin-bottom: 14px;
@@ -135,7 +148,7 @@ body {
 .dp-crit-num { color: #C62828; }
 .dp-maj-num  { color: #E65100; }
 .dp-min-num  { color: #1565C0; }
-.dp-lbl { font-size: 6.5pt; text-transform: uppercase; letter-spacing: 1px; color: #9E9E9E; display: block; margin-top: 2px; }
+.dp-lbl { font-size: 6.5pt; text-transform: uppercase; color: #9E9E9E; display: block; margin-top: 2px; }
 
 /* ── Section Summary Dashboard ─────────────────────────────────────── */
 .summary-dashboard {
@@ -149,10 +162,8 @@ body {
     padding: 7px 14px;
 }
 .summary-dashboard-hdr-text {
-    font-size: 7pt;
+    font-size: 7.5pt;
     font-weight: bold;
-    text-transform: uppercase;
-    letter-spacing: 1.5px;
     color: #ffffff;
 }
 .summary-table { width: 100%; border-collapse: collapse; }
@@ -162,7 +173,7 @@ body {
     font-size: 6.5pt;
     font-weight: bold;
     text-transform: uppercase;
-    letter-spacing: 0.5px;
+    letter-spacing: 0.2px;
     color: #546E7A;
     border-bottom: 1px solid #DEE2E6;
     text-align: left;
@@ -186,7 +197,6 @@ body {
     border-radius: 12px;
     font-size: 7pt;
     font-weight: bold;
-    letter-spacing: 0.3px;
 }
 .badge-pass    { background: #E8F5E9; color: #2E7D32; }
 .badge-fail    { background: #FFEBEE; color: #C62828; }
@@ -199,10 +209,8 @@ body {
     background: #F5F7FA;
     padding: 6px 14px;
     border-bottom: 1px solid #DEE2E6;
-    font-size: 6.5pt;
+    font-size: 7pt;
     font-weight: bold;
-    text-transform: uppercase;
-    letter-spacing: 1.5px;
     color: #546E7A;
 }
 
@@ -227,18 +235,17 @@ body {
     margin-bottom: 14px;
 }
 .run-page-header table { width: 100%; }
-.rph-label { font-size: 6.5pt; letter-spacing: 2px; text-transform: uppercase; color: #7FB3D3; }
+.rph-label { font-size: 6.5pt; text-transform: uppercase; color: #7FB3D3; }
 .rph-title { font-size: 13pt; font-weight: bold; margin-top: 2px; }
 .rph-meta  { font-size: 7.5pt; color: #B0C4D8; margin-top: 4px; }
 .rph-verdict-cell { text-align: right; vertical-align: middle; width: 150px; }
-.rph-verdict-label { font-size: 6.5pt; text-transform: uppercase; letter-spacing: 1.5px; color: #7FB3D3; margin-bottom: 5px; }
+.rph-verdict-label { font-size: 6.5pt; text-transform: uppercase; color: #7FB3D3; margin-bottom: 5px; }
 .rph-verdict-badge {
     display: inline-block;
     padding: 7px 18px;
     font-size: 10pt;
     font-weight: bold;
     border-radius: 4px;
-    letter-spacing: 1px;
 }
 
 /* ── Section blocks ────────────────────────────────────────────────── */
@@ -247,12 +254,20 @@ body {
     border: 1px solid #DEE2E6;
     border-left: 4px solid #1565C0;
     border-radius: 0 3px 3px 0;
+}
+.section-block-empty {
+    margin-bottom: 5px;
+    border: 1px solid #F0F0F0;
+    border-left: 4px solid #E0E0E0;
+    border-radius: 0 3px 3px 0;
+    background: #FAFAFA;
     page-break-inside: avoid;
 }
 .section-hdr {
     background: #F5F7FA;
     padding: 6px 12px;
     border-bottom: 1px solid #DEE2E6;
+    page-break-after: avoid;
 }
 .section-hdr table { width: 100%; }
 .sec-num {
@@ -283,7 +298,7 @@ body {
     font-size: 7pt;
     font-weight: bold;
     text-transform: uppercase;
-    letter-spacing: 0.8px;
+    letter-spacing: 0.2px;
     color: #546E7A;
     margin: 10px 0 6px;
     padding-bottom: 3px;
@@ -312,7 +327,7 @@ body {
     font-weight: bold;
     text-align: left;
     text-transform: uppercase;
-    letter-spacing: 0.5px;
+    letter-spacing: 0.2px;
 }
 .data-table td {
     padding: 5px 9px;
@@ -338,7 +353,7 @@ body {
     font-size: 7pt;
     text-align: center;
     text-transform: uppercase;
-    letter-spacing: 0.5px;
+    letter-spacing: 0.2px;
 }
 .aql-table td {
     padding: 5px 9px;
@@ -370,7 +385,7 @@ body {
     font-size: 7pt;
     text-align: left;
     text-transform: uppercase;
-    letter-spacing: 0.5px;
+    letter-spacing: 0.2px;
 }
 .defect-table td {
     padding: 5px 9px;
@@ -432,16 +447,14 @@ body {
     border-radius: 3px 3px 0 0;
 }
 .final-card-hdr-title {
-    font-size: 9pt;
+    font-size: 9.5pt;
     font-weight: bold;
-    text-transform: uppercase;
-    letter-spacing: 2px;
+    color: #ffffff;
 }
 .final-card-hdr-sub {
     font-size: 7pt;
     color: #7FB3D3;
     margin-top: 2px;
-    letter-spacing: 1px;
 }
 .final-card-body { padding: 18px; }
 
@@ -450,7 +463,6 @@ body {
     padding: 14px 0;
     font-size: 22pt;
     font-weight: bold;
-    letter-spacing: 4px;
     border-radius: 4px;
     text-align: center;
     margin-bottom: 16px;
@@ -468,7 +480,6 @@ body {
     font-size: 6.5pt;
     font-weight: bold;
     text-transform: uppercase;
-    letter-spacing: 1px;
     color: #9E9E9E;
     margin-bottom: 5px;
 }
@@ -499,11 +510,34 @@ $hiddenSlugs = [
     'cover_photo', 'workmanship_check',
 ];
 
+$sectionTypePriority = [
+    'general_info'      => 1,
+    'images'            => 2,
+    'checklist'         => 3,
+    'task_list'         => 4,
+    'verification'      => 5,
+    'article_results'   => 6,
+    'measurement_check' => 7,
+    'aql'               => 8,
+    'defects'           => 9,
+    'cartons'           => 10,
+    'container'         => 11,
+    'review'            => 12,
+    'conclusion'        => 13,
+];
+
 $coverVerdictClass = match($inspection->overall_status) {
     'Pass'             => 'vb-pass',
     'Fail'             => 'vb-fail',
     'Conditional Pass' => 'vb-conditional',
     default            => 'vb-pending',
+};
+
+$headerBadgeClass = match($inspection->overall_status) {
+    'Pass'             => 'badge-pass',
+    'Fail'             => 'badge-fail',
+    'Conditional Pass' => 'badge-pending',
+    default            => 'badge-pending',
 };
 
 // Aggregate defect counts across all runs
@@ -519,6 +553,61 @@ foreach ($runs as $_r) {
     }
 }
 
+// Detects whether a run-section carries no meaningful data
+$isSectionEmpty = function($rs, $currentRun): bool {
+    $data = $rs->data ?? [];
+    $type = $rs->section->section_type;
+    $slug = $rs->section->slug;
+    $imgs = $rs->attachments->filter(fn($a) => $a->isImage());
+    $hasVal = fn($v) => $v !== null && $v !== '';
+
+    return match(true) {
+        in_array($type, ['checklist','task_list','verification','article_results'])
+            => empty($data['items'])
+               || collect($data['items'])->every(fn($i) => ($i['result'] ?? $i['selected'] ?? '') === ''),
+
+        $type === 'general_info'
+            => empty(array_filter([
+                $data['buyer_name'] ?? null, $data['factory_name'] ?? null,
+                $data['po_number'] ?? null, $data['product_description'] ?? null,
+                $data['order_quantity'] ?? null,
+            ], $hasVal)),
+
+        $type === 'aql'
+            => !$currentRun->aql
+               || (($currentRun->aql->lot_size ?? 0) == 0 && ($currentRun->aql->sample_size ?? 0) == 0),
+
+        in_array($type, ['defects']) || $slug === 'defect_recording'
+            => collect($data['selections'] ?? [])->filter(fn($s) => !empty($s['selected']))->isEmpty(),
+
+        $type === 'images'
+            => $imgs->isEmpty() && empty($data['notes']),
+
+        $slug === 'measurement_check'
+            => empty($data['measurements']),
+
+        $type === 'cartons' || $slug === 'carton_dimensions_weight'
+            => empty($data['items']) && empty(array_filter([
+                $data['length'] ?? null, $data['width'] ?? null,
+            ], $hasVal)),
+
+        $type === 'container'
+            => empty(array_filter([
+                $data['container_number'] ?? null, $data['seal_number'] ?? null,
+                $data['container_condition'] ?? null,
+            ], $hasVal)),
+
+        in_array($type, ['review','conclusion']) || $slug === 'final_review'
+            => empty(array_filter([
+                $data['overall_verdict'] ?? null, $data['conclusion'] ?? null,
+                $data['notes'] ?? null, $data['summary'] ?? null,
+            ], $hasVal)),
+
+        default => collect($data)->filter(fn($v) => $v !== null && $v !== '' && !is_array($v))->isEmpty()
+                   && empty($data['items']),
+    };
+};
+
 // Build Section Summary Dashboard data
 $summaryRows = [];
 foreach ($runs as $sumRun) {
@@ -532,6 +621,7 @@ foreach ($runs as $sumRun) {
             $summaryRows[$sName] = [
                 'type'        => $sType,
                 'slug'        => $sSlug,
+                'sortPriority'=> $sumRs->section->sort_order ?? ($sectionTypePriority[$sType] ?? 99),
                 'statuses'    => [],
                 'passCount'   => 0,
                 'failCount'   => 0,
@@ -574,7 +664,25 @@ foreach ($runs as $sumRun) {
         }
     }
 }
+
+// Sort by section type priority (then by first-seen order within same priority)
+uasort($summaryRows, fn($a, $b) => $a['sortPriority'] <=> $b['sortPriority']);
 @endphp
+
+{{-- ══════════════════════════════════════════ RUNNING HEADER ══════════════ --}}
+<div class="pdf-header">
+    <table>
+        <tr>
+            <td class="ph-left">TradeSyncERP &bull; {{ $inspection->report_number }}</td>
+            <td class="ph-center">{{ $inspection->inspectionType?->name ?? 'Quality Inspection Report' }}</td>
+            <td class="ph-right">
+                {{ $inspection->inspection_date?->format('d M Y') ?? '' }}
+                &nbsp;&bull;&nbsp;
+                <span class="badge {{ $headerBadgeClass }}">{{ strtoupper($inspection->overall_status ?? 'PENDING') }}</span>
+            </td>
+        </tr>
+    </table>
+</div>
 
 {{-- ══════════════════════════════════════════ FIXED FOOTER ════════════════ --}}
 <div class="pdf-footer">
@@ -622,10 +730,10 @@ foreach ($runs as $sumRun) {
                 <div class="info-panel-body">
                     <table class="cover-kv">
                         <tr><td class="ck">Report Number</td><td class="cv">{{ $inspection->report_number }}</td></tr>
-                        <tr><td class="ck">Inspection Type</td><td class="cv">{{ $inspection->inspectionType?->name ?? '&mdash;' }}</td></tr>
-                        <tr><td class="ck">Inspection Date</td><td class="cv">{{ $inspection->inspection_date?->format('d F Y') ?? '&mdash;' }}</td></tr>
-                        <tr><td class="ck">Inspector(s)</td><td class="cv">{{ $inspection->inspectors->pluck('employee_name')->implode(', ') ?: '&mdash;' }}</td></tr>
-                        <tr><td class="ck">Customer Orders</td><td class="cv">{{ $inspection->customerOrders->count() > 0 ? $inspection->customerOrders->count().' order(s)' : '&mdash;' }}</td></tr>
+                        <tr><td class="ck">Inspection Type</td><td class="cv">{{ $inspection->inspectionType?->name ?? '—' }}</td></tr>
+                        <tr><td class="ck">Inspection Date</td><td class="cv">{{ $inspection->inspection_date?->format('d F Y') ?? '—' }}</td></tr>
+                        <tr><td class="ck">Inspector(s)</td><td class="cv">{{ $inspection->inspectors->pluck('employee_name')->implode(', ') ?: '—' }}</td></tr>
+                        <tr><td class="ck">Customer Orders</td><td class="cv">{{ $inspection->customerOrders->count() > 0 ? $inspection->customerOrders->count().' order(s)' : '—' }}</td></tr>
                         <tr><td class="ck">Total Runs</td><td class="cv">{{ $runs->count() }}</td></tr>
                         <tr><td class="ck">Report Generated</td><td class="cv">{{ now()->format('d F Y, H:i') }}</td></tr>
                         @if($inspection->remarks)
@@ -741,9 +849,9 @@ foreach ($runs as $sumRun) {
             @endphp
             <tr>
                 <td style="text-align:center; font-weight:bold; color:#1565C0">{{ $r->run_number }}</td>
-                <td style="font-weight:500">{{ $r->sample?->sample_code ?? '&mdash;' }}</td>
-                <td>{{ $r->sample?->product_name ?? '&mdash;' }}</td>
-                <td style="color:#546E7A">{{ $r->sample?->customer?->customer_name ?? '&mdash;' }}</td>
+                <td style="font-weight:500">{{ $r->sample?->sample_code ?? '—' }}</td>
+                <td>{{ $r->sample?->product_name ?? '—' }}</td>
+                <td style="color:#546E7A">{{ $r->sample?->customer?->customer_name ?? '—' }}</td>
                 <td style="text-align:center"><span class="{{ $rvc }}">{{ $r->verdict ?? 'Pending' }}</span></td>
                 <td style="font-size:8pt; color:#9E9E9E">{{ $r->completed_at?->format('d M Y') ?? 'In Progress' }}</td>
             </tr>
@@ -774,6 +882,8 @@ foreach ($runs as $sumRun) {
     };
     $visibleSections = $run->runSections->filter(
         fn($rs) => $rs->section && !in_array($rs->section->slug, $hiddenSlugs)
+    )->sortBy(fn($rs) =>
+        $rs->section->sort_order ?? ($sectionTypePriority[$rs->section->section_type] ?? 99)
     )->values();
     $secIdx = 0;
 @endphp
@@ -823,11 +933,28 @@ foreach ($runs as $sumRun) {
     $statusLabel = match($rs->status) { 'complete' => 'Complete', 'na' => 'N/A', default => 'Pending' };
     $statusClass = match($rs->status) { 'complete' => 'badge-pass', 'na' => 'badge-na', default => 'badge-pending' };
 
-    $images = $rs->attachments->filter(fn($a) => $a->isImage())->values();
-    $docs   = $rs->attachments->filter(fn($a) => !$a->isImage())->values();
+    $images  = $rs->attachments->filter(fn($a) => $a->isImage())->values();
+    $docs    = $rs->attachments->filter(fn($a) => !$a->isImage())->values();
+    $isEmpty = $isSectionEmpty($rs, $run);
 @endphp
 
-<div class="section-block no-break">
+@if($isEmpty)
+{{-- Compact collapsed state for sections with no data --}}
+<div class="section-block-empty">
+    <table style="width:100%; border-collapse:collapse">
+        <tr>
+            <td style="padding:7px 12px; vertical-align:middle">
+                <span class="sec-num" style="background:#BDBDBD">{{ $secIdx }}</span>
+                <span style="font-size:9pt; font-weight:bold; color:#BDBDBD">{{ $sec->name }}</span>
+            </td>
+            <td style="padding:7px 12px; text-align:right; width:120px; vertical-align:middle">
+                <span class="badge badge-na" style="color:#BDBDBD">No data recorded</span>
+            </td>
+        </tr>
+    </table>
+</div>
+@else
+<div class="section-block">
     <div class="section-hdr">
         <table>
             <tr>
@@ -914,7 +1041,7 @@ foreach ($runs as $sumRun) {
                 <tr>
                     <td style="text-align:center; color:#9E9E9E; font-size:8pt">{{ $idx+1 }}</td>
                     <td>{{ $item['label'] ?? '' }}</td>
-                    <td style="text-align:center"><span class="{{ $rClass }}">{{ $item['result'] ?? '&mdash;' }}</span></td>
+                    <td style="text-align:center"><span class="{{ $rClass }}">{{ $item['result'] ?: '—' }}</span></td>
                     <td style="color:#546E7A; font-size:8pt">{{ $item['remarks'] ?? '' }}</td>
                     @if($images->isNotEmpty())
                     <td style="text-align:center">
@@ -1009,13 +1136,13 @@ foreach ($runs as $sumRun) {
                 <td style="width:50%; padding-right:8px; vertical-align:top">
                     <table class="meta-table">
                         <tr><td class="mk">Lot Size</td><td class="mv">{{ number_format($aql->lot_size ?? 0) }} units</td></tr>
-                        <tr><td class="mk">Inspection Level</td><td class="mv">{{ $aql->inspection_level ?? '&mdash;' }}</td></tr>
+                        <tr><td class="mk">Inspection Level</td><td class="mv">{{ $aql->inspection_level ?? '—' }}</td></tr>
                     </table>
                 </td>
                 <td style="width:50%; vertical-align:top">
                     <table class="meta-table">
-                        <tr><td class="mk">Code Letter</td><td class="mv">{{ $aql->code_letter ?? '&mdash;' }}</td></tr>
-                        <tr><td class="mk">Sample Size</td><td class="mv">{{ $aql->sample_size ?? '&mdash;' }} units</td></tr>
+                        <tr><td class="mk">Code Letter</td><td class="mv">{{ $aql->code_letter ?? '—' }}</td></tr>
+                        <tr><td class="mk">Sample Size</td><td class="mv">{{ $aql->sample_size ?? '—' }} units</td></tr>
                     </table>
                 </td>
             </tr>
@@ -1038,14 +1165,14 @@ foreach ($runs as $sumRun) {
                     $ac       = $aql->{"ac_{$key}"};
                     $re       = $aql->{"re_{$key}"};
                     $found    = $aql->{"found_{$key}"} ?? 0;
-                    $rowRes   = ($ac !== null && $found > $ac) ? 'FAIL' : (($found > 0 || $ac !== null) ? 'PASS' : '&mdash;');
+                    $rowRes   = ($ac !== null && $found > $ac) ? 'FAIL' : (($found > 0 || $ac !== null) ? 'PASS' : '—');
                     $rowCls   = $rowRes === 'FAIL' ? 'rb-fail' : ($rowRes === 'PASS' ? 'rb-pass' : '');
                 @endphp
                 <tr>
                     <td class="aql-cat">{{ $label }}</td>
-                    <td>{{ $aqlLevel !== null ? $aqlLevel.'%' : '&mdash;' }}</td>
-                    <td>{{ $ac ?? '&mdash;' }}</td>
-                    <td>{{ $re ?? '&mdash;' }}</td>
+                    <td>{{ $aqlLevel !== null ? $aqlLevel.'%' : '—' }}</td>
+                    <td>{{ $ac ?? '—' }}</td>
+                    <td>{{ $re ?? '—' }}</td>
                     <td style="font-weight:bold">{{ $found }}</td>
                     <td><span class="{{ $rowCls }}">{!! $rowRes !!}</span></td>
                 </tr>
@@ -1202,7 +1329,7 @@ foreach ($runs as $sumRun) {
                 @php
                     $tKey   = $taskDef['key'] ?? '';
                     $tEntry = $taskData[$tKey] ?? [];
-                    $tRes   = $tEntry['selected'] ?? '&mdash;';
+                    $tRes   = $tEntry['selected'] ?? '—';
                     $tNotes = $tEntry['notes'] ?? ($tEntry['comments'] ?? '');
                     $tImgs  = $images->filter(fn($a) => $a->task_key === $tKey)->values();
                     $tCls   = match(strtolower((string)$tRes)) {
@@ -1212,7 +1339,7 @@ foreach ($runs as $sumRun) {
                 <tr>
                     <td style="text-align:center; color:#9E9E9E; font-size:8pt">{{ $tIdx+1 }}</td>
                     <td>{{ $taskDef['label'] ?? $tKey }}</td>
-                    <td style="text-align:center"><span class="{{ $tCls }}">{!! $tRes ?: '&mdash;' !!}</span></td>
+                    <td style="text-align:center"><span class="{{ $tCls }}">{!! $tRes ?: '—' !!}</span></td>
                     <td style="color:#546E7A; font-size:8pt">{{ $tNotes }}</td>
                     <td style="text-align:center">
                         @foreach($tImgs->take(2) as $img)
@@ -1279,16 +1406,16 @@ foreach ($runs as $sumRun) {
             <tbody>
                 @foreach($cartonRows as $ci)
                 @php
-                    $ciRes = $ci['result'] ?? '&mdash;';
+                    $ciRes = $ci['result'] ?? '—';
                     $ciCls = match(strtolower((string)$ciRes)) { 'pass' => 'rb-pass', 'fail' => 'rb-fail', default => 'rb-def' };
                 @endphp
                 <tr>
                     <td style="font-weight:bold">{{ $ci['carton_no'] ?? ($loop->index+1) }}</td>
-                    <td style="text-align:center">{{ $ci['length'] ?? '&mdash;' }}</td>
-                    <td style="text-align:center">{{ $ci['width'] ?? '&mdash;' }}</td>
-                    <td style="text-align:center">{{ $ci['height'] ?? '&mdash;' }}</td>
-                    <td style="text-align:center">{{ $ci['gross_weight'] ?? '&mdash;' }}</td>
-                    <td style="text-align:center">{{ $ci['net_weight'] ?? '&mdash;' }}</td>
+                    <td style="text-align:center">{{ $ci['length'] ?? '—' }}</td>
+                    <td style="text-align:center">{{ $ci['width'] ?? '—' }}</td>
+                    <td style="text-align:center">{{ $ci['height'] ?? '—' }}</td>
+                    <td style="text-align:center">{{ $ci['gross_weight'] ?? '—' }}</td>
+                    <td style="text-align:center">{{ $ci['net_weight'] ?? '—' }}</td>
                     <td style="text-align:center"><span class="{{ $ciCls }}">{!! $ciRes !!}</span></td>
                 </tr>
                 @endforeach
@@ -1322,7 +1449,7 @@ foreach ($runs as $sumRun) {
             <tbody>
                 @foreach($verItems as $vIdx => $vi)
                 @php
-                    $viRes = $vi['result'] ?? '&mdash;';
+                    $viRes = $vi['result'] ?? '—';
                     $viCls = match(strtolower((string)$viRes)) { 'pass' => 'rb-pass', 'fail' => 'rb-fail', 'n/a','na' => 'rb-na', default => 'rb-def' };
                 @endphp
                 <tr>
@@ -1362,7 +1489,7 @@ foreach ($runs as $sumRun) {
             <tbody>
                 @foreach($artItems as $aIdx => $ai)
                 @php
-                    $aiRes = $ai['result'] ?? '&mdash;';
+                    $aiRes = $ai['result'] ?? '—';
                     $aiCls = match(strtolower((string)$aiRes)) { 'pass' => 'rb-pass', 'fail' => 'rb-fail', 'n/a','na' => 'rb-na', default => 'rb-def' };
                 @endphp
                 <tr>
@@ -1394,15 +1521,15 @@ foreach ($runs as $sumRun) {
             <tbody>
                 @foreach($measurements as $mIdx => $m)
                 @php
-                    $mRes = $m['result'] ?? '&mdash;';
+                    $mRes = $m['result'] ?? '—';
                     $mCls = match(strtolower((string)$mRes)) { 'pass' => 'rb-pass', 'fail' => 'rb-fail', default => 'rb-def' };
                 @endphp
                 <tr>
                     <td style="text-align:center; color:#9E9E9E; font-size:8pt">{{ $mIdx+1 }}</td>
                     <td>{{ $m['point'] ?? '' }}</td>
-                    <td style="text-align:center">{{ $m['spec'] ?? '&mdash;' }}</td>
-                    <td style="text-align:center; color:#9E9E9E">{{ $m['tolerance'] ?? '&mdash;' }}</td>
-                    <td style="text-align:center; font-weight:bold">{{ $m['measured'] ?? '&mdash;' }}</td>
+                    <td style="text-align:center">{{ $m['spec'] ?? '—' }}</td>
+                    <td style="text-align:center; color:#9E9E9E">{{ $m['tolerance'] ?? '—' }}</td>
+                    <td style="text-align:center; font-weight:bold">{{ $m['measured'] ?? '—' }}</td>
                     <td style="text-align:center"><span class="{{ $mCls }}">{!! $mRes !!}</span></td>
                 </tr>
                 @endforeach
@@ -1439,7 +1566,7 @@ foreach ($runs as $sumRun) {
             <tbody>
                 @foreach($fbItems as $fIdx => $fi)
                 @php
-                    $fiRes = $fi['result'] ?? '&mdash;';
+                    $fiRes = $fi['result'] ?? '—';
                     $fiCls = match(strtolower((string)$fiRes)) { 'pass' => 'rb-pass', 'fail' => 'rb-fail', 'n/a','na' => 'rb-na', default => 'rb-def' };
                 @endphp
                 <tr>
@@ -1506,6 +1633,7 @@ foreach ($runs as $sumRun) {
 
     </div>{{-- /.section-body --}}
 </div>{{-- /.section-block --}}
+@endif{{-- empty/populated --}}
 
 @endforeach {{-- sections --}}
 
@@ -1550,11 +1678,11 @@ foreach ($runs as $sumRun) {
                 <td class="fmk">Report Number</td>
                 <td class="fmv">{{ $inspection->report_number }}</td>
                 <td class="fmk">Inspection Date</td>
-                <td class="fmv">{{ $inspection->inspection_date?->format('d F Y') ?? '&mdash;' }}</td>
+                <td class="fmv">{{ $inspection->inspection_date?->format('d F Y') ?? '—' }}</td>
             </tr>
             <tr>
                 <td class="fmk">Inspector(s)</td>
-                <td class="fmv">{{ $inspection->inspectors->pluck('employee_name')->implode(', ') ?: '&mdash;' }}</td>
+                <td class="fmv">{{ $inspection->inspectors->pluck('employee_name')->implode(', ') ?: '—' }}</td>
                 <td class="fmk">Total Runs</td>
                 <td class="fmv">{{ $runs->count() }}</td>
             </tr>

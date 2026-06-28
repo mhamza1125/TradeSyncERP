@@ -24,8 +24,8 @@
                     <a href="{{ route('customer-payments.index') }}" class="btn btn-icon btn-light-brand">
                         <i class="feather-arrow-left"></i>
                     </a>
-                    <a href="javascript:void(0)" class="btn btn-icon btn-light-brand printBTN">
-                        <i class="feather-printer"></i>
+                    <a href="{{ route('customer-payments.export-pdf', $customerPayment) }}" class="btn btn-light-brand" target="_blank">
+                        <i class="feather-download me-2"></i>Export PDF
                     </a>
                     @can('customer-payments.edit')
                     <a href="{{ route('customer-payments.edit', $customerPayment) }}" class="btn btn-primary">

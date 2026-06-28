@@ -6,13 +6,14 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\Masters\StoreExpenseHeadRequest;
 use App\Http\Requests\Masters\UpdateExpenseHeadRequest;
 use App\Models\ExpenseHead;
+use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Http\Request;
 
 class ExpenseHeadController extends Controller
 {
     public function __construct()
     {
-        $this->middleware('permission:expense-heads.index')->only(['index', 'show']);
+        $this->middleware('permission:expense-heads.index')->only(['index', 'show', 'exportPdf']);
         $this->middleware('permission:expense-heads.create')->only(['create', 'store']);
         $this->middleware('permission:expense-heads.edit')->only(['edit', 'update']);
         $this->middleware('permission:expense-heads.delete')->only('destroy');
@@ -88,5 +89,21 @@ class ExpenseHeadController extends Controller
 
         return redirect()->route('masters.expense-heads.index')
             ->with('success', 'Expense head deactivated successfully.');
+    }
+
+    public function exportPdf(Request $request)
+    {
+        $expenseHeads = ExpenseHead::with('parent')
+            ->when($request->search, fn ($q, $s) => $q->where('expense_name', 'like', "%{$s}%"))
+            ->orderBy('expense_name')
+            ->get();
+
+        $pdf = Pdf::loadView('exports.expense-heads-list-pdf', compact('expenseHeads'))
+            ->setPaper('a4', 'portrait')
+            ->setOption('isHtml5ParserEnabled', true)
+            ->setOption('isRemoteEnabled', false)
+            ->setOption('defaultFont', 'DejaVu Sans');
+
+        return $pdf->download('ExpenseHeads-' . now()->format('Y-m-d') . '.pdf');
     }
 }

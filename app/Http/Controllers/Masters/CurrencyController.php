@@ -6,13 +6,14 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\Masters\StoreCurrencyRequest;
 use App\Http\Requests\Masters\UpdateCurrencyRequest;
 use App\Models\Currency;
+use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Http\Request;
 
 class CurrencyController extends Controller
 {
     public function __construct()
     {
-        $this->middleware('permission:currencies.index')->only(['index', 'show']);
+        $this->middleware('permission:currencies.index')->only(['index', 'show', 'exportPdf']);
         $this->middleware('permission:currencies.create')->only(['create', 'store']);
         $this->middleware('permission:currencies.edit')->only(['edit', 'update']);
         $this->middleware('permission:currencies.delete')->only('destroy');
@@ -91,5 +92,22 @@ class CurrencyController extends Controller
 
         return redirect()->route('masters.currencies.index')
             ->with('success', 'Currency deactivated successfully.');
+    }
+
+    public function exportPdf(Request $request)
+    {
+        $currencies = Currency::query()
+            ->when($request->search, fn ($q, $s) => $q->where('currency_name', 'like', "%{$s}%")
+                ->orWhere('currency_code', 'like', "%{$s}%"))
+            ->orderBy('currency_name')
+            ->get();
+
+        $pdf = Pdf::loadView('exports.currencies-list-pdf', compact('currencies'))
+            ->setPaper('a4', 'portrait')
+            ->setOption('isHtml5ParserEnabled', true)
+            ->setOption('isRemoteEnabled', false)
+            ->setOption('defaultFont', 'DejaVu Sans');
+
+        return $pdf->download('Currencies-' . now()->format('Y-m-d') . '.pdf');
     }
 }

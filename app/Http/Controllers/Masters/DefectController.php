@@ -4,13 +4,14 @@ namespace App\Http\Controllers\Masters;
 
 use App\Http\Controllers\Controller;
 use App\Models\Defect;
+use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Http\Request;
 
 class DefectController extends Controller
 {
     public function __construct()
     {
-        $this->middleware('permission:defects.index')->only(['index', 'show']);
+        $this->middleware('permission:defects.index')->only(['index', 'show', 'exportPdf']);
         $this->middleware('permission:defects.create')->only(['create', 'store']);
         $this->middleware('permission:defects.edit')->only(['edit', 'update']);
         $this->middleware('permission:defects.delete')->only('destroy');
@@ -83,5 +84,23 @@ class DefectController extends Controller
 
         return redirect()->route('masters.defects.index')
             ->with('success', 'Defect deleted.');
+    }
+
+    public function exportPdf(Request $request)
+    {
+        $defects = Defect::query()
+            ->when($request->search, fn ($q, $s) => $q->where('defect_name', 'like', "%{$s}%"))
+            ->when($request->severity, fn ($q, $s) => $q->where('severity', $s))
+            ->when($request->status !== null && $request->status !== '', fn ($q) => $q->where('status', $request->status))
+            ->orderBy('defect_name')
+            ->get();
+
+        $pdf = Pdf::loadView('exports.defects-list-pdf', compact('defects'))
+            ->setPaper('a4', 'portrait')
+            ->setOption('isHtml5ParserEnabled', true)
+            ->setOption('isRemoteEnabled', false)
+            ->setOption('defaultFont', 'DejaVu Sans');
+
+        return $pdf->download('Defects-' . now()->format('Y-m-d') . '.pdf');
     }
 }

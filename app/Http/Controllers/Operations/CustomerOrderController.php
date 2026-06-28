@@ -8,6 +8,7 @@ use App\Http\Requests\Operations\UpdateCustomerOrderRequest;
 use App\Models\Customer;
 use App\Models\CustomerOrder;
 use App\Models\ProductCategory;
+use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 
@@ -15,7 +16,7 @@ class CustomerOrderController extends Controller
 {
     public function __construct()
     {
-        $this->middleware('permission:customer-orders.index')->only(['index', 'show']);
+        $this->middleware('permission:customer-orders.index')->only(['index', 'show', 'exportPdf', 'exportListPdf']);
         $this->middleware('permission:customer-orders.create')->only(['create', 'store']);
         $this->middleware('permission:customer-orders.edit')->only(['edit', 'update']);
         $this->middleware('permission:customer-orders.delete')->only('destroy');
@@ -101,6 +102,37 @@ class CustomerOrderController extends Controller
 
         return redirect()->route('customer-orders.index')
             ->with('success', 'Customer order deleted.');
+    }
+
+    public function exportListPdf(Request $request)
+    {
+        $orders = CustomerOrder::with(['customer', 'items'])
+            ->when($request->search, fn ($q) => $q->where('order_code', 'like', "%{$request->search}%"))
+            ->when($request->customer_id, fn ($q) => $q->where('customer_id', $request->customer_id))
+            ->when($request->status, fn ($q) => $q->where('status', $request->status))
+            ->latest()
+            ->get();
+
+        $pdf = Pdf::loadView('exports.customer-orders-list-pdf', compact('orders'))
+            ->setPaper('a4', 'portrait')
+            ->setOption('isHtml5ParserEnabled', true)
+            ->setOption('isRemoteEnabled', false)
+            ->setOption('defaultFont', 'DejaVu Sans');
+
+        return $pdf->download('CustomerOrders-' . now()->format('Y-m-d') . '.pdf');
+    }
+
+    public function exportPdf(CustomerOrder $customerOrder)
+    {
+        $customerOrder->load(['customer', 'items.productCategory']);
+
+        $pdf = Pdf::loadView('exports.customer-order-pdf', ['order' => $customerOrder])
+            ->setPaper('a4', 'portrait')
+            ->setOption('isHtml5ParserEnabled', true)
+            ->setOption('isRemoteEnabled', false)
+            ->setOption('defaultFont', 'DejaVu Sans');
+
+        return $pdf->download("Order-{$customerOrder->order_code}.pdf");
     }
 
     private function generateOrderCode(): string

@@ -11,6 +11,7 @@ use App\Models\Sample;
 use App\Models\SampleColor;
 use App\Models\SampleSize;
 use App\Models\Supplier;
+use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
@@ -19,7 +20,7 @@ class SampleController extends Controller
 {
     public function __construct()
     {
-        $this->middleware('permission:samples.index')->only(['index', 'show']);
+        $this->middleware('permission:samples.index')->only(['index', 'show', 'exportPdf', 'exportListPdf']);
         $this->middleware('permission:samples.create')->only(['create', 'store']);
         $this->middleware('permission:samples.edit')->only(['edit', 'update']);
         $this->middleware('permission:samples.delete')->only('destroy');
@@ -232,6 +233,44 @@ class SampleController extends Controller
 
         return redirect()->route('samples.index')
             ->with('success', 'Sample removed successfully.');
+    }
+
+    public function exportListPdf(Request $request)
+    {
+        $samples = Sample::with(['customer', 'category'])
+            ->when($request->search, fn ($q) => $q->where('sample_code', 'like', "%{$request->search}%")
+                ->orWhere('product_name', 'like', "%{$request->search}%"))
+            ->when($request->status, fn ($q) => $q->where('status', $request->status))
+            ->when($request->customer_id, fn ($q) => $q->where('customer_id', $request->customer_id))
+            ->latest('receive_date')
+            ->get();
+
+        $pdf = Pdf::loadView('exports.samples-list-pdf', compact('samples'))
+            ->setPaper('a4', 'portrait')
+            ->setOption('isHtml5ParserEnabled', true)
+            ->setOption('isRemoteEnabled', false)
+            ->setOption('defaultFont', 'DejaVu Sans');
+
+        return $pdf->download('Samples-' . now()->format('Y-m-d') . '.pdf');
+    }
+
+    public function exportPdf(Sample $sample)
+    {
+        $sample->load([
+            'customer',
+            'supplier',
+            'category',
+            'variations.color',
+            'variations.size',
+        ]);
+
+        $pdf = Pdf::loadView('exports.sample-pdf', compact('sample'))
+            ->setPaper('a4', 'portrait')
+            ->setOption('isHtml5ParserEnabled', true)
+            ->setOption('isRemoteEnabled', false)
+            ->setOption('defaultFont', 'DejaVu Sans');
+
+        return $pdf->download("Sample-{$sample->sample_code}.pdf");
     }
 
     private function generateSampleCode(): string

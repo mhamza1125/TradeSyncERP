@@ -24,8 +24,8 @@
                     <a href="{{ route('expenses.index') }}" class="btn btn-icon btn-light-brand">
                         <i class="feather-arrow-left"></i>
                     </a>
-                    <a href="javascript:void(0)" class="btn btn-icon btn-light-brand printBTN">
-                        <i class="feather-printer"></i>
+                    <a href="{{ route('expenses.export-single-pdf', $expense) }}" class="btn btn-light-brand" target="_blank">
+                        <i class="feather-download me-2"></i>Export PDF
                     </a>
                     @can('expenses.delete')
                     <form action="{{ route('expenses.destroy', $expense) }}" method="POST"

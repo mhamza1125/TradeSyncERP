@@ -19,6 +19,11 @@
                     <a href="{{ route('movements.index') }}" class="btn btn-light-brand">
                         <i class="feather-arrow-left me-2"></i><span>Back</span>
                     </a>
+                    @can('sample-movements.index')
+                    <a href="{{ route('movements.export-pdf', $movement) }}" class="btn btn-light-brand" target="_blank">
+                        <i class="feather-download me-2"></i><span>Export PDF</span>
+                    </a>
+                    @endcan
                     @can('sample-movements.edit')
                     <a href="{{ route('movements.edit', $movement) }}" class="btn btn-primary">
                         <i class="feather-edit me-2"></i><span>Update Return</span>

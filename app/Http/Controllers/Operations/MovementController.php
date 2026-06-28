@@ -9,13 +9,14 @@ use App\Models\Employee;
 use App\Models\InspectionRun;
 use App\Models\Movement;
 use App\Models\Sample;
+use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Http\Request;
 
 class MovementController extends Controller
 {
     public function __construct()
     {
-        $this->middleware('permission:sample-movements.index')->only(['index', 'show']);
+        $this->middleware('permission:sample-movements.index')->only(['index', 'show', 'exportListPdf', 'exportSinglePdf']);
         $this->middleware('permission:sample-movements.create')->only(['create', 'store']);
         $this->middleware('permission:sample-movements.edit')->only(['edit', 'update']);
         $this->middleware('permission:sample-movements.delete')->only('destroy');
@@ -192,5 +193,45 @@ class MovementController extends Controller
 
         return redirect()->route('movements.index')
             ->with('success', 'Movement deleted.');
+    }
+
+    public function exportListPdf(Request $request)
+    {
+        $movements = Movement::with(['items.sample.customer', 'employees', 'inspectionRun.inspection'])
+            ->when($request->search, fn ($q) =>
+                $q->whereHas('items.sample', fn ($sq) =>
+                    $sq->where('sample_code', 'like', "%{$request->search}%")
+                       ->orWhere('product_name', 'like', "%{$request->search}%")
+                ))
+            ->when($request->status, fn ($q) => $q->where('status', $request->status))
+            ->latest()
+            ->get();
+
+        $pdf = Pdf::loadView('exports.movements-list-pdf', compact('movements'))
+            ->setPaper('a4', 'portrait')
+            ->setOption('isHtml5ParserEnabled', true)
+            ->setOption('isRemoteEnabled', false)
+            ->setOption('defaultFont', 'DejaVu Sans');
+
+        return $pdf->download('Movements-' . now()->format('Y-m-d') . '.pdf');
+    }
+
+    public function exportSinglePdf(Movement $movement)
+    {
+        $movement->load([
+            'items.sample.customer',
+            'items.variation.color',
+            'items.variation.size',
+            'employees',
+            'inspectionRun.inspection',
+        ]);
+
+        $pdf = Pdf::loadView('exports.movement-pdf', compact('movement'))
+            ->setPaper('a4', 'portrait')
+            ->setOption('isHtml5ParserEnabled', true)
+            ->setOption('isRemoteEnabled', false)
+            ->setOption('defaultFont', 'DejaVu Sans');
+
+        return $pdf->download("Movement-{$movement->id}.pdf");
     }
 }

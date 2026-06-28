@@ -23,6 +23,11 @@
                     <a href="javascript:void(0);" class="btn btn-icon btn-light-brand" data-bs-toggle="collapse" data-bs-target="#collapseFilters">
                         <i class="feather-filter"></i>
                     </a>
+                    @can('customer-orders.index')
+                    <a href="{{ route('customer-orders.export-list-pdf', request()->query()) }}" class="btn btn-light-brand" target="_blank">
+                        <i class="feather-download me-2"></i><span>Export PDF</span>
+                    </a>
+                    @endcan
                     @can('customer-orders.create')
                     <a href="{{ route('customer-orders.create') }}" class="btn btn-primary">
                         <i class="feather-plus me-2"></i><span>New Order</span>

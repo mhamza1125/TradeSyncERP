@@ -24,6 +24,9 @@
                     <a href="{{ route('masters.employees.index') }}" class="btn btn-light-brand">
                         <i class="feather-arrow-left me-2"></i><span>Back</span>
                     </a>
+                    <a href="{{ route('masters.employees.export-single-pdf', $employee) }}" class="btn btn-light-brand" target="_blank">
+                        <i class="feather-download me-2"></i><span>Export PDF</span>
+                    </a>
                     @can('employees.edit')
                     <a href="{{ route('masters.employees.edit', $employee) }}" class="btn btn-primary">
                         <i class="feather-edit me-2"></i><span>Edit</span>
