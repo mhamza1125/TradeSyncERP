@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="en">
 <head>
 <title>{{ $title }} — Ledger</title>
@@ -11,9 +11,9 @@
 </head>
 <body>
 
-@include('exports.partials._pdf-company-header', ['reportTitle' => $title])
+@include('exports.partials._pdf-company-header')
 
-@include('exports.partials._pdf-company-footer', ['centerText' => $title])
+@include('exports.partials._pdf-company-footer')
 
 <div class="doc-banner">
     <table>

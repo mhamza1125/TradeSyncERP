@@ -76,6 +76,34 @@ class Sample extends Model
         return $this->hasMany(SampleMovement::class);
     }
 
+    public function movementItems()
+    {
+        return $this->hasMany(MovementItem::class);
+    }
+
+    public function computedStatus(): string
+    {
+        $hasOpenMovement = $this->movementItems()
+            ->whereHas('movement', fn ($q) => $q->where('status', 'Issued'))
+            ->exists();
+
+        return $hasOpenMovement ? 'In Testing' : 'Received';
+    }
+
+    public static function syncStatusFromMovements(array $sampleIds): void
+    {
+        foreach (array_unique(array_filter($sampleIds)) as $sampleId) {
+            $sample = static::find($sampleId);
+            if (!$sample) {
+                continue;
+            }
+            $hasOpen = $sample->movementItems()
+                ->whereHas('movement', fn ($q) => $q->where('status', 'Issued'))
+                ->exists();
+            $sample->updateQuietly(['status' => $hasOpen ? 'In Testing' : 'Received']);
+        }
+    }
+
     public function runs()
     {
         return $this->hasMany(InspectionRun::class);

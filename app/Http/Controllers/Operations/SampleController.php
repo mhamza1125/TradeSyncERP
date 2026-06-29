@@ -28,13 +28,24 @@ class SampleController extends Controller
 
     public function index(Request $request)
     {
-        $samples = Sample::withSum('variations', 'quantity')->with(['customer', 'category'])
+        $samples = Sample::withSum('variations', 'quantity')
+            ->withCount(['movementItems as open_movements_count' => fn ($q) =>
+                $q->whereHas('movement', fn ($mq) => $mq->where('status', 'Issued'))
+            ])
+            ->with(['customer', 'category'])
             ->when($request->search, fn ($q, $s) => $q->where('sample_code', 'like', "%{$s}%")
                 ->orWhere('product_name', 'like', "%{$s}%"))
             ->when($request->customer_id, fn ($q) => $q->where('customer_id', $request->customer_id))
             ->when($request->category_id, fn ($q) => $q->where('category_id', $request->category_id))
-            ->when($request->status, fn ($q) => $q->where('status', $request->status))
-            ->when($request->priority_level, fn ($q) => $q->where('priority_level', $request->priority_level))
+            ->when($request->status, function ($q) use ($request) {
+                if ($request->status === 'In Testing') {
+                    $q->whereHas('movementItems.movement', fn ($mq) => $mq->where('status', 'Issued'));
+                } else {
+                    $q->whereDoesntHave('movementItems', fn ($iq) =>
+                        $iq->whereHas('movement', fn ($mq) => $mq->where('status', 'Issued'))
+                    );
+                }
+            })
             ->when($request->from_date, fn ($q) => $q->where('receive_date', '>=', $request->from_date))
             ->when($request->to_date, fn ($q) => $q->where('receive_date', '<=', $request->to_date))
             ->latest()
@@ -63,6 +74,7 @@ class SampleController extends Controller
         return DB::transaction(function () use ($request) {
             $data = $request->validated();
             $data['sample_code'] = $this->generateSampleCode();
+            $data['status']      = 'Received';
 
             // Handle main image upload
             if ($request->hasFile('main_image_file')) {
@@ -133,6 +145,7 @@ class SampleController extends Controller
             'category',
             'variations.color', 'variations.size',
             'movements',
+            'movementItems.movement',
             'inspections.runs',
             'attachments',
         ]);
@@ -147,7 +160,7 @@ class SampleController extends Controller
         $suppliers  = Supplier::where('status', true)->orderBy('name')->get();
         $colors     = SampleColor::orderBy('name')->get();
         $sizes      = SampleSize::orderBy('name')->get();
-        $sample->load('variations.color', 'variations.size', 'testingParameters.parameter', 'attachments');
+        $sample->load('variations.color', 'variations.size', 'attachments');
 
         return view('operations.samples.edit', compact('sample', 'customers', 'categories', 'suppliers', 'colors', 'sizes'));
     }
@@ -167,6 +180,11 @@ class SampleController extends Controller
 
             $variations = $data['variations'] ?? [];
             unset($data['variations']);
+
+            // Auto-compute status from active movements
+            $data['status'] = $sample->movementItems()
+                ->whereHas('movement', fn ($q) => $q->where('status', 'Issued'))
+                ->exists() ? 'In Testing' : 'Received';
 
             $sample->update($data);
 
@@ -238,9 +256,11 @@ class SampleController extends Controller
     public function exportListPdf(Request $request)
     {
         $samples = Sample::with(['customer', 'category'])
+            ->withCount(['movementItems as open_movements_count' => fn ($q) =>
+                $q->whereHas('movement', fn ($mq) => $mq->where('status', 'Issued'))
+            ])
             ->when($request->search, fn ($q) => $q->where('sample_code', 'like', "%{$request->search}%")
                 ->orWhere('product_name', 'like', "%{$request->search}%"))
-            ->when($request->status, fn ($q) => $q->where('status', $request->status))
             ->when($request->customer_id, fn ($q) => $q->where('customer_id', $request->customer_id))
             ->latest('receive_date')
             ->get();
@@ -262,6 +282,7 @@ class SampleController extends Controller
             'category',
             'variations.color',
             'variations.size',
+            'movementItems.movement',
         ]);
 
         $pdf = Pdf::loadView('exports.sample-pdf', compact('sample'))

@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="en">
 <head>
 <title>Salary Run — {{ $salaryRun->month }}</title>
@@ -16,9 +16,9 @@
 </head>
 <body>
 
-@include('exports.partials._pdf-company-header', ['reportTitle' => 'Salary Statement', 'reportSubtitle' => $salaryRun->month])
+@include('exports.partials._pdf-company-header')
 
-@include('exports.partials._pdf-company-footer', ['centerText' => 'Salary Run — '.$salaryRun->month])
+@include('exports.partials._pdf-company-footer')
 
 <div class="doc-banner">
     <table>

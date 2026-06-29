@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="en">
 <head>
 <title>Samples</title>
@@ -6,9 +6,9 @@
 </head>
 <body>
 
-@include('exports.partials._pdf-company-header', ['reportTitle' => 'Samples'])
+@include('exports.partials._pdf-company-header')
 
-@include('exports.partials._pdf-company-footer', ['centerText' => 'Samples'])
+@include('exports.partials._pdf-company-footer')
 
 <div class="doc-banner">
     <table>
@@ -33,8 +33,7 @@
             <th style="width:120px">Customer</th>
             <th style="width:100px">Category</th>
             <th style="width:90px">Received</th>
-            <th style="width:60px">Priority</th>
-            <th style="width:70px">Status</th>
+            <th style="width:80px">Status</th>
         </tr>
     </thead>
     <tbody>
@@ -48,25 +47,14 @@
             <td>{{ $sample->receive_date->format('d M Y') }}</td>
             <td class="text-center">
                 @php
-                    $pc = match($sample->priority_level) {
-                        'Urgent' => 'danger', 'High' => 'warning',
-                        'Medium' => 'info', default => 'secondary',
-                    };
+                    $cs = ($sample->open_movements_count ?? 0) > 0 ? 'In Testing' : 'Received';
+                    $sc = $cs === 'In Testing' ? 'warning' : 'primary';
                 @endphp
-                <span class="badge badge-{{ $pc }}">{{ $sample->priority_level }}</span>
-            </td>
-            <td class="text-center">
-                @php
-                    $sc = match($sample->status) {
-                        'Completed' => 'success', 'In Testing' => 'info',
-                        'Returned' => 'secondary', default => 'warning',
-                    };
-                @endphp
-                <span class="badge badge-{{ $sc }}">{{ $sample->status }}</span>
+                <span class="badge badge-{{ $sc }}">{{ $cs }}</span>
             </td>
         </tr>
         @empty
-        <tr><td colspan="8" class="no-data">No samples found.</td></tr>
+        <tr><td colspan="7" class="no-data">No samples found.</td></tr>
         @endforelse
     </tbody>
 </table>

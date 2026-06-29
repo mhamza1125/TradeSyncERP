@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="en">
 <head>
 <title>Product Categories</title>
@@ -6,9 +6,9 @@
 </head>
 <body>
 
-@include('exports.partials._pdf-company-header', ['reportTitle' => 'Product Categories'])
+@include('exports.partials._pdf-company-header')
 
-@include('exports.partials._pdf-company-footer', ['centerText' => 'Product Categories'])
+@include('exports.partials._pdf-company-footer')
 
 <div class="doc-banner">
     <table>

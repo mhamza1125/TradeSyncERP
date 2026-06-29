@@ -12,7 +12,7 @@ body {
 
 @page {
     size: A4 portrait;
-    margin: 34mm 15mm 28mm 15mm;
+    margin: 24mm 15mm 28mm 15mm;
 }
 
 .page-break { page-break-after: always; }
@@ -21,45 +21,31 @@ body {
 /* ── Fixed running header (repeats every page) ─────────── */
 .pdf-header {
     position: fixed;
-    top: -30mm;
+    top: -20mm;
     left: -15mm; right: -15mm;
-    border-bottom: 2px solid #1a3560;
+    border-bottom: 2px solid #01AFEE;
     padding: 0 15mm;
     background: #ffffff;
 }
 
-/* Company logo row */
-.ph-logo-row { width: 100%; border-collapse: collapse; padding: 5px 0 4px; border-bottom: 1px solid #e8edf4; }
-.ph-logo-cell { vertical-align: middle; width: 36px; }
-.ph-logo-cell img { height: 24px; width: auto; display: block; }
-.ph-brand-cell { vertical-align: middle; padding-left: 8px; }
-.ph-brand-name { font-size: 10pt; font-weight: bold; color: #1a3560; line-height: 1.2; }
-.ph-brand-tag  { font-size: 6.5pt; color: #9e9e9e; }
-.ph-spacer     { }
-
-/* Report info row */
-.ph-info-row { width: 100%; border-collapse: collapse; padding: 3px 0; }
-.ph-left   { font-size: 8.5pt; font-weight: bold; color: #1a3560; vertical-align: middle; }
-.ph-sub    { font-size: 7pt; color: #757575; font-weight: normal; }
-.ph-center { text-align: center; font-size: 7pt; color: #9e9e9e; vertical-align: middle; }
-.ph-right  { text-align: right; font-size: 7pt; color: #9e9e9e; vertical-align: middle; white-space: nowrap; }
+/* Centered logo row */
+.ph-logo-row { width: 100%; border-collapse: collapse; padding: 4px 0; }
+.ph-logo-cell-centered { text-align: center; vertical-align: middle; }
+.ph-logo-cell-centered img { height: 42px; width: auto; display: inline-block; }
 
 /* ── Fixed footer ──────────────────────────────────────── */
 .pdf-footer {
     position: fixed;
     bottom: -24mm;
     left: -15mm; right: -15mm;
-    border-top: 1px solid #dee2e6;
+    border-top: 2px solid #01AFEE;
     padding: 4px 15mm 0;
     background: #ffffff;
 }
 .pdf-footer table { width: 100%; border-collapse: collapse; }
-.pf-addr   { font-size: 7pt; color: #616161; vertical-align: middle; }
-.pf-contact{ font-size: 6.5pt; color: #9e9e9e; vertical-align: middle; }
-.pf-left   { font-size: 7pt; color: #9e9e9e; vertical-align: middle; }
-.pf-center { text-align: center; font-size: 7pt; color: #9e9e9e; vertical-align: middle; }
-.pf-right  { text-align: right; font-size: 7pt; color: #9e9e9e; vertical-align: middle; }
-.pf-right:after { content: "Page " counter(page) " of " counter(pages); }
+.pf-center  { text-align: center; vertical-align: middle; }
+.pf-address { font-size: 7pt; color: #616161; }
+.pf-contact { font-size: 6.5pt; color: #9e9e9e; }
 
 /* ── Document title banner ─────────────────────────────── */
 .doc-banner {
@@ -101,7 +87,7 @@ body {
 /* ── Data tables ───────────────────────────────────────── */
 .data-table { width: 100%; border-collapse: collapse; margin-top: 4px; }
 .data-table thead th {
-    background: #1a3560;
+    background: #01AFEE;
     color: #ffffff;
     font-size: 8pt;
     font-weight: bold;
@@ -123,8 +109,8 @@ body {
     padding: 7px 8px;
     font-size: 9pt;
     font-weight: bold;
-    border-top: 2px solid #1a3560;
-    background: #eef2ff;
+    border-top: 2px solid #01AFEE;
+    background: #e6f7fd;
 }
 .data-table tfoot td.text-right { text-align: right; }
 
@@ -158,3 +144,15 @@ body {
 .no-data     { text-align: center; padding: 20px; color: #9e9e9e; font-style: italic; }
 .divider     { border: none; border-top: 1px solid #e0e0e0; margin: 12px 0; }
 </style>
+
+{{-- PHP canvas script: draws "Page X of Y" on every page via DomPDF's page_text API --}}
+<script type="text/php">
+if (isset($pdf)) {
+    $font  = $fontMetrics->get_font('DejaVu Sans', 'normal');
+    $size  = 7;
+    $color = [0.00, 0.69, 0.93];
+    $w     = $pdf->get_width();
+    $h     = $pdf->get_height();
+    $pdf->page_text($w - 90, $h - 28, "Page {PAGE_NUM} of {PAGE_COUNT}", $font, $size, $color);
+}
+</script>

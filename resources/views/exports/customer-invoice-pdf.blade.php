@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="en">
 <head>
 <title>Invoice — {{ $invoice->invoice_number }}</title>
@@ -17,9 +17,9 @@
 </head>
 <body>
 
-@include('exports.partials._pdf-company-header', ['reportTitle' => 'Tax Invoice', 'reportRef' => $invoice->invoice_number])
+@include('exports.partials._pdf-company-header')
 
-@include('exports.partials._pdf-company-footer', ['centerText' => $invoice->invoice_number])
+@include('exports.partials._pdf-company-footer')
 
 <div class="doc-banner">
     <table>

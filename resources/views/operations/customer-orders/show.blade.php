@@ -94,9 +94,8 @@
                                 <thead>
                                     <tr>
                                         <th>#</th>
-                                        <th>Product Name</th>
+                                        <th>Product Category</th>
                                         <th>Qty</th>
-                                        <th>Unit</th>
                                         <th>Description</th>
                                     </tr>
                                 </thead>
@@ -104,9 +103,8 @@
                                     @foreach($customerOrder->items as $i => $item)
                                     <tr>
                                         <td>{{ $i + 1 }}</td>
-                                        <td class="fw-semibold">{{ $item->product_name }}</td>
+                                        <td class="fw-semibold">{{ $item->productCategory->category_name ?? '—' }}</td>
                                         <td>{{ $item->quantity }}</td>
-                                        <td>{{ $item->unit ?? '—' }}</td>
                                         <td class="text-muted">{{ $item->description ?? '—' }}</td>
                                     </tr>
                                     @endforeach

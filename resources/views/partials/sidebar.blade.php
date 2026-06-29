@@ -357,3 +357,24 @@
         </div>
     </div>
 </nav>
+
+<script>
+(function () {
+    var KEY  = 'sidebar_scroll';
+    var wrap = document.querySelector('.nxl-navigation .navbar-content');
+    if (!wrap) return;
+
+    // Restore on load
+    var saved = localStorage.getItem(KEY);
+    if (saved) { wrap.scrollTop = parseInt(saved, 10); }
+
+    // Save on scroll (debounced to avoid excessive writes)
+    var tid;
+    wrap.addEventListener('scroll', function () {
+        clearTimeout(tid);
+        tid = setTimeout(function () {
+            localStorage.setItem(KEY, wrap.scrollTop);
+        }, 100);
+    }, { passive: true });
+})();
+</script>

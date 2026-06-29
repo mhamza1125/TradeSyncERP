@@ -259,18 +259,9 @@
     <div class="col-xl-4">
         <div class="card">
             <div class="card-header">
-                <h5 class="card-title">Priority & Status</h5>
+                <h5 class="card-title">Settings</h5>
             </div>
             <div class="card-body">
-                <div class="mb-4">
-                    <label class="form-label">Priority Level <span class="text-danger">*</span></label>
-                    <select name="priority_level" class="form-select @error('priority_level') is-invalid @enderror">
-                        @foreach(['Low','Medium','High','Urgent'] as $p)
-                        <option value="{{ $p }}" @selected(old('priority_level', $sample->priority_level ?? 'Medium') == $p)>{{ $p }}</option>
-                        @endforeach
-                    </select>
-                    @error('priority_level')<div class="invalid-feedback">{{ $message }}</div>@enderror
-                </div>
                 <div class="mb-4">
                     <label class="form-label">Alert Days</label>
                     <input type="number" min="1" name="alert_days" class="form-control @error('alert_days') is-invalid @enderror"
@@ -278,15 +269,15 @@
                     <small class="text-muted">Alert when due in this many days.</small>
                     @error('alert_days')<div class="invalid-feedback">{{ $message }}</div>@enderror
                 </div>
-                <div class="mb-4">
-                    <label class="form-label">Status <span class="text-danger">*</span></label>
-                    <select name="status" class="form-select @error('status') is-invalid @enderror">
-                        @foreach(['Received','In Testing','Completed','Returned'] as $s)
-                        <option value="{{ $s }}" @selected(old('status', $sample->status ?? 'Received') == $s)>{{ $s }}</option>
-                        @endforeach
-                    </select>
-                    @error('status')<div class="invalid-feedback">{{ $message }}</div>@enderror
+                @isset($sample->id)
+                <div class="alert alert-light border">
+                    <small class="text-muted">
+                        <strong>Status</strong> is computed automatically from movements:<br>
+                        <span class="text-warning fw-semibold">In Testing</span> — has open movement(s)<br>
+                        <span class="text-primary fw-semibold">Received</span> — no open movements
+                    </small>
                 </div>
+                @endisset
             </div>
         </div>
     </div>

@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="en">
 <head>
 <title>Payment Receipt #{{ $payment->id }}</title>
@@ -22,9 +22,9 @@
 </head>
 <body>
 
-@include('exports.partials._pdf-company-header', ['reportTitle' => 'Payment Receipt', 'reportRef' => 'RCP-'.$payment->id])
+@include('exports.partials._pdf-company-header')
 
-@include('exports.partials._pdf-company-footer', ['centerText' => 'Receipt #'.$payment->id])
+@include('exports.partials._pdf-company-footer')
 
 <div class="doc-banner">
     <table>

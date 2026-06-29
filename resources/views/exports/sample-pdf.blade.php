@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="en">
 <head>
 <title>Sample — {{ $sample->sample_code }}</title>
@@ -6,9 +6,9 @@
 </head>
 <body>
 
-@include('exports.partials._pdf-company-header', ['reportTitle' => 'Sample Report', 'reportRef' => $sample->sample_code])
+@include('exports.partials._pdf-company-header')
 
-@include('exports.partials._pdf-company-footer', ['centerText' => $sample->sample_code])
+@include('exports.partials._pdf-company-footer')
 
 <div class="doc-banner">
     <table>
@@ -40,25 +40,10 @@
                         <td class="info-label">Status</td>
                         <td class="info-value">
                             @php
-                                $sc = match($sample->status) {
-                                    'Completed', 'Returned' => 'success',
-                                    'In Testing' => 'primary',
-                                    default => 'secondary',
-                                };
+                                $cs = $sample->computedStatus();
+                                $sc = $cs === 'In Testing' ? 'warning' : 'primary';
                             @endphp
-                            <span class="badge badge-{{ $sc }}">{{ $sample->status }}</span>
-                        </td>
-                    </tr>
-                    <tr>
-                        <td class="info-label">Priority</td>
-                        <td class="info-value">
-                            @php
-                                $pc = match($sample->priority_level) {
-                                    'Urgent' => 'danger', 'High' => 'warning',
-                                    'Medium' => 'primary', default => 'secondary',
-                                };
-                            @endphp
-                            <span class="badge badge-{{ $pc }}">{{ $sample->priority_level }}</span>
+                            <span class="badge badge-{{ $sc }}">{{ $cs }}</span>
                         </td>
                     </tr>
                     <tr><td class="info-label">Receive Date</td><td class="info-value">{{ $sample->receive_date->format('d M Y') }}</td></tr>

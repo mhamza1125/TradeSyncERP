@@ -41,8 +41,8 @@
         @include('partials.flash-messages')
 
         @php
-            $priorityColors = ['Low'=>'secondary','Medium'=>'info','High'=>'warning','Urgent'=>'danger'];
-            $statusColors   = ['Received'=>'primary','In Testing'=>'warning','Completed'=>'success','Returned'=>'secondary'];
+            $computedStatus = $sample->computedStatus();
+            $statusColor    = $computedStatus === 'In Testing' ? 'warning' : 'primary';
         @endphp
 
         <div class="row">
@@ -63,12 +63,9 @@
                             @endif
                             <div class="fs-16 fw-bold">{{ $sample->sample_code }}</div>
                             <div class="text-muted">{{ $sample->product_name }}</div>
-                            <div class="mt-2 d-flex justify-content-center gap-2">
-                                <span class="badge bg-soft-{{ $priorityColors[$sample->priority_level] ?? 'secondary' }} text-{{ $priorityColors[$sample->priority_level] ?? 'secondary' }}">
-                                    {{ $sample->priority_level }}
-                                </span>
-                                <span class="badge bg-soft-{{ $statusColors[$sample->status] ?? 'secondary' }} text-{{ $statusColors[$sample->status] ?? 'secondary' }}">
-                                    {{ $sample->status }}
+                            <div class="mt-2">
+                                <span class="badge bg-soft-{{ $statusColor }} text-{{ $statusColor }}">
+                                    {{ $computedStatus }}
                                 </span>
                             </div>
                         </div>

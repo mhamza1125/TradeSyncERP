@@ -112,9 +112,17 @@
                                         </td>
                                         <td>{{ $customer->contact_person }}</td>
                                         <td>{{ $customer->phone }}</td>
-                                        <td>{{ $customer->default_currency }}</td>
+                                        <td>
+                                            @if($customer->currency)
+                                                <span class="fw-semibold">{{ $customer->currency->currency_code }}</span>
+                                                <small class="text-muted ms-1">{{ $customer->currency->currency_name }}</small>
+                                            @else
+                                                <span class="text-muted">—</span>
+                                            @endif
+                                        </td>
                                         <td class="fw-semibold text-dark">
-                                            {{ number_format($customer->opening_balance, 2) }} {{ $customer->opening_balance_currency }}
+                                            {{ number_format($customer->opening_balance ?? 0, 2) }}
+                                            <small class="text-muted">{{ $customer->currency?->currency_code }}</small>
                                         </td>
                                         <td>
                                             @if($customer->status)

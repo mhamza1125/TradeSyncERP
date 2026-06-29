@@ -61,17 +61,8 @@
                     <div class="col-md-2">
                         <select name="status" class="form-select">
                             <option value="">All Status</option>
-                            @foreach(['Received','In Testing','Completed','Returned'] as $s)
-                            <option value="{{ $s }}" @selected(request('status') == $s)>{{ $s }}</option>
-                            @endforeach
-                        </select>
-                    </div>
-                    <div class="col-md-2">
-                        <select name="priority_level" class="form-select">
-                            <option value="">All Priority</option>
-                            @foreach(['Low','Medium','High','Urgent'] as $p)
-                            <option value="{{ $p }}" @selected(request('priority_level') == $p)>{{ $p }}</option>
-                            @endforeach
+                            <option value="Received"   @selected(request('status') == 'Received')>Received</option>
+                            <option value="In Testing" @selected(request('status') == 'In Testing')>In Testing</option>
                         </select>
                     </div>
                     <div class="col-md-1">
@@ -101,7 +92,6 @@
                                         <th>Customer</th>
                                         <th>Category</th>
                                         <th>Receive Date</th>
-                                        <th>Priority</th>
                                         <th>Status</th>
                                         <th class="text-center">Total Qty</th>
                                         <th class="text-end">Actions</th>
@@ -110,8 +100,8 @@
                                 <tbody>
                                     @forelse($samples as $sample)
                                     @php
-                                        $priorityColors = ['Low'=>'secondary','Medium'=>'info','High'=>'warning','Urgent'=>'danger'];
-                                        $statusColors   = ['Received'=>'primary','In Testing'=>'warning','Completed'=>'success','Returned'=>'secondary'];
+                                        $computedStatus = ($sample->open_movements_count ?? 0) > 0 ? 'In Testing' : 'Received';
+                                        $statusColor    = $computedStatus === 'In Testing' ? 'warning' : 'primary';
                                     @endphp
                                     <tr class="single-item">
                                         <td>
@@ -124,13 +114,8 @@
                                         <td>{{ $sample->category->category_name }}</td>
                                         <td>{{ \Carbon\Carbon::parse($sample->receive_date)->format('d M Y') }}</td>
                                         <td>
-                                            <span class="badge bg-soft-{{ $priorityColors[$sample->priority_level] ?? 'secondary' }} text-{{ $priorityColors[$sample->priority_level] ?? 'secondary' }}">
-                                                {{ $sample->priority_level }}
-                                            </span>
-                                        </td>
-                                        <td>
-                                            <span class="badge bg-soft-{{ $statusColors[$sample->status] ?? 'secondary' }} text-{{ $statusColors[$sample->status] ?? 'secondary' }}">
-                                                {{ $sample->status }}
+                                            <span class="badge bg-soft-{{ $statusColor }} text-{{ $statusColor }}">
+                                                {{ $computedStatus }}
                                             </span>
                                         </td>
                                         <td class="text-center fw-semibold">
@@ -174,7 +159,7 @@
                                     </tr>
                                     @empty
                                     <tr>
-                                        <td colspan="9" class="text-center py-5 text-muted">
+                                        <td colspan="8" class="text-center py-5 text-muted">
                                             <i class="feather-package fs-1 d-block mb-2"></i>
                                             No samples found.
                                         </td>

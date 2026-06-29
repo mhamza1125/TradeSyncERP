@@ -33,8 +33,16 @@
                         <div class="row g-3">
                             <div class="col-md-4">
                                 <input type="text" name="search" class="form-control"
-                                       placeholder="Search action or subject..."
+                                       placeholder="Search subject or changes..."
                                        value="{{ request('search') }}">
+                            </div>
+                            <div class="col-md-2">
+                                <select name="event" class="form-select">
+                                    <option value="">All Events</option>
+                                    <option value="created"  @selected(request('event') === 'created')>Created</option>
+                                    <option value="updated"  @selected(request('event') === 'updated')>Updated</option>
+                                    <option value="deleted"  @selected(request('event') === 'deleted')>Deleted</option>
+                                </select>
                             </div>
                             <div class="col-md-1">
                                 <button type="submit" class="btn btn-primary w-100"><i class="feather-search"></i></button>
@@ -56,33 +64,42 @@
                             <table class="table table-hover mb-0">
                                 <thead>
                                     <tr>
-                                        <th>Action</th>
+                                        <th style="width:90px">Event</th>
                                         <th>Subject</th>
-                                        <th>By</th>
-                                        <th>Changes</th>
-                                        <th>When</th>
+                                        <th style="width:280px">Changes</th>
+                                        <th style="width:160px">By</th>
+                                        <th style="width:120px">When</th>
+                                        <th style="width:50px"></th>
                                     </tr>
                                 </thead>
                                 <tbody>
                                     @forelse($activities as $activity)
+                                    @php
+                                        $eventColors = [
+                                            'created' => 'success',
+                                            'updated' => 'primary',
+                                            'deleted' => 'danger',
+                                        ];
+                                        $ec         = $eventColors[$activity->description] ?? 'secondary';
+                                        $modelLabel = \App\Http\Controllers\ActivityController::modelLabel($activity->subject_type ?? '');
+                                        $identifier = \App\Http\Controllers\ActivityController::subjectIdentifier($activity);
+                                        $summary    = \App\Http\Controllers\ActivityController::changeSummary($activity);
+                                    @endphp
                                     <tr>
                                         <td>
-                                            @php
-                                                $actionColors = [
-                                                    'created' => 'success',
-                                                    'updated' => 'primary',
-                                                    'deleted' => 'danger',
-                                                ];
-                                                $ac = $actionColors[$activity->description] ?? 'secondary';
-                                            @endphp
-                                            <span class="badge bg-soft-{{ $ac }} text-{{ $ac }} text-capitalize">
+                                            <span class="badge bg-soft-{{ $ec }} text-{{ $ec }} text-capitalize">
                                                 {{ $activity->description }}
                                             </span>
                                         </td>
                                         <td class="text-dark fw-semibold fs-13">
-                                            {{ class_basename($activity->subject_type ?? '') }}
-                                            @if($activity->subject_id)
-                                                <span class="text-muted fw-normal">#{{ $activity->subject_id }}</span>
+                                            {{ $modelLabel }}
+                                            <span class="text-primary">{{ $identifier }}</span>
+                                        </td>
+                                        <td class="fs-12 text-muted">
+                                            @if($summary)
+                                                {{ $summary }}
+                                            @else
+                                                <span class="text-muted">—</span>
                                             @endif
                                         </td>
                                         <td class="text-muted fs-12">
@@ -95,33 +112,20 @@
                                                 {{ $activity->causer?->name ?? 'System' }}
                                             </div>
                                         </td>
-                                        <td class="fs-12 text-muted" style="max-width:280px;">
-                                            @if($activity->properties && $activity->properties->count())
-                                                @php
-                                                    $changed = $activity->properties->get('attributes', []);
-                                                    $keys    = array_keys($changed ?? []);
-                                                @endphp
-                                                @if(count($keys))
-                                                    <span class="text-dark">{{ implode(', ', array_slice($keys, 0, 4)) }}</span>
-                                                    @if(count($keys) > 4)
-                                                        <span class="text-muted"> +{{ count($keys) - 4 }} more</span>
-                                                    @endif
-                                                @else
-                                                    <span class="text-muted">—</span>
-                                                @endif
-                                            @else
-                                                <span class="text-muted">—</span>
-                                            @endif
-                                        </td>
                                         <td class="text-muted fs-12" style="white-space:nowrap;">
                                             <span data-bs-toggle="tooltip" title="{{ $activity->created_at->format('d M Y H:i') }}">
                                                 {{ $activity->created_at->diffForHumans() }}
                                             </span>
                                         </td>
+                                        <td>
+                                            <a href="{{ route('activities.show', $activity) }}" class="avatar-text avatar-sm" data-bs-toggle="tooltip" title="View Details">
+                                                <i class="feather feather-eye fs-14"></i>
+                                            </a>
+                                        </td>
                                     </tr>
                                     @empty
                                     <tr>
-                                        <td colspan="5" class="text-center py-5 text-muted">
+                                        <td colspan="6" class="text-center py-5 text-muted">
                                             <i class="feather-activity fs-1 d-block mb-2"></i>
                                             No activity records found.
                                         </td>

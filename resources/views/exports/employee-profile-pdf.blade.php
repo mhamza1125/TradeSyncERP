@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="en">
 <head>
 <title>Employee Profile — {{ $employee->employee_name }}</title>
@@ -6,9 +6,9 @@
 </head>
 <body>
 
-@include('exports.partials._pdf-company-header', ['reportTitle' => 'Employee Profile', 'reportSubtitle' => $employee->employee_name])
+@include('exports.partials._pdf-company-header')
 
-@include('exports.partials._pdf-company-footer', ['centerText' => $employee->employee_name])
+@include('exports.partials._pdf-company-footer')
 
 <div class="doc-banner">
     <table>

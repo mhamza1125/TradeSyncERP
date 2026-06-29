@@ -36,11 +36,10 @@
                         @error('status')<div class="invalid-feedback">{{ $message }}</div>@enderror
                     </div>
                     <div class="col-lg-4 mb-4">
-                        <label class="form-label">ETD</label>
+                        <label class="form-label">Required Date</label>
                         <input type="date" name="required_by"
                                class="form-control @error('required_by') is-invalid @enderror"
                                value="{{ old('required_by', isset($customerOrder) ? $customerOrder->required_by?->toDateString() : '') }}">
-                        <small class="text-muted">Estimated Time of Departure / Delivery</small>
                         @error('required_by')<div class="invalid-feedback">{{ $message }}</div>@enderror
                     </div>
                     <div class="col-lg-8 mb-4">

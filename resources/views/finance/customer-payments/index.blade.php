@@ -84,8 +84,8 @@
                                 <thead>
                                     <tr>
                                         <th>Date</th>
-                                        <th>Customer</th>
                                         <th>Invoice Ref</th>
+                                        <th>Customer</th>
                                         <th>Currency</th>
                                         <th>FC Received</th>
                                         <th>Exchange Rate</th>
@@ -99,14 +99,15 @@
                                     <tr class="single-item">
                                         <td>{{ \Carbon\Carbon::parse($payment->payment_date)->format('d M Y') }}</td>
                                         <td>
-                                            <a href="{{ route('masters.customers.show', $payment->customer) }}" class="hstack gap-3">
-                                                <div class="avatar-text avatar-md bg-soft-primary text-primary">
-                                                    {{ strtoupper(substr($payment->customer->customer_name, 0, 1)) }}
-                                                </div>
-                                                <span class="text-truncate-1-line">{{ $payment->customer->customer_name }}</span>
-                                            </a>
+                                            @if($payment->invoice_reference)
+                                                <a href="{{ route('customer-payments.show', $payment) }}" class="fw-semibold text-primary">
+                                                    {{ $payment->invoice_reference }}
+                                                </a>
+                                            @else
+                                                <span class="text-muted">—</span>
+                                            @endif
                                         </td>
-                                        <td>{{ $payment->invoice_reference ?? '—' }}</td>
+                                        <td>{{ $payment->customer->customer_name }}</td>
                                         <td>{{ $payment->foreign_currency }}</td>
                                         <td class="fw-semibold">{{ number_format($payment->received_fc, 2) }}</td>
                                         <td>{{ number_format($payment->exchange_rate, 4) }}</td>

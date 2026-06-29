@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="en">
 <head>
 <title>Customer Orders</title>
@@ -6,9 +6,9 @@
 </head>
 <body>
 
-@include('exports.partials._pdf-company-header', ['reportTitle' => 'Customer Orders'])
+@include('exports.partials._pdf-company-header')
 
-@include('exports.partials._pdf-company-footer', ['centerText' => 'Customer Orders'])
+@include('exports.partials._pdf-company-footer')
 
 <div class="doc-banner">
     <table>
@@ -31,7 +31,7 @@
             <th style="width:110px">Order Code</th>
             <th>Customer</th>
             <th style="width:90px">Order Date</th>
-            <th style="width:90px">Delivery Date</th>
+            <th style="width:90px">Required Date</th>
             <th style="width:70px text-center">Status</th>
             <th class="text-right" style="width:90px">Items</th>
         </tr>
@@ -43,7 +43,7 @@
             <td class="fw-bold">{{ $order->order_code }}</td>
             <td>{{ $order->customer->customer_name }}</td>
             <td>{{ $order->order_date->format('d M Y') }}</td>
-            <td>{{ $order->delivery_date ? $order->delivery_date->format('d M Y') : '—' }}</td>
+            <td>{{ $order->required_by ? $order->required_by->format('d M Y') : '—' }}</td>
             <td class="text-center">
                 @php
                     $sc = match($order->status) {

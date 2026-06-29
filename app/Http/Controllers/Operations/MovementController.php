@@ -126,6 +126,8 @@ class MovementController extends Controller
                 ->withInput();
         }
 
+        Sample::syncStatusFromMovements($movement->items()->pluck('sample_id')->toArray());
+
         return redirect()->route('movements.index')
             ->with('success', "Movement event recorded ({$itemsCreated} variation line(s)).");
     }
@@ -146,15 +148,42 @@ class MovementController extends Controller
     public function edit(Movement $movement)
     {
         $movement->load([
-            'items.sample',
+            'items.sample.customer',
+            'items.sample.variations.color',
+            'items.sample.variations.size',
             'items.variation.color',
             'items.variation.size',
             'employees',
+            'inspectionRun.inspection',
         ]);
 
+        $samples   = Sample::with(['customer', 'variations.color', 'variations.size'])->orderBy('sample_code')->get();
         $employees = Employee::where('status', true)->orderBy('employee_name')->get();
+        $inspectionRuns = InspectionRun::with('inspection')->latest()->get();
 
-        return view('operations.movements.edit', compact('movement', 'employees'));
+        // Build same JSON structures as create for the JS
+        $samplesJson = $samples->keyBy('id')->map(fn ($s) => [
+            'code'       => $s->sample_code,
+            'product'    => $s->product_name ?? '',
+            'customer'   => $s->customer?->customer_name ?? '',
+            'variations' => $s->variations->map(fn ($v) => [
+                'id'    => $v->id,
+                'color' => optional($v->color)->name,
+                'size'  => optional($v->size)->name,
+                'qty'   => $v->quantity,
+            ])->values(),
+        ]);
+
+        $inspectionRunsJson = $inspectionRuns->keyBy('id')->map(fn ($run) => [
+            'label'       => ($run->inspection->report_number ?? 'Inspection #' . $run->inspection_id)
+                             . ' — Run #' . ($run->run_number ?? $run->id),
+            'employeeIds' => $run->inspection?->inspectors?->pluck('id')->toArray() ?? [],
+        ]);
+
+        return view('operations.movements.edit', compact(
+            'movement', 'samples', 'employees', 'inspectionRuns',
+            'samplesJson', 'inspectionRunsJson'
+        ));
     }
 
     public function update(UpdateMovementRequest $request, Movement $movement)
@@ -162,26 +191,48 @@ class MovementController extends Controller
         $data = $request->validated();
 
         $movement->update([
-            'actual_return_date' => $data['actual_return_date'] ?? $movement->actual_return_date,
-            'status'             => $data['status'],
-            'remarks'            => $data['remarks'] ?? $movement->remarks,
+            'inspection_run_id'    => $data['inspection_run_id'] ?? null,
+            'issue_date'           => $data['issue_date'],
+            'expected_return_date' => $data['expected_return_date'] ?? null,
+            'alert_days'           => $data['alert_days'] ?? null,
+            'actual_return_date'   => $data['actual_return_date'] ?? null,
+            'status'               => $data['status'],
+            'remarks'              => $data['remarks'] ?? null,
         ]);
 
-        if (!empty($data['employee_ids'])) {
-            $movement->employees()->sync($data['employee_ids']);
+        $movement->employees()->sync($data['employee_ids']);
+
+        // Capture old sample IDs before replacing
+        $oldSampleIds = $movement->items()->pluck('sample_id')->toArray();
+
+        // Replace all items
+        $movement->items()->delete();
+        $newSampleIds = [];
+        $itemsCreated = 0;
+        foreach ($data['items'] as $itemData) {
+            $qty = (int) ($itemData['quantity'] ?? 0);
+            if ($qty < 1) {
+                continue;
+            }
+            $movement->items()->create([
+                'sample_id'           => $itemData['sample_id'],
+                'sample_variation_id' => !empty($itemData['variation_id']) ? $itemData['variation_id'] : null,
+                'quantity'            => $qty,
+                'actual_return_date'  => $itemData['actual_return_date'] ?? null,
+                'status'              => $itemData['item_status'] ?: null,
+                'remarks'             => $itemData['item_remarks'] ?? null,
+            ]);
+            $newSampleIds[] = $itemData['sample_id'];
+            $itemsCreated++;
         }
 
-        if (!empty($data['items'])) {
-            foreach ($data['items'] as $itemData) {
-                $movement->items()
-                    ->where('id', $itemData['id'])
-                    ->update([
-                        'actual_return_date' => $itemData['actual_return_date'] ?? null,
-                        'status'             => $itemData['status'] ?: null,
-                        'remarks'            => $itemData['remarks'] ?? null,
-                    ]);
-            }
+        if ($itemsCreated === 0) {
+            return back()
+                ->withErrors(['items' => 'Please enter a quantity greater than zero for at least one item.'])
+                ->withInput();
         }
+
+        Sample::syncStatusFromMovements(array_merge($oldSampleIds, $newSampleIds));
 
         return redirect()->route('movements.show', $movement)
             ->with('success', 'Movement updated successfully.');

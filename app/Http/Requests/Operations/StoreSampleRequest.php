@@ -23,7 +23,6 @@ class StoreSampleRequest extends FormRequest
             'sample_reference'   => ['nullable', 'string', 'max:255'],
             'physical_location'  => ['nullable', 'string', 'max:255'],
             'receive_date'       => ['required', 'date'],
-            'priority_level'     => ['required', Rule::in(['Low', 'Medium', 'High', 'Urgent'])],
             'alert_days'         => ['nullable', 'integer', 'min:1'],
             'remarks'            => ['nullable', 'string'],
             'variations'             => ['nullable', 'array'],

@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="en">
 <head>
 <title>Supplier Profile — {{ $supplier->name }}</title>
@@ -6,9 +6,9 @@
 </head>
 <body>
 
-@include('exports.partials._pdf-company-header', ['reportTitle' => 'Supplier Profile', 'reportSubtitle' => $supplier->name])
+@include('exports.partials._pdf-company-header')
 
-@include('exports.partials._pdf-company-footer', ['centerText' => $supplier->name])
+@include('exports.partials._pdf-company-footer')
 
 <div class="doc-banner">
     <table>

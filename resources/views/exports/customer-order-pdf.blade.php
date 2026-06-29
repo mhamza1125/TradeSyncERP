@@ -6,9 +6,9 @@
 </head>
 <body>
 
-@include('exports.partials._pdf-company-header', ['reportTitle' => 'Customer Order', 'reportRef' => $order->order_code])
+@include('exports.partials._pdf-company-header')
 
-@include('exports.partials._pdf-company-footer', ['centerText' => $order->order_code])
+@include('exports.partials._pdf-company-footer')
 
 {{-- Document banner --}}
 <div class="doc-banner">
@@ -55,10 +55,10 @@
                             <span class="badge badge-{{ $sc }}">{{ $order->status }}</span>
                         </td>
                     </tr>
-                    @if($order->delivery_date)
+                    @if($order->required_by)
                     <tr>
-                        <td class="info-label">Delivery Date</td>
-                        <td class="info-value">{{ $order->delivery_date->format('d M Y') }}</td>
+                        <td class="info-label">Required Date</td>
+                        <td class="info-value">{{ $order->required_by->format('d M Y') }}</td>
                     </tr>
                     @endif
                 </table>
@@ -105,39 +105,21 @@
                 <th style="width:30px">#</th>
                 <th>Product Category</th>
                 <th class="text-right" style="width:100px">Quantity</th>
-                <th class="text-right" style="width:110px">Unit Price</th>
-                <th class="text-right" style="width:120px">Total</th>
-                <th style="width:120px">Remarks</th>
+                <th>Description</th>
             </tr>
         </thead>
         <tbody>
-            @php $grandTotal = 0; @endphp
             @forelse($order->items as $i => $item)
-            @php
-                $lineTotal = ($item->unit_price ?? 0) * ($item->quantity ?? 0);
-                $grandTotal += $lineTotal;
-            @endphp
             <tr>
                 <td>{{ $i + 1 }}</td>
                 <td>{{ $item->productCategory->category_name ?? '—' }}</td>
                 <td class="text-right">{{ number_format($item->quantity ?? 0) }}</td>
-                <td class="text-right">{{ $item->unit_price ? number_format($item->unit_price, 2) : '—' }}</td>
-                <td class="text-right">{{ $lineTotal > 0 ? number_format($lineTotal, 2) : '—' }}</td>
-                <td class="text-muted">{{ $item->remarks ?? '—' }}</td>
+                <td class="text-muted">{{ $item->description ?? '—' }}</td>
             </tr>
             @empty
-            <tr><td colspan="6" class="no-data">No items on this order.</td></tr>
+            <tr><td colspan="4" class="no-data">No items on this order.</td></tr>
             @endforelse
         </tbody>
-        @if($order->items->count() && $grandTotal > 0)
-        <tfoot>
-            <tr>
-                <td colspan="4" class="text-right">Grand Total</td>
-                <td class="text-right">{{ number_format($grandTotal, 2) }}</td>
-                <td></td>
-            </tr>
-        </tfoot>
-        @endif
     </table>
 </div>
 

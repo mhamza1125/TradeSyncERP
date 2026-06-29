@@ -45,6 +45,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
 
     // Recent Activities
     Route::get('/activities', [ActivityController::class, 'index'])->name('activities.index');
+    Route::get('/activities/{activity}', [ActivityController::class, 'show'])->name('activities.show');
 
     // Profile
     Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
