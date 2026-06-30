@@ -12,6 +12,8 @@ use App\Models\Defect;
 use App\Models\InspectionSection;
 use App\Models\InspectionTypeSectionDefault;
 use App\Models\Sample;
+use App\Models\SampleColor;
+use App\Models\SampleSize;
 use App\Services\Inspection\AqlCalculationService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -107,9 +109,11 @@ class InspectionRunController extends Controller
         );
 
         $aqlJsData = $this->aql->tableForJs();
+        $colors = SampleColor::orderBy('name')->get();
+        $sizes = SampleSize::orderBy('name')->get();
 
         return view('operations.inspections.runs.edit', compact(
-            'inspection', 'run', 'defects', 'sectionMap', 'aqlJsData'
+            'inspection', 'run', 'defects', 'sectionMap', 'aqlJsData', 'colors', 'sizes'
         ));
     }
 

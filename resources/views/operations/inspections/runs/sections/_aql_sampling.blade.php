@@ -306,6 +306,20 @@
         "6.5":   { 2:{Ac:0,Re:1},3:{Ac:0,Re:1,Ss:2},5:{Ac:1,Re:2,Ss:8},8:{Ac:1,Re:2},13:{Ac:2,Re:3},20:{Ac:3,Re:4},32:{Ac:5,Re:6},50:{Ac:7,Re:8},80:{Ac:10,Re:11},125:{Ac:14,Re:15},200:{Ac:21,Re:22},315:{Ac:21,Re:22,Ss:200},500:{Ac:21,Re:22,Ss:200},800:{Ac:21,Re:22,Ss:200},1250:{Ac:21,Re:22,Ss:200},2000:{Ac:21,Re:22,Ss:200} }
     };
 
+    // ── Master data from DB ──────────────────────────────────────────────────
+    const AQL_COLORS = @json(($colors ?? collect())->pluck('name'));
+    const AQL_SIZES  = @json(($sizes  ?? collect())->pluck('name'));
+
+    function buildAqlColorOptions(selected) {
+        return '<option value="">— Color —</option>' +
+            AQL_COLORS.map(c => `<option value="${escHtml(c)}"${selected === c ? ' selected' : ''}>${escHtml(c)}</option>`).join('');
+    }
+
+    function buildAqlSizeOptions(selected) {
+        return '<option value="">— Size —</option>' +
+            AQL_SIZES.map(s => `<option value="${escHtml(s)}"${selected === s ? ' selected' : ''}>${escHtml(s)}</option>`).join('');
+    }
+
     // ── State ────────────────────────────────────────────────────────────────
     let aqlVariations = @json($a?->variations ?? []);
     if (!Array.isArray(aqlVariations)) aqlVariations = [];
@@ -362,16 +376,20 @@
         } else {
             tbody.innerHTML = aqlVariations.map((v, i) => `
                 <tr>
-                    <td><input type="text" class="form-control form-control-sm"
-                               name="aql[variations][${i}][color]"
-                               value="${escHtml(v.color)}"
-                               onchange="aqlUpdateVariation(${i},'color',this.value)"
-                               placeholder="e.g. Red"></td>
-                    <td><input type="text" class="form-control form-control-sm"
-                               name="aql[variations][${i}][size]"
-                               value="${escHtml(v.size)}"
-                               onchange="aqlUpdateVariation(${i},'size',this.value)"
-                               placeholder="e.g. M"></td>
+                    <td>
+                        <select class="form-select form-select-sm"
+                                name="aql[variations][${i}][color]"
+                                onchange="aqlUpdateVariation(${i},'color',this.value)">
+                            ${buildAqlColorOptions(v.color)}
+                        </select>
+                    </td>
+                    <td>
+                        <select class="form-select form-select-sm"
+                                name="aql[variations][${i}][size]"
+                                onchange="aqlUpdateVariation(${i},'size',this.value)">
+                            ${buildAqlSizeOptions(v.size)}
+                        </select>
+                    </td>
                     <td><input type="number" class="form-control form-control-sm text-center"
                                name="aql[variations][${i}][order_qty]"
                                value="${v.order_qty}"

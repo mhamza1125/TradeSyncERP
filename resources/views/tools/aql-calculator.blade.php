@@ -503,6 +503,10 @@
 (function() {
     'use strict';
 
+    // ── Master data from DB ──────────────────────────────────────────────────
+    const COLORS = @json($colors->pluck('name'));
+    const SIZES  = @json($sizes->pluck('name'));
+
     // ── ISO 2859-1 Reference Data ────────────────────────────────────────────
     const LOT_RANGES = [
         { Min:2,      Max:8,                  I:2,   II:2,   III:3,   S1:2,  S2:2,  S3:2,  S4:2   },
@@ -762,17 +766,31 @@
         distRecalc();
     };
 
+    function buildColorOptions(selected) {
+        return '<option value="">— Color —</option>' +
+            COLORS.map(c => `<option value="${escHtml(c)}"${selected === c ? ' selected' : ''}>${escHtml(c)}</option>`).join('');
+    }
+
+    function buildSizeOptions(selected) {
+        return '<option value="">— Size —</option>' +
+            SIZES.map(s => `<option value="${escHtml(s)}"${selected === s ? ' selected' : ''}>${escHtml(s)}</option>`).join('');
+    }
+
     function distRenderRows() {
         const tbody = document.getElementById('dist-rows-tbody');
         if (!tbody) return;
         tbody.innerHTML = distRows.map((r, i) => `
             <tr>
-                <td><input type="text" class="form-control form-control-sm" value="${escHtml(r.color)}"
-                           placeholder="e.g. Red"
-                           onchange="distUpdateRow(${i},'color',this.value)"></td>
-                <td><input type="text" class="form-control form-control-sm" value="${escHtml(r.size)}"
-                           placeholder="e.g. M"
-                           onchange="distUpdateRow(${i},'size',this.value)"></td>
+                <td>
+                    <select class="form-select form-select-sm" onchange="distUpdateRow(${i},'color',this.value)">
+                        ${buildColorOptions(r.color)}
+                    </select>
+                </td>
+                <td>
+                    <select class="form-select form-select-sm" onchange="distUpdateRow(${i},'size',this.value)">
+                        ${buildSizeOptions(r.size)}
+                    </select>
+                </td>
                 <td><input type="number" class="form-control form-control-sm text-center" value="${r.qty}"
                            min="0" oninput="distUpdateRow(${i},'qty',this.value)"></td>
                 <td class="text-center">

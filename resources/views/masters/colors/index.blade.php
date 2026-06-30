@@ -5,9 +5,13 @@
 @section('content')
 <div class="nxl-content apps-container">
     <div class="nxl-content without-header nxl-full-content">
+        <div class="main-content d-flex">
         <div class="content-area" data-scrollbar-target="#psScrollbarInit">
             <div class="content-area-header bg-white sticky-top">
                 <div class="page-header-left d-flex align-items-center">
+                    <a href="javascript:void(0);" class="app-sidebar-open-trigger me-2">
+                        <i class="feather-align-left fs-24"></i>
+                    </a>
                     <div class="page-header-title"><h5 class="m-b-10 mb-0">Colors</h5></div>
                     <ul class="breadcrumb ms-3 mb-0">
                         <li class="breadcrumb-item"><a href="{{ route('dashboard') }}">Home</a></li>
@@ -34,7 +38,7 @@
             </div>
 
             <div id="collapseFilters" class="accordion-collapse collapse">
-                <div class="accordion-body pb-2 px-3 pt-3">
+                <div class="accordion-body pb-2 px-3 pt-3 bg-white border-bottom">
                     <form method="GET" action="{{ route('masters.colors.index') }}">
                         <div class="row g-3">
                             <div class="col-md-4">
@@ -116,6 +120,7 @@
                     @endif
                 </div>
             </div>
+        </div>
         </div>
     </div>
 </div>
