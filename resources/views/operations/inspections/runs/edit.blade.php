@@ -551,13 +551,19 @@ foreach ($visibleRunSections as $rs) {
 
                                 @case('factory_readiness')
                                     @include('operations.inspections.runs.sections._factory_readiness', [
-                                        'runSection' => $runSection,
+                                        'runSection'  => $runSection,
+                                        'uploadUrl'   => $uploadUrl,
+                                        'inspection'  => $inspection,
+                                        'run'         => $run,
                                     ])
                                 @break
 
                                 @case('loading_schedule_and_timing')
                                     @include('operations.inspections.runs.sections._loading_schedule', [
-                                        'runSection' => $runSection,
+                                        'runSection'  => $runSection,
+                                        'uploadUrl'   => $uploadUrl,
+                                        'inspection'  => $inspection,
+                                        'run'         => $run,
                                     ])
                                 @break
 
@@ -971,10 +977,15 @@ foreach ($visibleRunSections as $rs) {
 
         let complete = 0;
 
+        // Source of truth is the canonical hidden-status-* input (same field the sidebar
+        // checkmarks, the PDF export, and the server-side counter all key off of) — NOT the
+        // human-readable badge text, which some sections (e.g. Selected Cartons SI, Files To
+        // Review) legitimately replace with their own label ("3 Carton(s)", "Acknowledged")
+        // and would otherwise silently undercount.
         document.querySelectorAll('[data-section-anchor]').forEach(function (card) {
             const sectionId = card.dataset.sectionAnchor;
-            const badge = document.getElementById('status-badge-' + sectionId);
-            if (badge && badge.textContent.trim() === 'Complete') complete++;
+            const hidden = document.getElementById('hidden-status-' + sectionId);
+            if (hidden && hidden.value === 'complete') complete++;
         });
 
         const pct = Math.round(complete / total * 100);
@@ -1351,8 +1362,9 @@ foreach ($visibleRunSections as $rs) {
         document.querySelectorAll('[data-section-anchor]').forEach(function (card) {
             const sectionId   = card.dataset.sectionAnchor;
             const sectionName = card.dataset.sectionName || ('Section ' + sectionId);
-            const badge = document.getElementById('status-badge-' + sectionId);
-            if (badge && badge.textContent.trim() !== 'Complete' && badge.textContent.trim() !== 'N/A') {
+            const hidden = document.getElementById('hidden-status-' + sectionId);
+            const status = hidden ? hidden.value : 'pending';
+            if (status !== 'complete' && status !== 'na') {
                 pending.push(sectionName);
             }
         });

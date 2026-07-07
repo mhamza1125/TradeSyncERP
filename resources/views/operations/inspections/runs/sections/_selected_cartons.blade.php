@@ -1,8 +1,10 @@
 {{-- Selected Cartons SI --}}
-{{-- Expects: $runSection --}}
+{{-- Expects: $runSection; $colors, $sizes are shared from the parent edit view --}}
 @php
     $cartons = $runSection->data['cartons'] ?? [['box_number'=>'','size'=>'','color'=>'','qty_inspected'=>'']];
     $rsId    = $runSection->id;
+    $colorOptions = ($colors ?? collect())->pluck('name');
+    $sizeOptions  = ($sizes  ?? collect())->pluck('name');
 @endphp
 
 <div class="mb-2">
@@ -26,18 +28,20 @@
                            placeholder="Box #">
                 </div>
                 <div class="col-6 col-md-3">
-                    <input type="text"
-                           name="sections[{{ $rsId }}][data][cartons][{{ $ci }}][size]"
-                           class="form-control form-control-sm"
-                           value="{{ $carton['size'] ?? '' }}"
-                           placeholder="Size">
+                    <select name="sections[{{ $rsId }}][data][cartons][{{ $ci }}][size]" class="form-select form-select-sm">
+                        <option value="">— Size —</option>
+                        @foreach($sizeOptions as $sz)
+                        <option value="{{ $sz }}" @selected(($carton['size'] ?? '') === $sz)>{{ $sz }}</option>
+                        @endforeach
+                    </select>
                 </div>
                 <div class="col-6 col-md-3">
-                    <input type="text"
-                           name="sections[{{ $rsId }}][data][cartons][{{ $ci }}][color]"
-                           class="form-control form-control-sm"
-                           value="{{ $carton['color'] ?? '' }}"
-                           placeholder="Color">
+                    <select name="sections[{{ $rsId }}][data][cartons][{{ $ci }}][color]" class="form-select form-select-sm">
+                        <option value="">— Color —</option>
+                        @foreach($colorOptions as $cl)
+                        <option value="{{ $cl }}" @selected(($carton['color'] ?? '') === $cl)>{{ $cl }}</option>
+                        @endforeach
+                    </select>
                 </div>
                 <div class="col-5 col-md-2">
                     <input type="number"
@@ -79,21 +83,34 @@
     const countEl   = document.getElementById('carton-count-' + rsId);
     if (!container) return;
 
+    const CARTON_COLORS = @json($colorOptions->values());
+    const CARTON_SIZES  = @json($sizeOptions->values());
+
+    function escHtml(s) {
+        return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+    }
+
+    function buildSizeOptions(selected) {
+        return '<option value="">— Size —</option>' +
+            CARTON_SIZES.map(s => `<option value="${escHtml(s)}"${selected === s ? ' selected' : ''}>${escHtml(s)}</option>`).join('');
+    }
+
+    function buildColorOptions(selected) {
+        return '<option value="">— Color —</option>' +
+            CARTON_COLORS.map(c => `<option value="${escHtml(c)}"${selected === c ? ' selected' : ''}>${escHtml(c)}</option>`).join('');
+    }
+
     function getCount() {
         return container.querySelectorAll('.carton-row').length;
     }
 
     function updateCount() {
         if (countEl) countEl.textContent = getCount() + ' carton(s) logged';
-        // Update hidden status
-        const hidden = document.getElementById('hidden-status-' + rsId);
-        const badge  = document.getElementById('status-badge-' + rsId);
-        const hasRows = getCount() > 0;
-        if (hidden) hidden.value = hasRows ? 'pending' : 'pending';
-        if (badge) {
-            badge.className = hasRows ? 'badge bg-soft-info text-info fs-11' : 'badge bg-soft-secondary text-secondary fs-11';
-            badge.textContent = hasRows ? getCount() + ' Carton(s)' : 'Pending';
-        }
+        // Completion status for this section is owned solely by the "Mark as Complete"
+        // button (see applyStatusEverywhere() in edit.blade.php). This row-count display
+        // must not touch hidden-status-*/status-badge-* — doing so previously forced the
+        // section back to "pending" on every page load, even after it had been saved as
+        // "complete".
     }
 
     function reindex() {
@@ -121,12 +138,14 @@
                            class="form-control form-control-sm" value="${data.box_number ?? ''}" placeholder="Box #">
                 </div>
                 <div class="col-6 col-md-3">
-                    <input type="text" name="sections[${rsId}][data][cartons][${idx}][size]"
-                           class="form-control form-control-sm" value="${data.size ?? ''}" placeholder="Size">
+                    <select name="sections[${rsId}][data][cartons][${idx}][size]" class="form-select form-select-sm">
+                        ${buildSizeOptions(data.size ?? '')}
+                    </select>
                 </div>
                 <div class="col-6 col-md-3">
-                    <input type="text" name="sections[${rsId}][data][cartons][${idx}][color]"
-                           class="form-control form-control-sm" value="${data.color ?? ''}" placeholder="Color">
+                    <select name="sections[${rsId}][data][cartons][${idx}][color]" class="form-select form-select-sm">
+                        ${buildColorOptions(data.color ?? '')}
+                    </select>
                 </div>
                 <div class="col-5 col-md-2">
                     <input type="number" name="sections[${rsId}][data][cartons][${idx}][qty_inspected]"

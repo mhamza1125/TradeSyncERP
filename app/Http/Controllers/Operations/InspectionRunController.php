@@ -132,7 +132,6 @@ class InspectionRunController extends Controller
             'aql.found_critical'                 => ['nullable', 'integer', 'min:0'],
             'aql.found_major'                    => ['nullable', 'integer', 'min:0'],
             'aql.found_minor'                    => ['nullable', 'integer', 'min:0'],
-            'aql.notes'                          => ['nullable', 'string', 'max:2000'],
             'aql.variations'                     => ['nullable', 'array'],
             'aql.variations.*.color'             => ['nullable', 'string', 'max:100'],
             'aql.variations.*.size'              => ['nullable', 'string', 'max:100'],
@@ -222,7 +221,6 @@ class InspectionRunController extends Controller
                         'found_major'      => $foundMajor,
                         'found_minor'      => $foundMinor,
                         'verdict'          => $verdict,
-                        'notes'            => $aqlInput['notes'] ?? null,
                         'variations'       => $variations,
                     ]
                 );

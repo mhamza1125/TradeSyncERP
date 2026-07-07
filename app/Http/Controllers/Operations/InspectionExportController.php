@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Operations;
 
 use App\Http\Controllers\Controller;
+use App\Models\Defect;
 use App\Models\Inspection;
 use App\Models\InspectionRun;
 use Barryvdh\DomPDF\Facade\Pdf;
@@ -33,6 +34,8 @@ class InspectionExportController extends Controller
             'inspection' => $inspection,
             'runs'       => collect([$run]),
             'imgBase64'  => $this->imgBase64Closure(),
+            'defects'    => Defect::all()->keyBy('id'),
+            'logoBase64' => $this->logoBase64(),
         ])
         ->setPaper('a4', 'portrait')
         ->setOption('isHtml5ParserEnabled', true)
@@ -76,6 +79,8 @@ class InspectionExportController extends Controller
             'inspection' => $inspection,
             'runs'       => $runs,
             'imgBase64'  => $this->imgBase64Closure(),
+            'defects'    => Defect::all()->keyBy('id'),
+            'logoBase64' => $this->logoBase64(),
         ])
         ->setPaper('a4', 'portrait')
         ->setOption('isHtml5ParserEnabled', true)
@@ -85,6 +90,21 @@ class InspectionExportController extends Controller
         $filename = sprintf('INS-%s-AllRuns.pdf', $inspection->report_number);
 
         return $pdf->download($filename);
+    }
+
+    // ── Helper: company logo as base64 URI, if the asset exists ───────────────
+
+    private function logoBase64(): ?string
+    {
+        $path = public_path('assets/images/logo-trade.png');
+
+        if (!file_exists($path)) {
+            return null;
+        }
+
+        $mime = mime_content_type($path) ?: 'image/png';
+
+        return 'data:' . $mime . ';base64,' . base64_encode(file_get_contents($path));
     }
 
     // ── Helper: closure that converts a storage-relative path to base64 URI ──

@@ -1,47 +1,52 @@
 ===================================================================================================================
 
-1. http://127.0.0.1:8000/activities
-Make these activities more meaningfull. Currently it shows the subject along with the record id. And changes only display the columnsn updated. Make it better and add another page to see the activity detals. Also make the Subject column more meaning full. For record updateon there should be two columns in it's view page could be in json form or other. IT should tell teh before and updated things. 
-Also add activities cleanup ocassionally like montholy weekly yearly etc. Whichever suits the best. 
+PDF Export — Section Count Bug
+The inspection has 34 sections attached, all completed (pass/fail, none pending). The export incorrectly shows 38 sections.
 
-2. http://127.0.0.1:8000/customer-orders
-Update it's print view and update the column name to require date not the delivery date. Also update the label ETD form it's add order and edit order page. As it is using hte ETD (Estimated time delivery / date). It will be require date. 
-Also it has header like "Customer Orders Confidential" That is not required and unnecessary. 
-Also the footer shows this "Customer Orders" that is not needed. 
-Also fix the footer page count in all the pdf exports as is ti shouwing "Page 1 of 0". There should not be the zero. IT should display the total number of exported pages. 
-And for footer content. That should be center aligned. 
-For main header. Remove this date added "28 Jun 2026, 17:33" and also the text "TradeSyncERP Quality Control & ERP System". As we are only using the logo in the header. And center align the header logo
+Find and remove the extra sections appearing in the export that are not actually attached to this inspection (likely orphaned/deleted/unused sections from the database).
+These phantom sections are showing as "pending" — once the unused sections are removed, this should resolve itself.
+Verify the final export section count matches exactly the 34 sections attached to the inspection.
 
-3. http://127.0.0.1:8000/customer-orders/2
-Same main header and footer cleanup as explained in #2
-This page view is showing the require date but there is no require date shown in the pdf export. Please review this pdf expoert and all the other so they matches with thier view page from which that pdf is being exported. So they match the labels and other details. 
-Update the table label of "Product Name" to "Product Categorry" as teh caetegory is being selectd in creation / edition of order. Same label should be there as well. Also there is no unit you can remove that column form the view of table "Requested Items (1)"
+PDF Export — Image "Upload" Label
+Some images in the export incorrectly show an "upload" label. These are general/reference images and should have no label — leave the caption area empty for them.
 
-4. http://127.0.0.1:8000/samples/7/edit
-Fix error: Call to undefined relationship [testingParameters] on model [App\Models\Sample].
-app\Http\Controllers\Operations\SampleController.php:150
-$sample->load('variations.color', 'variations.size', 'testingParameters.parameter', 'attachments');
+Inspection Run Edit Page (/inspections/2/runs/2/edit)
+1. AQL Sampling
+Remove the "AQL Notes" field — it's redundant since the "Remarks" field already serves this purpose.
+2. Carton Dimension and Weight
+Current row layout is too cramped (Length, Width, Height, Gross Weight, Net Weight all squeezed into one row). Update to a two-row layout per entry:
 
-5. http://127.0.0.1:8000/movements/1/edit
-This edit page view is not matching with the create page. Please update that according to the create page. 
+Row 1: dimension/weight fields (Length, Width, Height, Gross Weight, Net Weight) — give these more width.
+Row 2: Remarks and Attachment (moved here to free up space in row 1).
 
-6. http://127.0.0.1:8000/samples
-Remove the priority form the samples. Also connect the starus with the sample movement. Keep only static two statuses like In testing (If it's pending sample movemtn is there.). If it dont' have any pending smaple movment (Means we didint 'received all teh sample moved back. it's pending.) then it's status will be Received (Or any other )
-The thing is the sample status should be auto updated based on the smaple movemnt. Also sample movment also have the receiving back of moved sample. Means opening / closing or any other status for smaple movment. 
+3. Factory Readiness Check
 
-7. http://127.0.0.1:8000/samples/9/edit
-Fix error: Call to undefined relationship [testingParameters] on model [App\Models\Sample].
-app\Http\Controllers\Operations\SampleController.php:150
- $sample->load('variations.color', 'variations.size', 'testingParameters.parameter', 'attachments');
+Add image attachment capability to each row, matching the pattern used in the "Container Condition" section.
+Adjust table column widths — use the "Functional Test" section as the reference for correct column proportions.
 
-8. http://127.0.0.1:8000/customer-payments
-Shuffle the position of "Customer" and "Invoice Ref" column. And make the "invoice ref" clickable so ti opens up the view page of that payment. Remove the letter icon form teh "Customer" column. and remove the link form the customer name. For referenct you can see this view columns. "http://127.0.0.1:8000/customer-invoices"
+4. Labels Check
+Adjust table column widths to match the "Functional Test" section's proportions.
+5. Loading Schedule & Timing
 
-9. http://127.0.0.1:8000/masters/customers
-Show the customer attached curency in that table view Currenlty is not shown. Fix that. 
+Add image attachment capability to each row, matching the "Container Condition" section.
+Adjust table column widths to match the "Functional Test" section's proportions.
 
-10. http://127.0.0.1:8000/
-If possible keep the sidebar scrolled to the position of the opened tab.
+6. Order Quantity vs Packing List
+Adjust table column widths to match the "Functional Test" section's proportions.
+7. Overall Carton Condition
+Adjust table column widths to match the "Functional Test" section's proportions.
+8. Packing Check
+Adjust table column widths to match the "Functional Test" section's proportions.
+9. Preproduction Checklist
+Adjust table column widths to match the "Functional Test" section's proportions.
+10. Raw Material Check
+Adjust table column widths to match the "Functional Test" section's proportions.
+11. Selected Carton SI
+Use Size and Color dropdowns populated with system data, following the same pattern as "AQL Sampling" → "Quantity Distribution by Variation."
+12. Variations and Approved Samples
+Adjust table column widths to match the "Functional Test" section's proportions.
+
+Goal: Complete all items above thoroughly and ensure the module is stable and production-ready.
 
 ===================================================================================================================
 
@@ -61,27 +66,110 @@ http://127.0.0.1:8000/tools/aql-calculator
 It should reflect correct behaviour and follow the caculator in root directory named "AQL-Calculator" with three files. index.html with the view and possible options. script.js with the guidelines and style.css for styling. You can have your own styling but the functionaly should reflect the one in that AQL-Calculator folder. Use all those options and workflow
 Also add there the functionality that this aql calculator not only gives the total samples to be checked for each range but as a separate page / module it should also gives out the samples to be inspected if we give them the sample variations quanitty. 
 
-6. http://127.0.0.1:8000/inspection-sections
-Here also update and display teh sectino record in alphatical order. Keep the same order just in view of that page arrange them alphabetically 
-
-7. http://127.0.0.1:8000/inspections/3
-Display export buttons here as well. curreently thay are only visible in hte edit pages. 
-Here: http://127.0.0.1:8000/inspections/3/edit
-And here: http://127.0.0.1:8000/inspections/3/runs/4/edit
-Also add those export buttions to the view page.
-
-===================================================================================================================
-
-===================================================================================================================
-
 https://work.devshane.site/public/customer-invoices/create
 PO / Invoice No: TS/12/(Texual invoice number)
 
-Improve customer order view 
-
 Favorable Loan (Which will not be received back)
 
-Evaluation paper (Created before inspection). 
+===================================================================================================================
+
+3. Improve pics view in export pdf
+
+=====================================================================================
+Simple Final QC: 
+General Header
+With images of different sections along with some text where needed
+Image grouping with some title and description
+
+Size chart of the sample checked
+having Sizes, Order qty, Checked Qty, Error ratio 
+Another table with conclusion
+Total, Checked, Error (Major, Minor)
+
+Same pattern for different articles
+
+At the bottom there is the conslusion page in texual form 
+
+=====================================================================================
+=====================================================================================
+Higher Final QC: 
+General information and Inspection details
+Different sections with Images
+Each image could have it's own text area for detailing
+Each section will have it's Notes area
+Ordered, Checked, Error Quantities, With Major / Minor errors
+Total rectified, Total rejected details
+
+Result summary page with results
+
+At the end it has the page defining
+Style Name + Color: Checked Qty, Error Qty, QC Result, Corrective Actions
+
+They are also adding the Customer Comments
+
+=====================================================================================
+=====================================================================================
+
+1. Voice command for input fields
+2. Translator English to any language
+3. Image inspection with AI
+4. AQL Calculator Update
+5. Change salary days to 31 Always
+6. Add general details of company in invoice printing
+7. Add bill / PO for the purchase of goods. It will be recorded in expense
+
+===================================================================================================================
+
+Hosting Administration Control Panel: 
+http://www.tradesolutions.pk:8880
+http://158.69.103.250:8880
+https://alma.pakistaniclicks.com:8443 
+Hosting Control Panel Username: tradesolutions.pk
+Hosting Control Panel Password: je6ABg@hDxumz786s
+DB/User: tradesolutions_pk
+Pass: je6ABg@hDxumz786s
+
+===================================================================================================================
+
+=============================================================================================================
+=============================================================================================================
+
+1. On login it is showing the currently running inspections
+
+2. On opening of that inspection it has a sidebar of the things to be tested. 
+Each sections shows things checked / total Like (0/2) or (1/5)
+Showing things to be added / checked in each category of testing
+
+=============================================================================================================
+=============================================================================================================
+Inspection Type: Final QC
+
+Current sidebar shows
+
+Quantity & Sampling count (2/2 completed)
+Selected Cartons SI (X/Y Completed)
+Packing Check SI
+Packing check (CE) SI
+Cover Photo
+Labels check (CE) SI
+Textie - Sample conformity check
+Marking check Si
+Testile & leather - functional
+File to review
+Check measurements SI
+Denim & Textile Defect
+Finish Inspection
+
+To be added
+Techpack comparision (Just like the sample comparision)
+Swatch comparision
+After watch affect
+Water proof testing
+
+Add defects clasifications 
+Critical / Major / Minor
+ 
+Sort sections by name
 
 ===================================================================================================================
 ===================================================================================================================

@@ -1,4 +1,5 @@
-{{-- Carton Dimensions & Weight — multi-row table (one row per carton type / variant) --}}
+{{-- Carton Dimensions & Weight — two rows per carton type / variant:
+     row 1 = dimensions/weight (wide columns), row 2 = remarks + attachments --}}
 {{-- Expects: $runSection, $uploadUrl, $inspection, $run --}}
 @php
     $data        = $runSection->data ?? $runSection->section->default_data ?? [];
@@ -33,25 +34,23 @@
 <p class="text-muted fs-13 mb-2">Add a row for each carton type or variant. Attach measurement proof photos per row.</p>
 
 <div class="table-responsive mb-3">
-    <table class="table table-sm table-bordered align-middle" style="min-width:920px">
+    <table class="table table-sm table-bordered align-middle" style="min-width:820px">
         <thead class="table-light">
             <tr>
                 <th style="width:36px" class="text-center">#</th>
-                <th style="min-width:145px">Carton Type / Variant</th>
-                <th style="width:82px">Length</th>
-                <th style="width:82px">Width</th>
-                <th style="width:82px">Height</th>
-                <th style="width:95px">Gross Wt</th>
-                <th style="width:95px">Net Wt</th>
-                <th style="min-width:120px">Remarks</th>
-                <th style="min-width:170px">Photos</th>
+                <th style="min-width:180px">Carton Type / Variant</th>
+                <th style="width:110px">Length</th>
+                <th style="width:110px">Width</th>
+                <th style="width:110px">Height</th>
+                <th style="width:120px">Gross Wt</th>
+                <th style="width:120px">Net Wt</th>
                 <th style="width:42px"></th>
             </tr>
         </thead>
         <tbody id="carton-dim-body-{{ $rsId }}">
             @foreach($cartons as $ci => $carton)
             @php $taskKey = 'carton_dim_' . $ci; $cartonAtts = $attsByTask->get($taskKey, collect()); @endphp
-            <tr data-idx="{{ $ci }}">
+            <tr data-idx="{{ $ci }}" class="cdw-row-main">
                 <td class="text-muted text-center row-num">{{ $ci + 1 }}</td>
                 <td>
                     <input type="text"
@@ -90,47 +89,56 @@
                            class="form-control form-control-sm"
                            value="{{ $carton['net_weight'] ?? '' }}" placeholder="0.000">
                 </td>
-                <td>
-                    <input type="text"
-                           name="sections[{{ $rsId }}][data][cartons][{{ $ci }}][remarks]"
-                           class="form-control form-control-sm"
-                           value="{{ $carton['remarks'] ?? '' }}" placeholder="Optional…">
-                </td>
-                <td>
-                    <div class="attachment-area" data-upload-url="{{ $uploadUrl }}" data-task-key="{{ $taskKey }}">
-                        <div class="att-previews d-flex flex-wrap gap-1 mb-1">
-                            @foreach($cartonAtts as $att)
-                            <div class="att-thumb position-relative d-inline-block" id="att-{{ $att->id }}">
-                                @if($att->isImage())
-                                    <a href="{{ $att->url }}" target="_blank" rel="noopener noreferrer">
-                                        <img src="{{ $att->url }}" class="rounded border"
-                                             style="width:36px;height:36px;object-fit:cover" alt="">
-                                    </a>
-                                @else
-                                    <a href="{{ $att->url }}" target="_blank" rel="noopener noreferrer"
-                                       class="d-flex align-items-center justify-content-center border rounded bg-light text-decoration-none"
-                                       style="width:36px;height:36px">
-                                        <i class="feather-file text-muted" style="font-size:12px"></i>
-                                    </a>
-                                @endif
-                                <button type="button"
-                                        class="att-delete-btn btn btn-danger btn-sm p-0 position-absolute top-0 end-0 d-flex align-items-center justify-content-center"
-                                        style="width:14px;height:14px;font-size:8px;border-radius:50%;margin:-3px;z-index:1;"
-                                        data-delete-url="{{ route('inspections.runs.attachments.delete', [$inspection, $run, $att]) }}"
-                                        data-thumb-id="att-{{ $att->id }}">×</button>
-                            </div>
-                            @endforeach
-                        </div>
-                        <button type="button" class="add-files-btn btn btn-sm btn-light border" style="font-size:10px">
-                            <i class="feather-camera me-1" style="font-size:10px"></i>Add
-                        </button>
-                        <input type="file" class="att-file-input d-none" multiple accept="image/*,.pdf">
-                    </div>
-                </td>
                 <td class="text-center">
                     <button type="button" class="btn btn-sm btn-light-danger remove-carton-btn p-1" title="Remove row">
                         <i class="feather-x" style="font-size:13px"></i>
                     </button>
+                </td>
+            </tr>
+            <tr data-idx="{{ $ci }}" class="cdw-row-extra">
+                <td></td>
+                <td colspan="7">
+                    <div class="d-flex gap-3 align-items-start flex-wrap">
+                        <div class="flex-grow-1" style="min-width:220px">
+                            <label class="form-label fw-semibold fs-11 text-muted mb-1">Remarks</label>
+                            <input type="text"
+                                   name="sections[{{ $rsId }}][data][cartons][{{ $ci }}][remarks]"
+                                   class="form-control form-control-sm"
+                                   value="{{ $carton['remarks'] ?? '' }}" placeholder="Optional…">
+                        </div>
+                        <div style="min-width:280px">
+                            <label class="form-label fw-semibold fs-11 text-muted mb-1">Attachments</label>
+                            <div class="attachment-area" data-upload-url="{{ $uploadUrl }}" data-task-key="{{ $taskKey }}">
+                                <div class="att-previews d-flex flex-wrap gap-1 mb-1">
+                                    @foreach($cartonAtts as $att)
+                                    <div class="att-thumb position-relative d-inline-block" id="att-{{ $att->id }}">
+                                        @if($att->isImage())
+                                            <a href="{{ $att->url }}" target="_blank" rel="noopener noreferrer">
+                                                <img src="{{ $att->url }}" class="rounded border"
+                                                     style="width:36px;height:36px;object-fit:cover" alt="">
+                                            </a>
+                                        @else
+                                            <a href="{{ $att->url }}" target="_blank" rel="noopener noreferrer"
+                                               class="d-flex align-items-center justify-content-center border rounded bg-light text-decoration-none"
+                                               style="width:36px;height:36px">
+                                                <i class="feather-file text-muted" style="font-size:12px"></i>
+                                            </a>
+                                        @endif
+                                        <button type="button"
+                                                class="att-delete-btn btn btn-danger btn-sm p-0 position-absolute top-0 end-0 d-flex align-items-center justify-content-center"
+                                                style="width:14px;height:14px;font-size:8px;border-radius:50%;margin:-3px;z-index:1;"
+                                                data-delete-url="{{ route('inspections.runs.attachments.delete', [$inspection, $run, $att]) }}"
+                                                data-thumb-id="att-{{ $att->id }}">×</button>
+                                    </div>
+                                    @endforeach
+                                </div>
+                                <button type="button" class="add-files-btn btn btn-sm btn-light border" style="font-size:10px">
+                                    <i class="feather-camera me-1" style="font-size:10px"></i>Add
+                                </button>
+                                <input type="file" class="att-file-input d-none" multiple accept="image/*,.pdf">
+                            </div>
+                        </div>
+                    </div>
                 </td>
             </tr>
             @endforeach
@@ -156,11 +164,11 @@
     const tbody       = document.getElementById('carton-dim-body-' + rsId);
 
     function getCount() {
-        return tbody.querySelectorAll('tr').length;
+        return tbody.querySelectorAll('tr.cdw-row-main').length;
     }
 
     function reindex() {
-        tbody.querySelectorAll('tr').forEach((tr, i) => {
+        tbody.querySelectorAll('tr.cdw-row-main').forEach((tr, i) => {
             tr.dataset.idx = i;
             tr.querySelector('.row-num').textContent = i + 1;
             tr.querySelectorAll('[name]').forEach(el => {
@@ -169,17 +177,29 @@
                     `sections[${rsId}][data][cartons][${i}]`
                 );
             });
-            const attArea = tr.querySelector('.attachment-area');
-            if (attArea) attArea.dataset.taskKey = 'carton_dim_' + i;
+            const extra = tr.nextElementSibling;
+            if (extra && extra.classList.contains('cdw-row-extra')) {
+                extra.dataset.idx = i;
+                extra.querySelectorAll('[name]').forEach(el => {
+                    el.name = el.name.replace(
+                        /sections\[(\d+)\]\[data\]\[cartons\]\[\d+\]/,
+                        `sections[${rsId}][data][cartons][${i}]`
+                    );
+                });
+                const attArea = extra.querySelector('.attachment-area');
+                if (attArea) attArea.dataset.taskKey = 'carton_dim_' + i;
+            }
         });
     }
 
-    function buildRow(d) {
+    function buildRows(d) {
         const idx     = getCount();
         const taskKey = 'carton_dim_' + idx;
-        const tr      = document.createElement('tr');
-        tr.dataset.idx = idx;
-        tr.innerHTML = `
+
+        const trMain = document.createElement('tr');
+        trMain.className = 'cdw-row-main';
+        trMain.dataset.idx = idx;
+        trMain.innerHTML = `
             <td class="text-muted text-center row-num">${idx + 1}</td>
             <td><input type="text" name="sections[${rsId}][data][cartons][${idx}][carton_type]" class="form-control form-control-sm" value="${d.carton_type ?? ''}" placeholder="e.g. Master, Inner…"></td>
             <td><input type="number" step="0.01" min="0" name="sections[${rsId}][data][cartons][${idx}][length]" class="form-control form-control-sm" value="${d.length ?? ''}" placeholder="0.00"></td>
@@ -187,52 +207,70 @@
             <td><input type="number" step="0.01" min="0" name="sections[${rsId}][data][cartons][${idx}][height]" class="form-control form-control-sm" value="${d.height ?? ''}" placeholder="0.00"></td>
             <td><input type="number" step="0.001" min="0" name="sections[${rsId}][data][cartons][${idx}][gross_weight]" class="form-control form-control-sm" value="${d.gross_weight ?? ''}" placeholder="0.000"></td>
             <td><input type="number" step="0.001" min="0" name="sections[${rsId}][data][cartons][${idx}][net_weight]" class="form-control form-control-sm" value="${d.net_weight ?? ''}" placeholder="0.000"></td>
-            <td><input type="text" name="sections[${rsId}][data][cartons][${idx}][remarks]" class="form-control form-control-sm" value="${d.remarks ?? ''}" placeholder="Optional…"></td>
-            <td>
-                <div class="attachment-area" data-upload-url="${uploadUrl}" data-task-key="${taskKey}">
-                    <div class="att-previews d-flex flex-wrap gap-1 mb-1"></div>
-                    <button type="button" class="add-files-btn btn btn-sm btn-light border" style="font-size:10px">
-                        <i class="feather-camera me-1" style="font-size:10px"></i>Add
-                    </button>
-                    <input type="file" class="att-file-input d-none" multiple accept="image/*,.pdf">
-                </div>
-            </td>
             <td class="text-center">
                 <button type="button" class="btn btn-sm btn-light-danger remove-carton-btn p-1" title="Remove row">
                     <i class="feather-x" style="font-size:13px"></i>
                 </button>
             </td>`;
+
+        const trExtra = document.createElement('tr');
+        trExtra.className = 'cdw-row-extra';
+        trExtra.dataset.idx = idx;
+        trExtra.innerHTML = `
+            <td></td>
+            <td colspan="7">
+                <div class="d-flex gap-3 align-items-start flex-wrap">
+                    <div class="flex-grow-1" style="min-width:220px">
+                        <label class="form-label fw-semibold fs-11 text-muted mb-1">Remarks</label>
+                        <input type="text" name="sections[${rsId}][data][cartons][${idx}][remarks]" class="form-control form-control-sm" value="${d.remarks ?? ''}" placeholder="Optional…">
+                    </div>
+                    <div style="min-width:280px">
+                        <label class="form-label fw-semibold fs-11 text-muted mb-1">Attachments</label>
+                        <div class="attachment-area" data-upload-url="${uploadUrl}" data-task-key="${taskKey}">
+                            <div class="att-previews d-flex flex-wrap gap-1 mb-1"></div>
+                            <button type="button" class="add-files-btn btn btn-sm btn-light border" style="font-size:10px">
+                                <i class="feather-camera me-1" style="font-size:10px"></i>Add
+                            </button>
+                            <input type="file" class="att-file-input d-none" multiple accept="image/*,.pdf">
+                        </div>
+                    </div>
+                </div>
+            </td>`;
+
         if (window.initAttachmentArea) {
-            tr.querySelectorAll('.attachment-area').forEach(area => window.initAttachmentArea(area));
+            trExtra.querySelectorAll('.attachment-area').forEach(area => window.initAttachmentArea(area));
         }
-        return tr;
+        return [trMain, trExtra];
     }
 
     tbody.addEventListener('click', e => {
         const btn = e.target.closest('.remove-carton-btn');
         if (!btn) return;
         if (getCount() <= 1) { alert('At least one carton row is required.'); return; }
-        btn.closest('tr').remove();
+        const main = btn.closest('tr.cdw-row-main');
+        const extra = main.nextElementSibling;
+        main.remove();
+        if (extra && extra.classList.contains('cdw-row-extra')) extra.remove();
         reindex();
     });
 
     document.getElementById('add-carton-btn-' + rsId)?.addEventListener('click', () => {
-        tbody.appendChild(buildRow({}));
+        buildRows({}).forEach(tr => tbody.appendChild(tr));
     });
 
     document.getElementById('clone-carton-btn-' + rsId)?.addEventListener('click', () => {
-        const rows = tbody.querySelectorAll('tr');
-        if (!rows.length) { tbody.appendChild(buildRow({})); return; }
-        const last = rows[rows.length - 1];
+        const mains = tbody.querySelectorAll('tr.cdw-row-main');
+        if (!mains.length) { buildRows({}).forEach(tr => tbody.appendChild(tr)); return; }
+        const last = mains[mains.length - 1];
         const get  = key => last.querySelector(`[name*="[${key}]"]`)?.value ?? '';
-        tbody.appendChild(buildRow({
+        buildRows({
             carton_type:  get('carton_type'),
             length:       get('length'),
             width:        get('width'),
             height:       get('height'),
             gross_weight: get('gross_weight'),
             net_weight:   get('net_weight'),
-        }));
+        }).forEach(tr => tbody.appendChild(tr));
     });
 
     tbody.querySelectorAll('.attachment-area').forEach(area => {

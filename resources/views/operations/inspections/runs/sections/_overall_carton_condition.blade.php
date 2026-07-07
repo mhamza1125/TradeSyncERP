@@ -12,8 +12,8 @@
         <thead class="table-light">
             <tr>
                 <th class="ps-3">Checkpoint</th>
-                <th style="width:200px">Result</th>
-                <th style="width:220px">Attachments</th>
+                <th style="width:240px">Result</th>
+                <th style="width:280px">Attachments</th>
             </tr>
         </thead>
         <tbody>

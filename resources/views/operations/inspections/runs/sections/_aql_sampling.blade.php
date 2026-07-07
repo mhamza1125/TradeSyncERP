@@ -249,13 +249,6 @@
         </div>
     </div>
 
-    {{-- Notes --}}
-    <div class="mb-0">
-        <label class="form-label fw-semibold fs-12">AQL Notes</label>
-        <textarea name="aql[notes]" rows="2"
-                  class="form-control form-control-sm"
-                  placeholder="Sampling observations, deviations, inspector notes…">{{ old('aql.notes', $a?->notes) }}</textarea>
-    </div>
 </div>
 
 {{-- ══════════════════════════════════════════════════════════════════════

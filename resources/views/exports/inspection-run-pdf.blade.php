@@ -403,17 +403,34 @@ body {
 
 /* ── Image gallery — 3 columns ─────────────────────────────────────── */
 .img-gallery-table { width: 100%; border-collapse: collapse; }
-.img-gallery-table td { padding: 5px; vertical-align: top; text-align: center; }
+.img-gallery-table td { padding: 6px; vertical-align: top; text-align: center; width: 33.33%; }
 .img-thumb {
-    width: 145px;
-    height: 145px;
-    object-fit: cover;
+    height: 150px;
+    width: auto;
+    max-width: 100%;
+    object-fit: contain;
     border: 2px solid #DEE2E6;
     border-radius: 3px;
     display: block;
     margin: 0 auto 5px;
+    background: #FAFAFA;
 }
-.img-label { font-size: 7pt; color: #9E9E9E; word-break: break-word; }
+.img-label { font-size: 7pt; color: #757575; word-break: break-word; margin-top: 2px; }
+.img-label strong { color: #212121; }
+.img-missing {
+    height: 150px;
+    border: 2px dashed #DEE2E6;
+    display: block;
+    margin: 0 auto;
+    background: #F9FAFB;
+    text-align: center;
+    font-size: 7pt;
+    color: #9E9E9E;
+    padding-top: 65px;
+}
+
+/* ── Header logo (cover banner) ──────────────────────────────────────── */
+.cb-logo { max-height: 46px; max-width: 240px; }
 
 /* ── Review verdict box ────────────────────────────────────────────── */
 .review-verdict-box {
@@ -504,27 +521,45 @@ body {
 
 {{-- ══════════════════════════════════════════ GLOBAL PHP SETUP ════════════ --}}
 @php
+// Slugs treated as "not a section" — must stay identical to the $hiddenSlugs list in
+// resources/views/operations/inspections/runs/edit.blade.php, otherwise stale/orphaned
+// InspectionRunSection rows for these slugs leak into the report as phantom "pending" sections.
 $hiddenSlugs = [
     'corrective_action', 'inspection_conclusion', 'finish_inspection',
     'textile_sample_conformity', 'denim_textile_defects',
     'cover_photo', 'workmanship_check',
 ];
 
+// Real section_type values seeded in InspectionSectionSeeder — used to order the report
 $sectionTypePriority = [
-    'general_info'      => 1,
-    'images'            => 2,
-    'checklist'         => 3,
-    'task_list'         => 4,
-    'verification'      => 5,
-    'article_results'   => 6,
-    'measurement_check' => 7,
-    'aql'               => 8,
-    'defects'           => 9,
-    'cartons'           => 10,
-    'container'         => 11,
-    'review'            => 12,
-    'conclusion'        => 13,
+    'general_info'       => 1,
+    'images'             => 2,
+    'quantity_sampling'  => 3,
+    'cartons'            => 4,
+    'cover_photo'        => 5,
+    'checklist'          => 6,
+    'checkpoint'         => 7,
+    'files_review'       => 8,
+    'verification'       => 9,
+    'article_results'    => 10,
+    'aql'                => 11,
+    'defects'            => 12,
+    'workmanship'        => 13,
+    'production_stages'  => 14,
+    'container'          => 15,
+    'review'             => 16,
+    'conclusion'         => 17,
+    'finish'             => 18,
 ];
+
+// Resolve a defect's display name + severity, since only defect_id is stored on the row
+$defectInfo = function ($defectId) use ($defects) {
+    $def = $defects->get((int) $defectId);
+    return [
+        'name'     => $def->defect_name ?? ('Defect #' . $defectId),
+        'severity' => $def->severity ?? 'minor',
+    ];
+};
 
 $coverVerdictClass = match($inspection->overall_status) {
     'Pass'             => 'vb-pass',
@@ -540,32 +575,31 @@ $headerBadgeClass = match($inspection->overall_status) {
     default            => 'badge-pending',
 };
 
-// Aggregate defect counts across all runs
+// Aggregate defect counts across all runs (severity resolved from the Defect master)
 $defCritical = 0; $defMajor = 0; $defMinor = 0;
 foreach ($runs as $_r) {
     foreach ($_r->runSections as $_rs) {
-        if ($_rs->section && (in_array($_rs->section->section_type, ['defects']) || $_rs->section->slug === 'defect_recording')) {
-            $sels = collect($_rs->data['selections'] ?? [])->filter(fn($s) => !empty($s['selected']));
-            $defCritical += $sels->where('severity', 'critical')->count();
-            $defMajor    += $sels->where('severity', 'major')->count();
-            $defMinor    += $sels->where('severity', 'minor')->count();
+        if ($_rs->section && $_rs->section->section_type === 'defects') {
+            $sels = collect($_rs->data['selections'] ?? [])->filter(fn($s) => !empty($s['selected']) && !empty($s['defect_id']));
+            foreach ($sels as $_sel) {
+                $sev = $_sel['severity'] ?? $defectInfo($_sel['defect_id'])['severity'];
+                if ($sev === 'critical') $defCritical++;
+                elseif ($sev === 'major') $defMajor++;
+                elseif ($sev === 'minor') $defMinor++;
+            }
         }
     }
 }
 
-// Detects whether a run-section carries no meaningful data
+// Detects whether a run-section carries no meaningful data (matched against real section_type values)
 $isSectionEmpty = function($rs, $currentRun): bool {
     $data = $rs->data ?? [];
     $type = $rs->section->section_type;
     $slug = $rs->section->slug;
-    $imgs = $rs->attachments->filter(fn($a) => $a->isImage());
+    $imgs = $rs->attachments; // any attachment (image or doc) counts as recorded evidence
     $hasVal = fn($v) => $v !== null && $v !== '';
 
     return match(true) {
-        in_array($type, ['checklist','task_list','verification','article_results'])
-            => empty($data['items'])
-               || collect($data['items'])->every(fn($i) => ($i['result'] ?? $i['selected'] ?? '') === ''),
-
         $type === 'general_info'
             => empty(array_filter([
                 $data['buyer_name'] ?? null, $data['factory_name'] ?? null,
@@ -573,35 +607,74 @@ $isSectionEmpty = function($rs, $currentRun): bool {
                 $data['order_quantity'] ?? null,
             ], $hasVal)),
 
-        $type === 'aql'
-            => !$currentRun->aql
-               || (($currentRun->aql->lot_size ?? 0) == 0 && ($currentRun->aql->sample_size ?? 0) == 0),
-
-        in_array($type, ['defects']) || $slug === 'defect_recording'
-            => collect($data['selections'] ?? [])->filter(fn($s) => !empty($s['selected']))->isEmpty(),
-
         $type === 'images'
             => $imgs->isEmpty() && empty($data['notes']),
 
-        $slug === 'measurement_check'
-            => empty($data['measurements']),
+        $type === 'workmanship'
+            => collect($data['items'] ?? [])->every(fn($i) => empty($i['status'])),
 
-        $type === 'cartons' || $slug === 'carton_dimensions_weight'
-            => empty($data['items']) && empty(array_filter([
-                $data['length'] ?? null, $data['width'] ?? null,
-            ], $hasVal)),
+        $type === 'defects'
+            => collect($data['selections'] ?? [])->filter(fn($s) => !empty($s['selected']) && !empty($s['defect_id']))->isEmpty(),
+
+        $type === 'aql'
+            => !$currentRun->aql
+               || (($currentRun->aql->found_critical ?? 0) == 0 && ($currentRun->aql->found_major ?? 0) == 0
+                   && ($currentRun->aql->found_minor ?? 0) == 0 && ($currentRun->aql->lot_size ?? 0) == 0),
+
+        $type === 'checklist'
+            => !empty($data['items'])
+                ? collect($data['items'])->every(fn($i) => empty($i['result']))
+                : empty(array_filter(collect($data)->except('items')->all(), $hasVal)) && $imgs->isEmpty(),
 
         $type === 'container'
             => empty(array_filter([
                 $data['container_number'] ?? null, $data['seal_number'] ?? null,
-                $data['container_condition'] ?? null,
-            ], $hasVal)),
+                $data['loading_date'] ?? null, $data['notes'] ?? null,
+            ], $hasVal)) && $imgs->isEmpty(),
 
-        in_array($type, ['review','conclusion']) || $slug === 'final_review'
-            => empty(array_filter([
-                $data['overall_verdict'] ?? null, $data['conclusion'] ?? null,
-                $data['notes'] ?? null, $data['summary'] ?? null,
-            ], $hasVal)),
+        $type === 'verification'
+            => empty(array_filter(collect($data)->except('items')->all(), $hasVal))
+               && (empty($data['items']) || collect($data['items'])->every(fn($i) => empty($i['result'])))
+               && $imgs->isEmpty(),
+
+        $type === 'review' && $slug === 'overall_carton_condition'
+            => empty($data['overall_condition']) && empty($data['remarks']) && $imgs->isEmpty(),
+
+        $type === 'review' && $slug === 'corrective_action'
+            => collect($data['items'] ?? [])->every(fn($i) => empty($i['defect_description']) && empty($i['corrective_action'])),
+
+        $type === 'review' && $slug === 'overall_article_result'
+            => empty($data['overall_result']) && empty($data['remarks']),
+
+        $type === 'review'
+            => empty(array_filter([$data['overall_verdict'] ?? null, $data['qc_remarks'] ?? null], $hasVal)),
+
+        $type === 'article_results'
+            => collect($data['articles'] ?? [])->every(fn($a) => empty($a['result']) && empty($a['article_no'])),
+
+        $type === 'conclusion'
+            => empty(array_filter([$data['presented_styles'] ?? null, $data['unpresented_styles'] ?? null, $data['note'] ?? null], $hasVal)),
+
+        $type === 'finish'
+            => empty($data['comments']) && !$currentRun->completed_at,
+
+        $type === 'quantity_sampling'
+            => empty(array_filter([$data['product_quantity'] ?? null, $data['packed_goods_qty'] ?? null, $data['packed_cartons_qty'] ?? null], $hasVal)),
+
+        $type === 'cartons'
+            => collect($data['cartons'] ?? [])->every(fn($c) => empty(array_filter($c, $hasVal))),
+
+        $type === 'cover_photo'
+            => $imgs->isEmpty(),
+
+        $type === 'files_review'
+            => $imgs->isEmpty() && empty($data['notes']) && empty($data['acknowledged']),
+
+        $type === 'checkpoint'
+            => collect($data['tasks'] ?? [])->every(fn($t) => empty($t['selected'] ?? null)),
+
+        $type === 'production_stages'
+            => collect($data['selections'] ?? [])->filter(fn($s) => !empty($s['stage']))->isEmpty(),
 
         default => collect($data)->filter(fn($v) => $v !== null && $v !== '' && !is_array($v))->isEmpty()
                    && empty($data['items']),
@@ -632,35 +705,48 @@ foreach ($runs as $sumRun) {
         }
         $summaryRows[$sName]['statuses'][] = $sumRs->status;
 
-        if (in_array($sType, ['checklist', 'task_list', 'verification', 'article_results'])) {
-            foreach ($sumRs->data['items'] ?? [] as $si) {
-                $sr = strtolower((string)($si['result'] ?? $si['selected'] ?? ''));
+        if (in_array($sType, ['checklist', 'verification']) && !empty($sumRs->data['items'])) {
+            foreach ($sumRs->data['items'] as $si) {
+                $sr = strtolower((string)($si['result'] ?? ''));
+                if ($sr === '') continue;
                 $summaryRows[$sName]['totalCount']++;
                 if ($sr === 'pass') $summaryRows[$sName]['passCount']++;
                 elseif ($sr === 'fail') $summaryRows[$sName]['failCount']++;
                 elseif (in_array($sr, ['n/a', 'na'])) $summaryRows[$sName]['naCount']++;
             }
-        } elseif ($sSlug === 'measurement_check') {
-            foreach ($sumRs->data['measurements'] ?? [] as $sm) {
-                $smr = strtolower((string)($sm['result'] ?? ''));
+        } elseif ($sType === 'checkpoint') {
+            $taskDefs = $sumRs->section->default_data['tasks'] ?? [];
+            foreach ($taskDefs as $td) {
+                $sr = strtolower((string)($sumRs->data['tasks'][$td['key']]['selected'] ?? ''));
+                if ($sr === '') continue;
                 $summaryRows[$sName]['totalCount']++;
-                if ($smr === 'pass') $summaryRows[$sName]['passCount']++;
-                elseif ($smr === 'fail') $summaryRows[$sName]['failCount']++;
+                if ($sr === 'pass') $summaryRows[$sName]['passCount']++;
+                elseif ($sr === 'fail') $summaryRows[$sName]['failCount']++;
+                elseif (in_array($sr, ['n/a', 'na'])) $summaryRows[$sName]['naCount']++;
             }
         } elseif ($sType === 'aql') {
             $aqlV = strtolower($sumRun->aql?->verdict ?? '');
             if ($aqlV === 'pass') $summaryRows[$sName]['passCount']++;
             elseif ($aqlV === 'fail') $summaryRows[$sName]['failCount']++;
             $summaryRows[$sName]['customDetail'] = 'Verdict: '.($sumRun->aql?->verdict ?? 'Pending');
-        } elseif (in_array($sType, ['defects']) || $sSlug === 'defect_recording') {
-            $dSels  = collect($sumRs->data['selections'] ?? [])->filter(fn($s) => !empty($s['selected']));
-            $dCritD = $dSels->where('severity', 'critical')->count();
-            $dMajD  = $dSels->where('severity', 'major')->count();
-            $dMinD  = $dSels->where('severity', 'minor')->count();
+        } elseif ($sType === 'defects') {
+            $dSels  = collect($sumRs->data['selections'] ?? [])->filter(fn($s) => !empty($s['selected']) && !empty($s['defect_id']));
+            $dCritD = $dSels->filter(fn($s) => ($s['severity'] ?? $defectInfo($s['defect_id'])['severity']) === 'critical')->count();
+            $dMajD  = $dSels->filter(fn($s) => ($s['severity'] ?? $defectInfo($s['defect_id'])['severity']) === 'major')->count();
+            $dMinD  = $dSels->filter(fn($s) => ($s['severity'] ?? $defectInfo($s['defect_id'])['severity']) === 'minor')->count();
             $dTotal = $dCritD + $dMajD + $dMinD;
             $summaryRows[$sName]['customDetail'] = $dTotal > 0
                 ? $dCritD.' Crit, '.$dMajD.' Major, '.$dMinD.' Minor'
                 : 'None recorded';
+        } elseif ($sType === 'article_results') {
+            foreach ($sumRs->data['articles'] ?? [] as $ar) {
+                $sr = strtolower((string)($ar['result'] ?? ''));
+                if ($sr === '') continue;
+                $summaryRows[$sName]['totalCount']++;
+                if ($sr === 'pass') $summaryRows[$sName]['passCount']++;
+                elseif ($sr === 'fail') $summaryRows[$sName]['failCount']++;
+                elseif (in_array($sr, ['n/a', 'na'])) $summaryRows[$sName]['naCount']++;
+            }
         }
     }
 }
@@ -702,9 +788,13 @@ uasort($summaryRows, fn($a, $b) => $a['sortPriority'] <=> $b['sortPriority']);
     <table>
         <tr>
             <td style="vertical-align: bottom">
-                <div class="cb-system-label">Quality Assurance &amp; Inspection Management</div>
-                <div class="cb-company">TradeSyncERP</div>
-                <div class="cb-tagline">Inspection &amp; Quality Control System</div>
+                @if($logoBase64)
+                    <img src="{{ $logoBase64 }}" class="cb-logo" alt="TradeSyncERP">
+                @else
+                    <div class="cb-system-label">Quality Assurance &amp; Inspection Management</div>
+                    <div class="cb-company">TradeSyncERP</div>
+                    <div class="cb-tagline">Inspection &amp; Quality Control System</div>
+                @endif
             </td>
             <td class="cb-right">
                 <div class="cb-type">{{ $inspection->inspectionType?->name ?? 'Inspection Report' }}</div>
@@ -936,6 +1026,21 @@ uasort($summaryRows, fn($a, $b) => $a['sortPriority'] <=> $b['sortPriority']);
     $images  = $rs->attachments->filter(fn($a) => $a->isImage())->values();
     $docs    = $rs->attachments->filter(fn($a) => !$a->isImage())->values();
     $isEmpty = $isSectionEmpty($rs, $run);
+
+    // Photos are collected here as the section is rendered (with a row label, where one applies)
+    // and rendered once, after the data table, instead of as a cramped in-table column.
+    $galleryItems     = [];
+    $consumedImageIds = [];
+    // $label is only set for images tied to a specific row (defect name, checkpoint label,
+    // carton type, production stage, …). General / reference gallery photos pass null and
+    // are rendered with no caption at all — never fall back to the raw filename.
+    $addGallery = function ($imgs, $label = null) use (&$galleryItems, &$consumedImageIds) {
+        foreach ($imgs as $img) {
+            $galleryItems[]     = ['img' => $img, 'label' => $label ?: null];
+            $consumedImageIds[] = $img->id;
+        }
+    };
+    $imgsByTask = fn(string $taskKey) => $images->where('task_key', $taskKey)->values();
 @endphp
 
 @if($isEmpty)
@@ -1006,51 +1111,40 @@ uasort($summaryRows, fn($a, $b) => $a['sortPriority'] <=> $b['sortPriority']);
         </table>
         @endif
 
-        {{-- ════════════ CHECKLIST ════════════ --}}
-        @elseif($secType === 'checklist')
-        @php
-            $items = $data['items'] ?? [];
-            $extra = collect($data)->except('items')->filter(fn($v) => $v !== null && $v !== '' && !is_array($v));
-        @endphp
-        @if($extra->isNotEmpty())
-        <table class="meta-table" style="margin-bottom:10px">
-            @foreach($extra as $k => $v)
-            <tr><td class="mk">{{ ucwords(str_replace('_', ' ', $k)) }}</td><td class="mv">{{ $v }}</td></tr>
-            @endforeach
-        </table>
+        {{-- ════════════ PRODUCT SCREENING / IMAGES ════════════ --}}
+        @elseif($secType === 'images')
+        @php $addGallery($images, null); @endphp
+        @if($images->isEmpty())
+        <div class="empty-state">No product images uploaded.</div>
         @endif
-        @if(!empty($items))
+        @if(!empty($data['notes']))
+        <div class="section-note">{{ $data['notes'] }}</div>
+        @endif
+
+        {{-- ════════════ WORKMANSHIP CHECK (legacy) ════════════ --}}
+        @elseif($secType === 'workmanship')
+        @php $wItems = $data['items'] ?? []; @endphp
+        @if(!empty($wItems))
         <table class="data-table">
             <thead>
                 <tr>
                     <th style="width:4%; text-align:center">#</th>
-                    <th style="width:42%">Checkpoint</th>
-                    <th style="width:14%; text-align:center">Result</th>
-                    <th>Remarks</th>
-                    @if($images->isNotEmpty())<th style="width:65px; text-align:center">Photos</th>@endif
+                    <th style="width:60%">Item</th>
+                    <th style="width:18%; text-align:center">Status</th>
                 </tr>
             </thead>
             <tbody>
-                @foreach($items as $idx => $item)
+                @foreach($wItems as $wIdx => $wi)
                 @php
-                    $rClass = match(strtolower($item['result'] ?? '')) {
-                        'pass' => 'rb-pass', 'fail' => 'rb-fail', 'n/a','na' => 'rb-na', default => 'rb-def'
-                    };
-                    $itemImgs = $images->filter(fn($a) => $a->task_key === 'item_'.$idx)->values();
+                    $wRes = $wi['status'] ?? '—';
+                    $wCls = match(strtolower((string)$wRes)) { 'pass' => 'rb-pass', 'fail' => 'rb-fail', 'n/a','na' => 'rb-na', default => 'rb-def' };
                 @endphp
                 <tr>
-                    <td style="text-align:center; color:#9E9E9E; font-size:8pt">{{ $idx+1 }}</td>
-                    <td>{{ $item['label'] ?? '' }}</td>
-                    <td style="text-align:center"><span class="{{ $rClass }}">{{ $item['result'] ?: '—' }}</span></td>
-                    <td style="color:#546E7A; font-size:8pt">{{ $item['remarks'] ?? '' }}</td>
-                    @if($images->isNotEmpty())
-                    <td style="text-align:center">
-                        @foreach($itemImgs->take(2) as $img)
-                        @php $b64 = $imgBase64($img->file_path); @endphp
-                        @if($b64)<img src="{{ $b64 }}" style="width:36px;height:36px;object-fit:cover;border:1px solid #DEE2E6;margin:1px;border-radius:2px">@endif
-                        @endforeach
+                    <td style="text-align:center; color:#9E9E9E; font-size:8pt">{{ $wIdx+1 }}</td>
+                    <td>{{ $wi['name'] ?? '' }}
+                        @if(!empty($wi['description']))<div style="color:#9E9E9E; font-size:7.5pt">{{ $wi['description'] }}</div>@endif
                     </td>
-                    @endif
+                    <td style="text-align:center"><span class="{{ $wCls }}">{!! $wRes !!}</span></td>
                 </tr>
                 @endforeach
             </tbody>
@@ -1058,14 +1152,18 @@ uasort($summaryRows, fn($a, $b) => $a['sortPriority'] <=> $b['sortPriority']);
         @endif
 
         {{-- ════════════ DEFECT RECORDING ════════════ --}}
-        @elseif($secType === 'defects' || $slug === 'defect_recording')
+        @elseif($secType === 'defects')
         @php
             $selections = collect($data['selections'] ?? [])->filter(
                 fn($s) => !empty($s['selected']) && !empty($s['defect_id'])
             )->values();
-            $dCrit = $selections->where('severity', 'critical')->count();
-            $dMaj  = $selections->where('severity', 'major')->count();
-            $dMin  = $selections->where('severity', 'minor')->count();
+            $dCrit = 0; $dMaj = 0; $dMin = 0;
+            foreach ($selections as $_s) {
+                $sev = $_s['severity'] ?? $defectInfo($_s['defect_id'])['severity'];
+                if ($sev === 'critical') $dCrit++;
+                elseif ($sev === 'major') $dMaj++;
+                elseif ($sev === 'minor') $dMin++;
+            }
         @endphp
         @if($selections->isEmpty())
         <div class="empty-state">No defects recorded for this inspection run.</div>
@@ -1096,31 +1194,25 @@ uasort($summaryRows, fn($a, $b) => $a['sortPriority'] <=> $b['sortPriority']);
             <thead>
                 <tr>
                     <th style="width:28px; text-align:center">#</th>
-                    <th style="width:36%">Defect Description</th>
+                    <th style="width:38%">Defect Description</th>
                     <th style="width:90px; text-align:center">Severity</th>
                     <th style="width:48px; text-align:center">Qty</th>
                     <th>Comment / Location</th>
-                    <th style="width:80px; text-align:center">Photos</th>
                 </tr>
             </thead>
             <tbody>
                 @foreach($selections as $i => $sel)
                 @php
-                    $sev     = $sel['severity'] ?? 'minor';
-                    $defImgs = $images->filter(fn($a) => $a->task_key === 'defect_'.$sel['defect_id'])->values();
+                    $defInfo = $defectInfo($sel['defect_id']);
+                    $sev     = $sel['severity'] ?? $defInfo['severity'];
+                    $addGallery($imgsByTask('defect_'.$sel['defect_id']), $defInfo['name']);
                 @endphp
                 <tr>
                     <td style="text-align:center; color:#9E9E9E; font-size:8pt">{{ $i+1 }}</td>
-                    <td><strong>{{ $sel['defect_name'] ?? ('Defect #'.$sel['defect_id']) }}</strong></td>
+                    <td><strong>{{ $defInfo['name'] }}</strong></td>
                     <td style="text-align:center"><span class="sev-{{ $sev }}">{{ ucfirst($sev) }}</span></td>
                     <td style="text-align:center; font-weight:bold">{{ $sel['quantity'] ?? 1 }}</td>
                     <td style="color:#546E7A; font-size:8pt">{{ $sel['comment'] ?? '' }}</td>
-                    <td style="text-align:center">
-                        @foreach($defImgs->take(3) as $img)
-                        @php $b64 = $imgBase64($img->file_path); @endphp
-                        @if($b64)<img src="{{ $b64 }}" style="width:26px;height:26px;object-fit:cover;border:1px solid #FFCDD2;margin:1px;border-radius:2px">@endif
-                        @endforeach
-                    </td>
                 </tr>
                 @endforeach
             </tbody>
@@ -1187,39 +1279,204 @@ uasort($summaryRows, fn($a, $b) => $a['sortPriority'] <=> $b['sortPriority']);
         <div class="aql-verdict-block {{ $avbClass }}">
             AQL Sampling Verdict: {{ strtoupper($aql->verdict ?? 'Pending') }}
         </div>
-        @if($aql->notes)
-        <div class="section-note" style="margin-top:8px">{{ $aql->notes }}</div>
+        @if(!empty($aql->variations))
+        <div class="sub-heading">Quantity Distribution by Variation</div>
+        <table class="data-table">
+            <thead>
+                <tr>
+                    <th>Color</th>
+                    <th>Size</th>
+                    <th style="text-align:center">Order Qty</th>
+                    <th style="text-align:center">Inspect Qty</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach($aql->variations as $var)
+                <tr>
+                    <td>{{ $var['color'] ?? '—' }}</td>
+                    <td>{{ $var['size'] ?? '—' }}</td>
+                    <td style="text-align:center">{{ $var['order_qty'] ?? '—' }}</td>
+                    <td style="text-align:center">{{ $var['inspect_qty'] ?? '—' }}</td>
+                </tr>
+                @endforeach
+            </tbody>
+        </table>
         @endif
         @else
         <div class="empty-state">No AQL sampling data recorded.</div>
         @endif
 
-        {{-- ════════════ IMAGES / PRODUCT SCREENING ════════════ --}}
-        @elseif($secType === 'images')
-        @if($images->isEmpty())
-        <div class="empty-state">No product images uploaded.</div>
-        @else
-        @foreach($images->chunk(3) as $chunk)
-        <table class="img-gallery-table" style="margin-bottom:6px">
-            <tr>
-                @foreach($chunk as $img)
-                @php $b64 = $imgBase64($img->file_path); @endphp
-                <td style="width:33.33%">
-                    @if($b64)
-                        <img src="{{ $b64 }}" class="img-thumb">
-                        <div class="img-label">{{ $img->title ?: $img->file_name }}</div>
-                    @else
-                        <div style="width:145px;height:145px;border:2px dashed #DEE2E6;display:block;margin:0 auto;background:#F9FAFB;text-align:center;font-size:7pt;color:#9E9E9E;padding-top:60px">No Image</div>
-                    @endif
-                </td>
-                @endforeach
-                @for($p = $chunk->count(); $p < 3; $p++)<td style="width:33.33%"></td>@endfor
-            </tr>
+        {{-- ════════════ CHECKLIST (covers carton_verification, packaging_check, labels_check,
+             order_quantity_vs_packing_list, loading_schedule_and_timing, inner_conditions_of_container,
+             pre_production_checklist, factory_readiness, raw_material_check, variations_sample,
+             barcode_testing, variations_techpack, carton_dimensions_weight) ════════════ --}}
+        @elseif($secType === 'checklist')
+        @php
+            $items   = $data['items'] ?? [];
+            $cartons = $data['cartons'] ?? [];
+            $skipKeys = ['items', 'cartons', 'dim_unit', 'weight_unit', 'barcode_status', 'tech_pack_reference', 'result'];
+            $extra = collect($data)->except($skipKeys)->filter(fn($v) => $v !== null && $v !== '' && !is_array($v));
+        @endphp
+        @if($extra->isNotEmpty())
+        <table class="meta-table" style="margin-bottom:10px">
+            @foreach($extra as $k => $v)
+            <tr><td class="mk">{{ ucwords(str_replace('_', ' ', $k)) }}</td><td class="mv">{{ $v }}</td></tr>
+            @endforeach
         </table>
-        @endforeach
+        @endif
+
+        @if($slug === 'barcode_testing')
+        @php
+            $bStatus = $data['barcode_status'] ?? null;
+            $bCls = match($bStatus) { 'functional' => 'rb-pass', 'non-functional' => 'rb-fail', 'partial' => 'rb-na', default => 'rb-def' };
+            $addGallery($imgsByTask('barcode_photos'), null);
+        @endphp
+        @if($bStatus)
+        <table class="meta-table">
+            <tr><td class="mk">Barcode Status</td><td class="mv"><span class="{{ $bCls }}">{{ ucfirst($bStatus) }}</span></td></tr>
+        </table>
+        @endif
+
+        @elseif($slug === 'variations_techpack')
+        @php $addGallery($imgsByTask('techpack_photos'), null); @endphp
+
+        @elseif($slug === 'carton_dimensions_weight')
+        @php
+            $dimUnit    = $data['dim_unit'] ?? 'cm';
+            $weightUnit = $data['weight_unit'] ?? 'kg';
+        @endphp
+        @if(!empty($cartons))
+        <table class="data-table">
+            <thead>
+                <tr>
+                    <th>Carton Type / Variant</th>
+                    <th style="text-align:center">Length ({{ $dimUnit }})</th>
+                    <th style="text-align:center">Width ({{ $dimUnit }})</th>
+                    <th style="text-align:center">Height ({{ $dimUnit }})</th>
+                    <th style="text-align:center">Gross Wt. ({{ $weightUnit }})</th>
+                    <th style="text-align:center">Net Wt. ({{ $weightUnit }})</th>
+                    <th>Remarks</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach($cartons as $ci => $carton)
+                @php
+                    $cLabel = $carton['carton_type'] ?: ('Carton ' . ($ci + 1));
+                    $addGallery($imgsByTask('carton_dim_'.$ci), $cLabel);
+                @endphp
+                <tr>
+                    <td style="font-weight:bold">{{ $cLabel }}</td>
+                    <td style="text-align:center">{{ $carton['length'] ?? '—' }}</td>
+                    <td style="text-align:center">{{ $carton['width'] ?? '—' }}</td>
+                    <td style="text-align:center">{{ $carton['height'] ?? '—' }}</td>
+                    <td style="text-align:center">{{ $carton['gross_weight'] ?? '—' }}</td>
+                    <td style="text-align:center">{{ $carton['net_weight'] ?? '—' }}</td>
+                    <td style="color:#546E7A; font-size:8pt">{{ $carton['remarks'] ?? '' }}</td>
+                </tr>
+                @endforeach
+            </tbody>
+        </table>
+        @endif
+
+        @elseif(!empty($items))
+        <table class="data-table">
+            <thead>
+                <tr>
+                    <th style="width:4%; text-align:center">#</th>
+                    <th style="width:46%">Checkpoint</th>
+                    <th style="width:14%; text-align:center">Result</th>
+                    <th>Remarks</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach($items as $idx => $item)
+                @php
+                    $rClass = match(strtolower($item['result'] ?? '')) {
+                        'pass' => 'rb-pass', 'fail' => 'rb-fail', 'n/a','na' => 'rb-na', default => 'rb-def'
+                    };
+                    $addGallery($imgsByTask('checkpoint_'.$idx), $item['label'] ?? null);
+                @endphp
+                <tr>
+                    <td style="text-align:center; color:#9E9E9E; font-size:8pt">{{ $idx+1 }}</td>
+                    <td>{{ $item['label'] ?? '' }}</td>
+                    <td style="text-align:center"><span class="{{ $rClass }}">{{ !empty($item['result']) ? $item['result'] : '—' }}</span></td>
+                    <td style="color:#546E7A; font-size:8pt">{{ $item['remarks'] ?? '' }}</td>
+                </tr>
+                @endforeach
+            </tbody>
+        </table>
+        @endif
+
+        {{-- ════════════ CHECKPOINT (Packing Check SI, Functional Test, etc.) ════════════ --}}
+        @elseif($secType === 'checkpoint')
+        @php
+            $taskDefs = $sec->default_data['tasks'] ?? [];
+            $taskData = $data['tasks'] ?? [];
+        @endphp
+        @if(!empty($taskDefs))
+        <table class="data-table">
+            <thead>
+                <tr>
+                    <th style="width:4%; text-align:center">#</th>
+                    <th style="width:56%">Checkpoint</th>
+                    <th style="width:18%; text-align:center">Result</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach($taskDefs as $tIdx => $taskDef)
+                @php
+                    $tKey = $taskDef['key'] ?? '';
+                    $tRes = $taskData[$tKey]['selected'] ?? '—';
+                    $tCls = match(strtolower((string)$tRes)) {
+                        'pass' => 'rb-pass', 'fail' => 'rb-fail', 'n/a','na' => 'rb-na', default => 'rb-def'
+                    };
+                    $addGallery($imgsByTask($tKey), $taskDef['label'] ?? $tKey);
+                @endphp
+                <tr>
+                    <td style="text-align:center; color:#9E9E9E; font-size:8pt">{{ $tIdx+1 }}</td>
+                    <td>{{ $taskDef['label'] ?? $tKey }}</td>
+                    <td style="text-align:center"><span class="{{ $tCls }}">{!! $tRes ?: '—' !!}</span></td>
+                </tr>
+                @endforeach
+            </tbody>
+        </table>
+        @endif
+
+        {{-- ════════════ PRODUCTION STATUS ════════════ --}}
+        @elseif($secType === 'production_stages')
+        @php $psSelections = collect($data['selections'] ?? [])->filter(fn($s) => !empty($s['stage']))->values(); @endphp
+        @if($psSelections->isEmpty())
+        <div class="empty-state">No production stages recorded.</div>
+        @else
+        <table class="data-table">
+            <thead>
+                <tr>
+                    <th style="width:4%; text-align:center">#</th>
+                    <th style="width:32%">Production Stage</th>
+                    <th style="width:14%; text-align:center">% Complete</th>
+                    <th style="width:16%; text-align:center">Qty / Output</th>
+                    <th>Status Notes</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach($psSelections as $psIdx => $ps)
+                @php
+                    $stageKey = 'ps_' . preg_replace('/[^a-z0-9_]/', '', strtolower(str_replace(' ', '_', $ps['stage'])));
+                    $addGallery($imgsByTask($stageKey), $ps['stage']);
+                @endphp
+                <tr>
+                    <td style="text-align:center; color:#9E9E9E; font-size:8pt">{{ $psIdx+1 }}</td>
+                    <td>{{ $ps['stage'] }}</td>
+                    <td style="text-align:center">{{ $ps['percentage'] !== '' && $ps['percentage'] !== null ? $ps['percentage'].'%' : '—' }}</td>
+                    <td style="text-align:center">{{ $ps['quantity'] ?? '—' }}</td>
+                    <td style="color:#546E7A; font-size:8pt">{{ $ps['comment'] ?? '' }}</td>
+                </tr>
+                @endforeach
+            </tbody>
+        </table>
         @endif
         @if(!empty($data['notes']))
-        <div class="section-note">{{ $data['notes'] }}</div>
+        <div class="section-note" style="margin-top:8px">{{ $data['notes'] }}</div>
         @endif
 
         {{-- ════════════ CONTAINER DETAILS ════════════ --}}
@@ -1230,13 +1487,15 @@ uasort($summaryRows, fn($a, $b) => $a['sortPriority'] <=> $b['sortPriority']);
                 'Container Type'      => $data['container_type'] ?? null,
                 'Seal Number'         => $data['seal_number'] ?? null,
                 'Loading Date'        => $data['loading_date'] ?? null,
+                'Loading Start Time'  => $data['loading_start_time'] ?? null,
+                'Loading End Time'    => $data['loading_end_time'] ?? null,
                 'Loading Port'        => $data['loading_port'] ?? null,
                 'Discharge Port'      => $data['discharge_port'] ?? null,
-                'Total Cartons'       => $data['total_cartons_loaded'] ?? null,
-                'Total Quantity'      => $data['total_qty_loaded'] ?? null,
-                'Container Condition' => $data['container_condition'] ?? null,
+                'Total Cartons Loaded' => $data['total_cartons_loaded'] ?? null,
+                'Total Quantity Loaded' => $data['total_quantity_loaded'] ?? null,
             ], fn($v) => $v !== null && $v !== '');
             $cfHalf = (int) ceil(count($cf) / 2);
+            $addGallery($imgsByTask('container_photos'), null);
         @endphp
         <table style="width:100%; border-collapse:collapse">
             <tr>
@@ -1256,178 +1515,16 @@ uasort($summaryRows, fn($a, $b) => $a['sortPriority'] <=> $b['sortPriority']);
                 </td>
             </tr>
         </table>
-        @if($images->isNotEmpty())
-        <div class="sub-heading">Container Photos</div>
-        <table class="img-gallery-table">
-            <tr>
-                @foreach($images->take(3) as $img)
-                @php $b64 = $imgBase64($img->file_path); @endphp
-                <td style="width:33.33%">
-                    @if($b64)<img src="{{ $b64 }}" class="img-thumb"><div class="img-label">{{ $img->title ?: $img->file_name }}</div>@endif
-                </td>
-                @endforeach
-                @for($p = min($images->count(), 3); $p < 3; $p++)<td style="width:33.33%"></td>@endfor
-            </tr>
-        </table>
+        @if(!empty($data['notes']))
+        <div class="section-note" style="margin-top:8px">{{ $data['notes'] }}</div>
         @endif
 
-        {{-- ════════════ FINAL REVIEW / CONCLUSION ════════════ --}}
-        @elseif($secType === 'review' || $secType === 'conclusion' || $slug === 'final_review')
-        @php
-            $rf = array_filter([
-                'Overall QC Verdict' => $data['overall_verdict'] ?? null,
-                'Inspector Name'     => $data['inspector_name'] ?? null,
-                'Follow-up Date'     => $data['follow_up_date'] ?? null,
-                'Conclusion'         => $data['conclusion'] ?? null,
-                'Summary'            => $data['summary'] ?? null,
-                'Notes / Remarks'    => $data['notes'] ?? null,
-            ], fn($v) => $v !== null && $v !== '');
-        @endphp
-        @if(!empty($rf))
-        <table class="meta-table">
-            @foreach($rf as $label => $value)
-            <tr>
-                <td class="mk">{{ $label }}</td>
-                <td class="mv">
-                    @if($label === 'Overall QC Verdict')
-                    @php $vc = match($value) {
-                        'Pass'                   => 'vb-pass',
-                        'Fail'                   => 'vb-fail',
-                        'Conditional Pass'       => 'vb-conditional',
-                        'Re-Inspection Required' => 'vb-conditional',
-                        default                  => 'vb-pending',
-                    }; @endphp
-                    <span class="review-verdict-box {{ $vc }}">{{ $value }}</span>
-                    @else
-                        {{ $value }}
-                    @endif
-                </td>
-            </tr>
-            @endforeach
-        </table>
-        @endif
-
-        {{-- ════════════ TASK LIST ════════════ --}}
-        @elseif($secType === 'task_list')
-        @php
-            $taskDefs = $sec->default_data['tasks'] ?? [];
-            $taskData = $data['tasks'] ?? [];
-        @endphp
-        @if(!empty($taskDefs))
-        <table class="data-table">
-            <thead>
-                <tr>
-                    <th style="width:4%; text-align:center">#</th>
-                    <th style="width:40%">Task / Checkpoint</th>
-                    <th style="width:14%; text-align:center">Result</th>
-                    <th>Notes</th>
-                    <th style="width:65px; text-align:center">Photos</th>
-                </tr>
-            </thead>
-            <tbody>
-                @foreach($taskDefs as $tIdx => $taskDef)
-                @php
-                    $tKey   = $taskDef['key'] ?? '';
-                    $tEntry = $taskData[$tKey] ?? [];
-                    $tRes   = $tEntry['selected'] ?? '—';
-                    $tNotes = $tEntry['notes'] ?? ($tEntry['comments'] ?? '');
-                    $tImgs  = $images->filter(fn($a) => $a->task_key === $tKey)->values();
-                    $tCls   = match(strtolower((string)$tRes)) {
-                        'pass' => 'rb-pass', 'fail' => 'rb-fail', 'n/a','na' => 'rb-na', default => 'rb-def'
-                    };
-                @endphp
-                <tr>
-                    <td style="text-align:center; color:#9E9E9E; font-size:8pt">{{ $tIdx+1 }}</td>
-                    <td>{{ $taskDef['label'] ?? $tKey }}</td>
-                    <td style="text-align:center"><span class="{{ $tCls }}">{!! $tRes ?: '—' !!}</span></td>
-                    <td style="color:#546E7A; font-size:8pt">{{ $tNotes }}</td>
-                    <td style="text-align:center">
-                        @foreach($tImgs->take(2) as $img)
-                        @php $b64 = $imgBase64($img->file_path); @endphp
-                        @if($b64)<img src="{{ $b64 }}" style="width:32px;height:32px;object-fit:cover;border:1px solid #DEE2E6;margin:1px;border-radius:2px">@endif
-                        @endforeach
-                    </td>
-                </tr>
-                @endforeach
-            </tbody>
-        </table>
-        @endif
-
-        {{-- ════════════ CARTON DIMENSIONS & WEIGHT ════════════ --}}
-        @elseif($secType === 'cartons' || $slug === 'carton_dimensions_weight')
-        @php
-            $cstd = array_filter([
-                'Length (cm)'        => $data['length'] ?? null,
-                'Width (cm)'         => $data['width'] ?? null,
-                'Height (cm)'        => $data['height'] ?? null,
-                'Gross Weight (kg)'  => $data['gross_weight'] ?? null,
-                'Net Weight (kg)'    => $data['net_weight'] ?? null,
-                'CBM'                => $data['cbm'] ?? null,
-                'Cartons per Pallet' => $data['cartons_per_pallet'] ?? null,
-            ], fn($v) => $v !== null && $v !== '');
-            $cstdHalf   = (int) ceil(count($cstd) / 2);
-            $cartonRows = $data['items'] ?? [];
-        @endphp
-        @if(!empty($cstd))
-        <div class="sub-heading" style="margin-top:0">Standard Specifications</div>
-        <table style="width:100%; margin-bottom:12px; border-collapse:collapse">
-            <tr>
-                <td style="width:50%; padding-right:8px; vertical-align:top">
-                    <table class="meta-table">
-                        @foreach(array_slice($cstd, 0, $cstdHalf) as $label => $value)
-                        <tr><td class="mk">{{ $label }}</td><td class="mv">{{ $value }}</td></tr>
-                        @endforeach
-                    </table>
-                </td>
-                <td style="width:50%; vertical-align:top">
-                    <table class="meta-table">
-                        @foreach(array_slice($cstd, $cstdHalf) as $label => $value)
-                        <tr><td class="mk">{{ $label }}</td><td class="mv">{{ $value }}</td></tr>
-                        @endforeach
-                    </table>
-                </td>
-            </tr>
-        </table>
-        @endif
-        @if(!empty($cartonRows))
-        <div class="sub-heading">Measured Cartons</div>
-        <table class="data-table">
-            <thead>
-                <tr>
-                    <th>Carton No.</th>
-                    <th style="text-align:center">Length</th>
-                    <th style="text-align:center">Width</th>
-                    <th style="text-align:center">Height</th>
-                    <th style="text-align:center">Gross Wt.</th>
-                    <th style="text-align:center">Net Wt.</th>
-                    <th style="text-align:center">Result</th>
-                </tr>
-            </thead>
-            <tbody>
-                @foreach($cartonRows as $ci)
-                @php
-                    $ciRes = $ci['result'] ?? '—';
-                    $ciCls = match(strtolower((string)$ciRes)) { 'pass' => 'rb-pass', 'fail' => 'rb-fail', default => 'rb-def' };
-                @endphp
-                <tr>
-                    <td style="font-weight:bold">{{ $ci['carton_no'] ?? ($loop->index+1) }}</td>
-                    <td style="text-align:center">{{ $ci['length'] ?? '—' }}</td>
-                    <td style="text-align:center">{{ $ci['width'] ?? '—' }}</td>
-                    <td style="text-align:center">{{ $ci['height'] ?? '—' }}</td>
-                    <td style="text-align:center">{{ $ci['gross_weight'] ?? '—' }}</td>
-                    <td style="text-align:center">{{ $ci['net_weight'] ?? '—' }}</td>
-                    <td style="text-align:center"><span class="{{ $ciCls }}">{!! $ciRes !!}</span></td>
-                </tr>
-                @endforeach
-            </tbody>
-        </table>
-        @endif
-
-        {{-- ════════════ VERIFICATION ════════════ --}}
+        {{-- ════════════ VERIFICATION (seal_verification, shipment_verification) ════════════ --}}
         @elseif($secType === 'verification')
         @php
             $verItems = $data['items'] ?? [];
             $verExtra = collect($data)->except('items')->filter(fn($v) => $v !== null && $v !== '' && !is_array($v));
+            $addGallery($imgsByTask('verification_photos'), null);
         @endphp
         @if($verExtra->isNotEmpty())
         <table class="meta-table" style="margin-bottom:10px">
@@ -1463,82 +1560,225 @@ uasort($summaryRows, fn($a, $b) => $a['sortPriority'] <=> $b['sortPriority']);
         </table>
         @endif
 
-        {{-- ════════════ ARTICLE RESULTS ════════════ --}}
-        @elseif($secType === 'article_results')
-        @php
-            $artItems = $data['items'] ?? [];
-            $artExtra = collect($data)->except('items')->filter(fn($v) => $v !== null && $v !== '' && !is_array($v));
-        @endphp
-        @if($artExtra->isNotEmpty())
-        <table class="meta-table" style="margin-bottom:10px">
-            @foreach($artExtra as $k => $v)
-            <tr><td class="mk">{{ ucwords(str_replace('_', ' ', $k)) }}</td><td class="mv">{{ $v }}</td></tr>
-            @endforeach
+        {{-- ════════════ REVIEW (overall_carton_condition / corrective_action / overall_article_result / final_review) ════════════ --}}
+        @elseif($secType === 'review')
+        @if($slug === 'overall_carton_condition')
+        @php $addGallery($imgsByTask('carton_condition'), null); @endphp
+        <table class="meta-table">
+            <tr><td class="mk">Overall Carton Condition</td><td class="mv">{{ $data['overall_condition'] ?? '—' }}</td></tr>
         </table>
+        @if(!empty($data['remarks']))
+        <div class="section-note" style="margin-top:8px">{{ $data['remarks'] }}</div>
         @endif
-        @if(!empty($artItems))
+
+        @elseif($slug === 'corrective_action')
+        @php $capItems = $data['items'] ?? []; @endphp
+        @if(!empty($capItems))
         <table class="data-table">
             <thead>
                 <tr>
                     <th style="width:4%; text-align:center">#</th>
-                    <th style="width:45%">Parameter</th>
-                    <th style="width:18%; text-align:center">Result</th>
-                    <th>Remarks</th>
+                    <th style="width:20%">Defect / Non-Conformance</th>
+                    <th style="width:16%">Root Cause</th>
+                    <th style="width:18%">Corrective Action</th>
+                    <th style="width:12%">Responsible</th>
+                    <th style="width:10%; text-align:center">Target Date</th>
+                    <th style="width:10%; text-align:center">Status</th>
                 </tr>
             </thead>
             <tbody>
-                @foreach($artItems as $aIdx => $ai)
+                @foreach($capItems as $capIdx => $cap)
                 @php
-                    $aiRes = $ai['result'] ?? '—';
-                    $aiCls = match(strtolower((string)$aiRes)) { 'pass' => 'rb-pass', 'fail' => 'rb-fail', 'n/a','na' => 'rb-na', default => 'rb-def' };
+                    $capCls = match($cap['status'] ?? 'Open') {
+                        'Closed' => 'rb-pass', 'Rejected' => 'rb-fail', default => 'rb-na',
+                    };
                 @endphp
                 <tr>
-                    <td style="text-align:center; color:#9E9E9E; font-size:8pt">{{ $aIdx+1 }}</td>
-                    <td>{{ $ai['label'] ?? $ai['parameter'] ?? '' }}</td>
-                    <td style="text-align:center"><span class="{{ $aiCls }}">{!! $aiRes !!}</span></td>
-                    <td style="color:#546E7A; font-size:8pt">{{ $ai['remarks'] ?? '' }}</td>
+                    <td style="text-align:center; color:#9E9E9E; font-size:8pt">{{ $capIdx+1 }}</td>
+                    <td>{{ $cap['defect_description'] ?? '' }}</td>
+                    <td style="color:#546E7A; font-size:8pt">{{ $cap['root_cause'] ?? '' }}</td>
+                    <td style="color:#546E7A; font-size:8pt">{{ $cap['corrective_action'] ?? '' }}</td>
+                    <td>{{ $cap['responsible_party'] ?? '' }}</td>
+                    <td style="text-align:center; font-size:8pt">{{ $cap['target_date'] ?? '—' }}</td>
+                    <td style="text-align:center"><span class="{{ $capCls }}">{{ $cap['status'] ?? 'Open' }}</span></td>
                 </tr>
                 @endforeach
             </tbody>
         </table>
         @endif
 
-        {{-- ════════════ MEASUREMENT CHECK ════════════ --}}
-        @elseif($slug === 'measurement_check')
-        @php $measurements = $data['measurements'] ?? []; @endphp
-        @if(!empty($measurements))
+        @elseif($slug === 'overall_article_result')
+        @php
+            $vc = match($data['overall_result'] ?? null) {
+                'Pass'                   => 'vb-pass',
+                'Fail'                   => 'vb-fail',
+                'Re-Inspection Required' => 'vb-conditional',
+                default                  => 'vb-pending',
+            };
+        @endphp
+        <table class="meta-table">
+            <tr>
+                <td class="mk">Overall Article Result</td>
+                <td class="mv"><span class="review-verdict-box {{ $vc }}">{{ $data['overall_result'] ?? 'Pending' }}</span></td>
+            </tr>
+            @if(!empty($data['follow_up_date']))
+            <tr><td class="mk">Follow-up Date</td><td class="mv">{{ $data['follow_up_date'] }}</td></tr>
+            @endif
+        </table>
+        @if(!empty($data['remarks']))
+        <div class="section-note" style="margin-top:8px">{{ $data['remarks'] }}</div>
+        @endif
+
+        @else
+        {{-- final_review or any other legacy review slug --}}
+        @php
+            $rf = array_filter([
+                'Overall QC Verdict' => $data['overall_verdict'] ?? null,
+                'Inspector Name'     => $data['inspector_name'] ?? null,
+                'Follow-up Date'     => $data['follow_up_date'] ?? null,
+                'Action Required'    => $data['action_required'] ?? null,
+                'QC Remarks'         => $data['qc_remarks'] ?? null,
+            ], fn($v) => $v !== null && $v !== '');
+        @endphp
+        @if(!empty($rf))
+        <table class="meta-table">
+            @foreach($rf as $label => $value)
+            <tr><td class="mk">{{ $label }}</td><td class="mv">{{ $value }}</td></tr>
+            @endforeach
+        </table>
+        @endif
+        @endif
+
+        {{-- ════════════ ARTICLE RESULTS TABLE ════════════ --}}
+        @elseif($secType === 'article_results')
+        @php $articles = collect($data['articles'] ?? [])->filter(fn($a) => !empty($a['article_no']) || !empty($a['result']))->values(); @endphp
+        @if($articles->isEmpty())
+        <div class="empty-state">No article results recorded.</div>
+        @else
         <table class="data-table">
             <thead>
                 <tr>
                     <th style="width:4%; text-align:center">#</th>
-                    <th style="width:34%">Measurement Point</th>
-                    <th style="width:14%; text-align:center">Spec</th>
-                    <th style="width:14%; text-align:center">Tolerance</th>
-                    <th style="width:14%; text-align:center">Measured</th>
-                    <th style="width:12%; text-align:center">Result</th>
+                    <th>Article / Style No.</th>
+                    <th>Color</th>
+                    <th>Size</th>
+                    <th style="text-align:center">Qty Ordered</th>
+                    <th style="text-align:center">Qty Inspected</th>
+                    <th style="text-align:center">Result</th>
                 </tr>
             </thead>
             <tbody>
-                @foreach($measurements as $mIdx => $m)
+                @foreach($articles as $aIdx => $ai)
                 @php
-                    $mRes = $m['result'] ?? '—';
-                    $mCls = match(strtolower((string)$mRes)) { 'pass' => 'rb-pass', 'fail' => 'rb-fail', default => 'rb-def' };
+                    $aiRes = $ai['result'] ?? '—';
+                    $aiCls = match(strtolower((string)$aiRes)) { 'pass' => 'rb-pass', 'fail' => 'rb-fail', 'n/a','na' => 'rb-na', default => 'rb-def' };
                 @endphp
                 <tr>
-                    <td style="text-align:center; color:#9E9E9E; font-size:8pt">{{ $mIdx+1 }}</td>
-                    <td>{{ $m['point'] ?? '' }}</td>
-                    <td style="text-align:center">{{ $m['spec'] ?? '—' }}</td>
-                    <td style="text-align:center; color:#9E9E9E">{{ $m['tolerance'] ?? '—' }}</td>
-                    <td style="text-align:center; font-weight:bold">{{ $m['measured'] ?? '—' }}</td>
-                    <td style="text-align:center"><span class="{{ $mCls }}">{!! $mRes !!}</span></td>
+                    <td style="text-align:center; color:#9E9E9E; font-size:8pt">{{ $aIdx+1 }}</td>
+                    <td>{{ $ai['article_no'] ?? '' }}</td>
+                    <td>{{ $ai['color'] ?? '' }}</td>
+                    <td>{{ $ai['size'] ?? '' }}</td>
+                    <td style="text-align:center">{{ $ai['qty_ordered'] ?? '—' }}</td>
+                    <td style="text-align:center">{{ $ai['qty_inspected'] ?? '—' }}</td>
+                    <td style="text-align:center"><span class="{{ $aiCls }}">{!! $aiRes !!}</span></td>
                 </tr>
                 @endforeach
             </tbody>
         </table>
         @endif
-        @if(!empty($data['notes']))
-        <div class="section-note" style="margin-top:8px">{{ $data['notes'] }}</div>
+
+        {{-- ════════════ CONCLUSION ════════════ --}}
+        @elseif($secType === 'conclusion')
+        @php
+            $cnFields = array_filter([
+                'Presented Styles'   => $data['presented_styles'] ?? null,
+                'Unpresented Styles' => $data['unpresented_styles'] ?? null,
+                'Note'               => $data['note'] ?? null,
+            ], fn($v) => $v !== null && $v !== '');
+        @endphp
+        @if(!empty($cnFields))
+        <table class="meta-table">
+            @foreach($cnFields as $label => $value)
+            <tr><td class="mk">{{ $label }}</td><td class="mv">{{ $value }}</td></tr>
+            @endforeach
+        </table>
         @endif
+
+        {{-- ════════════ FINISH INSPECTION ════════════ --}}
+        @elseif($secType === 'finish')
+        <table class="meta-table">
+            <tr>
+                <td class="mk">Status</td>
+                <td class="mv">{{ $run->completed_at ? 'Finished — ' . $run->completed_at->format('d M Y H:i') : 'Not yet finished' }}</td>
+            </tr>
+            @if(!empty($data['comments']))
+            <tr><td class="mk">Final Comments</td><td class="mv">{{ $data['comments'] }}</td></tr>
+            @endif
+        </table>
+
+        {{-- ════════════ QUANTITY & SAMPLING COUNT ════════════ --}}
+        @elseif($secType === 'quantity_sampling')
+        @php
+            $qsFields = array_filter([
+                'Product Quantity'      => $data['product_quantity'] ?? null,
+                'Packed Goods Quantity' => $data['packed_goods_qty'] ?? null,
+                'Packed Cartons Quantity' => $data['packed_cartons_qty'] ?? null,
+            ], fn($v) => $v !== null && $v !== '');
+        @endphp
+        @if(!empty($qsFields))
+        <table class="meta-table">
+            @foreach($qsFields as $label => $value)
+            <tr><td class="mk">{{ $label }}</td><td class="mv">{{ $value }}</td></tr>
+            @endforeach
+        </table>
+        @endif
+
+        {{-- ════════════ SELECTED CARTONS SI ════════════ --}}
+        @elseif($secType === 'cartons')
+        @php $selCartons = collect($data['cartons'] ?? [])->filter(fn($c) => array_filter($c))->values(); @endphp
+        @if($selCartons->isEmpty())
+        <div class="empty-state">No cartons recorded.</div>
+        @else
+        <table class="data-table">
+            <thead>
+                <tr>
+                    <th style="width:4%; text-align:center">#</th>
+                    <th>Box #</th>
+                    <th>Size</th>
+                    <th>Color</th>
+                    <th style="text-align:center">Qty Inspected</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach($selCartons as $cIdx => $carton)
+                <tr>
+                    <td style="text-align:center; color:#9E9E9E; font-size:8pt">{{ $cIdx+1 }}</td>
+                    <td>{{ $carton['box_number'] ?? '' }}</td>
+                    <td>{{ $carton['size'] ?? '' }}</td>
+                    <td>{{ $carton['color'] ?? '' }}</td>
+                    <td style="text-align:center">{{ $carton['qty_inspected'] ?? '—' }}</td>
+                </tr>
+                @endforeach
+            </tbody>
+        </table>
+        @endif
+
+        {{-- ════════════ COVER PHOTO ════════════ --}}
+        @elseif($secType === 'cover_photo')
+        @php $addGallery($images, 'Cover Photo'); @endphp
+        @if($images->isEmpty())
+        <div class="empty-state">No cover photo uploaded.</div>
+        @endif
+
+        {{-- ════════════ FILES TO REVIEW ════════════ --}}
+        @elseif($secType === 'files_review')
+        <table class="meta-table" style="margin-bottom:10px">
+            <tr><td class="mk">Reviewed by Inspector</td><td class="mv">{{ !empty($data['acknowledged']) ? 'Yes' : 'No' }}</td></tr>
+        </table>
+        @if(!empty($data['notes']))
+        <div class="section-note" style="margin-bottom:8px">{{ $data['notes'] }}</div>
+        @endif
+        @php $addGallery($images, null); @endphp
 
         {{-- ════════════ GENERIC FALLBACK ════════════ --}}
         @else
@@ -1584,31 +1824,35 @@ uasort($summaryRows, fn($a, $b) => $a['sortPriority'] <=> $b['sortPriority']);
         @endif
         @endif
 
-        {{-- ── General section-level images (non-task-keyed) ────────────── --}}
-        @php $generalImages = $images->filter(fn($a) => empty($a->task_key))->values(); @endphp
-        @if($generalImages->isNotEmpty() && $secType !== 'images')
-        <div class="sub-heading">Attached Photos</div>
-        @foreach($generalImages->take(6)->chunk(3) as $imgChunk)
+        {{-- ── Photo gallery: every recorded photo for this section, labeled by the row it
+             belongs to where applicable. Any image not explicitly consumed above (a safety net
+             against task_key mismatches) is still shown here, unlabeled. ────────────────────── --}}
+        @php
+            $leftoverImages = $images->reject(fn($img) => in_array($img->id, $consumedImageIds))->values();
+            $addGallery($leftoverImages, null);
+        @endphp
+        @if(!empty($galleryItems))
+        <div class="sub-heading">Photos</div>
+        @foreach(array_chunk($galleryItems, 3) as $galChunk)
         <table class="img-gallery-table" style="margin-bottom:4px">
             <tr>
-                @foreach($imgChunk as $img)
-                @php $b64 = $imgBase64($img->file_path); @endphp
-                <td style="width:33.33%">
+                @foreach($galChunk as $galItem)
+                @php $b64 = $imgBase64($galItem['img']->file_path); @endphp
+                <td>
                     @if($b64)
                         <img src="{{ $b64 }}" class="img-thumb">
-                        <div class="img-label">{{ $img->title ?: $img->file_name }}</div>
+                    @else
+                        <div class="img-missing">Image unavailable</div>
+                    @endif
+                    @if(!empty($galItem['label']))
+                        <div class="img-label"><strong>{{ $galItem['label'] }}</strong></div>
                     @endif
                 </td>
                 @endforeach
-                @for($p = $imgChunk->count(); $p < 3; $p++)<td style="width:33.33%"></td>@endfor
+                @for($p = count($galChunk); $p < 3; $p++)<td></td>@endfor
             </tr>
         </table>
         @endforeach
-        @if($generalImages->count() > 6)
-        <div style="font-size:7.5pt; color:#9E9E9E; margin-top:3px">
-            + {{ $generalImages->count() - 6 }} more photo(s) not shown
-        </div>
-        @endif
         @endif
 
         {{-- ── Documents ────────────────────────────────────────────────── --}}

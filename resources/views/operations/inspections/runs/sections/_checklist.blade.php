@@ -78,9 +78,9 @@
             <tr>
                 <th class="ps-3" style="width:36px">#</th>
                 <th>Checkpoint</th>
-                <th style="width:200px">Result</th>
+                <th style="width:240px">Result</th>
                 @if($hasUpload)
-                    <th style="width:200px">Attachments</th>
+                    <th style="width:280px">Attachments</th>
                 @endif
             </tr>
         </thead>
