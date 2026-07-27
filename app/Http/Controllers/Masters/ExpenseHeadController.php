@@ -36,6 +36,7 @@ class ExpenseHeadController extends Controller
     public function create()
     {
         $categories = ExpenseHead::whereNull('parent_id')->where('status', true)->orderBy('expense_name')->get();
+
         return view('masters.expense-heads.create', compact('categories'));
     }
 
@@ -54,6 +55,7 @@ class ExpenseHeadController extends Controller
     public function show(ExpenseHead $expenseHead)
     {
         $expenseHead->load('parent', 'children', 'expenses');
+
         return view('masters.expense-heads.show', compact('expenseHead'));
     }
 
@@ -64,6 +66,7 @@ class ExpenseHeadController extends Controller
             ->where('id', '!=', $expenseHead->id)
             ->orderBy('expense_name')
             ->get();
+
         return view('masters.expense-heads.edit', compact('expenseHead', 'categories'));
     }
 
@@ -104,6 +107,6 @@ class ExpenseHeadController extends Controller
             ->setOption('isRemoteEnabled', false)
             ->setOption('defaultFont', 'DejaVu Sans');
 
-        return $pdf->download('ExpenseHeads-' . now()->format('Y-m-d') . '.pdf');
+        return $pdf->stream('ExpenseHeads-'.now()->format('Y-m-d').'.pdf');
     }
 }

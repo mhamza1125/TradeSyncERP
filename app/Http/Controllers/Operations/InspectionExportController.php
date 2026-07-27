@@ -32,19 +32,19 @@ class InspectionExportController extends Controller
 
         $pdf = Pdf::loadView('exports.inspection-run-pdf', [
             'inspection' => $inspection,
-            'runs'       => collect([$run]),
-            'imgBase64'  => $this->imgBase64Closure(),
-            'defects'    => Defect::all()->keyBy('id'),
+            'runs' => collect([$run]),
+            'imgBase64' => $this->imgBase64Closure(),
+            'defects' => Defect::all()->keyBy('id'),
             'logoBase64' => $this->logoBase64(),
         ])
-        ->setPaper('a4', 'portrait')
-        ->setOption('isHtml5ParserEnabled', true)
-        ->setOption('isRemoteEnabled', false)
-        ->setOption('defaultFont', 'sans-serif');
+            ->setPaper('a4', 'portrait')
+            ->setOption('isHtml5ParserEnabled', true)
+            ->setOption('isRemoteEnabled', false)
+            ->setOption('defaultFont', 'sans-serif');
 
         $filename = sprintf('INS-%s-Run%d.pdf', $inspection->report_number, $run->run_number);
 
-        return $pdf->download($filename);
+        return $pdf->stream($filename);
     }
 
     // ── Bulk PDF: all runs for an inspection (or selected subset) ─────────────
@@ -63,7 +63,7 @@ class InspectionExportController extends Controller
             ])
             ->orderBy('run_number');
 
-        if (!empty($runIds)) {
+        if (! empty($runIds)) {
             $query->whereIn('id', $runIds);
         }
 
@@ -77,19 +77,19 @@ class InspectionExportController extends Controller
 
         $pdf = Pdf::loadView('exports.inspection-run-pdf', [
             'inspection' => $inspection,
-            'runs'       => $runs,
-            'imgBase64'  => $this->imgBase64Closure(),
-            'defects'    => Defect::all()->keyBy('id'),
+            'runs' => $runs,
+            'imgBase64' => $this->imgBase64Closure(),
+            'defects' => Defect::all()->keyBy('id'),
             'logoBase64' => $this->logoBase64(),
         ])
-        ->setPaper('a4', 'portrait')
-        ->setOption('isHtml5ParserEnabled', true)
-        ->setOption('isRemoteEnabled', false)
-        ->setOption('defaultFont', 'sans-serif');
+            ->setPaper('a4', 'portrait')
+            ->setOption('isHtml5ParserEnabled', true)
+            ->setOption('isRemoteEnabled', false)
+            ->setOption('defaultFont', 'sans-serif');
 
         $filename = sprintf('INS-%s-AllRuns.pdf', $inspection->report_number);
 
-        return $pdf->download($filename);
+        return $pdf->stream($filename);
     }
 
     // ── Helper: company logo as base64 URI, if the asset exists ───────────────
@@ -98,13 +98,13 @@ class InspectionExportController extends Controller
     {
         $path = public_path('assets/images/logo-trade.png');
 
-        if (!file_exists($path)) {
+        if (! file_exists($path)) {
             return null;
         }
 
         $mime = mime_content_type($path) ?: 'image/png';
 
-        return 'data:' . $mime . ';base64,' . base64_encode(file_get_contents($path));
+        return 'data:'.$mime.';base64,'.base64_encode(file_get_contents($path));
     }
 
     // ── Helper: closure that converts a storage-relative path to base64 URI ──
@@ -112,21 +112,22 @@ class InspectionExportController extends Controller
     private function imgBase64Closure(): \Closure
     {
         return function (?string $filePath): ?string {
-            if (!$filePath) {
+            if (! $filePath) {
                 return null;
             }
 
             // Resolve against both public disk and public/assets
             $candidates = [
-                storage_path('app/public/' . $filePath),
+                storage_path('app/public/'.$filePath),
                 public_path($filePath),
-                public_path('storage/' . $filePath),
+                public_path('storage/'.$filePath),
             ];
 
             foreach ($candidates as $abs) {
                 if (file_exists($abs)) {
                     $mime = mime_content_type($abs) ?: 'image/jpeg';
-                    return 'data:' . $mime . ';base64,' . base64_encode(file_get_contents($abs));
+
+                    return 'data:'.$mime.';base64,'.base64_encode(file_get_contents($abs));
                 }
             }
 

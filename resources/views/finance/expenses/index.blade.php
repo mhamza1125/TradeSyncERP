@@ -24,7 +24,7 @@
                         <i class="feather-filter"></i>
                     </a>
                     @can('expenses.index')
-                    <a href="{{ route('expenses.export-pdf', request()->query()) }}" class="btn btn-light-brand" title="Export PDF">
+                    <a href="{{ route('expenses.export-pdf', request()->query()) }}" class="btn btn-light-brand" title="Export PDF" target="_blank">
                         <i class="feather-download me-2"></i><span>Export PDF</span>
                     </a>
                     @endcan

@@ -49,6 +49,7 @@ class SizeController extends Controller
     public function show(SampleSize $size)
     {
         $size->loadCount('variations');
+
         return view('masters.sizes.show', compact('size'));
     }
 
@@ -60,7 +61,7 @@ class SizeController extends Controller
     public function update(Request $request, SampleSize $size)
     {
         $request->validate([
-            'name' => ['required', 'string', 'max:100', 'unique:sample_sizes,name,' . $size->id],
+            'name' => ['required', 'string', 'max:100', 'unique:sample_sizes,name,'.$size->id],
         ]);
 
         $size->update(['name' => $request->name]);
@@ -95,6 +96,6 @@ class SizeController extends Controller
             ->setOption('isRemoteEnabled', false)
             ->setOption('defaultFont', 'DejaVu Sans');
 
-        return $pdf->download('Sizes-' . now()->format('Y-m-d') . '.pdf');
+        return $pdf->stream('Sizes-'.now()->format('Y-m-d').'.pdf');
     }
 }

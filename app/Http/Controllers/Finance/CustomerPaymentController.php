@@ -3,7 +3,6 @@
 namespace App\Http\Controllers\Finance;
 
 use App\Http\Controllers\Controller;
-use App\Http\Controllers\Finance\CustomerInvoiceController;
 use App\Http\Requests\Finance\StoreCustomerPaymentRequest;
 use App\Http\Requests\Finance\UpdateCustomerPaymentRequest;
 use App\Models\Account;
@@ -36,13 +35,14 @@ class CustomerPaymentController extends Controller
             ->withQueryString();
 
         $customers = Customer::where('status', true)->orderBy('customer_name')->get();
+
         return view('finance.customer-payments.index', compact('payments', 'customers'));
     }
 
     public function create(Request $request)
     {
-        $customers   = Customer::with('currency')->where('status', true)->orderBy('customer_name')->get();
-        $accounts    = Account::where('status', true)->whereIn('account_type', ['Cash', 'Bank'])->get();
+        $customers = Customer::with('currency')->where('status', true)->orderBy('customer_name')->get();
+        $accounts = Account::where('status', true)->whereIn('account_type', ['Cash', 'Bank'])->get();
         $fromInvoice = null;
 
         if ($request->filled('from_invoice')) {
@@ -58,21 +58,21 @@ class CustomerPaymentController extends Controller
         return DB::transaction(function () use ($request) {
             $data = $request->validated();
 
-            $data['expected_pkr']  = round($data['received_fc'] * $data['exchange_rate'], 2);
+            $data['expected_pkr'] = round($data['received_fc'] * $data['exchange_rate'], 2);
             $data['pkr_gain_loss'] = round($data['actual_pkr_received'] - $data['expected_pkr'], 2);
-            $data['fc_gain_loss']  = round($data['invoiced_amount_fc'] - $data['received_fc'], 2);
-            $data['deduction_fc']  = round($data['invoiced_amount_fc'] - $data['received_fc'], 2);
-            $data['account_id']    = $data['debit_account_id'];
+            $data['fc_gain_loss'] = round($data['invoiced_amount_fc'] - $data['received_fc'], 2);
+            $data['deduction_fc'] = round($data['invoiced_amount_fc'] - $data['received_fc'], 2);
+            $data['account_id'] = $data['debit_account_id'];
 
             $transaction = Transaction::create([
-                'transaction_date'  => $data['payment_date'],
-                'transaction_type'  => 'CustomerReceipt',
-                'reference_type'    => 'customer_payment',
-                'debit_account_id'  => $data['debit_account_id'],
+                'transaction_date' => $data['payment_date'],
+                'transaction_type' => 'CustomerReceipt',
+                'reference_type' => 'customer_payment',
+                'debit_account_id' => $data['debit_account_id'],
                 'credit_account_id' => $data['account_id'],
-                'amount'            => $data['actual_pkr_received'],
-                'remarks'           => $data['remarks'] ?? null,
-                'created_by'        => auth()->id(),
+                'amount' => $data['actual_pkr_received'],
+                'remarks' => $data['remarks'] ?? null,
+                'created_by' => auth()->id(),
             ]);
 
             $data['transaction_id'] = $transaction->id;
@@ -96,6 +96,7 @@ class CustomerPaymentController extends Controller
     public function show(CustomerPayment $customerPayment)
     {
         $customerPayment->load(['customer', 'account', 'transaction.debitAccount', 'transaction.creditAccount']);
+
         return view('finance.customer-payments.show', compact('customerPayment'));
     }
 
@@ -103,7 +104,8 @@ class CustomerPaymentController extends Controller
     {
         $customerPayment->load(['customer', 'account', 'transaction']);
         $customers = Customer::with('currency')->where('status', true)->orderBy('customer_name')->get();
-        $accounts  = Account::where('status', true)->whereIn('account_type', ['Cash', 'Bank'])->get();
+        $accounts = Account::where('status', true)->whereIn('account_type', ['Cash', 'Bank'])->get();
+
         return view('finance.customer-payments.edit', compact('customerPayment', 'customers', 'accounts'));
     }
 
@@ -112,11 +114,11 @@ class CustomerPaymentController extends Controller
         return DB::transaction(function () use ($request, $customerPayment) {
             $data = $request->validated();
 
-            $data['expected_pkr']  = round($data['received_fc'] * $data['exchange_rate'], 2);
+            $data['expected_pkr'] = round($data['received_fc'] * $data['exchange_rate'], 2);
             $data['pkr_gain_loss'] = round($data['actual_pkr_received'] - $data['expected_pkr'], 2);
-            $data['fc_gain_loss']  = round($data['invoiced_amount_fc'] - $data['received_fc'], 2);
-            $data['deduction_fc']  = round($data['invoiced_amount_fc'] - $data['received_fc'], 2);
-            $data['account_id']    = $data['debit_account_id'];
+            $data['fc_gain_loss'] = round($data['invoiced_amount_fc'] - $data['received_fc'], 2);
+            $data['deduction_fc'] = round($data['invoiced_amount_fc'] - $data['received_fc'], 2);
+            $data['account_id'] = $data['debit_account_id'];
             unset($data['debit_account_id']);
 
             $oldInvoiceRef = $customerPayment->invoice_reference;
@@ -124,11 +126,11 @@ class CustomerPaymentController extends Controller
 
             if ($customerPayment->transaction) {
                 $customerPayment->transaction->update([
-                    'transaction_date'  => $data['payment_date'],
-                    'debit_account_id'  => $data['account_id'],
+                    'transaction_date' => $data['payment_date'],
+                    'debit_account_id' => $data['account_id'],
                     'credit_account_id' => $data['account_id'],
-                    'amount'            => $data['actual_pkr_received'],
-                    'remarks'           => $data['remarks'] ?? null,
+                    'amount' => $data['actual_pkr_received'],
+                    'remarks' => $data['remarks'] ?? null,
                 ]);
             }
 
@@ -162,7 +164,7 @@ class CustomerPaymentController extends Controller
             ->setOption('isRemoteEnabled', false)
             ->setOption('defaultFont', 'DejaVu Sans');
 
-        return $pdf->download('CustomerPayments-' . now()->format('Y-m-d') . '.pdf');
+        return $pdf->stream('CustomerPayments-'.now()->format('Y-m-d').'.pdf');
     }
 
     public function exportPdf(CustomerPayment $customerPayment)
@@ -175,7 +177,7 @@ class CustomerPaymentController extends Controller
             ->setOption('isRemoteEnabled', false)
             ->setOption('defaultFont', 'DejaVu Sans');
 
-        return $pdf->download("PaymentReceipt-{$customerPayment->id}.pdf");
+        return $pdf->stream("PaymentReceipt-{$customerPayment->id}.pdf");
     }
 
     public function destroy(CustomerPayment $customerPayment)

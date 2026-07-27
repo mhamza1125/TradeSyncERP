@@ -18,9 +18,9 @@ class LedgerController extends Controller
 
     public function cash(Request $request)
     {
-        $accounts    = Account::where('account_type', 'Cash')->where('status', true)->get();
-        $account     = $accounts->firstWhere('id', $request->account_id) ?? $accounts->first();
-        $transactions   = [];
+        $accounts = Account::where('account_type', 'Cash')->where('status', true)->get();
+        $account = $accounts->firstWhere('id', $request->account_id) ?? $accounts->first();
+        $transactions = [];
         $openingBalance = 0;
 
         if ($account) {
@@ -46,6 +46,7 @@ class LedgerController extends Controller
                         if ($txn->transaction_type === 'JournalEntry') {
                             return $carry + ($txn->debit_account_id == $account->id ? (float) $txn->amount : -(float) $txn->amount);
                         }
+
                         return $carry + ($txn->transaction_type === 'CustomerReceipt' ? (float) $txn->amount : -(float) $txn->amount);
                     }, 0.0);
             }
@@ -56,9 +57,9 @@ class LedgerController extends Controller
 
     public function bank(Request $request)
     {
-        $accounts    = Account::where('account_type', 'Bank')->where('status', true)->get();
-        $account     = $accounts->firstWhere('id', $request->account_id) ?? $accounts->first();
-        $transactions   = [];
+        $accounts = Account::where('account_type', 'Bank')->where('status', true)->get();
+        $account = $accounts->firstWhere('id', $request->account_id) ?? $accounts->first();
+        $transactions = [];
         $openingBalance = 0;
 
         if ($account) {
@@ -84,6 +85,7 @@ class LedgerController extends Controller
                         if ($txn->transaction_type === 'JournalEntry') {
                             return $carry + ($txn->debit_account_id == $account->id ? (float) $txn->amount : -(float) $txn->amount);
                         }
+
                         return $carry + ($txn->transaction_type === 'CustomerReceipt' ? (float) $txn->amount : -(float) $txn->amount);
                     }, 0.0);
             }
@@ -108,51 +110,51 @@ class LedgerController extends Controller
     public function exportCash(Request $request)
     {
         $accounts = Account::where('account_type', 'Cash')->where('status', true)->get();
-        $account  = $accounts->firstWhere('id', $request->account_id) ?? $accounts->first();
+        $account = $accounts->firstWhere('id', $request->account_id) ?? $accounts->first();
 
         [$transactions, $openingBalance] = $this->fetchLedgerTransactions($request, $account);
         $closingBalance = $this->computeClosingBalance($transactions, $account, $openingBalance);
 
         $pdf = Pdf::loadView('exports.ledger-pdf', [
-            'title'          => 'Cash Ledger',
-            'account'        => $account,
-            'transactions'   => $transactions,
+            'title' => 'Cash Ledger',
+            'account' => $account,
+            'transactions' => $transactions,
             'openingBalance' => $openingBalance,
             'closingBalance' => $closingBalance,
-            'filters'        => $request->only('from_date', 'to_date'),
-            'customer'       => null,
+            'filters' => $request->only('from_date', 'to_date'),
+            'customer' => null,
         ])
-        ->setPaper('a4', 'portrait')
-        ->setOption('isHtml5ParserEnabled', true)
-        ->setOption('isRemoteEnabled', false)
-        ->setOption('defaultFont', 'DejaVu Sans');
+            ->setPaper('a4', 'portrait')
+            ->setOption('isHtml5ParserEnabled', true)
+            ->setOption('isRemoteEnabled', false)
+            ->setOption('defaultFont', 'DejaVu Sans');
 
-        return $pdf->download('CashLedger-' . now()->format('Y-m-d') . '.pdf');
+        return $pdf->stream('CashLedger-'.now()->format('Y-m-d').'.pdf');
     }
 
     public function exportBank(Request $request)
     {
         $accounts = Account::where('account_type', 'Bank')->where('status', true)->get();
-        $account  = $accounts->firstWhere('id', $request->account_id) ?? $accounts->first();
+        $account = $accounts->firstWhere('id', $request->account_id) ?? $accounts->first();
 
         [$transactions, $openingBalance] = $this->fetchLedgerTransactions($request, $account);
         $closingBalance = $this->computeClosingBalance($transactions, $account, $openingBalance);
 
         $pdf = Pdf::loadView('exports.ledger-pdf', [
-            'title'          => 'Bank Ledger',
-            'account'        => $account,
-            'transactions'   => $transactions,
+            'title' => 'Bank Ledger',
+            'account' => $account,
+            'transactions' => $transactions,
             'openingBalance' => $openingBalance,
             'closingBalance' => $closingBalance,
-            'filters'        => $request->only('from_date', 'to_date'),
-            'customer'       => null,
+            'filters' => $request->only('from_date', 'to_date'),
+            'customer' => null,
         ])
-        ->setPaper('a4', 'portrait')
-        ->setOption('isHtml5ParserEnabled', true)
-        ->setOption('isRemoteEnabled', false)
-        ->setOption('defaultFont', 'DejaVu Sans');
+            ->setPaper('a4', 'portrait')
+            ->setOption('isHtml5ParserEnabled', true)
+            ->setOption('isRemoteEnabled', false)
+            ->setOption('defaultFont', 'DejaVu Sans');
 
-        return $pdf->download('BankLedger-' . now()->format('Y-m-d') . '.pdf');
+        return $pdf->stream('BankLedger-'.now()->format('Y-m-d').'.pdf');
     }
 
     public function exportCustomer(Request $request, Customer $customer)
@@ -165,25 +167,25 @@ class LedgerController extends Controller
             ->get();
 
         $pdf = Pdf::loadView('exports.ledger-pdf', [
-            'title'          => 'Customer Ledger',
-            'customer'       => $customer->load('currency'),
-            'transactions'   => $transactions,
-            'account'        => null,
+            'title' => 'Customer Ledger',
+            'customer' => $customer->load('currency'),
+            'transactions' => $transactions,
+            'account' => null,
             'openingBalance' => 0,
             'closingBalance' => 0,
-            'filters'        => $request->only('from_date', 'to_date'),
+            'filters' => $request->only('from_date', 'to_date'),
         ])
-        ->setPaper('a4', 'landscape')
-        ->setOption('isHtml5ParserEnabled', true)
-        ->setOption('isRemoteEnabled', false)
-        ->setOption('defaultFont', 'DejaVu Sans');
+            ->setPaper('a4', 'landscape')
+            ->setOption('isHtml5ParserEnabled', true)
+            ->setOption('isRemoteEnabled', false)
+            ->setOption('defaultFont', 'DejaVu Sans');
 
-        return $pdf->download("CustomerLedger-{$customer->customer_name}-" . now()->format('Y-m-d') . '.pdf');
+        return $pdf->stream("CustomerLedger-{$customer->customer_name}-".now()->format('Y-m-d').'.pdf');
     }
 
     private function fetchLedgerTransactions(Request $request, ?Account $account): array
     {
-        if (!$account) {
+        if (! $account) {
             return [collect(), 0];
         }
 
@@ -199,15 +201,16 @@ class LedgerController extends Controller
 
     private function computeClosingBalance($transactions, ?Account $account, float $opening): float
     {
-        if (!$account) {
+        if (! $account) {
             return 0.0;
         }
 
         return $transactions->reduce(function (float $carry, $txn) use ($account) {
             if ($txn->transaction_type === 'JournalEntry') {
-                return $carry + ($txn->debit_account_id == $account->id ? (float)$txn->amount : -(float)$txn->amount);
+                return $carry + ($txn->debit_account_id == $account->id ? (float) $txn->amount : -(float) $txn->amount);
             }
-            return $carry + ($txn->transaction_type === 'CustomerReceipt' ? (float)$txn->amount : -(float)$txn->amount);
+
+            return $carry + ($txn->transaction_type === 'CustomerReceipt' ? (float) $txn->amount : -(float) $txn->amount);
         }, $opening);
     }
 }

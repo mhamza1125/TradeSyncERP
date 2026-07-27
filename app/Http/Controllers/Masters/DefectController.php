@@ -38,10 +38,10 @@ class DefectController extends Controller
     public function store(Request $request)
     {
         $validated = $request->validate([
-            'defect_name'       => ['required', 'string', 'max:255', 'unique:defects,defect_name'],
-            'severity'          => ['required', 'in:critical,major,minor,functional'],
+            'defect_name' => ['required', 'string', 'max:255', 'unique:defects,defect_name'],
+            'severity' => ['required', 'in:critical,major,minor,functional'],
             'corrective_action' => ['nullable', 'string', 'max:2000'],
-            'status'            => ['boolean'],
+            'status' => ['boolean'],
         ]);
 
         $validated['status'] = $request->boolean('status', true);
@@ -60,10 +60,10 @@ class DefectController extends Controller
     public function update(Request $request, Defect $defect)
     {
         $validated = $request->validate([
-            'defect_name'       => ['required', 'string', 'max:255', 'unique:defects,defect_name,' . $defect->id],
-            'severity'          => ['required', 'in:critical,major,minor,functional'],
+            'defect_name' => ['required', 'string', 'max:255', 'unique:defects,defect_name,'.$defect->id],
+            'severity' => ['required', 'in:critical,major,minor,functional'],
             'corrective_action' => ['nullable', 'string', 'max:2000'],
-            'status'            => ['boolean'],
+            'status' => ['boolean'],
         ]);
 
         $validated['status'] = $request->boolean('status', true);
@@ -101,6 +101,6 @@ class DefectController extends Controller
             ->setOption('isRemoteEnabled', false)
             ->setOption('defaultFont', 'DejaVu Sans');
 
-        return $pdf->download('Defects-' . now()->format('Y-m-d') . '.pdf');
+        return $pdf->stream('Defects-'.now()->format('Y-m-d').'.pdf');
     }
 }

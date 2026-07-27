@@ -52,6 +52,7 @@ class BankController extends Controller
     public function show(Bank $bank)
     {
         $bank->load('accounts');
+
         return view('masters.banks.show', compact('bank'));
     }
 
@@ -97,6 +98,6 @@ class BankController extends Controller
             ->setOption('isRemoteEnabled', false)
             ->setOption('defaultFont', 'DejaVu Sans');
 
-        return $pdf->download('Banks-' . now()->format('Y-m-d') . '.pdf');
+        return $pdf->stream('Banks-'.now()->format('Y-m-d').'.pdf');
     }
 }

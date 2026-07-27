@@ -9,6 +9,7 @@ use App\Models\Expense;
 use App\Models\ExpenseHead;
 use App\Models\Transaction;
 use Barryvdh\DomPDF\Facade\Pdf;
+use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 
@@ -33,7 +34,7 @@ class ExpenseController extends Controller
             ->withQueryString();
 
         $expenseHeads = ExpenseHead::where('status', true)->orderBy('expense_name')->get();
-        $accounts     = Account::where('status', true)->orderBy('account_name')->get();
+        $accounts = Account::where('status', true)->orderBy('account_name')->get();
 
         return view('finance.expenses.index', compact('expenses', 'expenseHeads', 'accounts'));
     }
@@ -46,6 +47,7 @@ class ExpenseController extends Controller
             ->orderBy('expense_name')
             ->get();
         $accounts = Account::where('status', true)->orderBy('account_name')->get();
+
         return view('finance.expenses.create', compact('expenseHeads', 'accounts'));
     }
 
@@ -61,14 +63,14 @@ class ExpenseController extends Controller
             $account = Account::findOrFail($data['account_id']);
 
             $transaction = Transaction::create([
-                'transaction_date'  => $data['expense_date'],
-                'transaction_type'  => 'Expense',
-                'reference_type'    => 'expense',
-                'debit_account_id'  => $data['account_id'],
+                'transaction_date' => $data['expense_date'],
+                'transaction_type' => 'Expense',
+                'reference_type' => 'expense',
+                'debit_account_id' => $data['account_id'],
                 'credit_account_id' => $data['account_id'],
-                'amount'            => $data['amount'],
-                'remarks'           => $data['description'] ?? null,
-                'created_by'        => auth()->id(),
+                'amount' => $data['amount'],
+                'remarks' => $data['description'] ?? null,
+                'created_by' => auth()->id(),
             ]);
 
             $data['transaction_id'] = $transaction->id;
@@ -88,6 +90,7 @@ class ExpenseController extends Controller
     public function show(Expense $expense)
     {
         $expense->load(['expenseHead', 'account', 'transaction']);
+
         return view('finance.expenses.show', compact('expense'));
     }
 
@@ -112,16 +115,16 @@ class ExpenseController extends Controller
             ->setOption('isRemoteEnabled', false)
             ->setOption('defaultFont', 'DejaVu Sans');
 
-        return $pdf->download("Expense-{$expense->id}.pdf");
+        return $pdf->stream("Expense-{$expense->id}.pdf");
     }
 
     public function exportPdf(Request $request)
     {
         $expenses = Expense::with(['expenseHead', 'account', 'transaction.creator'])
             ->when($request->expense_head_id, fn ($q) => $q->where('expense_head_id', $request->expense_head_id))
-            ->when($request->account_id,      fn ($q) => $q->where('account_id', $request->account_id))
-            ->when($request->from_date,       fn ($q) => $q->where('expense_date', '>=', $request->from_date))
-            ->when($request->to_date,         fn ($q) => $q->where('expense_date', '<=', $request->to_date))
+            ->when($request->account_id, fn ($q) => $q->where('account_id', $request->account_id))
+            ->when($request->from_date, fn ($q) => $q->where('expense_date', '>=', $request->from_date))
+            ->when($request->to_date, fn ($q) => $q->where('expense_date', '<=', $request->to_date))
             ->latest('expense_date')
             ->get();
 
@@ -129,14 +132,14 @@ class ExpenseController extends Controller
             'Expense Head' => $request->expense_head_id
                 ? optional(ExpenseHead::find($request->expense_head_id))->expense_name
                 : null,
-            'Account'   => $request->account_id
+            'Account' => $request->account_id
                 ? optional(Account::find($request->account_id))->account_name
                 : null,
             'From Date' => $request->from_date
-                ? \Carbon\Carbon::parse($request->from_date)->format('d M Y')
+                ? Carbon::parse($request->from_date)->format('d M Y')
                 : null,
-            'To Date'   => $request->to_date
-                ? \Carbon\Carbon::parse($request->to_date)->format('d M Y')
+            'To Date' => $request->to_date
+                ? Carbon::parse($request->to_date)->format('d M Y')
                 : null,
         ]);
 
@@ -148,8 +151,8 @@ class ExpenseController extends Controller
             ->setOption('isRemoteEnabled', false)
             ->setOption('defaultFont', 'sans-serif');
 
-        $filename = 'Expenses-' . now()->format('Y-m-d') . '.pdf';
+        $filename = 'Expenses-'.now()->format('Y-m-d').'.pdf';
 
-        return $pdf->download($filename);
+        return $pdf->stream($filename);
     }
 }

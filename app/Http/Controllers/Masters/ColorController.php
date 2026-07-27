@@ -49,6 +49,7 @@ class ColorController extends Controller
     public function show(SampleColor $color)
     {
         $color->loadCount('variations');
+
         return view('masters.colors.show', compact('color'));
     }
 
@@ -60,7 +61,7 @@ class ColorController extends Controller
     public function update(Request $request, SampleColor $color)
     {
         $request->validate([
-            'name' => ['required', 'string', 'max:100', 'unique:sample_colors,name,' . $color->id],
+            'name' => ['required', 'string', 'max:100', 'unique:sample_colors,name,'.$color->id],
         ]);
 
         $color->update(['name' => $request->name]);
@@ -95,6 +96,6 @@ class ColorController extends Controller
             ->setOption('isRemoteEnabled', false)
             ->setOption('defaultFont', 'DejaVu Sans');
 
-        return $pdf->download('Colors-' . now()->format('Y-m-d') . '.pdf');
+        return $pdf->stream('Colors-'.now()->format('Y-m-d').'.pdf');
     }
 }

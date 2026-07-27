@@ -6,7 +6,6 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\Masters\StoreEmployeeRequest;
 use App\Http\Requests\Masters\UpdateEmployeeRequest;
 use App\Models\Employee;
-use App\Models\EmployeeExperience;
 use App\Models\Transaction;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Http\Request;
@@ -44,14 +43,14 @@ class EmployeeController extends Controller
     public function store(StoreEmployeeRequest $request)
     {
         return DB::transaction(function () use ($request) {
-            $data        = $request->validated();
+            $data = $request->validated();
             $experiences = $data['experiences'] ?? [];
             unset($data['experiences']);
 
             $employee = Employee::create($data);
 
             foreach ($experiences as $exp) {
-                if (!empty($exp['company_name'])) {
+                if (! empty($exp['company_name'])) {
                     $employee->experiences()->create($exp);
                 }
             }
@@ -85,13 +84,14 @@ class EmployeeController extends Controller
     public function edit(Employee $employee)
     {
         $employee->load('experiences');
+
         return view('masters.employees.edit', compact('employee'));
     }
 
     public function update(UpdateEmployeeRequest $request, Employee $employee)
     {
         return DB::transaction(function () use ($request, $employee) {
-            $data        = $request->validated();
+            $data = $request->validated();
             $experiences = $data['experiences'] ?? [];
             unset($data['experiences']);
 
@@ -100,7 +100,7 @@ class EmployeeController extends Controller
             // Replace experience records
             $employee->experiences()->delete();
             foreach ($experiences as $exp) {
-                if (!empty($exp['company_name'])) {
+                if (! empty($exp['company_name'])) {
                     $employee->experiences()->create($exp);
                 }
             }
@@ -128,7 +128,7 @@ class EmployeeController extends Controller
             ->setOption('isRemoteEnabled', false)
             ->setOption('defaultFont', 'DejaVu Sans');
 
-        return $pdf->download('Employees-' . now()->format('Y-m-d') . '.pdf');
+        return $pdf->stream('Employees-'.now()->format('Y-m-d').'.pdf');
     }
 
     public function exportSinglePdf(Employee $employee)
@@ -146,7 +146,7 @@ class EmployeeController extends Controller
             ->setOption('isRemoteEnabled', false)
             ->setOption('defaultFont', 'DejaVu Sans');
 
-        return $pdf->download("Employee-{$employee->employee_name}.pdf");
+        return $pdf->stream("Employee-{$employee->employee_name}.pdf");
     }
 
     public function destroy(Employee $employee)

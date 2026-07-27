@@ -261,7 +261,7 @@ class MovementController extends Controller
             ->setOption('isRemoteEnabled', false)
             ->setOption('defaultFont', 'DejaVu Sans');
 
-        return $pdf->download('Movements-'.now()->format('Y-m-d').'.pdf');
+        return $pdf->stream('Movements-'.now()->format('Y-m-d').'.pdf');
     }
 
     public function exportSinglePdf(Movement $movement)
@@ -280,6 +280,6 @@ class MovementController extends Controller
             ->setOption('isRemoteEnabled', false)
             ->setOption('defaultFont', 'DejaVu Sans');
 
-        return $pdf->download("Movement-{$movement->id}.pdf");
+        return $pdf->stream("Movement-{$movement->id}.pdf");
     }
 }

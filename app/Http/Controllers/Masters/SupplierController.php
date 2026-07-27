@@ -52,6 +52,7 @@ class SupplierController extends Controller
     public function show(Supplier $supplier)
     {
         $supplier->load('samples', 'customers');
+
         return view('masters.suppliers.show', compact('supplier'));
     }
 
@@ -86,7 +87,7 @@ class SupplierController extends Controller
             ->setOption('isRemoteEnabled', false)
             ->setOption('defaultFont', 'DejaVu Sans');
 
-        return $pdf->download('Suppliers-' . now()->format('Y-m-d') . '.pdf');
+        return $pdf->stream('Suppliers-'.now()->format('Y-m-d').'.pdf');
     }
 
     public function exportSinglePdf(Supplier $supplier)
@@ -99,7 +100,7 @@ class SupplierController extends Controller
             ->setOption('isRemoteEnabled', false)
             ->setOption('defaultFont', 'DejaVu Sans');
 
-        return $pdf->download("Supplier-{$supplier->name}.pdf");
+        return $pdf->stream("Supplier-{$supplier->name}.pdf");
     }
 
     public function destroy(Supplier $supplier)

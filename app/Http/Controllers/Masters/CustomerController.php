@@ -37,6 +37,7 @@ class CustomerController extends Controller
     public function create()
     {
         $currencies = Currency::where('status', true)->get();
+
         return view('masters.customers.create', compact('currencies'));
     }
 
@@ -55,12 +56,14 @@ class CustomerController extends Controller
     public function show(Customer $customer)
     {
         $customer->load(['currency', 'payments' => fn ($q) => $q->latest()->limit(10), 'attachments']);
+
         return view('masters.customers.show', compact('customer'));
     }
 
     public function edit(Customer $customer)
     {
         $currencies = Currency::where('status', true)->get();
+
         return view('masters.customers.edit', compact('customer', 'currencies'));
     }
 
@@ -90,7 +93,7 @@ class CustomerController extends Controller
             ->setOption('isRemoteEnabled', false)
             ->setOption('defaultFont', 'DejaVu Sans');
 
-        return $pdf->download('Customers-' . now()->format('Y-m-d') . '.pdf');
+        return $pdf->stream('Customers-'.now()->format('Y-m-d').'.pdf');
     }
 
     public function exportSinglePdf(Customer $customer)
@@ -103,7 +106,7 @@ class CustomerController extends Controller
             ->setOption('isRemoteEnabled', false)
             ->setOption('defaultFont', 'DejaVu Sans');
 
-        return $pdf->download("Customer-{$customer->customer_name}.pdf");
+        return $pdf->stream("Customer-{$customer->customer_name}.pdf");
     }
 
     public function destroy(Customer $customer)

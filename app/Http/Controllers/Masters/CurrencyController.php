@@ -40,7 +40,7 @@ class CurrencyController extends Controller
     {
         $data = $request->validated();
 
-        if (!empty($data['is_default'])) {
+        if (! empty($data['is_default'])) {
             Currency::where('is_default', true)->update(['is_default' => false]);
         }
 
@@ -68,7 +68,7 @@ class CurrencyController extends Controller
     {
         $data = $request->validated();
 
-        if (!empty($data['is_default'])) {
+        if (! empty($data['is_default'])) {
             Currency::where('is_default', true)->where('id', '!=', $currency->id)->update(['is_default' => false]);
         }
 
@@ -108,6 +108,6 @@ class CurrencyController extends Controller
             ->setOption('isRemoteEnabled', false)
             ->setOption('defaultFont', 'DejaVu Sans');
 
-        return $pdf->download('Currencies-' . now()->format('Y-m-d') . '.pdf');
+        return $pdf->stream('Currencies-'.now()->format('Y-m-d').'.pdf');
     }
 }

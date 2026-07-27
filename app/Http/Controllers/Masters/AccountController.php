@@ -36,8 +36,9 @@ class AccountController extends Controller
 
     public function create()
     {
-        $banks      = Bank::where('status', true)->orderBy('bank_name')->get();
+        $banks = Bank::where('status', true)->orderBy('bank_name')->get();
         $currencies = Currency::where('status', true)->orderBy('currency_code')->get();
+
         return view('masters.accounts.create', compact('banks', 'currencies'));
     }
 
@@ -60,8 +61,9 @@ class AccountController extends Controller
 
     public function edit(Account $account)
     {
-        $banks      = Bank::where('status', true)->orderBy('bank_name')->get();
+        $banks = Bank::where('status', true)->orderBy('bank_name')->get();
         $currencies = Currency::where('status', true)->orderBy('currency_code')->get();
+
         return view('masters.accounts.edit', compact('account', 'banks', 'currencies'));
     }
 
@@ -103,6 +105,6 @@ class AccountController extends Controller
             ->setOption('isRemoteEnabled', false)
             ->setOption('defaultFont', 'DejaVu Sans');
 
-        return $pdf->download('Accounts-' . now()->format('Y-m-d') . '.pdf');
+        return $pdf->stream('Accounts-'.now()->format('Y-m-d').'.pdf');
     }
 }

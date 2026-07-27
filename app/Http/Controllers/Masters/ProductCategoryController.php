@@ -51,6 +51,7 @@ class ProductCategoryController extends Controller
     public function show(ProductCategory $category)
     {
         $category->load('testingParameters');
+
         return view('masters.categories.show', compact('category'));
     }
 
@@ -96,6 +97,6 @@ class ProductCategoryController extends Controller
             ->setOption('isRemoteEnabled', false)
             ->setOption('defaultFont', 'DejaVu Sans');
 
-        return $pdf->download('Categories-' . now()->format('Y-m-d') . '.pdf');
+        return $pdf->stream('Categories-'.now()->format('Y-m-d').'.pdf');
     }
 }

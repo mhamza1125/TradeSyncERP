@@ -41,7 +41,7 @@ class CustomerOrderController extends Controller
 
     public function create()
     {
-        $customers  = Customer::where('status', true)->orderBy('customer_name')->get();
+        $customers = Customer::where('status', true)->orderBy('customer_name')->get();
         $categories = ProductCategory::orderBy('category_name')->get();
 
         return view('operations.customer-orders.create', compact('customers', 'categories'));
@@ -74,7 +74,7 @@ class CustomerOrderController extends Controller
     public function edit(CustomerOrder $customerOrder)
     {
         $customerOrder->load('items');
-        $customers  = Customer::where('status', true)->orderBy('customer_name')->get();
+        $customers = Customer::where('status', true)->orderBy('customer_name')->get();
         $categories = ProductCategory::orderBy('category_name')->get();
 
         return view('operations.customer-orders.edit', compact('customerOrder', 'customers', 'categories'));
@@ -83,7 +83,7 @@ class CustomerOrderController extends Controller
     public function update(UpdateCustomerOrderRequest $request, CustomerOrder $customerOrder)
     {
         return DB::transaction(function () use ($request, $customerOrder) {
-            $data  = $request->validated();
+            $data = $request->validated();
             $items = $data['items'];
             unset($data['items']);
 
@@ -119,7 +119,7 @@ class CustomerOrderController extends Controller
             ->setOption('isRemoteEnabled', false)
             ->setOption('defaultFont', 'DejaVu Sans');
 
-        return $pdf->download('CustomerOrders-' . now()->format('Y-m-d') . '.pdf');
+        return $pdf->stream('CustomerOrders-'.now()->format('Y-m-d').'.pdf');
     }
 
     public function exportPdf(CustomerOrder $customerOrder)
@@ -132,7 +132,7 @@ class CustomerOrderController extends Controller
             ->setOption('isRemoteEnabled', false)
             ->setOption('defaultFont', 'DejaVu Sans');
 
-        return $pdf->download("Order-{$customerOrder->order_code}.pdf");
+        return $pdf->stream("Order-{$customerOrder->order_code}.pdf");
     }
 
     private function generateOrderCode(): string

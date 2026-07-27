@@ -29,8 +29,7 @@ class SampleController extends Controller
     public function index(Request $request)
     {
         $samples = Sample::withSum('variations', 'quantity')
-            ->withCount(['movementItems as open_movements_count' => fn ($q) =>
-                $q->whereHas('movement', fn ($mq) => $mq->where('status', 'Issued'))
+            ->withCount(['movementItems as open_movements_count' => fn ($q) => $q->whereHas('movement', fn ($mq) => $mq->where('status', 'Issued')),
             ])
             ->with(['customer', 'category'])
             ->when($request->search, fn ($q, $s) => $q->where('sample_code', 'like', "%{$s}%")
@@ -41,8 +40,7 @@ class SampleController extends Controller
                 if ($request->status === 'In Testing') {
                     $q->whereHas('movementItems.movement', fn ($mq) => $mq->where('status', 'Issued'));
                 } else {
-                    $q->whereDoesntHave('movementItems', fn ($iq) =>
-                        $iq->whereHas('movement', fn ($mq) => $mq->where('status', 'Issued'))
+                    $q->whereDoesntHave('movementItems', fn ($iq) => $iq->whereHas('movement', fn ($mq) => $mq->where('status', 'Issued'))
                     );
                 }
             })
@@ -52,7 +50,7 @@ class SampleController extends Controller
             ->paginate(20)
             ->withQueryString();
 
-        $customers  = Customer::where('status', true)->orderBy('customer_name')->get();
+        $customers = Customer::where('status', true)->orderBy('customer_name')->get();
         $categories = ProductCategory::where('status', true)->orderBy('category_name')->get();
 
         return view('operations.samples.index', compact('samples', 'customers', 'categories'));
@@ -60,11 +58,11 @@ class SampleController extends Controller
 
     public function create()
     {
-        $customers  = Customer::where('status', true)->orderBy('customer_name')->get();
+        $customers = Customer::where('status', true)->orderBy('customer_name')->get();
         $categories = ProductCategory::where('status', true)->orderBy('category_name')->get();
-        $suppliers  = Supplier::where('status', true)->orderBy('name')->get();
-        $colors     = SampleColor::orderBy('name')->get();
-        $sizes      = SampleSize::orderBy('name')->get();
+        $suppliers = Supplier::where('status', true)->orderBy('name')->get();
+        $colors = SampleColor::orderBy('name')->get();
+        $sizes = SampleSize::orderBy('name')->get();
 
         return view('operations.samples.create', compact('customers', 'categories', 'suppliers', 'colors', 'sizes'));
     }
@@ -74,7 +72,7 @@ class SampleController extends Controller
         return DB::transaction(function () use ($request) {
             $data = $request->validated();
             $data['sample_code'] = $this->generateSampleCode();
-            $data['status']      = 'Received';
+            $data['status'] = 'Received';
 
             // Handle main image upload
             if ($request->hasFile('main_image_file')) {
@@ -88,10 +86,10 @@ class SampleController extends Controller
 
             // Save color/size/qty variations
             foreach ($variations as $variation) {
-                if (!empty($variation['quantity'])) {
+                if (! empty($variation['quantity'])) {
                     $sample->variations()->create([
                         'color_id' => $variation['color_id'] ?? null,
-                        'size_id'  => $variation['size_id'] ?? null,
+                        'size_id' => $variation['size_id'] ?? null,
                         'quantity' => $variation['quantity'],
                     ]);
                 }
@@ -102,13 +100,13 @@ class SampleController extends Controller
                 foreach ($request->file('gallery_images') as $file) {
                     $path = $file->store('samples/gallery', 'public');
                     $sample->attachments()->create([
-                        'title'           => $file->getClientOriginalName(),
-                        'file_name'       => $file->getClientOriginalName(),
-                        'file_path'       => $path,
-                        'mime_type'       => $file->getMimeType(),
-                        'file_size'       => $file->getSize(),
+                        'title' => $file->getClientOriginalName(),
+                        'file_name' => $file->getClientOriginalName(),
+                        'file_path' => $path,
+                        'mime_type' => $file->getMimeType(),
+                        'file_size' => $file->getSize(),
                         'attachment_type' => 'gallery',
-                        'uploaded_by'     => auth()->id(),
+                        'uploaded_by' => auth()->id(),
                     ]);
                 }
             }
@@ -118,13 +116,13 @@ class SampleController extends Controller
                 foreach ($request->file('attachments') as $index => $file) {
                     $path = $file->store('samples/attachments', 'public');
                     $sample->attachments()->create([
-                        'title'           => $request->input("attachment_titles.{$index}", $file->getClientOriginalName()),
-                        'file_name'       => $file->getClientOriginalName(),
-                        'file_path'       => $path,
-                        'mime_type'       => $file->getMimeType(),
-                        'file_size'       => $file->getSize(),
+                        'title' => $request->input("attachment_titles.{$index}", $file->getClientOriginalName()),
+                        'file_name' => $file->getClientOriginalName(),
+                        'file_path' => $path,
+                        'mime_type' => $file->getMimeType(),
+                        'file_size' => $file->getSize(),
                         'attachment_type' => 'document',
-                        'uploaded_by'     => auth()->id(),
+                        'uploaded_by' => auth()->id(),
                     ]);
                 }
             }
@@ -155,11 +153,11 @@ class SampleController extends Controller
 
     public function edit(Sample $sample)
     {
-        $customers  = Customer::where('status', true)->orderBy('customer_name')->get();
+        $customers = Customer::where('status', true)->orderBy('customer_name')->get();
         $categories = ProductCategory::where('status', true)->orderBy('category_name')->get();
-        $suppliers  = Supplier::where('status', true)->orderBy('name')->get();
-        $colors     = SampleColor::orderBy('name')->get();
-        $sizes      = SampleSize::orderBy('name')->get();
+        $suppliers = Supplier::where('status', true)->orderBy('name')->get();
+        $colors = SampleColor::orderBy('name')->get();
+        $sizes = SampleSize::orderBy('name')->get();
         $sample->load('variations.color', 'variations.size', 'attachments');
 
         return view('operations.samples.edit', compact('sample', 'customers', 'categories', 'suppliers', 'colors', 'sizes'));
@@ -191,10 +189,10 @@ class SampleController extends Controller
             // Replace variations
             $sample->variations()->delete();
             foreach ($variations as $variation) {
-                if (!empty($variation['quantity'])) {
+                if (! empty($variation['quantity'])) {
                     $sample->variations()->create([
                         'color_id' => $variation['color_id'] ?? null,
-                        'size_id'  => $variation['size_id'] ?? null,
+                        'size_id' => $variation['size_id'] ?? null,
                         'quantity' => $variation['quantity'],
                     ]);
                 }
@@ -205,13 +203,13 @@ class SampleController extends Controller
                 foreach ($request->file('gallery_images') as $file) {
                     $path = $file->store('samples/gallery', 'public');
                     $sample->attachments()->create([
-                        'title'           => $file->getClientOriginalName(),
-                        'file_name'       => $file->getClientOriginalName(),
-                        'file_path'       => $path,
-                        'mime_type'       => $file->getMimeType(),
-                        'file_size'       => $file->getSize(),
+                        'title' => $file->getClientOriginalName(),
+                        'file_name' => $file->getClientOriginalName(),
+                        'file_path' => $path,
+                        'mime_type' => $file->getMimeType(),
+                        'file_size' => $file->getSize(),
                         'attachment_type' => 'gallery',
-                        'uploaded_by'     => auth()->id(),
+                        'uploaded_by' => auth()->id(),
                     ]);
                 }
             }
@@ -221,13 +219,13 @@ class SampleController extends Controller
                 foreach ($request->file('attachments') as $index => $file) {
                     $path = $file->store('samples/attachments', 'public');
                     $sample->attachments()->create([
-                        'title'           => $request->input("attachment_titles.{$index}", $file->getClientOriginalName()),
-                        'file_name'       => $file->getClientOriginalName(),
-                        'file_path'       => $path,
-                        'mime_type'       => $file->getMimeType(),
-                        'file_size'       => $file->getSize(),
+                        'title' => $request->input("attachment_titles.{$index}", $file->getClientOriginalName()),
+                        'file_name' => $file->getClientOriginalName(),
+                        'file_path' => $path,
+                        'mime_type' => $file->getMimeType(),
+                        'file_size' => $file->getSize(),
                         'attachment_type' => 'document',
-                        'uploaded_by'     => auth()->id(),
+                        'uploaded_by' => auth()->id(),
                     ]);
                 }
             }
@@ -256,8 +254,7 @@ class SampleController extends Controller
     public function exportListPdf(Request $request)
     {
         $samples = Sample::with(['customer', 'category'])
-            ->withCount(['movementItems as open_movements_count' => fn ($q) =>
-                $q->whereHas('movement', fn ($mq) => $mq->where('status', 'Issued'))
+            ->withCount(['movementItems as open_movements_count' => fn ($q) => $q->whereHas('movement', fn ($mq) => $mq->where('status', 'Issued')),
             ])
             ->when($request->search, fn ($q) => $q->where('sample_code', 'like', "%{$request->search}%")
                 ->orWhere('product_name', 'like', "%{$request->search}%"))
@@ -271,7 +268,7 @@ class SampleController extends Controller
             ->setOption('isRemoteEnabled', false)
             ->setOption('defaultFont', 'DejaVu Sans');
 
-        return $pdf->download('Samples-' . now()->format('Y-m-d') . '.pdf');
+        return $pdf->stream('Samples-'.now()->format('Y-m-d').'.pdf');
     }
 
     public function exportPdf(Sample $sample)
@@ -291,14 +288,15 @@ class SampleController extends Controller
             ->setOption('isRemoteEnabled', false)
             ->setOption('defaultFont', 'DejaVu Sans');
 
-        return $pdf->download("Sample-{$sample->sample_code}.pdf");
+        return $pdf->stream("Sample-{$sample->sample_code}.pdf");
     }
 
     private function generateSampleCode(): string
     {
-        $year    = now()->year;
-        $lastId  = Sample::withTrashed()->max('id') ?? 0;
+        $year = now()->year;
+        $lastId = Sample::withTrashed()->max('id') ?? 0;
         $nextSeq = str_pad($lastId + 1, 5, '0', STR_PAD_LEFT);
+
         return "SMP-{$year}-{$nextSeq}";
     }
 }
