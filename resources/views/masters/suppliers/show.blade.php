@@ -36,7 +36,7 @@
         @include('partials.flash-messages')
         <div class="row">
             <div class="col-xl-8">
-                <div class="card stretch stretch-full mb-4">
+                <div class="card mb-4">
                     <div class="card-header"><h5 class="card-title">Supplier Details</h5></div>
                     <div class="card-body">
                         <div class="row g-3">
@@ -79,7 +79,7 @@
                 </div>
 
                 {{-- Linked Samples --}}
-                <div class="card stretch stretch-full">
+                <div class="card mb-4">
                     <div class="card-header d-flex justify-content-between align-items-center">
                         <h5 class="card-title mb-0">Samples ({{ $supplier->samples->count() }})</h5>
                     </div>
@@ -117,7 +117,7 @@
             </div>
 
             <div class="col-xl-4">
-                <div class="card stretch stretch-full">
+                <div class="card">
                     <div class="card-header"><h5 class="card-title">Linked Customers ({{ $supplier->customers->count() }})</h5></div>
                     <div class="card-body">
                         @forelse($supplier->customers as $customer)
@@ -137,6 +137,13 @@
                 </div>
             </div>
         </div>
+
+        {{-- Attachment Panel --}}
+        @include('partials.attachment-panel', [
+            'attachEntity'     => $supplier,
+            'attachEntityType' => 'suppliers',
+            'attachLabel'      => 'Supplier Attachments',
+        ])
     </div>
 </div>
 @endsection

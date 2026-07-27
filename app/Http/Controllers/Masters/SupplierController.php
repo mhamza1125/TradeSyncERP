@@ -51,7 +51,7 @@ class SupplierController extends Controller
 
     public function show(Supplier $supplier)
     {
-        $supplier->load('samples', 'customers');
+        $supplier->load('samples', 'customers', 'attachments');
 
         return view('masters.suppliers.show', compact('supplier'));
     }

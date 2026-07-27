@@ -41,4 +41,9 @@ class Supplier extends Model
     {
         return $this->belongsToMany(Customer::class, 'customer_supplier');
     }
+
+    public function attachments()
+    {
+        return $this->morphMany(Attachment::class, 'attachable');
+    }
 }

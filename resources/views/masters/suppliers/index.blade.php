@@ -79,8 +79,11 @@
                                     @forelse($suppliers as $supplier)
                                     <tr>
                                         <td>
-                                            <a href="{{ route('masters.suppliers.show', $supplier) }}" class="fw-semibold">
-                                                {{ $supplier->name }}
+                                            <a href="{{ route('masters.suppliers.show', $supplier) }}" class="hstack gap-3">
+                                                <div class="avatar-text avatar-md bg-soft-warning text-warning">
+                                                    {{ strtoupper(substr($supplier->name, 0, 1)) }}
+                                                </div>
+                                                <span class="fw-semibold">{{ $supplier->name }}</span>
                                             </a>
                                         </td>
                                         <td>{{ $supplier->city ?? '—' }}</td>
