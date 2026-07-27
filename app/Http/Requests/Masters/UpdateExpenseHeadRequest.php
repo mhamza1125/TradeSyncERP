@@ -14,9 +14,9 @@ class UpdateExpenseHeadRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'parent_id'    => ['nullable', 'exists:expense_heads,id'],
-            'expense_name' => ['required', 'string', 'max:255', 'unique:expense_heads,expense_name,' . $this->route('expense_head')],
-            'status'       => ['boolean'],
+            'parent_id' => ['nullable', 'exists:expense_heads,id'],
+            'expense_name' => ['required', 'string', 'max:255', 'unique:expense_heads,expense_name,'.$this->route('expense_head')?->id],
+            'status' => ['boolean'],
         ];
     }
 }

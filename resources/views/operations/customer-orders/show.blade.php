@@ -50,7 +50,7 @@
                             </div>
                             <div class="col-md-4">
                                 <div class="text-muted fs-12">Customer</div>
-                                <div class="fw-semibold">{{ $customerOrder->customer->customer_name }}</div>
+                                <div class="fw-semibold">{{ $customerOrder->customer?->customer_name ?? '—' }}</div>
                             </div>
                             <div class="col-md-4">
                                 <div class="text-muted fs-12">Brand</div>

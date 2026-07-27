@@ -72,11 +72,11 @@
                         <ul class="list-unstyled mb-4">
                             <li class="hstack justify-content-between mb-3">
                                 <span class="text-muted hstack gap-3"><i class="feather-users"></i>Customer</span>
-                                <span class="fw-semibold">{{ $sample->customer->customer_name }}</span>
+                                <span class="fw-semibold">{{ $sample->customer?->customer_name ?? '—' }}</span>
                             </li>
                             <li class="hstack justify-content-between mb-3">
                                 <span class="text-muted hstack gap-3"><i class="feather-tag"></i>Brand</span>
-                                <span>{{ $sample->customer->brand ?? '—' }}</span>
+                                <span>{{ $sample->customer?->brand ?? '—' }}</span>
                             </li>
                             <li class="hstack justify-content-between mb-3">
                                 <span class="text-muted hstack gap-3"><i class="feather-grid"></i>Category</span>
@@ -144,8 +144,8 @@
                             @if($sample->article)
                             <div class="row g-0 mb-3"><div class="col-sm-5 text-muted">Article / Style No:</div><div class="col-sm-7 fw-semibold">{{ $sample->article }}</div></div>
                             @endif
-                            <div class="row g-0 mb-3"><div class="col-sm-5 text-muted">Customer:</div><div class="col-sm-7 fw-semibold">{{ $sample->customer->customer_name }}</div></div>
-                            <div class="row g-0 mb-3"><div class="col-sm-5 text-muted">Brand:</div><div class="col-sm-7 fw-semibold">{{ $sample->customer->brand ?? '—' }}</div></div>
+                            <div class="row g-0 mb-3"><div class="col-sm-5 text-muted">Customer:</div><div class="col-sm-7 fw-semibold">{{ $sample->customer?->customer_name ?? '—' }}</div></div>
+                            <div class="row g-0 mb-3"><div class="col-sm-5 text-muted">Brand:</div><div class="col-sm-7 fw-semibold">{{ $sample->customer?->brand ?? '—' }}</div></div>
                             <div class="row g-0 mb-3"><div class="col-sm-5 text-muted">Category:</div><div class="col-sm-7 fw-semibold">{{ $sample->category->category_name }}</div></div>
                             <div class="row g-0 mb-3"><div class="col-sm-5 text-muted">Total Quantity:</div><div class="col-sm-7 fw-semibold">{{ $sample->variations->sum('quantity') }}</div></div>
                             <div class="row g-0 mb-3"><div class="col-sm-5 text-muted">Receive Date:</div><div class="col-sm-7 fw-semibold">{{ \Carbon\Carbon::parse($sample->receive_date)->format('d M Y') }}</div></div>

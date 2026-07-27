@@ -1,4 +1,4 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
 <title>Invoice — {{ $invoice->invoice_number }}</title>
@@ -42,6 +42,7 @@
         <td>
             <p style="font-size:7.5pt; text-transform:uppercase; color:#757575; margin-bottom:4px;">Bill To:</p>
             <div class="invoice-to">
+                @if($invoice->customer)
                 <div class="name">{{ $invoice->customer->customer_name }}</div>
                 @if($invoice->customer->contact_person)
                 <div>{{ $invoice->customer->contact_person }}</div>
@@ -51,6 +52,9 @@
                 @endif
                 @if($invoice->customer->address)
                 <div style="color:#757575;">{{ $invoice->customer->address }}</div>
+                @endif
+                @else
+                <div class="name">Deleted Customer</div>
                 @endif
             </div>
         </td>
@@ -85,7 +89,7 @@
                         <span class="badge badge-{{ $sc }}">{{ $invoice->status }}</span>
                     </td>
                 </tr>
-                @if($invoice->customer->currency)
+                @if($invoice->customer?->currency)
                 <tr>
                     <td class="info-label">Currency</td>
                     <td class="info-value">{{ $invoice->customer->currency->currency_code }}</td>
@@ -157,7 +161,7 @@
         <td>{{ number_format($invoice->total_amount, 2) }}</td>
     </tr>
     @php
-        $currCode = $invoice->customer->currency?->currency_code ?? 'PKR';
+        $currCode = $invoice->customer?->currency?->currency_code ?? 'PKR';
         $words = \App\Helpers\NumberToWords::convert(
             (float) $invoice->total_amount,
             \App\Helpers\NumberToWords::currencyName($currCode),
@@ -181,7 +185,7 @@
     @endif
 </table>
 
-@if($invoice->foreign_amount && $invoice->customer->currency)
+@if($invoice->foreign_amount && $invoice->customer?->currency)
 <div class="info-section" style="margin-top:16px;">
     <h3>Foreign Currency Details</h3>
     <table class="info-grid" style="width:50%;">

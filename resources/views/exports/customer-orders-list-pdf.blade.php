@@ -1,4 +1,4 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
 <title>Customer Orders</title>
@@ -41,7 +41,7 @@
         <tr>
             <td>{{ $i + 1 }}</td>
             <td class="fw-bold">{{ $order->order_code }}</td>
-            <td>{{ $order->customer->customer_name }}</td>
+            <td>{{ $order->customer?->customer_name ?? '—' }}</td>
             <td>{{ $order->order_date->format('d M Y') }}</td>
             <td>{{ $order->required_by ? $order->required_by->format('d M Y') : '—' }}</td>
             <td class="text-center">

@@ -80,7 +80,7 @@
                     <div class="d-flex gap-4 flex-wrap">
                         <div><span class="text-muted fs-12">Sample</span><br><strong>{{ $sample->sample_code }}</strong></div>
                         <div><span class="text-muted fs-12">Product</span><br><strong>{{ $sample->product_name }}</strong></div>
-                        <div><span class="text-muted fs-12">Customer</span><br><strong>{{ $sample->customer->customer_name }}</strong></div>
+                        <div><span class="text-muted fs-12">Customer</span><br><strong>{{ $sample->customer?->customer_name ?? '—' }}</strong></div>
                     </div>
                 </div>
 

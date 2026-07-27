@@ -15,11 +15,11 @@ class UpdateCurrencyRequest extends FormRequest
     {
         return [
             'currency_name' => ['required', 'string', 'max:255'],
-            'currency_code' => ['required', 'string', 'max:10', 'unique:currencies,currency_code,' . $this->route('currency')],
-            'symbol'        => ['required', 'string', 'max:10'],
+            'currency_code' => ['required', 'string', 'max:10', 'unique:currencies,currency_code,'.$this->route('currency')?->id],
+            'symbol' => ['required', 'string', 'max:10'],
             'exchange_rate' => ['required', 'numeric', 'min:0'],
-            'is_default'    => ['boolean'],
-            'status'        => ['boolean'],
+            'is_default' => ['boolean'],
+            'status' => ['boolean'],
         ];
     }
 }

@@ -110,7 +110,7 @@
                                             </a>
                                         </td>
                                         <td>{{ $sample->product_name }}</td>
-                                        <td>{{ $sample->customer->customer_name }}</td>
+                                        <td>{{ $sample->customer?->customer_name ?? '—' }}</td>
                                         <td>{{ $sample->category->category_name }}</td>
                                         <td>{{ \Carbon\Carbon::parse($sample->receive_date)->format('d M Y') }}</td>
                                         <td>

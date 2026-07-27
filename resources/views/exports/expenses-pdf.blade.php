@@ -1,4 +1,4 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
 <title>Expense Report</title>
@@ -55,8 +55,8 @@
         <tr>
             <td>{{ $i + 1 }}</td>
             <td>{{ \Carbon\Carbon::parse($expense->expense_date)->format('d M Y') }}</td>
-            <td class="fw-bold">{{ $expense->expenseHead->expense_name }}</td>
-            <td>{{ $expense->account->account_name }}</td>
+            <td class="fw-bold">{{ $expense->expenseHead->expense_name ?? '—' }}</td>
+            <td>{{ $expense->account->account_name ?? '—' }}</td>
             <td class="text-right fw-bold">{{ number_format($expense->amount, 2) }}</td>
             <td class="text-muted">{{ $expense->description ?? '—' }}</td>
             <td>{{ $expense->transaction?->creator?->name ?? '—' }}</td>

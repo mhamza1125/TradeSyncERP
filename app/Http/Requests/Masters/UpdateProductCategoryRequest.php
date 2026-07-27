@@ -14,8 +14,8 @@ class UpdateProductCategoryRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'category_name' => ['required', 'string', 'max:255', 'unique:product_categories,category_name,' . $this->route('category')],
-            'status'        => ['boolean'],
+            'category_name' => ['required', 'string', 'max:255', 'unique:product_categories,category_name,'.$this->route('category')?->id],
+            'status' => ['boolean'],
         ];
     }
 }

@@ -4,11 +4,11 @@ namespace App\Http\Controllers\Operations;
 
 use App\Http\Controllers\Controller;
 use App\Models\Attachment;
+use App\Models\Defect;
 use App\Models\Inspection;
 use App\Models\InspectionRun;
 use App\Models\InspectionRunAql;
 use App\Models\InspectionRunSection;
-use App\Models\Defect;
 use App\Models\InspectionSection;
 use App\Models\InspectionTypeSectionDefault;
 use App\Models\Sample;
@@ -35,11 +35,11 @@ class InspectionRunController extends Controller
         $samples = Sample::with('customer', 'category')
             ->orderBy('sample_code')
             ->get()
-            ->map(fn($s) => [
-                'id'   => $s->id,
+            ->map(fn ($s) => [
+                'id' => $s->id,
                 'text' => $s->sample_code
-                    . ($s->product_name ? ' — ' . $s->product_name : '')
-                    . ($s->customer ? ' (' . $s->customer->customer_name . ')' : ''),
+                    .($s->product_name ? ' — '.$s->product_name : '')
+                    .($s->customer ? ' ('.$s->customer->customer_name.')' : ''),
             ]);
 
         return view('operations.inspections.runs.create', compact('inspection', 'samples'));
@@ -50,9 +50,9 @@ class InspectionRunController extends Controller
     public function store(Request $request, Inspection $inspection)
     {
         $request->validate([
-            'sample_id'        => ['required', 'exists:samples,id'],
-            'review_files'     => ['nullable', 'array', 'max:20'],
-            'review_files.*'   => ['nullable', 'file', 'max:20480', 'mimes:jpg,jpeg,png,gif,webp,pdf,doc,docx,xls,xlsx'],
+            'sample_id' => ['required', 'exists:samples,id'],
+            'review_files' => ['nullable', 'array', 'max:20'],
+            'review_files.*' => ['nullable', 'file', 'max:20480', 'mimes:jpg,jpeg,png,gif,webp,pdf,doc,docx,xls,xlsx'],
         ]);
 
         return DB::transaction(function () use ($request, $inspection) {
@@ -60,17 +60,17 @@ class InspectionRunController extends Controller
             $runNumber = $inspection->runs()->max('run_number') + 1;
 
             $run = $inspection->runs()->create([
-                'sample_id'  => $request->sample_id,
+                'sample_id' => $request->sample_id,
                 'run_number' => $runNumber,
-                'verdict'    => 'Pending',
+                'verdict' => 'Pending',
             ]);
 
             $this->resolveRunSections($run, $request->sample_id, $inspection->inspection_type_id);
 
             $reviewFiles = $request->file('review_files', []);
-            if (!empty($reviewFiles)) {
+            if (! empty($reviewFiles)) {
                 $filesToReview = $run->runSections()
-                    ->whereHas('section', fn($q) => $q->where('slug', 'files_to_review'))
+                    ->whereHas('section', fn ($q) => $q->where('slug', 'files_to_review'))
                     ->first();
 
                 if ($filesToReview) {
@@ -105,7 +105,7 @@ class InspectionRunController extends Controller
 
         // Map run sections by slug for view access
         $sectionMap = $run->runSections->mapWithKeys(
-            fn($rs) => [$rs->section->slug => $rs]
+            fn ($rs) => [$rs->section->slug => $rs]
         );
 
         $aqlJsData = $this->aql->tableForJs();
@@ -123,27 +123,27 @@ class InspectionRunController extends Controller
     {
         $request->validate([
             // AQL
-            'aql.lot_size'                       => ['nullable', 'integer', 'min:1'],
-            'aql.inspection_level'               => ['nullable', 'in:I,II,III,S1,S2,S3,S4'],
-            'aql.sample_size'                    => ['nullable', 'integer', 'min:1'],
-            'aql.aql_critical'                   => ['nullable', 'string'],
-            'aql.aql_major'                      => ['nullable', 'string'],
-            'aql.aql_minor'                      => ['nullable', 'string'],
-            'aql.found_critical'                 => ['nullable', 'integer', 'min:0'],
-            'aql.found_major'                    => ['nullable', 'integer', 'min:0'],
-            'aql.found_minor'                    => ['nullable', 'integer', 'min:0'],
-            'aql.variations'                     => ['nullable', 'array'],
-            'aql.variations.*.color'             => ['nullable', 'string', 'max:100'],
-            'aql.variations.*.size'              => ['nullable', 'string', 'max:100'],
-            'aql.variations.*.order_qty'         => ['nullable', 'integer', 'min:0'],
-            'aql.variations.*.inspect_qty'       => ['nullable', 'integer', 'min:0'],
+            'aql.lot_size' => ['nullable', 'integer', 'min:1'],
+            'aql.inspection_level' => ['nullable', 'in:I,II,III,S1,S2,S3,S4'],
+            'aql.sample_size' => ['nullable', 'integer', 'min:1'],
+            'aql.aql_critical' => ['nullable', 'string'],
+            'aql.aql_major' => ['nullable', 'string'],
+            'aql.aql_minor' => ['nullable', 'string'],
+            'aql.found_critical' => ['nullable', 'integer', 'min:0'],
+            'aql.found_major' => ['nullable', 'integer', 'min:0'],
+            'aql.found_minor' => ['nullable', 'integer', 'min:0'],
+            'aql.variations' => ['nullable', 'array'],
+            'aql.variations.*.color' => ['nullable', 'string', 'max:100'],
+            'aql.variations.*.size' => ['nullable', 'string', 'max:100'],
+            'aql.variations.*.order_qty' => ['nullable', 'integer', 'min:0'],
+            'aql.variations.*.inspect_qty' => ['nullable', 'integer', 'min:0'],
 
             // Dynamic sections
-            'sections'          => ['nullable', 'array'],
+            'sections' => ['nullable', 'array'],
             'sections.*.status' => ['nullable', 'in:pending,complete,na'],
-            'sections.*.notes'  => ['nullable', 'string', 'max:2000'],
-            'sections.*.data'   => ['nullable', 'array'],
-            'finish_run'        => ['nullable', 'boolean'],
+            'sections.*.notes' => ['nullable', 'string', 'max:2000'],
+            'sections.*.data' => ['nullable', 'array'],
+            'finish_run' => ['nullable', 'boolean'],
         ]);
 
         return DB::transaction(function () use ($request, $inspection, $run) {
@@ -153,8 +153,8 @@ class InspectionRunController extends Controller
                 $aqlInput = $request->input('aql', []);
 
                 // Recalculate lot_size from variations if present
-                $variations = array_values(array_filter($aqlInput['variations'] ?? [], fn($v) => !empty($v['order_qty']) || !empty($v['color']) || !empty($v['size'])));
-                if (!empty($variations)) {
+                $variations = array_values(array_filter($aqlInput['variations'] ?? [], fn ($v) => ! empty($v['order_qty']) || ! empty($v['color']) || ! empty($v['size'])));
+                if (! empty($variations)) {
                     $variationsTotal = array_sum(array_column($variations, 'order_qty'));
                     $lotSize = $variationsTotal > 0 ? $variationsTotal : (int) ($aqlInput['lot_size'] ?? 0);
                 } else {
@@ -166,30 +166,30 @@ class InspectionRunController extends Controller
 
                 // Resolve AQL levels — support "not_allowed" string
                 $aqlCriticalRaw = $aqlInput['aql_critical'] ?? null;
-                $aqlMajorRaw    = $aqlInput['aql_major']    ?? null;
-                $aqlMinorRaw    = $aqlInput['aql_minor']    ?? null;
+                $aqlMajorRaw = $aqlInput['aql_major'] ?? null;
+                $aqlMinorRaw = $aqlInput['aql_minor'] ?? null;
 
                 $notAllowedCritical = ($aqlCriticalRaw === 'not_allowed');
-                $notAllowedMajor    = ($aqlMajorRaw    === 'not_allowed');
-                $notAllowedMinor    = ($aqlMinorRaw    === 'not_allowed');
+                $notAllowedMajor = ($aqlMajorRaw === 'not_allowed');
+                $notAllowedMinor = ($aqlMinorRaw === 'not_allowed');
 
                 $aqlCritical = $notAllowedCritical ? null : (is_numeric($aqlCriticalRaw) ? (float) $aqlCriticalRaw : null);
-                $aqlMajor    = $notAllowedMajor    ? null : (is_numeric($aqlMajorRaw)    ? (float) $aqlMajorRaw    : null);
-                $aqlMinor    = $notAllowedMinor    ? null : (is_numeric($aqlMinorRaw)    ? (float) $aqlMinorRaw    : null);
+                $aqlMajor = $notAllowedMajor ? null : (is_numeric($aqlMajorRaw) ? (float) $aqlMajorRaw : null);
+                $aqlMinor = $notAllowedMinor ? null : (is_numeric($aqlMinorRaw) ? (float) $aqlMinorRaw : null);
 
                 $plan = $this->aql->calculate($lotSize, $level, $aqlCritical, $aqlMajor, $aqlMinor);
 
                 // "Not Allowed" → Ac=0, Re=1 (any defect fails)
                 $acCritical = $notAllowedCritical ? 0 : ($plan['critical']['ac'] ?? null);
                 $reCritical = $notAllowedCritical ? 1 : ($plan['critical']['re'] ?? null);
-                $acMajor    = $notAllowedMajor    ? 0 : ($plan['major']['ac']    ?? null);
-                $reMajor    = $notAllowedMajor    ? 1 : ($plan['major']['re']    ?? null);
-                $acMinor    = $notAllowedMinor    ? 0 : ($plan['minor']['ac']    ?? null);
-                $reMinor    = $notAllowedMinor    ? 1 : ($plan['minor']['re']    ?? null);
+                $acMajor = $notAllowedMajor ? 0 : ($plan['major']['ac'] ?? null);
+                $reMajor = $notAllowedMajor ? 1 : ($plan['major']['re'] ?? null);
+                $acMinor = $notAllowedMinor ? 0 : ($plan['minor']['ac'] ?? null);
+                $reMinor = $notAllowedMinor ? 1 : ($plan['minor']['re'] ?? null);
 
                 $foundCritical = (int) ($aqlInput['found_critical'] ?? 0);
-                $foundMajor    = (int) ($aqlInput['found_major']    ?? 0);
-                $foundMinor    = (int) ($aqlInput['found_minor']    ?? 0);
+                $foundMajor = (int) ($aqlInput['found_major'] ?? 0);
+                $foundMinor = (int) ($aqlInput['found_minor'] ?? 0);
 
                 $verdict = $this->aql->verdict(
                     $foundCritical, $foundMajor, $foundMinor,
@@ -198,30 +198,30 @@ class InspectionRunController extends Controller
 
                 // Store "not_allowed" as a special sentinel float (-1) so it round-trips
                 $storeAqlCritical = $notAllowedCritical ? -1.0 : $aqlCritical;
-                $storeAqlMajor    = $notAllowedMajor    ? -1.0 : $aqlMajor;
-                $storeAqlMinor    = $notAllowedMinor    ? -1.0 : $aqlMinor;
+                $storeAqlMajor = $notAllowedMajor ? -1.0 : $aqlMajor;
+                $storeAqlMinor = $notAllowedMinor ? -1.0 : $aqlMinor;
 
                 InspectionRunAql::updateOrCreate(
                     ['inspection_run_id' => $run->id],
                     [
-                        'lot_size'         => $lotSize,
+                        'lot_size' => $lotSize,
                         'inspection_level' => $level,
-                        'code_letter'      => $plan['code_letter'],
-                        'sample_size'      => $plan['sample_size'],
-                        'aql_critical'     => $storeAqlCritical,
-                        'aql_major'        => $storeAqlMajor,
-                        'aql_minor'        => $storeAqlMinor,
-                        'ac_critical'      => $acCritical,
-                        're_critical'      => $reCritical,
-                        'ac_major'         => $acMajor,
-                        're_major'         => $reMajor,
-                        'ac_minor'         => $acMinor,
-                        're_minor'         => $reMinor,
-                        'found_critical'   => $foundCritical,
-                        'found_major'      => $foundMajor,
-                        'found_minor'      => $foundMinor,
-                        'verdict'          => $verdict,
-                        'variations'       => $variations,
+                        'code_letter' => $plan['code_letter'],
+                        'sample_size' => $plan['sample_size'],
+                        'aql_critical' => $storeAqlCritical,
+                        'aql_major' => $storeAqlMajor,
+                        'aql_minor' => $storeAqlMinor,
+                        'ac_critical' => $acCritical,
+                        're_critical' => $reCritical,
+                        'ac_major' => $acMajor,
+                        're_major' => $reMajor,
+                        'ac_minor' => $acMinor,
+                        're_minor' => $reMinor,
+                        'found_critical' => $foundCritical,
+                        'found_major' => $foundMajor,
+                        'found_minor' => $foundMinor,
+                        'verdict' => $verdict,
+                        'variations' => $variations,
                     ]
                 );
             }
@@ -240,8 +240,8 @@ class InspectionRunController extends Controller
 
                 $runSection->update([
                     'status' => $sectionData['status'] ?? 'pending',
-                    'notes'  => $sectionData['notes']  ?? null,
-                    'data'   => $mergedData,
+                    'notes' => $sectionData['notes'] ?? null,
+                    'data' => $mergedData,
                 ]);
             }
 
@@ -249,7 +249,7 @@ class InspectionRunController extends Controller
             if ($request->boolean('finish_run')) {
                 $run->update([
                     'completed_at' => now(),
-                    'verdict'      => $this->resolveRunVerdict($run),
+                    'verdict' => $this->resolveRunVerdict($run),
                 ]);
 
                 $this->syncInspectionStatus($inspection);
@@ -288,22 +288,22 @@ class InspectionRunController extends Controller
         abort_unless($runSection->inspection_run_id === $run->id, 403);
 
         $request->validate([
-            'files'    => ['required', 'array', 'max:20'],
-            'files.*'  => ['required', 'file', 'max:20480', 'mimes:jpg,jpeg,png,gif,webp,pdf,doc,docx'],
+            'files' => ['required', 'array', 'max:20'],
+            'files.*' => ['required', 'file', 'max:20480', 'mimes:jpg,jpeg,png,gif,webp,pdf,doc,docx'],
             'task_key' => ['nullable', 'string', 'max:100'],
         ]);
 
         $taskKey = $request->input('task_key') ?: null;
-        $result  = [];
+        $result = [];
 
         foreach ($request->file('files') as $file) {
             $att = $this->storeSectionAttachment($runSection, $file, $taskKey);
 
             $result[] = [
-                'id'         => $att->id,
-                'url'        => Storage::disk('public')->url($att->file_path),
-                'name'       => $att->file_name,
-                'is_image'   => $att->isImage(),
+                'id' => $att->id,
+                'url' => Storage::disk('public')->url($att->file_path),
+                'name' => $att->file_name,
+                'is_image' => $att->isImage(),
                 'delete_url' => route('inspections.runs.attachments.delete', [$inspection, $run, $att]),
             ];
         }
@@ -318,14 +318,14 @@ class InspectionRunController extends Controller
         $path = $file->store("inspection-sections/{$runSection->id}", 'public');
 
         return $runSection->attachments()->create([
-            'title'           => pathinfo($file->getClientOriginalName(), PATHINFO_FILENAME),
-            'file_name'       => $file->getClientOriginalName(),
-            'file_path'       => $path,
-            'mime_type'       => $file->getMimeType(),
-            'file_size'       => $file->getSize(),
+            'title' => pathinfo($file->getClientOriginalName(), PATHINFO_FILENAME),
+            'file_name' => $file->getClientOriginalName(),
+            'file_path' => $path,
+            'mime_type' => $file->getMimeType(),
+            'file_size' => $file->getSize(),
             'attachment_type' => str_starts_with($file->getMimeType(), 'image/') ? 'gallery' : 'document',
-            'task_key'        => $taskKey,
-            'uploaded_by'     => auth()->id(),
+            'task_key' => $taskKey,
+            'uploaded_by' => auth()->id(),
         ]);
     }
 
@@ -354,27 +354,27 @@ class InspectionRunController extends Controller
 
         $validated = $request->validate([
             'status' => ['required', 'in:pending,complete,na'],
-            'notes'  => ['nullable', 'string', 'max:2000'],
-            'data'   => ['nullable', 'array'],
+            'notes' => ['nullable', 'string', 'max:2000'],
+            'data' => ['nullable', 'array'],
         ]);
 
         $mergedData = array_merge($runSection->data ?? [], $validated['data'] ?? []);
 
         $runSection->update([
             'status' => $validated['status'],
-            'notes'  => $validated['notes'] ?? $runSection->notes,
-            'data'   => $mergedData,
+            'notes' => $validated['notes'] ?? $runSection->notes,
+            'data' => $mergedData,
         ]);
 
         $run->loadMissing('runSections');
-        $total    = $run->runSections->count();
+        $total = $run->runSections->count();
         $complete = $run->runSections->where('status', 'complete')->count();
 
         return response()->json([
-            'success'        => true,
-            'status'         => $runSection->status,
+            'success' => true,
+            'status' => $runSection->status,
             'sections_total' => $total,
-            'sections_done'  => $complete,
+            'sections_done' => $complete,
         ]);
     }
 
@@ -383,19 +383,19 @@ class InspectionRunController extends Controller
     public function aqlCalculate(Request $request)
     {
         $request->validate([
-            'lot_size'         => ['required', 'integer', 'min:1'],
+            'lot_size' => ['required', 'integer', 'min:1'],
             'inspection_level' => ['nullable', 'in:I,II,III,S1,S2,S3,S4'],
-            'aql_critical'     => ['nullable', 'numeric'],
-            'aql_major'        => ['nullable', 'numeric'],
-            'aql_minor'        => ['nullable', 'numeric'],
+            'aql_critical' => ['nullable', 'numeric'],
+            'aql_major' => ['nullable', 'numeric'],
+            'aql_minor' => ['nullable', 'numeric'],
         ]);
 
         $plan = $this->aql->calculate(
-            (int)   $request->lot_size,
+            (int) $request->lot_size,
             $request->input('inspection_level', 'II'),
             $request->filled('aql_critical') ? (float) $request->aql_critical : 0.065,
-            $request->filled('aql_major')    ? (float) $request->aql_major    : 2.5,
-            $request->filled('aql_minor')    ? (float) $request->aql_minor    : 4.0,
+            $request->filled('aql_major') ? (float) $request->aql_major : 2.5,
+            $request->filled('aql_minor') ? (float) $request->aql_minor : 4.0,
         );
 
         return response()->json($plan);
@@ -408,13 +408,13 @@ class InspectionRunController extends Controller
         $sections = $run->runSections()->with('section')->get();
 
         // 1. Explicit verdict chosen by the inspector in Final Review
-        $finalReview = $sections->first(fn($rs) => $rs->section?->slug === 'final_review');
-        $selected    = $finalReview->data['overall_verdict'] ?? null;
+        $finalReview = $sections->first(fn ($rs) => $rs->section?->slug === 'final_review');
+        $selected = $finalReview?->data['overall_verdict'] ?? null;
 
         $map = [
-            'Pass'                   => 'Pass',
-            'Fail'                   => 'Fail',
-            'Conditional Pass'       => 'Conditional',
+            'Pass' => 'Pass',
+            'Fail' => 'Fail',
+            'Conditional Pass' => 'Conditional',
             'Re-Inspection Required' => 'Conditional',
         ];
 
@@ -429,18 +429,18 @@ class InspectionRunController extends Controller
         }
 
         // 3. Derive from recorded defects (Critical/Major => Fail, Minor only => Conditional, none => Pass)
-        $defectSection = $sections->first(fn($rs) => $rs->section?->slug === 'defect_recording');
+        $defectSection = $sections->first(fn ($rs) => $rs->section?->slug === 'defect_recording');
         if ($defectSection) {
             $defectIds = collect($defectSection->data['selections'] ?? [])
-                ->filter(fn($s) => !empty($s['selected']) && !empty($s['defect_id']))
+                ->filter(fn ($s) => ! empty($s['selected']) && ! empty($s['defect_id']))
                 ->pluck('defect_id')
-                ->map(fn($id) => (int) $id);
+                ->map(fn ($id) => (int) $id);
 
             if ($defectIds->isEmpty()) {
                 return 'Pass';
             }
 
-            $hasCriticalOrMajor = \App\Models\Defect::whereIn('id', $defectIds)
+            $hasCriticalOrMajor = Defect::whereIn('id', $defectIds)
                 ->whereIn('severity', ['critical', 'major'])
                 ->exists();
 
@@ -456,9 +456,9 @@ class InspectionRunController extends Controller
     {
         $runs = $inspection->runs()->get(['id', 'verdict', 'completed_at']);
 
-        if ($runs->isEmpty() || $runs->contains(fn($r) => is_null($r->completed_at))) {
+        if ($runs->isEmpty() || $runs->contains(fn ($r) => is_null($r->completed_at))) {
             $status = 'Pending';
-        } elseif ($runs->contains(fn($r) => $r->verdict === 'Fail')) {
+        } elseif ($runs->contains(fn ($r) => $r->verdict === 'Fail')) {
             $status = 'Fail';
         } else {
             $status = 'Pass';
@@ -481,7 +481,7 @@ class InspectionRunController extends Controller
 
         // Load active type-section defaults: global (NULL category) OR matching sample category
         $defaults = InspectionTypeSectionDefault::with('section')
-            ->whereHas('section', fn($q) => $q->where('is_active', true))
+            ->whereHas('section', fn ($q) => $q->where('is_active', true))
             ->where('inspection_type_id', $inspectionTypeId)
             ->where(function ($q) use ($sample) {
                 $q->whereNull('category_id');
@@ -501,42 +501,42 @@ class InspectionRunController extends Controller
             }
 
             InspectionRunSection::create([
-                'inspection_run_id'     => $run->id,
+                'inspection_run_id' => $run->id,
                 'inspection_section_id' => $default->inspection_section_id,
-                'sort_order'            => ($i + 1) * 10,
-                'data'                  => $default->section->default_data,
-                'status'                => 'pending',
+                'sort_order' => ($i + 1) * 10,
+                'data' => $default->section->default_data,
+                'status' => 'pending',
             ]);
         }
 
         // Always ensure final_review is the last section (sort_order=9999)
         $hasFinalReview = $run->runSections()
-            ->whereHas('section', fn($q) => $q->where('slug', 'final_review'))
+            ->whereHas('section', fn ($q) => $q->where('slug', 'final_review'))
             ->exists();
         if (! $hasFinalReview) {
-            $finalReviewSection = \App\Models\InspectionSection::where('slug', 'final_review')
+            $finalReviewSection = InspectionSection::where('slug', 'final_review')
                 ->where('is_active', true)
                 ->first();
             if ($finalReviewSection) {
                 InspectionRunSection::create([
-                    'inspection_run_id'     => $run->id,
+                    'inspection_run_id' => $run->id,
                     'inspection_section_id' => $finalReviewSection->id,
-                    'sort_order'            => 9999,
-                    'data'                  => $finalReviewSection->default_data,
-                    'status'                => 'pending',
+                    'sort_order' => 9999,
+                    'data' => $finalReviewSection->default_data,
+                    'status' => 'pending',
                 ]);
             }
         }
 
         // Create AQL record if aql_sampling section is included and none exists yet
-        $hasAql = $defaults->contains(fn($d) => $d->section?->slug === 'aql_sampling');
+        $hasAql = $defaults->contains(fn ($d) => $d->section?->slug === 'aql_sampling');
         if ($hasAql && ! $run->aql()->exists()) {
             InspectionRunAql::create([
                 'inspection_run_id' => $run->id,
-                'aql_major'         => 2.5,
-                'aql_minor'         => 4.0,
-                'aql_critical'      => 0.065,
-                'inspection_level'  => 'II',
+                'aql_major' => 2.5,
+                'aql_minor' => 4.0,
+                'aql_critical' => 0.065,
+                'inspection_level' => 'II',
             ]);
         }
     }

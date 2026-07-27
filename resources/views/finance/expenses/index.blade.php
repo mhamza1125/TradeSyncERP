@@ -105,10 +105,10 @@
                                         <td>{{ \Carbon\Carbon::parse($expense->expense_date)->format('d M Y') }}</td>
                                         <td>
                                             <span class="badge bg-soft-primary text-primary">
-                                                {{ $expense->expenseHead->expense_name }}
+                                                {{ $expense->expenseHead?->expense_name ?? '—' }}
                                             </span>
                                         </td>
-                                        <td>{{ $expense->account->account_name }}</td>
+                                        <td>{{ $expense->account?->account_name ?? '—' }}</td>
                                         <td class="fw-bold text-dark">{{ number_format($expense->amount, 2) }}</td>
                                         <td class="text-muted text-truncate-1-line" style="max-width:200px">{{ $expense->description ?? '—' }}</td>
                                         <td>

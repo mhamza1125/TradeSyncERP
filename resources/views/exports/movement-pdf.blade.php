@@ -1,4 +1,4 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
 <title>Movement #{{ $movement->id }}</title>
@@ -96,9 +96,9 @@
             @forelse($movement->items as $i => $item)
             <tr>
                 <td>{{ $i + 1 }}</td>
-                <td class="fw-bold">{{ $item->sample->sample_code }}</td>
-                <td>{{ $item->sample->product_name ?? '—' }}</td>
-                <td class="text-muted">{{ $item->sample->customer?->customer_name ?? '—' }}</td>
+                <td class="fw-bold">{{ $item->sample?->sample_code ?? 'Removed' }}</td>
+                <td>{{ $item->sample?->product_name ?? '—' }}</td>
+                <td class="text-muted">{{ $item->sample?->customer?->customer_name ?? '—' }}</td>
                 <td class="text-muted">{{ $item->variation?->color?->name ?? '—' }}</td>
                 <td class="text-muted">{{ $item->variation?->size?->name ?? '—' }}</td>
                 <td class="text-right">{{ $item->quantity }}</td>

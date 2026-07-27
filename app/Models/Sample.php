@@ -9,7 +9,7 @@ use Spatie\Activitylog\Traits\LogsActivity;
 
 class Sample extends Model
 {
-    use SoftDeletes, LogsActivity;
+    use LogsActivity, SoftDeletes;
 
     protected $fillable = [
         'sample_code',
@@ -34,7 +34,7 @@ class Sample extends Model
 
     protected $casts = [
         'receive_date' => 'date',
-        'status'       => 'string',
+        'status' => 'string',
     ];
 
     public function getActivitylogOptions(): LogOptions
@@ -70,7 +70,6 @@ class Sample extends Model
         return $this->hasMany(SampleVariation::class);
     }
 
-
     public function movements()
     {
         return $this->hasMany(SampleMovement::class);
@@ -94,7 +93,7 @@ class Sample extends Model
     {
         foreach (array_unique(array_filter($sampleIds)) as $sampleId) {
             $sample = static::find($sampleId);
-            if (!$sample) {
+            if (! $sample) {
                 continue;
             }
             $hasOpen = $sample->movementItems()
@@ -136,7 +135,8 @@ class Sample extends Model
 
     public function isOverdue(): bool
     {
-        return !in_array($this->status, ['Completed', 'Returned'])
-            && $this->receive_date->addDays($this->alert_days)->isPast();
+        return ! in_array($this->status, ['Completed', 'Returned'])
+            && $this->receive_date
+            && $this->receive_date->addDays($this->alert_days ?? 0)->isPast();
     }
 }

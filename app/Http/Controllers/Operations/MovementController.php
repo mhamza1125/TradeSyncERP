@@ -25,12 +25,10 @@ class MovementController extends Controller
     public function index(Request $request)
     {
         $movements = Movement::with(['items.sample.customer', 'employees', 'inspectionRun.inspection'])
-            ->when($request->search, fn($q) =>
-                $q->whereHas('items.sample', fn($sq) =>
-                    $sq->where('sample_code', 'like', "%{$request->search}%")
-                       ->orWhere('product_name', 'like', "%{$request->search}%")
-                ))
-            ->when($request->status, fn($q) => $q->where('status', $request->status))
+            ->when($request->search, fn ($q) => $q->whereHas('items.sample', fn ($sq) => $sq->where('sample_code', 'like', "%{$request->search}%")
+                ->orWhere('product_name', 'like', "%{$request->search}%")
+            ))
+            ->when($request->status, fn ($q) => $q->where('status', $request->status))
             ->latest()
             ->paginate(25)
             ->withQueryString();
@@ -60,27 +58,27 @@ class MovementController extends Controller
             ])->find($request->inspection_run_id);
 
             if ($preselectedRun) {
-                $preselectedEmployeeIds = $preselectedRun->inspection->inspectors->pluck('id')->toArray();
+                $preselectedEmployeeIds = $preselectedRun->inspection?->inspectors?->pluck('id')->toArray() ?? [];
             }
         }
 
         // Build samples data for JavaScript (keyed by ID)
-        $samplesJson = $samples->keyBy('id')->map(fn($s) => [
-            'code'       => $s->sample_code,
-            'product'    => $s->product_name ?? '',
-            'customer'   => $s->customer?->customer_name ?? '',
-            'variations' => $s->variations->map(fn($v) => [
-                'id'    => $v->id,
+        $samplesJson = $samples->keyBy('id')->map(fn ($s) => [
+            'code' => $s->sample_code,
+            'product' => $s->product_name ?? '',
+            'customer' => $s->customer?->customer_name ?? '',
+            'variations' => $s->variations->map(fn ($v) => [
+                'id' => $v->id,
                 'color' => optional($v->color)->name,
-                'size'  => optional($v->size)->name,
-                'qty'   => $v->quantity,
+                'size' => optional($v->size)->name,
+                'qty' => $v->quantity,
             ])->values(),
         ]);
 
         // Build inspection runs data for JS (employee auto-population)
-        $inspectionRunsJson = $inspectionRuns->keyBy('id')->map(fn($run) => [
-            'label'       => ($run->inspection->report_number ?? 'Inspection #' . $run->inspection_id)
-                             . ' — Run #' . ($run->run_number ?? $run->id),
+        $inspectionRunsJson = $inspectionRuns->keyBy('id')->map(fn ($run) => [
+            'label' => ($run->inspection->report_number ?? 'Inspection #'.$run->inspection_id)
+                             .' — Run #'.($run->run_number ?? $run->id),
             'employeeIds' => $run->inspection?->inspectors?->pluck('id')->toArray() ?? [],
         ]);
 
@@ -96,11 +94,11 @@ class MovementController extends Controller
         $data = $request->validated();
 
         $movement = Movement::create([
-            'inspection_run_id'    => $data['inspection_run_id'] ?? null,
-            'issue_date'           => $data['issue_date'],
+            'inspection_run_id' => $data['inspection_run_id'] ?? null,
+            'issue_date' => $data['issue_date'],
             'expected_return_date' => $data['expected_return_date'] ?? null,
-            'alert_days'           => $data['alert_days'] ?? null,
-            'remarks'              => $data['remarks'] ?? null,
+            'alert_days' => $data['alert_days'] ?? null,
+            'remarks' => $data['remarks'] ?? null,
         ]);
 
         $movement->employees()->sync($data['employee_ids']);
@@ -112,15 +110,16 @@ class MovementController extends Controller
                 continue; // skip zero-quantity variations
             }
             $movement->items()->create([
-                'sample_id'           => $itemData['sample_id'],
-                'sample_variation_id' => !empty($itemData['variation_id']) ? $itemData['variation_id'] : null,
-                'quantity'            => $qty,
+                'sample_id' => $itemData['sample_id'],
+                'sample_variation_id' => ! empty($itemData['variation_id']) ? $itemData['variation_id'] : null,
+                'quantity' => $qty,
             ]);
             $itemsCreated++;
         }
 
         if ($itemsCreated === 0) {
             $movement->delete();
+
             return back()
                 ->withErrors(['items' => 'Please enter a quantity greater than zero for at least one variation.'])
                 ->withInput();
@@ -157,26 +156,26 @@ class MovementController extends Controller
             'inspectionRun.inspection',
         ]);
 
-        $samples   = Sample::with(['customer', 'variations.color', 'variations.size'])->orderBy('sample_code')->get();
+        $samples = Sample::with(['customer', 'variations.color', 'variations.size'])->orderBy('sample_code')->get();
         $employees = Employee::where('status', true)->orderBy('employee_name')->get();
         $inspectionRuns = InspectionRun::with('inspection')->latest()->get();
 
         // Build same JSON structures as create for the JS
         $samplesJson = $samples->keyBy('id')->map(fn ($s) => [
-            'code'       => $s->sample_code,
-            'product'    => $s->product_name ?? '',
-            'customer'   => $s->customer?->customer_name ?? '',
+            'code' => $s->sample_code,
+            'product' => $s->product_name ?? '',
+            'customer' => $s->customer?->customer_name ?? '',
             'variations' => $s->variations->map(fn ($v) => [
-                'id'    => $v->id,
+                'id' => $v->id,
                 'color' => optional($v->color)->name,
-                'size'  => optional($v->size)->name,
-                'qty'   => $v->quantity,
+                'size' => optional($v->size)->name,
+                'qty' => $v->quantity,
             ])->values(),
         ]);
 
         $inspectionRunsJson = $inspectionRuns->keyBy('id')->map(fn ($run) => [
-            'label'       => ($run->inspection->report_number ?? 'Inspection #' . $run->inspection_id)
-                             . ' — Run #' . ($run->run_number ?? $run->id),
+            'label' => ($run->inspection->report_number ?? 'Inspection #'.$run->inspection_id)
+                             .' — Run #'.($run->run_number ?? $run->id),
             'employeeIds' => $run->inspection?->inspectors?->pluck('id')->toArray() ?? [],
         ]);
 
@@ -191,13 +190,13 @@ class MovementController extends Controller
         $data = $request->validated();
 
         $movement->update([
-            'inspection_run_id'    => $data['inspection_run_id'] ?? null,
-            'issue_date'           => $data['issue_date'],
+            'inspection_run_id' => $data['inspection_run_id'] ?? null,
+            'issue_date' => $data['issue_date'],
             'expected_return_date' => $data['expected_return_date'] ?? null,
-            'alert_days'           => $data['alert_days'] ?? null,
-            'actual_return_date'   => $data['actual_return_date'] ?? null,
-            'status'               => $data['status'],
-            'remarks'              => $data['remarks'] ?? null,
+            'alert_days' => $data['alert_days'] ?? null,
+            'actual_return_date' => $data['actual_return_date'] ?? null,
+            'status' => $data['status'],
+            'remarks' => $data['remarks'] ?? null,
         ]);
 
         $movement->employees()->sync($data['employee_ids']);
@@ -215,12 +214,12 @@ class MovementController extends Controller
                 continue;
             }
             $movement->items()->create([
-                'sample_id'           => $itemData['sample_id'],
-                'sample_variation_id' => !empty($itemData['variation_id']) ? $itemData['variation_id'] : null,
-                'quantity'            => $qty,
-                'actual_return_date'  => $itemData['actual_return_date'] ?? null,
-                'status'              => $itemData['item_status'] ?: null,
-                'remarks'             => $itemData['item_remarks'] ?? null,
+                'sample_id' => $itemData['sample_id'],
+                'sample_variation_id' => ! empty($itemData['variation_id']) ? $itemData['variation_id'] : null,
+                'quantity' => $qty,
+                'actual_return_date' => $itemData['actual_return_date'] ?? null,
+                'status' => $itemData['item_status'] ?: null,
+                'remarks' => $itemData['item_remarks'] ?? null,
             ]);
             $newSampleIds[] = $itemData['sample_id'];
             $itemsCreated++;
@@ -249,11 +248,9 @@ class MovementController extends Controller
     public function exportListPdf(Request $request)
     {
         $movements = Movement::with(['items.sample.customer', 'employees', 'inspectionRun.inspection'])
-            ->when($request->search, fn ($q) =>
-                $q->whereHas('items.sample', fn ($sq) =>
-                    $sq->where('sample_code', 'like', "%{$request->search}%")
-                       ->orWhere('product_name', 'like', "%{$request->search}%")
-                ))
+            ->when($request->search, fn ($q) => $q->whereHas('items.sample', fn ($sq) => $sq->where('sample_code', 'like', "%{$request->search}%")
+                ->orWhere('product_name', 'like', "%{$request->search}%")
+            ))
             ->when($request->status, fn ($q) => $q->where('status', $request->status))
             ->latest()
             ->get();
@@ -264,7 +261,7 @@ class MovementController extends Controller
             ->setOption('isRemoteEnabled', false)
             ->setOption('defaultFont', 'DejaVu Sans');
 
-        return $pdf->download('Movements-' . now()->format('Y-m-d') . '.pdf');
+        return $pdf->download('Movements-'.now()->format('Y-m-d').'.pdf');
     }
 
     public function exportSinglePdf(Movement $movement)

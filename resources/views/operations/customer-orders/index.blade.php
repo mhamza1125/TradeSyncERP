@@ -113,7 +113,7 @@
                                                 {{ $order->order_code }}
                                             </a>
                                         </td>
-                                        <td>{{ $order->customer->customer_name }}</td>
+                                        <td>{{ $order->customer?->customer_name ?? '—' }}</td>
                                         <td>{{ $order->brand?->brand_name ?? '—' }}</td>
                                         <td>{{ $order->order_date->format('d M Y') }}</td>
                                         <td>{{ $order->required_by?->format('d M Y') ?? '—' }}</td>

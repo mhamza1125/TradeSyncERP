@@ -116,7 +116,7 @@
                                         {{ $invoice->invoice_number }}
                                     </a>
                                 </td>
-                                <td>{{ $invoice->customer->customer_name }}</td>
+                                <td>{{ $invoice->customer?->customer_name ?? '—' }}</td>
                                 <td>{{ $invoice->invoice_date->format('d M Y') }}</td>
                                 <td>{{ $invoice->due_date?->format('d M Y') ?? '—' }}</td>
                                 <td class="text-end">{{ number_format($invoice->total_amount, 2) }}</td>

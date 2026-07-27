@@ -62,12 +62,12 @@
                                 <div>
                                     <h6 class="fw-bold mb-2">Expense Head:</h6>
                                     <span class="badge bg-soft-primary text-primary fs-14 px-3 py-2">
-                                        {{ $expense->expenseHead->expense_name }}
+                                        {{ $expense->expenseHead?->expense_name ?? '—' }}
                                     </span>
                                 </div>
                                 <div class="lh-lg pt-3 pt-sm-0">
                                     <div><span class="fw-bold text-dark">Date:</span> <span class="text-muted">{{ \Carbon\Carbon::parse($expense->expense_date)->format('d M Y') }}</span></div>
-                                    <div><span class="fw-bold text-dark">Account:</span> <span class="text-muted">{{ $expense->account->account_name }}</span></div>
+                                    <div><span class="fw-bold text-dark">Account:</span> <span class="text-muted">{{ $expense->account?->account_name ?? '—' }}</span></div>
                                 </div>
                             </div>
                         </div>
@@ -86,8 +86,8 @@
                                 <div class="col-sm-6">
                                     <div class="p-3 bg-light rounded">
                                         <div class="text-muted fs-12 mb-1">Paid From</div>
-                                        <div class="fs-16 fw-bold text-dark">{{ $expense->account->account_name }}</div>
-                                        <div class="text-muted fs-12">{{ $expense->account->account_type }}</div>
+                                        <div class="fs-16 fw-bold text-dark">{{ $expense->account?->account_name ?? '—' }}</div>
+                                        <div class="text-muted fs-12">{{ $expense->account?->account_type ?? '—' }}</div>
                                     </div>
                                 </div>
                             </div>

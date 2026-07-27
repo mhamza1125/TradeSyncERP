@@ -47,7 +47,7 @@
                     </div>
                     <div>
                         <div class="text-muted fs-12">Customer</div>
-                        <div class="fw-semibold">{{ $sample->customer->customer_name }}</div>
+                        <div class="fw-semibold">{{ $sample->customer?->customer_name ?? '—' }}</div>
                     </div>
                     <div>
                         <div class="text-muted fs-12">Status</div>

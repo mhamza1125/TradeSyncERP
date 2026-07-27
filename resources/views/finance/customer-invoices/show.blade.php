@@ -55,10 +55,14 @@
                 <div class="row mb-4">
                     <div class="col-sm-6">
                         <h6 class="text-muted mb-1">Customer</h6>
+                        @if($customerInvoice->customer)
                         <p class="fw-semibold mb-0">{{ $customerInvoice->customer->customer_name }}</p>
                         <p class="text-muted mb-0">{{ $customerInvoice->customer->phone }}</p>
                         @if($customerInvoice->customer->currency)
                         <p class="text-muted mb-0">Currency: <span class="fw-semibold text-dark">{{ $customerInvoice->customer->currency->code }}</span></p>
+                        @endif
+                        @else
+                        <p class="fw-semibold mb-0">Deleted Customer</p>
                         @endif
                     </div>
                     <div class="col-sm-6 text-sm-end">
@@ -161,7 +165,7 @@
         </div>
 
         {{-- Secondary cards: FC details + Attachments side by side if both exist --}}
-        @php $customerCurrency = $customerInvoice->customer->currency ?? null; @endphp
+        @php $customerCurrency = $customerInvoice->customer?->currency; @endphp
         @if($customerCurrency || $customerInvoice->attachments->count())
         <div class="row">
             @if($customerCurrency && $customerInvoice->foreign_amount)

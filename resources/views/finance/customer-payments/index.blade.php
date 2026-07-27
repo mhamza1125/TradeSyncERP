@@ -107,7 +107,7 @@
                                                 <span class="text-muted">—</span>
                                             @endif
                                         </td>
-                                        <td>{{ $payment->customer->customer_name }}</td>
+                                        <td>{{ $payment->customer?->customer_name ?? '—' }}</td>
                                         <td>{{ $payment->foreign_currency }}</td>
                                         <td class="fw-semibold">{{ number_format($payment->received_fc, 2) }}</td>
                                         <td>{{ number_format($payment->exchange_rate, 4) }}</td>
