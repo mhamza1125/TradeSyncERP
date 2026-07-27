@@ -24,17 +24,17 @@
     </table>
 </div>
 
-<table class="data-table">
+<table class="data-table data-table-fixed">
     <thead>
         <tr>
-            <th style="width:30px">#</th>
-            <th style="width:110px">Invoice No.</th>
-            <th>Customer</th>
-            <th style="width:90px">Invoice Date</th>
-            <th style="width:90px">Due Date</th>
-            <th class="text-right" style="width:110px">Total Amount</th>
-            <th class="text-right" style="width:110px">Amount Due</th>
-            <th style="width:70px">Status</th>
+            <th style="width:4%">#</th>
+            <th style="width:13%">Invoice No.</th>
+            <th style="width:23%">Customer</th>
+            <th style="width:11%">Invoice Date</th>
+            <th style="width:11%">Due Date</th>
+            <th class="text-right" style="width:13%">Total Amount</th>
+            <th class="text-right" style="width:13%">Amount Due</th>
+            <th style="width:12%">Status</th>
         </tr>
     </thead>
     <tbody>
@@ -42,7 +42,7 @@
         <tr>
             <td>{{ $i + 1 }}</td>
             <td class="fw-bold">{{ $invoice->invoice_number }}</td>
-            <td>{{ $invoice->customer?->customer_name ?? '—' }}</td>
+            <td>{{ Illuminate\Support\Str::limit($invoice->customer?->customer_name ?? '—', 26) }}</td>
             <td>{{ $invoice->invoice_date->format('d M Y') }}</td>
             <td>{{ $invoice->due_date ? $invoice->due_date->format('d M Y') : '—' }}</td>
             <td class="text-right">{{ number_format($invoice->total_amount, 2) }}</td>

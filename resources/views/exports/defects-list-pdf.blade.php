@@ -24,20 +24,20 @@
     </table>
 </div>
 
-<table class="data-table">
+<table class="data-table data-table-fixed">
     <thead>
         <tr>
-            <th style="width:30px">#</th>
-            <th>Defect Name</th>
-            <th style="width:100px">Severity</th>
-            <th style="width:60px">Status</th>
+            <th style="width:6%">#</th>
+            <th style="width:54%">Defect Name</th>
+            <th style="width:20%">Severity</th>
+            <th style="width:20%">Status</th>
         </tr>
     </thead>
     <tbody>
         @forelse($defects as $i => $defect)
         <tr>
             <td>{{ $i + 1 }}</td>
-            <td class="fw-bold">{{ $defect->defect_name }}</td>
+            <td class="fw-bold">{{ Illuminate\Support\Str::limit($defect->defect_name, 60) }}</td>
             <td class="text-center">
                 @php
                     $sc = match($defect->severity) {

@@ -99,22 +99,22 @@
 {{-- Order Items --}}
 <div class="info-section">
     <h3>Order Items</h3>
-    <table class="data-table">
+    <table class="data-table data-table-fixed">
         <thead>
             <tr>
-                <th style="width:30px">#</th>
-                <th>Product Category</th>
-                <th class="text-right" style="width:100px">Quantity</th>
-                <th>Description</th>
+                <th style="width:5%">#</th>
+                <th style="width:28%">Product Category</th>
+                <th class="text-right" style="width:15%">Quantity</th>
+                <th style="width:52%">Description</th>
             </tr>
         </thead>
         <tbody>
             @forelse($order->items as $i => $item)
             <tr>
                 <td>{{ $i + 1 }}</td>
-                <td>{{ $item->productCategory->category_name ?? '—' }}</td>
+                <td>{{ Illuminate\Support\Str::limit($item->productCategory->category_name ?? '—', 24) }}</td>
                 <td class="text-right">{{ number_format($item->quantity ?? 0) }}</td>
-                <td class="text-muted">{{ $item->description ?? '—' }}</td>
+                <td class="text-muted">{{ Illuminate\Support\Str::limit($item->description ?? '—', 70) }}</td>
             </tr>
             @empty
             <tr><td colspan="4" class="no-data">No items on this order.</td></tr>

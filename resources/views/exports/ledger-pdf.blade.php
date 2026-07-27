@@ -96,15 +96,15 @@
 @if(!empty($account))
 <div class="info-section">
     <h3>Transaction Ledger</h3>
-    <table class="data-table">
+    <table class="data-table data-table-fixed">
         <thead>
             <tr>
-                <th style="width:80px">Date</th>
-                <th>Description / Reference</th>
-                <th style="width:90px">Type</th>
-                <th class="text-right" style="width:90px">Debit</th>
-                <th class="text-right" style="width:90px">Credit</th>
-                <th class="text-right" style="width:100px">Balance</th>
+                <th style="width:12%">Date</th>
+                <th style="width:34%">Description / Reference</th>
+                <th style="width:13%">Type</th>
+                <th class="text-right" style="width:13%">Debit</th>
+                <th class="text-right" style="width:13%">Credit</th>
+                <th class="text-right" style="width:15%">Balance</th>
             </tr>
         </thead>
         <tbody>
@@ -128,7 +128,7 @@
                 <td>
                     <span>{{ ucfirst(str_replace('_', ' ', $txn->transaction_type)) }}</span>
                     @if($txn->remarks)
-                    <div class="text-muted" style="font-size:7pt;">{{ $txn->remarks }}</div>
+                    <div class="text-muted" style="font-size:7pt;">{{ Illuminate\Support\Str::limit($txn->remarks, 50) }}</div>
                     @endif
                 </td>
                 <td class="text-muted" style="font-size:7.5pt;">{{ $txn->transaction_type }}</td>
@@ -157,24 +157,24 @@
 @if(!empty($customer))
 <div class="info-section">
     <h3>Payment History</h3>
-    <table class="data-table">
+    <table class="data-table data-table-fixed">
         <thead>
             <tr>
-                <th style="width:80px">Date</th>
-                <th style="width:120px">Invoice Ref</th>
-                <th style="width:70px">Currency</th>
-                <th class="text-right" style="width:100px">Invoiced (FC)</th>
-                <th class="text-right" style="width:100px">Received (FC)</th>
-                <th class="text-right" style="width:90px">Exch. Rate</th>
-                <th class="text-right" style="width:110px">PKR Received</th>
-                <th class="text-right" style="width:90px">PKR Gain/Loss</th>
+                <th style="width:11%">Date</th>
+                <th style="width:15%">Invoice Ref</th>
+                <th style="width:8%">Currency</th>
+                <th class="text-right" style="width:13%">Invoiced (FC)</th>
+                <th class="text-right" style="width:13%">Received (FC)</th>
+                <th class="text-right" style="width:11%">Exch. Rate</th>
+                <th class="text-right" style="width:15%">PKR Received</th>
+                <th class="text-right" style="width:14%">PKR Gain/Loss</th>
             </tr>
         </thead>
         <tbody>
             @forelse($transactions as $payment)
             <tr>
                 <td>{{ \Carbon\Carbon::parse($payment->payment_date)->format('d M Y') }}</td>
-                <td>{{ $payment->invoice_reference ?? '—' }}</td>
+                <td>{{ Illuminate\Support\Str::limit($payment->invoice_reference ?? '—', 16) }}</td>
                 <td>{{ $payment->foreign_currency }}</td>
                 <td class="text-right">{{ number_format($payment->invoiced_amount_fc, 2) }}</td>
                 <td class="text-right">{{ number_format($payment->received_fc, 2) }}</td>

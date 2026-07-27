@@ -38,16 +38,16 @@
 </div>
 @endif
 
-<table class="data-table">
+<table class="data-table data-table-fixed">
     <thead>
         <tr>
-            <th style="width:30px">#</th>
-            <th style="width:90px">Date</th>
-            <th style="width:140px">Expense Type</th>
-            <th style="width:120px">Account</th>
-            <th class="text-right" style="width:100px">Amount</th>
-            <th>Description</th>
-            <th style="width:100px">Created By</th>
+            <th style="width:4%">#</th>
+            <th style="width:10%">Date</th>
+            <th style="width:17%">Expense Type</th>
+            <th style="width:15%">Account</th>
+            <th class="text-right" style="width:12%">Amount</th>
+            <th style="width:30%">Description</th>
+            <th style="width:12%">Created By</th>
         </tr>
     </thead>
     <tbody>
@@ -55,11 +55,11 @@
         <tr>
             <td>{{ $i + 1 }}</td>
             <td>{{ \Carbon\Carbon::parse($expense->expense_date)->format('d M Y') }}</td>
-            <td class="fw-bold">{{ $expense->expenseHead->expense_name ?? '—' }}</td>
-            <td>{{ $expense->account->account_name ?? '—' }}</td>
+            <td class="fw-bold">{{ Illuminate\Support\Str::limit($expense->expenseHead->expense_name ?? '—', 20) }}</td>
+            <td>{{ Illuminate\Support\Str::limit($expense->account->account_name ?? '—', 18) }}</td>
             <td class="text-right fw-bold">{{ number_format($expense->amount, 2) }}</td>
-            <td class="text-muted">{{ $expense->description ?? '—' }}</td>
-            <td>{{ $expense->transaction?->creator?->name ?? '—' }}</td>
+            <td class="text-muted">{{ Illuminate\Support\Str::limit($expense->description ?? '—', 55) }}</td>
+            <td>{{ Illuminate\Support\Str::limit($expense->transaction?->creator?->name ?? '—', 16) }}</td>
         </tr>
         @empty
         <tr><td colspan="7" class="no-data">No expenses found.</td></tr>

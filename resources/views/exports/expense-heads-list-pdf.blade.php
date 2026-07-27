@@ -24,13 +24,13 @@
     </table>
 </div>
 
-<table class="data-table">
+<table class="data-table data-table-fixed">
     <thead>
         <tr>
-            <th style="width:30px">#</th>
-            <th>Expense Head Name</th>
-            <th style="width:160px">Parent Category</th>
-            <th style="width:70px">Status</th>
+            <th style="width:6%">#</th>
+            <th style="width:49%">Expense Head Name</th>
+            <th style="width:30%">Parent Category</th>
+            <th style="width:15%">Status</th>
         </tr>
     </thead>
     <tbody>
@@ -38,9 +38,9 @@
         <tr>
             <td>{{ $i + 1 }}</td>
             <td class="{{ $head->parent_id ? '' : 'fw-bold' }}">
-                {{ $head->parent_id ? '↳ ' : '' }}{{ $head->expense_name }}
+                {{ $head->parent_id ? '↳ ' : '' }}{{ Illuminate\Support\Str::limit($head->expense_name, 44) }}
             </td>
-            <td class="text-muted">{{ $head->parent?->expense_name ?? '—' }}</td>
+            <td class="text-muted">{{ Illuminate\Support\Str::limit($head->parent?->expense_name ?? '—', 26) }}</td>
             <td class="text-center">
                 <span class="badge {{ $head->status ? 'badge-success' : 'badge-danger' }}">
                     {{ $head->status ? 'Active' : 'Inactive' }}

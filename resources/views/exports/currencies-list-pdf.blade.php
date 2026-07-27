@@ -24,15 +24,15 @@
     </table>
 </div>
 
-<table class="data-table">
+<table class="data-table data-table-fixed">
     <thead>
         <tr>
-            <th style="width:30px">#</th>
-            <th style="width:90px">Code</th>
-            <th>Currency Name</th>
-            <th class="text-right" style="width:120px">Exchange Rate</th>
-            <th style="width:80px text-center">Default</th>
-            <th style="width:70px">Status</th>
+            <th style="width:4%">#</th>
+            <th style="width:12%">Code</th>
+            <th style="width:32%">Currency Name</th>
+            <th class="text-right" style="width:18%">Exchange Rate</th>
+            <th style="width:17%; text-align:center;">Default</th>
+            <th style="width:17%">Status</th>
         </tr>
     </thead>
     <tbody>
@@ -40,7 +40,7 @@
         <tr>
             <td>{{ $i + 1 }}</td>
             <td class="fw-bold">{{ $currency->currency_code }}</td>
-            <td>{{ $currency->currency_name }}</td>
+            <td>{{ Illuminate\Support\Str::limit($currency->currency_name, 28) }}</td>
             <td class="text-right">{{ number_format($currency->exchange_rate, 4) }}</td>
             <td class="text-center">
                 @if($currency->is_default)

@@ -1,18 +1,8 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
 <title>Salary Run — {{ $salaryRun->month }}</title>
 @include('exports.partials._pdf-head')
-<style>
-    @page { size: A4 landscape; margin: 40mm 12mm 28mm 12mm; }
-    .pdf-header { top: -36mm; left: -12mm; right: -12mm; padding: 0 12mm; }
-    .pdf-footer { bottom: -24mm; left: -12mm; right: -12mm; padding: 3px 12mm 0; }
-    .salary-table thead th { font-size: 6.5pt; padding: 4px 5px; }
-    .salary-table tbody td { font-size: 7pt; padding: 4px 5px; }
-    .salary-table tfoot td { font-size: 7.5pt; padding: 5px; }
-    .border-group { border-left: 1px solid #dee2e6; }
-    .text-end { text-align: right; }
-</style>
 </head>
 <body>
 
@@ -67,66 +57,74 @@
     </tr>
 </table>
 
-{{-- Salary Lines --}}
+{{-- Salary Lines: one stacked card per employee — a wide 11-field row never fits a
+     printable page cleanly, so each record gets a header + a 4-column key/value grid. --}}
 <div class="info-section">
     <h3>Employee Salary Details</h3>
-    <table class="data-table salary-table">
-        <thead>
+
+    @foreach($salaryRun->lines as $i => $line)
+    <div class="record-card no-break">
+        <div class="record-card-header">
+            <table>
+                <tr>
+                    <td class="rch-title">{{ $i + 1 }}. {{ optional($line->employee)->employee_name ?? 'Deleted Employee' }}</td>
+                    <td class="rch-value">Net Pay: {{ number_format($line->net_payable, 0) }} PKR</td>
+                </tr>
+            </table>
+        </div>
+        <table class="kv-grid">
             <tr>
-                <th style="width:18px">#</th>
-                <th style="width:80px">Employee</th>
-                <th class="text-end" style="width:60px">Basic</th>
-                <th class="text-end" style="width:50px">Bonus</th>
-                <th class="text-end" style="width:62px">Allowances</th>
-                <th class="text-end" style="width:55px">Deduction</th>
-                <th class="text-end" style="width:55px">Advance</th>
-                <th class="text-end border-group" style="width:50px">Leave Ded.</th>
-                <th class="text-end" style="width:50px">Loan Ded.</th>
-                <th class="text-end" style="width:50px">Late Ded.</th>
-                <th class="text-end border-group fw-bold" style="width:72px">Net Pay</th>
+                <td><span class="kv-label">Basic</span><span class="kv-value">{{ number_format($line->basic_salary, 0) }}</span></td>
+                <td><span class="kv-label">Bonus</span><span class="kv-value">{{ number_format($line->bonus, 0) }}</span></td>
+                <td><span class="kv-label">Allowances</span><span class="kv-value">{{ number_format($line->allowances, 0) }}</span></td>
+                <td><span class="kv-label">Deduction</span><span class="kv-value">{{ number_format($line->deduction, 0) }}</span></td>
             </tr>
-        </thead>
-        <tbody>
-            @foreach($salaryRun->lines as $i => $line)
             <tr>
-                <td>{{ $i + 1 }}</td>
-                <td class="fw-bold">{{ optional($line->employee)->employee_name ?? 'Deleted' }}</td>
-                <td class="text-end">{{ number_format($line->basic_salary, 0) }}</td>
-                <td class="text-end">{{ number_format($line->bonus, 0) }}</td>
-                <td class="text-end">
-                    {{ number_format($line->allowances, 0) }}
-                    @if($line->lineAllowances->count())
-                    <div class="text-muted" style="font-size:6pt;">
-                        @foreach($line->lineAllowances as $la)
-                        {{ $la->allowanceType?->name ?? '—' }}: {{ number_format($la->amount, 0) }}<br>
-                        @endforeach
-                    </div>
-                    @endif
-                </td>
-                <td class="text-end">{{ number_format($line->deduction, 0) }}</td>
-                <td class="text-end">{{ number_format($line->advance, 0) }}</td>
-                <td class="text-end border-group">{{ number_format($line->leave_deduction_amount, 0) }}</td>
-                <td class="text-end">{{ number_format($line->loan_deduction, 0) }}</td>
-                <td class="text-end">{{ number_format($line->late_deduction ?? 0, 0) }}</td>
-                <td class="text-end border-group fw-bold" style="color:#1a3560;">{{ number_format($line->net_payable, 0) }}</td>
+                <td><span class="kv-label">Advance</span><span class="kv-value">{{ number_format($line->advance, 0) }}</span></td>
+                <td><span class="kv-label">Leave Ded.</span><span class="kv-value">{{ number_format($line->leave_deduction_amount, 0) }}</span></td>
+                <td><span class="kv-label">Loan Ded.</span><span class="kv-value">{{ number_format($line->loan_deduction, 0) }}</span></td>
+                <td><span class="kv-label">Late Ded.</span><span class="kv-value">{{ number_format($line->late_deduction ?? 0, 0) }}</span></td>
             </tr>
+        </table>
+        @if($line->lineAllowances->count())
+        <div style="padding:0 10px 6px; font-size:6.5pt; color:#757575;">
+            Allowance breakdown:
+            @foreach($line->lineAllowances as $la)
+            {{ $la->allowanceType?->name ?? '—' }}: {{ number_format($la->amount, 0) }}{{ !$loop->last ? ', ' : '' }}
             @endforeach
-        </tbody>
-        <tfoot>
+        </div>
+        @endif
+    </div>
+    @endforeach
+
+    <div class="summary-box no-break">
+        <table>
             <tr>
-                <td colspan="2" class="fw-bold">Grand Total</td>
-                <td class="text-end">{{ number_format($salaryRun->lines->sum('basic_salary'), 0) }}</td>
-                <td class="text-end">{{ number_format($salaryRun->lines->sum('bonus'), 0) }}</td>
-                <td class="text-end">{{ number_format($salaryRun->lines->sum('allowances'), 0) }}</td>
-                <td class="text-end">{{ number_format($salaryRun->lines->sum('deduction'), 0) }}</td>
-                <td class="text-end">{{ number_format($salaryRun->lines->sum('advance'), 0) }}</td>
-                <td class="text-end">{{ number_format($salaryRun->lines->sum('leave_deduction_amount'), 0) }}</td>
-                <td class="text-end">{{ number_format($salaryRun->lines->sum('loan_deduction'), 0) }}</td>
-                <td class="text-end">{{ number_format($salaryRun->lines->sum('late_deduction'), 0) }}</td>
-                <td class="text-end fw-bold" style="color:#1a3560; font-size:10pt;">{{ number_format($salaryRun->total_net_payable, 0) }}</td>
+                <td>Total Employees</td>
+                <td class="text-right">{{ $salaryRun->lines->count() }}</td>
             </tr>
-        </tfoot>
-    </table>
+            <tr>
+                <td>Total Basic</td>
+                <td class="text-right">{{ number_format($salaryRun->lines->sum('basic_salary'), 0) }}</td>
+            </tr>
+            <tr>
+                <td>Total Bonus</td>
+                <td class="text-right">{{ number_format($salaryRun->lines->sum('bonus'), 0) }}</td>
+            </tr>
+            <tr>
+                <td>Total Allowances</td>
+                <td class="text-right">{{ number_format($salaryRun->lines->sum('allowances'), 0) }}</td>
+            </tr>
+            <tr>
+                <td>Total Deductions (advance, leave, loan, late)</td>
+                <td class="text-right">{{ number_format($salaryRun->lines->sum('deduction') + $salaryRun->lines->sum('advance') + $salaryRun->lines->sum('leave_deduction_amount') + $salaryRun->lines->sum('loan_deduction') + $salaryRun->lines->sum('late_deduction'), 0) }}</td>
+            </tr>
+            <tr class="summary-row-total">
+                <td>Grand Total Net Payable</td>
+                <td class="text-right">{{ number_format($salaryRun->total_net_payable, 0) }} PKR</td>
+            </tr>
+        </table>
+    </div>
 </div>
 
 </body>

@@ -24,26 +24,26 @@
     </table>
 </div>
 
-<table class="data-table">
+<table class="data-table data-table-fixed">
     <thead>
         <tr>
-            <th style="width:30px">#</th>
-            <th style="min-width:130px">Employee Name</th>
-            <th style="width:100px">Department</th>
-            <th style="width:110px">Designation</th>
-            <th style="width:100px">Phone</th>
-            <th style="width:80px">Joining Date</th>
-            <th class="text-right" style="width:90px">Basic Salary</th>
-            <th style="width:55px; text-align:center;">Status</th>
+            <th style="width:4%">#</th>
+            <th style="width:18%">Employee Name</th>
+            <th style="width:13%">Department</th>
+            <th style="width:15%">Designation</th>
+            <th style="width:13%">Phone</th>
+            <th style="width:12%">Joining Date</th>
+            <th class="text-right" style="width:13%">Basic Salary</th>
+            <th style="width:12%; text-align:center;">Status</th>
         </tr>
     </thead>
     <tbody>
         @forelse($employees as $i => $emp)
         <tr>
             <td>{{ $i + 1 }}</td>
-            <td class="fw-bold">{{ $emp->employee_name }}</td>
-            <td>{{ $emp->department ?? '—' }}</td>
-            <td>{{ $emp->designation ?? $emp->job_title ?? '—' }}</td>
+            <td class="fw-bold">{{ Illuminate\Support\Str::limit($emp->employee_name, 20) }}</td>
+            <td>{{ Illuminate\Support\Str::limit($emp->department ?? '—', 15) }}</td>
+            <td>{{ Illuminate\Support\Str::limit($emp->designation ?? $emp->job_title ?? '—', 17) }}</td>
             <td>{{ $emp->phone ?? '—' }}</td>
             <td>{{ $emp->joining_date ? $emp->joining_date->format('d M Y') : '—' }}</td>
             <td class="text-right">{{ number_format($emp->basic_salary, 0) }}</td>

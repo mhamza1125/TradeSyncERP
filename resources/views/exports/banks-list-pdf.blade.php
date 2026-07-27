@@ -24,23 +24,23 @@
     </table>
 </div>
 
-<table class="data-table">
+<table class="data-table data-table-fixed">
     <thead>
         <tr>
-            <th style="width:30px">#</th>
-            <th>Bank Name</th>
-            <th style="width:160px">Branch</th>
-            <th style="width:160px">Address</th>
-            <th style="width:110px">Phone</th>
+            <th style="width:4%">#</th>
+            <th style="width:26%">Bank Name</th>
+            <th style="width:22%">Branch</th>
+            <th style="width:28%">Address</th>
+            <th style="width:20%">Phone</th>
         </tr>
     </thead>
     <tbody>
         @forelse($banks as $i => $bank)
         <tr>
             <td>{{ $i + 1 }}</td>
-            <td class="fw-bold">{{ $bank->bank_name }}</td>
-            <td class="text-muted">{{ $bank->branch_name ?? '—' }}</td>
-            <td class="text-muted">{{ $bank->address ?? '—' }}</td>
+            <td class="fw-bold">{{ Illuminate\Support\Str::limit($bank->bank_name, 24) }}</td>
+            <td class="text-muted">{{ Illuminate\Support\Str::limit($bank->branch_name ?? '—', 20) }}</td>
+            <td class="text-muted">{{ Illuminate\Support\Str::limit($bank->address ?? '—', 26) }}</td>
             <td class="text-muted">{{ $bank->phone ?? '—' }}</td>
         </tr>
         @empty

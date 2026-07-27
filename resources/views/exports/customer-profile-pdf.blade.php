@@ -63,22 +63,22 @@
 @if($customer->payments->count())
 <div class="info-section">
     <h3>Recent Payments</h3>
-    <table class="data-table">
+    <table class="data-table data-table-fixed">
         <thead>
             <tr>
-                <th style="width:90px">Date</th>
-                <th style="width:120px">Invoice Ref</th>
-                <th style="width:70px">Currency</th>
-                <th class="text-right" style="width:100px">Received (FC)</th>
-                <th class="text-right" style="width:110px">PKR Received</th>
-                <th class="text-right" style="width:90px">Exchange Rate</th>
+                <th style="width:13%">Date</th>
+                <th style="width:20%">Invoice Ref</th>
+                <th style="width:11%">Currency</th>
+                <th class="text-right" style="width:16%">Received (FC)</th>
+                <th class="text-right" style="width:18%">PKR Received</th>
+                <th class="text-right" style="width:22%">Exchange Rate</th>
             </tr>
         </thead>
         <tbody>
             @foreach($customer->payments as $payment)
             <tr>
                 <td>{{ \Carbon\Carbon::parse($payment->payment_date)->format('d M Y') }}</td>
-                <td>{{ $payment->invoice_reference ?? '—' }}</td>
+                <td>{{ Illuminate\Support\Str::limit($payment->invoice_reference ?? '—', 20) }}</td>
                 <td>{{ $payment->foreign_currency }}</td>
                 <td class="text-right">{{ number_format($payment->received_fc, 2) }}</td>
                 <td class="text-right fw-bold">{{ number_format($payment->actual_pkr_received, 2) }}</td>

@@ -24,16 +24,16 @@
     </table>
 </div>
 
-<table class="data-table">
+<table class="data-table data-table-fixed">
     <thead>
         <tr>
-            <th style="width:30px">#</th>
-            <th style="width:90px">Issue Date</th>
-            <th style="width:100px">Expected Return</th>
-            <th>Assigned To</th>
-            <th class="text-right" style="width:60px">Items</th>
-            <th style="width:100px">Inspection Run</th>
-            <th style="width:70px">Status</th>
+            <th style="width:4%">#</th>
+            <th style="width:12%">Issue Date</th>
+            <th style="width:14%">Expected Return</th>
+            <th style="width:26%">Assigned To</th>
+            <th class="text-right" style="width:8%">Items</th>
+            <th style="width:20%">Inspection Run</th>
+            <th style="width:16%">Status</th>
         </tr>
     </thead>
     <tbody>
@@ -42,10 +42,10 @@
             <td>{{ $i + 1 }}</td>
             <td>{{ \Carbon\Carbon::parse($movement->issue_date)->format('d M Y') }}</td>
             <td>{{ $movement->expected_return_date ? \Carbon\Carbon::parse($movement->expected_return_date)->format('d M Y') : '—' }}</td>
-            <td>{{ $movement->employees->pluck('employee_name')->implode(', ') ?: '—' }}</td>
+            <td>{{ Illuminate\Support\Str::limit($movement->employees->pluck('employee_name')->implode(', ') ?: '—', 28) }}</td>
             <td class="text-right">{{ $movement->items->count() }}</td>
             <td class="text-muted" style="font-size:7.5pt;">
-                {{ $movement->inspectionRun?->inspection?->report_number ?? '—' }}
+                {{ Illuminate\Support\Str::limit($movement->inspectionRun?->inspection?->report_number ?? '—', 18) }}
             </td>
             <td class="text-center">
                 @php

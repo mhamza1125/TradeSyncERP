@@ -114,6 +114,23 @@ body {
 }
 .data-table tfoot td.text-right { text-align: right; }
 
+/* ── Fixed-layout data tables (opt-in): guarantees columns never push
+   content past the page margin — every <th> must carry a % width that
+   sums to 100 across the row. ─────────────────────────────────────── */
+.data-table-fixed { table-layout: fixed; }
+.data-table-fixed th,
+.data-table-fixed td {
+    overflow: hidden;
+    word-wrap: break-word;
+    word-break: break-word;
+}
+.cell-ellipsis {
+    display: block;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
 /* ── Status badges ─────────────────────────────────────── */
 .badge           { display: inline-block; padding: 2px 6px; border-radius: 3px; font-size: 7.5pt; font-weight: bold; }
 .badge-success   { background: #d4edda; color: #155724; }
@@ -134,6 +151,37 @@ body {
 .summary-box table { width: 100%; border-collapse: collapse; }
 .summary-box td { font-size: 8.5pt; padding: 3px 0; }
 .summary-row-total td { font-size: 11pt; font-weight: bold; color: #1a3560; border-top: 1px solid #c8d6f0; padding-top: 6px; margin-top: 4px; }
+
+/* ── Stacked record cards (many-field records, e.g. salary lines) ──
+   One card per record: a header row + a key/value grid beneath it,
+   so wide records never need a single overflowing row. ───────────── */
+.record-card {
+    border: 1px solid #e0e0e0;
+    border-radius: 4px;
+    margin-bottom: 8px;
+    overflow: hidden;
+}
+.record-card-header {
+    background: #eef3fb;
+    padding: 5px 10px;
+    border-bottom: 1px solid #e0e0e0;
+}
+.record-card-header table { width: 100%; border-collapse: collapse; }
+.rch-title { font-size: 8.5pt; font-weight: bold; color: #1a3560; }
+.rch-value { text-align: right; font-size: 9pt; font-weight: bold; color: #1a3560; }
+.kv-grid { width: 100%; border-collapse: collapse; table-layout: fixed; }
+.kv-grid td {
+    width: 25%;
+    padding: 5px 10px;
+    font-size: 7.5pt;
+    vertical-align: top;
+    border-bottom: 1px solid #f1f3f5;
+    word-wrap: break-word;
+    word-break: break-word;
+}
+.kv-grid tr:last-child td { border-bottom: none; }
+.kv-label { display: block; color: #8a97a6; font-size: 6.5pt; text-transform: uppercase; letter-spacing: 0.3px; margin-bottom: 1px; }
+.kv-value { display: block; color: #212121; font-size: 8pt; font-weight: bold; }
 
 /* ── Utilities ─────────────────────────────────────────── */
 .text-right  { text-align: right; }

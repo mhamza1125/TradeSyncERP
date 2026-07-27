@@ -75,13 +75,13 @@
 @if($sample->variations->count())
 <div class="info-section">
     <h3>Variations</h3>
-    <table class="data-table">
+    <table class="data-table data-table-fixed">
         <thead>
             <tr>
-                <th>#</th>
-                <th>Color</th>
-                <th>Size</th>
-                <th class="text-right">Quantity</th>
+                <th style="width:8%">#</th>
+                <th style="width:36%">Color</th>
+                <th style="width:32%">Size</th>
+                <th class="text-right" style="width:24%">Quantity</th>
             </tr>
         </thead>
         <tbody>

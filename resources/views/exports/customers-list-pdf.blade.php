@@ -24,29 +24,27 @@
     </table>
 </div>
 
-<table class="data-table">
+<table class="data-table data-table-fixed">
     <thead>
         <tr>
-            <th style="width:30px">#</th>
-            <th style="min-width:140px">Customer Name</th>
-            <th style="width:120px">Contact Person</th>
-            <th style="width:110px">Phone</th>
-            <th style="width:120px">Email</th>
-            <th style="width:60px">Currency</th>
-            <th class="text-right" style="width:100px">Opening Bal.</th>
-            <th style="width:60px text-center">Status</th>
+            <th style="width:4%">#</th>
+            <th style="width:21%">Customer Name</th>
+            <th style="width:16%">Contact Person</th>
+            <th style="width:14%">Phone</th>
+            <th style="width:20%">Email</th>
+            <th class="text-right" style="width:15%">Opening Bal.</th>
+            <th style="width:10%">Status</th>
         </tr>
     </thead>
     <tbody>
         @forelse($customers as $i => $customer)
         <tr>
             <td>{{ $i + 1 }}</td>
-            <td class="fw-bold">{{ $customer->customer_name }}</td>
-            <td>{{ $customer->contact_person ?? '—' }}</td>
+            <td class="fw-bold">{{ Illuminate\Support\Str::limit($customer->customer_name, 24) }}</td>
+            <td>{{ Illuminate\Support\Str::limit($customer->contact_person ?? '—', 18) }}</td>
             <td>{{ $customer->phone ?? '—' }}</td>
-            <td class="text-muted" style="font-size:7.5pt;">{{ $customer->email ?? '—' }}</td>
-            <td class="text-center">{{ $customer->currency?->currency_code ?? 'PKR' }}</td>
-            <td class="text-right">{{ number_format($customer->opening_balance, 2) }}</td>
+            <td class="text-muted" style="font-size:7.5pt;">{{ Illuminate\Support\Str::limit($customer->email ?? '—', 24) }}</td>
+            <td class="text-right">{{ number_format($customer->opening_balance, 2) }} {{ $customer->currency?->currency_code ?? 'PKR' }}</td>
             <td class="text-center">
                 @if($customer->status)
                     <span class="badge badge-success">Active</span>
@@ -56,7 +54,7 @@
             </td>
         </tr>
         @empty
-        <tr><td colspan="8" class="no-data">No customers found.</td></tr>
+        <tr><td colspan="7" class="no-data">No customers found.</td></tr>
         @endforelse
     </tbody>
 </table>

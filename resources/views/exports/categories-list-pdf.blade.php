@@ -24,12 +24,12 @@
     </table>
 </div>
 
-<table class="data-table">
+<table class="data-table data-table-fixed">
     <thead>
         <tr>
-            <th style="width:30px">#</th>
-            <th>Category Name</th>
-            <th style="width:200px">Description</th>
+            <th style="width:6%">#</th>
+            <th style="width:34%">Category Name</th>
+            <th style="width:60%">Description</th>
         </tr>
     </thead>
     <tbody>
@@ -37,7 +37,7 @@
         <tr>
             <td>{{ $i + 1 }}</td>
             <td class="fw-bold">{{ $category->category_name }}</td>
-            <td class="text-muted">{{ $category->description ?? '—' }}</td>
+            <td class="text-muted">{{ Illuminate\Support\Str::limit($category->description ?? '—', 80) }}</td>
         </tr>
         @empty
         <tr><td colspan="3" class="no-data">No categories found.</td></tr>

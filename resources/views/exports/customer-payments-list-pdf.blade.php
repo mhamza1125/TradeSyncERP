@@ -24,33 +24,33 @@
     </table>
 </div>
 
-<table class="data-table">
+<table class="data-table data-table-fixed">
     <thead>
         <tr>
-            <th style="width:30px">#</th>
-            <th>Customer</th>
-            <th style="width:90px">Payment Date</th>
-            <th style="width:60px">Currency</th>
-            <th class="text-right" style="width:100px">Received (FC)</th>
-            <th class="text-right" style="width:110px">PKR Received</th>
-            <th class="text-right" style="width:100px">Gain / Loss</th>
-            <th style="width:120px">Invoice Ref.</th>
+            <th style="width:4%">#</th>
+            <th style="width:19%">Customer</th>
+            <th style="width:10%">Payment Date</th>
+            <th style="width:8%">Currency</th>
+            <th class="text-right" style="width:13%">Received (FC)</th>
+            <th class="text-right" style="width:14%">PKR Received</th>
+            <th class="text-right" style="width:13%">Gain / Loss</th>
+            <th style="width:19%">Invoice Ref.</th>
         </tr>
     </thead>
     <tbody>
         @forelse($payments as $i => $payment)
         <tr>
             <td>{{ $i + 1 }}</td>
-            <td class="fw-bold">{{ $payment->customer?->customer_name ?? '—' }}</td>
+            <td class="fw-bold">{{ Illuminate\Support\Str::limit($payment->customer?->customer_name ?? '—', 22) }}</td>
             <td>{{ \Carbon\Carbon::parse($payment->payment_date)->format('d M Y') }}</td>
             <td class="text-center">{{ $payment->foreign_currency }}</td>
             <td class="text-right">{{ number_format($payment->received_fc, 2) }}</td>
             <td class="text-right fw-bold">{{ number_format($payment->actual_pkr_received, 2) }}</td>
-            <td class="text-right {{ $payment->pkr_gain_loss > 0 ? '' : ($payment->pkr_gain_loss < 0 ? '' : '') }}"
+            <td class="text-right"
                 style="{{ $payment->pkr_gain_loss > 0 ? 'color:#155724;' : ($payment->pkr_gain_loss < 0 ? 'color:#721c24;' : '') }}">
                 {{ $payment->pkr_gain_loss > 0 ? '+' : '' }}{{ number_format($payment->pkr_gain_loss, 2) }}
             </td>
-            <td class="text-muted">{{ $payment->invoice_reference ?? '—' }}</td>
+            <td class="text-muted">{{ Illuminate\Support\Str::limit($payment->invoice_reference ?? '—', 18) }}</td>
         </tr>
         @empty
         <tr><td colspan="8" class="no-data">No payments found.</td></tr>

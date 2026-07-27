@@ -81,26 +81,26 @@
 @if($employee->experiences->count())
 <div class="info-section">
     <h3>Work Experience</h3>
-    <table class="data-table">
+    <table class="data-table data-table-fixed">
         <thead>
             <tr>
-                <th>#</th>
-                <th>Company</th>
-                <th>Designation</th>
-                <th>From</th>
-                <th>To</th>
-                <th>Remarks</th>
+                <th style="width:4%">#</th>
+                <th style="width:22%">Company</th>
+                <th style="width:18%">Designation</th>
+                <th style="width:12%">From</th>
+                <th style="width:12%">To</th>
+                <th style="width:32%">Remarks</th>
             </tr>
         </thead>
         <tbody>
             @foreach($employee->experiences as $i => $exp)
             <tr>
                 <td>{{ $i + 1 }}</td>
-                <td class="fw-bold">{{ $exp->company_name }}</td>
-                <td>{{ $exp->designation ?? '—' }}</td>
+                <td class="fw-bold">{{ Illuminate\Support\Str::limit($exp->company_name, 24) }}</td>
+                <td>{{ Illuminate\Support\Str::limit($exp->designation ?? '—', 18) }}</td>
                 <td>{{ $exp->start_date ? \Carbon\Carbon::parse($exp->start_date)->format('M Y') : '—' }}</td>
                 <td>{{ $exp->end_date ? \Carbon\Carbon::parse($exp->end_date)->format('M Y') : 'Present' }}</td>
-                <td class="text-muted">{{ $exp->remarks ?? '—' }}</td>
+                <td class="text-muted">{{ Illuminate\Support\Str::limit($exp->remarks ?? '—', 40) }}</td>
             </tr>
             @endforeach
         </tbody>
@@ -111,15 +111,15 @@
 @if($salaryHistory->count())
 <div class="info-section">
     <h3>Recent Salary History</h3>
-    <table class="data-table">
+    <table class="data-table data-table-fixed">
         <thead>
             <tr>
-                <th>Period</th>
-                <th class="text-right">Basic Salary</th>
-                <th class="text-right">Allowances</th>
-                <th class="text-right">Deductions</th>
-                <th class="text-right">Net Pay</th>
-                <th>Status</th>
+                <th style="width:16%">Period</th>
+                <th class="text-right" style="width:17%">Basic Salary</th>
+                <th class="text-right" style="width:17%">Allowances</th>
+                <th class="text-right" style="width:17%">Deductions</th>
+                <th class="text-right" style="width:17%">Net Pay</th>
+                <th style="width:16%">Status</th>
             </tr>
         </thead>
         <tbody>

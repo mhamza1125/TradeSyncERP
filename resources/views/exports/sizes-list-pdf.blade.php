@@ -24,11 +24,11 @@
     </table>
 </div>
 
-<table class="data-table">
+<table class="data-table data-table-fixed">
     <thead>
         <tr>
-            <th style="width:40px">#</th>
-            <th>Size Name</th>
+            <th style="width:15%">#</th>
+            <th style="width:85%">Size Name</th>
         </tr>
     </thead>
     <tbody>

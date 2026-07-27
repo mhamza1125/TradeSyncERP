@@ -67,20 +67,20 @@
 @if($supplier->customers->count())
 <div class="info-section">
     <h3>Linked Customers</h3>
-    <table class="data-table">
+    <table class="data-table data-table-fixed">
         <thead>
             <tr>
-                <th>#</th>
-                <th>Customer Name</th>
-                <th>Phone</th>
-                <th>Status</th>
+                <th style="width:6%">#</th>
+                <th style="width:50%">Customer Name</th>
+                <th style="width:26%">Phone</th>
+                <th style="width:18%">Status</th>
             </tr>
         </thead>
         <tbody>
             @foreach($supplier->customers as $i => $c)
             <tr>
                 <td>{{ $i + 1 }}</td>
-                <td class="fw-bold">{{ $c->customer_name }}</td>
+                <td class="fw-bold">{{ Illuminate\Support\Str::limit($c->customer_name, 34) }}</td>
                 <td>{{ $c->phone ?? '—' }}</td>
                 <td><span class="badge badge-{{ $c->status ? 'success' : 'danger' }}">{{ $c->status ? 'Active' : 'Inactive' }}</span></td>
             </tr>

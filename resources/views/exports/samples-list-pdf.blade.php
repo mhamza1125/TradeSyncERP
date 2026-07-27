@@ -24,16 +24,16 @@
     </table>
 </div>
 
-<table class="data-table">
+<table class="data-table data-table-fixed">
     <thead>
         <tr>
-            <th style="width:30px">#</th>
-            <th style="width:100px">Sample Code</th>
-            <th>Product Name</th>
-            <th style="width:120px">Customer</th>
-            <th style="width:100px">Category</th>
-            <th style="width:90px">Received</th>
-            <th style="width:80px">Status</th>
+            <th style="width:4%">#</th>
+            <th style="width:13%">Sample Code</th>
+            <th style="width:24%">Product Name</th>
+            <th style="width:19%">Customer</th>
+            <th style="width:15%">Category</th>
+            <th style="width:13%">Received</th>
+            <th style="width:12%">Status</th>
         </tr>
     </thead>
     <tbody>
@@ -41,9 +41,9 @@
         <tr>
             <td>{{ $i + 1 }}</td>
             <td class="fw-bold">{{ $sample->sample_code }}</td>
-            <td>{{ $sample->product_name ?? '—' }}</td>
-            <td>{{ $sample->customer?->customer_name ?? '—' }}</td>
-            <td class="text-muted">{{ $sample->category?->category_name ?? '—' }}</td>
+            <td>{{ Illuminate\Support\Str::limit($sample->product_name ?? '—', 22) }}</td>
+            <td>{{ Illuminate\Support\Str::limit($sample->customer?->customer_name ?? '—', 18) }}</td>
+            <td class="text-muted">{{ Illuminate\Support\Str::limit($sample->category?->category_name ?? '—', 14) }}</td>
             <td>{{ $sample->receive_date->format('d M Y') }}</td>
             <td class="text-center">
                 @php

@@ -103,15 +103,15 @@
 {{-- Line Items --}}
 <div class="info-section">
     <h3>Invoice Items</h3>
-    <table class="data-table">
+    <table class="data-table data-table-fixed">
         <thead>
             <tr>
-                <th style="width:30px">#</th>
-                <th>Description / Supplier</th>
-                <th style="width:120px">Service Type</th>
-                <th style="width:90px">PO / Inv No.</th>
-                <th style="width:80px">Date</th>
-                <th class="text-right" style="width:110px">Amount</th>
+                <th style="width:4%">#</th>
+                <th style="width:34%">Description / Supplier</th>
+                <th style="width:18%">Service Type</th>
+                <th style="width:14%">PO / Inv No.</th>
+                <th style="width:12%">Date</th>
+                <th class="text-right" style="width:18%">Amount</th>
             </tr>
         </thead>
         <tbody>
@@ -120,14 +120,14 @@
                 <td>{{ $i + 1 }}</td>
                 <td>
                     @if($item->supplier)
-                    <span class="fw-bold">{{ $item->supplier->name }}</span>
+                    <span class="fw-bold">{{ Illuminate\Support\Str::limit($item->supplier->name, 34) }}</span>
                     @endif
                     @if($item->description)
-                    <div class="text-muted" style="font-size:7.5pt;">{{ $item->description }}</div>
+                    <div class="text-muted" style="font-size:7.5pt;">{{ Illuminate\Support\Str::limit($item->description, 60) }}</div>
                     @endif
                 </td>
-                <td class="text-muted">{{ $item->inspectionType->name ?? '—' }}</td>
-                <td class="text-muted">{{ $item->po_invoice_no ?? '—' }}</td>
+                <td class="text-muted">{{ Illuminate\Support\Str::limit($item->inspectionType->name ?? '—', 20) }}</td>
+                <td class="text-muted">{{ Illuminate\Support\Str::limit($item->po_invoice_no ?? '—', 16) }}</td>
                 <td>{{ $item->item_date ? $item->item_date->format('d M Y') : '—' }}</td>
                 <td class="text-right fw-bold">{{ number_format($item->amount, 2) }}</td>
             </tr>

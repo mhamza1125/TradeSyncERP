@@ -24,16 +24,16 @@
     </table>
 </div>
 
-<table class="data-table">
+<table class="data-table data-table-fixed">
     <thead>
         <tr>
-            <th style="width:30px">#</th>
-            <th style="width:110px">Order Code</th>
-            <th>Customer</th>
-            <th style="width:90px">Order Date</th>
-            <th style="width:90px">Required Date</th>
-            <th style="width:70px text-center">Status</th>
-            <th class="text-right" style="width:90px">Items</th>
+            <th style="width:4%">#</th>
+            <th style="width:14%">Order Code</th>
+            <th style="width:26%">Customer</th>
+            <th style="width:13%">Order Date</th>
+            <th style="width:13%">Required Date</th>
+            <th style="width:14%; text-align:center;">Status</th>
+            <th class="text-right" style="width:16%">Items</th>
         </tr>
     </thead>
     <tbody>
@@ -41,7 +41,7 @@
         <tr>
             <td>{{ $i + 1 }}</td>
             <td class="fw-bold">{{ $order->order_code }}</td>
-            <td>{{ $order->customer?->customer_name ?? '—' }}</td>
+            <td>{{ Illuminate\Support\Str::limit($order->customer?->customer_name ?? '—', 26) }}</td>
             <td>{{ $order->order_date->format('d M Y') }}</td>
             <td>{{ $order->required_by ? $order->required_by->format('d M Y') : '—' }}</td>
             <td class="text-center">

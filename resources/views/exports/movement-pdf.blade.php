@@ -78,18 +78,18 @@
 {{-- Items --}}
 <div class="info-section">
     <h3>Sample Items</h3>
-    <table class="data-table">
+    <table class="data-table data-table-fixed">
         <thead>
             <tr>
-                <th style="width:30px">#</th>
-                <th style="width:100px">Sample Code</th>
-                <th>Product Name</th>
-                <th style="width:90px">Customer</th>
-                <th style="width:70px">Color</th>
-                <th style="width:60px">Size</th>
-                <th class="text-right" style="width:55px">Qty</th>
-                <th style="width:90px">Status</th>
-                <th style="width:90px">Return Date</th>
+                <th style="width:4%">#</th>
+                <th style="width:12%">Sample Code</th>
+                <th style="width:18%">Product Name</th>
+                <th style="width:15%">Customer</th>
+                <th style="width:9%">Color</th>
+                <th style="width:8%">Size</th>
+                <th class="text-right" style="width:7%">Qty</th>
+                <th style="width:14%">Status</th>
+                <th style="width:13%">Return Date</th>
             </tr>
         </thead>
         <tbody>
@@ -97,8 +97,8 @@
             <tr>
                 <td>{{ $i + 1 }}</td>
                 <td class="fw-bold">{{ $item->sample?->sample_code ?? 'Removed' }}</td>
-                <td>{{ $item->sample?->product_name ?? '—' }}</td>
-                <td class="text-muted">{{ $item->sample?->customer?->customer_name ?? '—' }}</td>
+                <td>{{ Illuminate\Support\Str::limit($item->sample?->product_name ?? '—', 18) }}</td>
+                <td class="text-muted">{{ Illuminate\Support\Str::limit($item->sample?->customer?->customer_name ?? '—', 16) }}</td>
                 <td class="text-muted">{{ $item->variation?->color?->name ?? '—' }}</td>
                 <td class="text-muted">{{ $item->variation?->size?->name ?? '—' }}</td>
                 <td class="text-right">{{ $item->quantity }}</td>

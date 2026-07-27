@@ -24,17 +24,16 @@
     </table>
 </div>
 
-<table class="data-table">
+<table class="data-table data-table-fixed">
     <thead>
         <tr>
-            <th style="width:30px">#</th>
-            <th style="width:90px">Period</th>
-            <th style="width:80px">Working Days</th>
-            <th style="width:110px">Pay Account</th>
-            <th class="text-right" style="width:70px">Employees</th>
-            <th class="text-right" style="width:130px">Total Net Payable</th>
-            <th style="width:90px">Payment Date</th>
-            <th style="width:60px">Status</th>
+            <th style="width:4%">#</th>
+            <th style="width:14%">Period</th>
+            <th style="width:22%">Pay Account</th>
+            <th class="text-right" style="width:11%">Employees</th>
+            <th class="text-right" style="width:19%">Total Net Payable</th>
+            <th style="width:16%">Payment Date</th>
+            <th style="width:14%">Status</th>
         </tr>
     </thead>
     <tbody>
@@ -42,8 +41,7 @@
         <tr>
             <td>{{ $i + 1 }}</td>
             <td class="fw-bold">{{ $run->month }}</td>
-            <td class="text-center">{{ $run->working_days ?? '—' }}</td>
-            <td class="text-muted">{{ $run->account?->account_name ?? '—' }}</td>
+            <td class="text-muted">{{ Illuminate\Support\Str::limit($run->account?->account_name ?? '—', 20) }}</td>
             <td class="text-right">{{ $run->lines_count ?? $run->lines->count() }}</td>
             <td class="text-right fw-bold">{{ number_format($run->total_net_payable, 2) }}</td>
             <td>{{ $run->payment_date ? \Carbon\Carbon::parse($run->payment_date)->format('d M Y') : '—' }}</td>
@@ -52,13 +50,13 @@
             </td>
         </tr>
         @empty
-        <tr><td colspan="8" class="no-data">No salary runs found.</td></tr>
+        <tr><td colspan="7" class="no-data">No salary runs found.</td></tr>
         @endforelse
     </tbody>
     @if($salaryRuns->isNotEmpty())
     <tfoot>
         <tr>
-            <td colspan="5" class="text-right">Grand Total</td>
+            <td colspan="4" class="text-right">Grand Total</td>
             <td class="text-right">{{ number_format($salaryRuns->sum('total_net_payable'), 2) }}</td>
             <td colspan="2"></td>
         </tr>

@@ -24,27 +24,27 @@
     </table>
 </div>
 
-<table class="data-table">
+<table class="data-table data-table-fixed">
     <thead>
         <tr>
-            <th style="width:30px">#</th>
-            <th style="min-width:140px">Supplier Name</th>
-            <th style="width:110px">Phone</th>
-            <th style="width:140px">Email</th>
-            <th style="width:90px">City</th>
-            <th style="width:80px">Country</th>
-            <th style="width:60px; text-align:center;">Status</th>
+            <th style="width:4%">#</th>
+            <th style="width:22%">Supplier Name</th>
+            <th style="width:15%">Phone</th>
+            <th style="width:22%">Email</th>
+            <th style="width:14%">City</th>
+            <th style="width:13%">Country</th>
+            <th style="width:10%; text-align:center;">Status</th>
         </tr>
     </thead>
     <tbody>
         @forelse($suppliers as $i => $supplier)
         <tr>
             <td>{{ $i + 1 }}</td>
-            <td class="fw-bold">{{ $supplier->name }}</td>
+            <td class="fw-bold">{{ Illuminate\Support\Str::limit($supplier->name, 24) }}</td>
             <td>{{ $supplier->phone ?? '—' }}</td>
-            <td class="text-muted" style="font-size:7.5pt;">{{ $supplier->email ?? '—' }}</td>
-            <td>{{ $supplier->city ?? '—' }}</td>
-            <td>{{ $supplier->country ?? '—' }}</td>
+            <td class="text-muted" style="font-size:7.5pt;">{{ Illuminate\Support\Str::limit($supplier->email ?? '—', 24) }}</td>
+            <td>{{ Illuminate\Support\Str::limit($supplier->city ?? '—', 14) }}</td>
+            <td>{{ Illuminate\Support\Str::limit($supplier->country ?? '—', 12) }}</td>
             <td class="text-center">
                 @if($supplier->status)
                     <span class="badge badge-success">Active</span>
