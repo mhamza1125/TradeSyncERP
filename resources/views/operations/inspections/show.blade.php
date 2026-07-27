@@ -90,7 +90,7 @@
                                 <div class="border rounded p-3">
                                     <a href="{{ route('customer-orders.show', $order) }}" class="fw-bold text-primary">{{ $order->order_code }}</a>
                                     @if($order->customer)
-                                    <div class="text-muted fs-12">{{ $order->customer->customer_name }}</div>
+                                    <div class="text-muted fs-12">{{ $order->customer->display_name }}</div>
                                     @endif
                                 </div>
                             </div>
@@ -157,7 +157,7 @@
                                 <div class="d-flex gap-2 mt-1">
                                     @if($run->sample->customer)
                                         <span class="badge bg-soft-secondary text-secondary fs-11">
-                                            {{ $run->sample->customer->customer_name }}
+                                            {{ $run->sample->customer->display_name }}
                                         </span>
                                     @endif
                                     @if($run->sample->category)

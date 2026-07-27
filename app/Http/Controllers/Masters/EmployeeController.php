@@ -25,9 +25,9 @@ class EmployeeController extends Controller
     {
         $employees = Employee::query()
             ->when($request->search, fn ($q, $s) => $q->where('employee_name', 'like', "%{$s}%")
-                ->orWhere('department', 'like', "%{$s}%")
-                ->orWhere('job_title', 'like', "%{$s}%"))
+                ->orWhere('department', 'like', "%{$s}%"))
             ->when($request->status !== null && $request->status !== '', fn ($q) => $q->where('status', $request->status))
+            ->when($request->employee_type, fn ($q, $type) => $q->where('employee_type', $type))
             ->latest()
             ->paginate(20)
             ->withQueryString();
@@ -43,17 +43,7 @@ class EmployeeController extends Controller
     public function store(StoreEmployeeRequest $request)
     {
         return DB::transaction(function () use ($request) {
-            $data = $request->validated();
-            $experiences = $data['experiences'] ?? [];
-            unset($data['experiences']);
-
-            $employee = Employee::create($data);
-
-            foreach ($experiences as $exp) {
-                if (! empty($exp['company_name'])) {
-                    $employee->experiences()->create($exp);
-                }
-            }
+            $employee = Employee::create($request->validated());
 
             if ($request->wantsJson()) {
                 return response()->json(['success' => true, 'employee' => $employee]);
@@ -66,7 +56,7 @@ class EmployeeController extends Controller
 
     public function show(Employee $employee)
     {
-        $employee->load('attachments', 'experiences');
+        $employee->load('attachments');
 
         $salaryHistory = $employee->salaryRunLines()
             ->with('salaryRun')
@@ -83,27 +73,13 @@ class EmployeeController extends Controller
 
     public function edit(Employee $employee)
     {
-        $employee->load('experiences');
-
         return view('masters.employees.edit', compact('employee'));
     }
 
     public function update(UpdateEmployeeRequest $request, Employee $employee)
     {
         return DB::transaction(function () use ($request, $employee) {
-            $data = $request->validated();
-            $experiences = $data['experiences'] ?? [];
-            unset($data['experiences']);
-
-            $employee->update($data);
-
-            // Replace experience records
-            $employee->experiences()->delete();
-            foreach ($experiences as $exp) {
-                if (! empty($exp['company_name'])) {
-                    $employee->experiences()->create($exp);
-                }
-            }
+            $employee->update($request->validated());
 
             if ($request->wantsJson()) {
                 return response()->json(['success' => true, 'employee' => $employee]);
@@ -133,8 +109,6 @@ class EmployeeController extends Controller
 
     public function exportSinglePdf(Employee $employee)
     {
-        $employee->load('experiences');
-
         $salaryHistory = $employee->salaryRunLines()
             ->with('salaryRun')
             ->orderByDesc('id')

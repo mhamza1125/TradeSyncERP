@@ -55,7 +55,7 @@
             <div class="info-section">
                 <h3>Parties</h3>
                 <table class="info-grid">
-                    <tr><td class="info-label">Customer</td><td class="info-value">{{ $sample->customer?->customer_name ?? '—' }}</td></tr>
+                    <tr><td class="info-label">Customer</td><td class="info-value">{{ $sample->customer?->display_name ?? '—' }}</td></tr>
                     <tr><td class="info-label">Supplier</td><td class="info-value">{{ $sample->supplier?->name ?? '—' }}</td></tr>
                     <tr><td class="info-label">Source</td><td class="info-value">{{ $sample->source ?? '—' }}</td></tr>
                 </table>

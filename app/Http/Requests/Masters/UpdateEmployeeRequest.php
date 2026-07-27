@@ -18,7 +18,7 @@ class UpdateEmployeeRequest extends FormRequest
             'father_name'       => ['nullable', 'string', 'max:255'],
             'department'        => ['nullable', 'string', 'max:255'],
             'designation'       => ['nullable', 'string', 'max:255'],
-            'job_title'         => ['nullable', 'string', 'max:255'],
+            'employee_type'     => ['nullable', 'in:CONTRACTUAL,PERMANENT'],
             'phone'             => ['required', 'string', 'max:50'],
             'nic'               => ['nullable', 'string', 'max:50'],
             'dob'               => ['nullable', 'date'],
@@ -30,18 +30,10 @@ class UpdateEmployeeRequest extends FormRequest
             'country'           => ['nullable', 'string', 'max:100'],
             'postal_code'       => ['nullable', 'string', 'max:20'],
             'joining_date'      => ['nullable', 'date'],
-            'hire_date'         => ['nullable', 'date'],
             'basic_salary'      => ['nullable', 'numeric', 'min:0'],
             'salary'            => ['nullable', 'numeric', 'min:0'],
             'status'            => ['boolean'],
             'remarks'           => ['nullable', 'string'],
-
-            'experiences'                       => ['nullable', 'array'],
-            'experiences.*.company_name'        => ['required_with:experiences', 'string', 'max:255'],
-            'experiences.*.designation'         => ['nullable', 'string', 'max:255'],
-            'experiences.*.start_date'          => ['nullable', 'date'],
-            'experiences.*.end_date'            => ['nullable', 'date'],
-            'experiences.*.responsibilities'    => ['nullable', 'string'],
         ];
     }
 }

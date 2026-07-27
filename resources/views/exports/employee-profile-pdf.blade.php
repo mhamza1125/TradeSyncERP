@@ -15,7 +15,7 @@
         <tr>
             <td>
                 <div class="db-title">Employee Profile</div>
-                <div class="db-sub">{{ $employee->department ?? '' }}{{ $employee->department && ($employee->designation ?? $employee->job_title) ? ' · ' : '' }}{{ $employee->designation ?? $employee->job_title ?? '' }}</div>
+                <div class="db-sub">{{ $employee->department ?? '' }}{{ $employee->department && $employee->designation ? ' · ' : '' }}{{ $employee->designation ?? '' }}</div>
             </td>
             <td class="db-right">
                 @if($employee->status)
@@ -61,12 +61,9 @@
                 <table class="info-grid">
                     <tr><td class="info-label">Department</td><td class="info-value">{{ $employee->department ?? '—' }}</td></tr>
                     <tr><td class="info-label">Designation</td><td class="info-value">{{ $employee->designation ?? '—' }}</td></tr>
-                    <tr><td class="info-label">Job Title</td><td class="info-value">{{ $employee->job_title ?? '—' }}</td></tr>
+                    <tr><td class="info-label">Employee Type</td><td class="info-value">{{ $employee->employee_type ? ucfirst(strtolower($employee->employee_type)) : '—' }}</td></tr>
                     @if($employee->joining_date)
                     <tr><td class="info-label">Joining Date</td><td class="info-value">{{ $employee->joining_date->format('d M Y') }}</td></tr>
-                    @endif
-                    @if($employee->hire_date)
-                    <tr><td class="info-label">Hire Date</td><td class="info-value">{{ $employee->hire_date->format('d M Y') }}</td></tr>
                     @endif
                     <tr><td class="info-label">Basic Salary</td><td class="info-value" style="font-size:11pt; color:#1a3560;">{{ number_format($employee->basic_salary, 2) }} PKR</td></tr>
                     @if($employee->remarks)
@@ -77,36 +74,6 @@
         </td>
     </tr>
 </table>
-
-@if($employee->experiences->count())
-<div class="info-section">
-    <h3>Work Experience</h3>
-    <table class="data-table data-table-fixed">
-        <thead>
-            <tr>
-                <th style="width:4%">#</th>
-                <th style="width:22%">Company</th>
-                <th style="width:18%">Designation</th>
-                <th style="width:12%">From</th>
-                <th style="width:12%">To</th>
-                <th style="width:32%">Remarks</th>
-            </tr>
-        </thead>
-        <tbody>
-            @foreach($employee->experiences as $i => $exp)
-            <tr>
-                <td>{{ $i + 1 }}</td>
-                <td class="fw-bold">{{ Illuminate\Support\Str::limit($exp->company_name, 24) }}</td>
-                <td>{{ Illuminate\Support\Str::limit($exp->designation ?? '—', 18) }}</td>
-                <td>{{ $exp->start_date ? \Carbon\Carbon::parse($exp->start_date)->format('M Y') : '—' }}</td>
-                <td>{{ $exp->end_date ? \Carbon\Carbon::parse($exp->end_date)->format('M Y') : 'Present' }}</td>
-                <td class="text-muted">{{ Illuminate\Support\Str::limit($exp->remarks ?? '—', 40) }}</td>
-            </tr>
-            @endforeach
-        </tbody>
-    </table>
-</div>
-@endif
 
 @if($salaryHistory->count())
 <div class="info-section">

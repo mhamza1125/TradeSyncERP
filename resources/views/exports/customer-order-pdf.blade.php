@@ -16,7 +16,7 @@
         <tr>
             <td>
                 <div class="db-title">Customer Order</div>
-                <div class="db-sub">{{ $order->customer?->customer_name ?? '—' }}</div>
+                <div class="db-sub">{{ $order->customer?->display_name ?? '—' }}</div>
             </td>
             <td class="db-right">
                 <div class="db-code">{{ $order->order_code }}</div>
@@ -37,6 +37,12 @@
                         <td class="info-label">Order Code</td>
                         <td class="info-value">{{ $order->order_code }}</td>
                     </tr>
+                    @if($order->order_number)
+                    <tr>
+                        <td class="info-label">Order Number</td>
+                        <td class="info-value">{{ $order->order_number }}</td>
+                    </tr>
+                    @endif
                     <tr>
                         <td class="info-label">Order Date</td>
                         <td class="info-value">{{ $order->order_date->format('d M Y') }}</td>
@@ -46,9 +52,7 @@
                         <td class="info-value">
                             @php
                                 $sc = match($order->status) {
-                                    'Confirmed','Processing' => 'primary',
-                                    'Dispatched' => 'success',
-                                    'Cancelled' => 'danger',
+                                    'Done' => 'success',
                                     default => 'secondary',
                                 };
                             @endphp
@@ -57,7 +61,7 @@
                     </tr>
                     @if($order->required_by)
                     <tr>
-                        <td class="info-label">Required Date</td>
+                        <td class="info-label">ETD (Estimated Time of Departure)</td>
                         <td class="info-value">{{ $order->required_by->format('d M Y') }}</td>
                     </tr>
                     @endif
@@ -69,25 +73,13 @@
                 <h3>Customer Details</h3>
                 <table class="info-grid">
                     <tr>
-                        <td class="info-label">Customer</td>
-                        <td class="info-value">{{ $order->customer?->customer_name ?? '—' }}</td>
+                        <td class="info-label">Brand</td>
+                        <td class="info-value">{{ $order->customer?->display_name ?? '—' }}</td>
                     </tr>
                     @if($order->customer?->contact_person)
                     <tr>
                         <td class="info-label">Contact Person</td>
                         <td class="info-value">{{ $order->customer->contact_person }}</td>
-                    </tr>
-                    @endif
-                    @if($order->customer?->phone)
-                    <tr>
-                        <td class="info-label">Phone</td>
-                        <td class="info-value">{{ $order->customer->phone }}</td>
-                    </tr>
-                    @endif
-                    @if($order->customer?->email)
-                    <tr>
-                        <td class="info-label">Email</td>
-                        <td class="info-value">{{ $order->customer->email }}</td>
                     </tr>
                     @endif
                 </table>

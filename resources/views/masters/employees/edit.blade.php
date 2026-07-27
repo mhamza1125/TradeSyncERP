@@ -1,15 +1,15 @@
 @extends('index')
 
-@section('title', 'Edit Employee - TradeSyncERP')
+@section('title', 'Edit Employee Record - TradeSyncERP')
 
 @section('content')
 <div class="nxl-content">
     <div class="page-header">
         <div class="page-header-left d-flex align-items-center">
-            <div class="page-header-title"><h5 class="m-b-10">Employees</h5></div>
+            <div class="page-header-title"><h5 class="m-b-10">Employee Record</h5></div>
             <ul class="breadcrumb">
                 <li class="breadcrumb-item"><a href="{{ route('dashboard') }}">Home</a></li>
-                <li class="breadcrumb-item"><a href="{{ route('masters.employees.index') }}">Employees</a></li>
+                <li class="breadcrumb-item"><a href="{{ route('masters.employees.index') }}">Employee Record</a></li>
                 <li class="breadcrumb-item">Edit</li>
             </ul>
         </div>

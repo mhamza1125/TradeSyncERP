@@ -116,8 +116,6 @@ class TestDataSeeder extends Seeder
             [
                 'customer_name'   => 'Allied Textiles Ltd',
                 'contact_person'  => 'Ahmed Raza',
-                'phone'           => '+92-21-3456789',
-                'email'           => 'ahmed@alliedtextiles.com',
                 'address'         => 'SITE Area, Karachi',
                 'brand'           => 'IXON',
                 'currency_id'     => $usd->id,
@@ -126,8 +124,6 @@ class TestDataSeeder extends Seeder
             [
                 'customer_name'   => 'Global Fabrics GmbH',
                 'contact_person'  => 'Hans Mueller',
-                'phone'           => '+49-30-12345678',
-                'email'           => 'hans@globalfabrics.de',
                 'address'         => 'Berlin, Germany',
                 'brand'           => 'GIVI',
                 'currency_id'     => $eur->id,
@@ -136,8 +132,6 @@ class TestDataSeeder extends Seeder
             [
                 'customer_name'   => 'Premier Garments UK',
                 'contact_person'  => 'James Wilson',
-                'phone'           => '+44-20-98765432',
-                'email'           => 'james@premiergarments.co.uk',
                 'address'         => 'Manchester, UK',
                 'brand'           => 'SHIMA',
                 'currency_id'     => $gbp->id,
@@ -146,8 +140,6 @@ class TestDataSeeder extends Seeder
             [
                 'customer_name'   => 'National Textiles Co.',
                 'contact_person'  => 'Imran Sheikh',
-                'phone'           => '+92-42-3567890',
-                'email'           => 'imran@nationaltextiles.pk',
                 'address'         => 'Gulberg, Lahore',
                 'brand'           => 'HOLYFREEDOM',
                 'currency_id'     => $usd->id,
@@ -169,17 +161,17 @@ class TestDataSeeder extends Seeder
 
         // ─── Employees ─────────────────────────────────────────────────────
         collect([
-            ['employee_name' => 'RIZWAN ALI',       'department' => 'Quality Control', 'designation' => 'Senior QC Auditor',                 'phone' => '+92-300-1000001', 'joining_date' => '2022-01-01', 'basic_salary' => 80000],
-            ['employee_name' => 'RIZWAN AHMED',     'department' => 'Quality Control', 'designation' => 'Senior QC Auditor',                 'phone' => '+92-300-1000002', 'joining_date' => '2022-02-01', 'basic_salary' => 80000],
-            ['employee_name' => 'HARIS',            'department' => 'Quality Control', 'designation' => 'QC Auditor',                        'phone' => '+92-300-1000003', 'joining_date' => '2022-06-01', 'basic_salary' => 60000],
-            ['employee_name' => 'AHMED',            'department' => 'Quality Control', 'designation' => 'QC Associate',                      'phone' => '+92-300-1000004', 'joining_date' => '2023-01-01', 'basic_salary' => 45000],
-            ['employee_name' => 'RAFIQ',            'department' => 'Quality Control', 'designation' => 'QC Associate',                      'phone' => '+92-300-1000005', 'joining_date' => '2023-03-01', 'basic_salary' => 45000],
-            ['employee_name' => 'UMER ADIL',        'department' => 'Operations',      'designation' => 'Operations Manager',                'phone' => '+92-300-1000006', 'joining_date' => '2021-09-01', 'basic_salary' => 100000],
-            ['employee_name' => 'QADEER',           'department' => 'Reporting',       'designation' => 'Reporting Manager',                 'phone' => '+92-300-1000007', 'joining_date' => '2022-04-01', 'basic_salary' => 75000],
-            ['employee_name' => 'KASHIF',           'department' => 'Reporting',       'designation' => 'Reporting Manager',                 'phone' => '+92-300-1000008', 'joining_date' => '2022-05-01', 'basic_salary' => 75000],
-            ['employee_name' => 'QURATULAIN AZHAR', 'department' => 'Administration',  'designation' => 'Administration Department',         'phone' => '+92-300-1000009', 'joining_date' => '2022-08-01', 'basic_salary' => 55000],
-            ['employee_name' => 'VARDAH SHAFIQ',    'department' => 'Marketing',       'designation' => 'Communication & Marketing Manager', 'phone' => '+92-300-1000010', 'joining_date' => '2023-01-01', 'basic_salary' => 70000],
-            ['employee_name' => 'JOHAM UROOSH',     'department' => 'R&D',             'designation' => 'R & D Manager',                    'phone' => '+92-300-1000011', 'joining_date' => '2022-10-01', 'basic_salary' => 85000],
+            ['employee_name' => 'RIZWAN ALI',       'department' => 'Quality Control', 'designation' => 'Senior QC Auditor',                 'employee_type' => 'PERMANENT',  'phone' => '+92-300-1000001', 'joining_date' => '2022-01-01', 'basic_salary' => 80000],
+            ['employee_name' => 'RIZWAN AHMED',     'department' => 'Quality Control', 'designation' => 'Senior QC Auditor',                 'employee_type' => 'PERMANENT',  'phone' => '+92-300-1000002', 'joining_date' => '2022-02-01', 'basic_salary' => 80000],
+            ['employee_name' => 'HARIS',            'department' => 'Quality Control', 'designation' => 'QC Auditor',                        'employee_type' => 'PERMANENT',  'phone' => '+92-300-1000003', 'joining_date' => '2022-06-01', 'basic_salary' => 60000],
+            ['employee_name' => 'AHMED',            'department' => 'Quality Control', 'designation' => 'QC Associate',                      'employee_type' => 'CONTRACTUAL', 'phone' => '+92-300-1000004', 'joining_date' => '2023-01-01', 'basic_salary' => 45000],
+            ['employee_name' => 'RAFIQ',            'department' => 'Quality Control', 'designation' => 'QC Associate',                      'employee_type' => 'CONTRACTUAL', 'phone' => '+92-300-1000005', 'joining_date' => '2023-03-01', 'basic_salary' => 45000],
+            ['employee_name' => 'UMER ADIL',        'department' => 'Operations',      'designation' => 'Operations Manager',                'employee_type' => 'PERMANENT',  'phone' => '+92-300-1000006', 'joining_date' => '2021-09-01', 'basic_salary' => 100000],
+            ['employee_name' => 'QADEER',           'department' => 'Reporting',       'designation' => 'Reporting Manager',                 'employee_type' => 'PERMANENT',  'phone' => '+92-300-1000007', 'joining_date' => '2022-04-01', 'basic_salary' => 75000],
+            ['employee_name' => 'KASHIF',           'department' => 'Reporting',       'designation' => 'Reporting Manager',                 'employee_type' => 'PERMANENT',  'phone' => '+92-300-1000008', 'joining_date' => '2022-05-01', 'basic_salary' => 75000],
+            ['employee_name' => 'QURATULAIN AZHAR', 'department' => 'Administration',  'designation' => 'Administration Department',         'employee_type' => 'PERMANENT',  'phone' => '+92-300-1000009', 'joining_date' => '2022-08-01', 'basic_salary' => 55000],
+            ['employee_name' => 'VARDAH SHAFIQ',    'department' => 'Marketing',       'designation' => 'Communication & Marketing Manager', 'employee_type' => 'CONTRACTUAL', 'phone' => '+92-300-1000010', 'joining_date' => '2023-01-01', 'basic_salary' => 70000],
+            ['employee_name' => 'JOHAM UROOSH',     'department' => 'R&D',             'designation' => 'R & D Manager',                    'employee_type' => 'CONTRACTUAL', 'phone' => '+92-300-1000011', 'joining_date' => '2022-10-01', 'basic_salary' => 85000],
         ])->each(fn($data) => Employee::create(array_merge($data, ['status' => true])));
 
         // ─── Users for Lab Manager & Accountant roles ──────────────────────
@@ -353,23 +345,25 @@ class TestDataSeeder extends Seeder
 
         // ─── Customer Orders ───────────────────────────────────────────────
         $order1 = CustomerOrder::create([
-            'order_code'  => 'CSO-2024-00001',
-            'customer_id' => $customers[0]->id,
-            'order_date'  => now()->subDays(12)->toDateString(),
-            'required_by' => now()->addDays(10)->toDateString(),
-            'status'      => 'Confirmed',
-            'remarks'     => 'Customer needs samples for upcoming season',
+            'order_code'   => 'CSO-2024-00001',
+            'order_number' => 'PO-4471',
+            'customer_id'  => $customers[0]->id,
+            'order_date'   => now()->subDays(12)->toDateString(),
+            'required_by'  => now()->addDays(10)->toDateString(),
+            'status'       => 'Due',
+            'remarks'      => 'Customer needs samples for upcoming season',
         ]);
         CustomerOrderItem::create(['customer_order_id' => $order1->id, 'product_category_id' => $garmentsCat->id, 'quantity' => 50, 'remarks' => 'CE AA rated, black/grey']);
         CustomerOrderItem::create(['customer_order_id' => $order1->id, 'product_category_id' => $garmentsCat->id, 'quantity' => 30, 'remarks' => 'CE A rated, with knee armor']);
 
         $order2 = CustomerOrder::create([
-            'order_code'  => 'CSO-2024-00002',
-            'customer_id' => $customers[1]->id,
-            'order_date'  => now()->subDays(5)->toDateString(),
-            'required_by' => null,
-            'status'      => 'Draft',
-            'remarks'     => 'Initial inquiry',
+            'order_code'   => 'CSO-2024-00002',
+            'order_number' => null,
+            'customer_id'  => $customers[1]->id,
+            'order_date'   => now()->subDays(5)->toDateString(),
+            'required_by'  => null,
+            'status'       => 'Due',
+            'remarks'      => 'Initial inquiry',
         ]);
         CustomerOrderItem::create(['customer_order_id' => $order2->id, 'product_category_id' => $bootsCat->id, 'quantity' => 40, 'remarks' => 'Waterproof, size range 40-46']);
 

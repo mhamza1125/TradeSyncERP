@@ -1,15 +1,15 @@
 @extends('index')
 
-@section('title', 'Employees - TradeSyncERP')
+@section('title', 'Employee Record - TradeSyncERP')
 
 @section('content')
 <div class="nxl-content">
     <div class="page-header">
         <div class="page-header-left d-flex align-items-center">
-            <div class="page-header-title"><h5 class="m-b-10">Employees</h5></div>
+            <div class="page-header-title"><h5 class="m-b-10">Employee Record</h5></div>
             <ul class="breadcrumb">
                 <li class="breadcrumb-item"><a href="{{ route('dashboard') }}">Home</a></li>
-                <li class="breadcrumb-item">Employees</li>
+                <li class="breadcrumb-item">Employee Record</li>
             </ul>
         </div>
         <div class="page-header-right ms-auto">
@@ -30,7 +30,7 @@
                     @endcan
                     @can('employees.create')
                     <a href="{{ route('masters.employees.create') }}" class="btn btn-primary">
-                        <i class="feather-plus me-2"></i><span>Add Employee</span>
+                        <i class="feather-plus me-2"></i><span>Add Employee Record</span>
                     </a>
                     @endcan
                 </div>
@@ -55,6 +55,14 @@
                             <option value="">All Status</option>
                             <option value="1" @selected(request('status') === '1')>Active</option>
                             <option value="0" @selected(request('status') === '0')>Inactive</option>
+                        </select>
+                    </div>
+                    <div class="col-md-3">
+                        <select name="employee_type" class="form-select">
+                            <option value="">All Types</option>
+                            @foreach(\App\Models\Employee::TYPES as $type)
+                            <option value="{{ $type }}" @selected(request('employee_type') === $type)>{{ ucfirst(strtolower($type)) }}</option>
+                            @endforeach
                         </select>
                     </div>
                     <div class="col-md-2">
@@ -82,6 +90,7 @@
                                         <th>Employee</th>
                                         <th>Department</th>
                                         <th>Designation</th>
+                                        <th>Type</th>
                                         <th>Phone</th>
                                         <th>Joining Date</th>
                                         <th>Basic Salary</th>
@@ -102,6 +111,7 @@
                                         </td>
                                         <td>{{ $employee->department }}</td>
                                         <td>{{ $employee->designation }}</td>
+                                        <td>{{ $employee->employee_type ? ucfirst(strtolower($employee->employee_type)) : '—' }}</td>
                                         <td>{{ $employee->phone }}</td>
                                         <td>{{ \Carbon\Carbon::parse($employee->joining_date)->format('d M Y') }}</td>
                                         <td class="fw-semibold text-dark">{{ number_format($employee->basic_salary, 2) }}</td>
@@ -150,9 +160,9 @@
                                     </tr>
                                     @empty
                                     <tr>
-                                        <td colspan="8" class="text-center py-5 text-muted">
+                                        <td colspan="9" class="text-center py-5 text-muted">
                                             <i class="feather-briefcase fs-1 d-block mb-2"></i>
-                                            No employees found.
+                                            No employee records found.
                                         </td>
                                     </tr>
                                     @endforelse

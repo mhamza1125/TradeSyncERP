@@ -98,7 +98,7 @@
                 <td>{{ $i + 1 }}</td>
                 <td class="fw-bold">{{ $item->sample?->sample_code ?? 'Removed' }}</td>
                 <td>{{ Illuminate\Support\Str::limit($item->sample?->product_name ?? '—', 18) }}</td>
-                <td class="text-muted">{{ Illuminate\Support\Str::limit($item->sample?->customer?->customer_name ?? '—', 16) }}</td>
+                <td class="text-muted">{{ Illuminate\Support\Str::limit($item->sample?->customer?->display_name ?? '—', 16) }}</td>
                 <td class="text-muted">{{ $item->variation?->color?->name ?? '—' }}</td>
                 <td class="text-muted">{{ $item->variation?->size?->name ?? '—' }}</td>
                 <td class="text-right">{{ $item->quantity }}</td>

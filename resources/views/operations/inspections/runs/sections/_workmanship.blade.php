@@ -16,7 +16,7 @@
         </div>
         <div class="fs-12 text-muted d-flex gap-2">
             @if($sample->customer)
-                <span>{{ $sample->customer->customer_name }}</span>
+                <span>{{ $sample->customer->display_name }}</span>
             @endif
             @if($sample->category)
                 <span class="badge bg-soft-primary text-primary">{{ $sample->category->category_name }}</span>

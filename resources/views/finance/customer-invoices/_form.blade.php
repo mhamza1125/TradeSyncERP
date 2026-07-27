@@ -24,7 +24,7 @@
                                 <option value="{{ $customer->id }}"
                                     data-currency="{{ optional($customer->currency)->currency_code }}"
                                     @selected(old('customer_id', $customerInvoice->customer_id ?? '') == $customer->id)>
-                                    {{ $customer->customer_name }}
+                                    {{ $customer->display_name }}
                                 </option>
                             @endforeach
                         </select>

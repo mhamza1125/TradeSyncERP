@@ -198,7 +198,7 @@
                 <li class="nxl-item {{ $is('masters.employees.*') ? 'active' : '' }}">
                     <a href="{{ route('masters.employees.index') }}" class="nxl-link">
                         <span class="nxl-micon"><i class="feather-briefcase"></i></span>
-                        <span class="nxl-mtext">Employees</span>
+                        <span class="nxl-mtext">Employee Record</span>
                     </a>
                 </li>
                 @endcan

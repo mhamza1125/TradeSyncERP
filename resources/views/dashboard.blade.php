@@ -432,7 +432,7 @@
                                                 {{ $order->order_code }}
                                             </a>
                                         </td>
-                                        <td class="text-muted">{{ $order->customer?->customer_name ?? '-' }}</td>
+                                        <td class="text-muted">{{ $order->customer?->display_name ?? '-' }}</td>
                                         <td class="text-muted fs-12">{{ $order->order_date?->format('d M Y') ?? '-' }}</td>
                                         <td>
                                             <span class="badge bg-soft-{{ $sc[$order->status] ?? 'secondary' }} text-{{ $sc[$order->status] ?? 'secondary' }}">

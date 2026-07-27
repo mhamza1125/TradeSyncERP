@@ -54,7 +54,7 @@
                         <select name="customer_id" class="form-select">
                             <option value="">All Customers</option>
                             @foreach($customers as $c)
-                            <option value="{{ $c->id }}" @selected(request('customer_id') == $c->id)>{{ $c->customer_name }}</option>
+                            <option value="{{ $c->id }}" @selected(request('customer_id') == $c->id)>{{ $c->display_name }}</option>
                             @endforeach
                         </select>
                     </div>
@@ -110,7 +110,7 @@
                                             </a>
                                         </td>
                                         <td>{{ $sample->product_name }}</td>
-                                        <td>{{ $sample->customer?->customer_name ?? '—' }}</td>
+                                        <td>{{ $sample->customer?->display_name ?? '—' }}</td>
                                         <td>{{ $sample->category->category_name }}</td>
                                         <td>{{ \Carbon\Carbon::parse($sample->receive_date)->format('d M Y') }}</td>
                                         <td>

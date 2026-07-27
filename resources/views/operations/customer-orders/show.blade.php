@@ -49,25 +49,25 @@
                                 <div class="fw-semibold">{{ $customerOrder->order_code }}</div>
                             </div>
                             <div class="col-md-4">
-                                <div class="text-muted fs-12">Customer</div>
-                                <div class="fw-semibold">{{ $customerOrder->customer?->customer_name ?? '—' }}</div>
+                                <div class="text-muted fs-12">Order Number</div>
+                                <div class="fw-semibold">{{ $customerOrder->order_number ?? '—' }}</div>
                             </div>
                             <div class="col-md-4">
                                 <div class="text-muted fs-12">Brand</div>
-                                <div class="fw-semibold">{{ $customerOrder->brand?->brand_name ?? '—' }}</div>
+                                <div class="fw-semibold">{{ $customerOrder->customer?->display_name ?? '—' }}</div>
                             </div>
                             <div class="col-md-4">
                                 <div class="text-muted fs-12">Order Date</div>
                                 <div class="fw-semibold">{{ $customerOrder->order_date->format('d M Y') }}</div>
                             </div>
                             <div class="col-md-4">
-                                <div class="text-muted fs-12">Required By</div>
+                                <div class="text-muted fs-12">ETD (Estimated Time of Departure)</div>
                                 <div class="fw-semibold">{{ $customerOrder->required_by?->format('d M Y') ?? '—' }}</div>
                             </div>
                             <div class="col-md-4">
                                 <div class="text-muted fs-12">Status</div>
                                 @php
-                                $statusColors = ['Draft'=>'secondary','Confirmed'=>'primary','Processing'=>'warning','Dispatched'=>'success','Cancelled'=>'danger'];
+                                $statusColors = ['Due'=>'warning','Done'=>'success'];
                                 @endphp
                                 <span class="badge bg-soft-{{ $statusColors[$customerOrder->status] ?? 'secondary' }} text-{{ $statusColors[$customerOrder->status] ?? 'secondary' }}">
                                     {{ $customerOrder->status }}
@@ -140,6 +140,13 @@
                 </div>
             </div>
         </div>
+
+        {{-- Attachment Panel --}}
+        @include('partials.attachment-panel', [
+            'attachEntity'     => $customerOrder,
+            'attachEntityType' => 'customer-orders',
+            'attachLabel'      => 'Order Attachments',
+        ])
     </div>
 </div>
 @endsection

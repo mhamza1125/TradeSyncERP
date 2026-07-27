@@ -18,7 +18,7 @@
                             @foreach($customers as $c)
                             <option value="{{ $c->id }}"
                                 data-currency="{{ optional($c->currency)->currency_code }}"
-                                @selected(old('customer_id', $fromInvoice->customer_id ?? $customerPayment->customer_id ?? '') == $c->id)>{{ $c->customer_name }}</option>
+                                @selected(old('customer_id', $fromInvoice->customer_id ?? $customerPayment->customer_id ?? '') == $c->id)>{{ $c->display_name }}</option>
                             @endforeach
                         </select>
                         @error('customer_id')<div class="invalid-feedback">{{ $message }}</div>@enderror

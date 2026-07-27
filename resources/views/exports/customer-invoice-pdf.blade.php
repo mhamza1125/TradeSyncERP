@@ -43,12 +43,9 @@
             <p style="font-size:7.5pt; text-transform:uppercase; color:#757575; margin-bottom:4px;">Bill To:</p>
             <div class="invoice-to">
                 @if($invoice->customer)
-                <div class="name">{{ $invoice->customer->customer_name }}</div>
+                <div class="name">{{ $invoice->customer->display_name }}</div>
                 @if($invoice->customer->contact_person)
                 <div>{{ $invoice->customer->contact_person }}</div>
-                @endif
-                @if($invoice->customer->phone)
-                <div style="color:#757575;">{{ $invoice->customer->phone }}</div>
                 @endif
                 @if($invoice->customer->address)
                 <div style="color:#757575;">{{ $invoice->customer->address }}</div>

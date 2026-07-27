@@ -1,7 +1,7 @@
 ﻿<!DOCTYPE html>
 <html lang="en">
 <head>
-<title>Customer Profile — {{ $customer->customer_name }}</title>
+<title>Customer Profile — {{ $customer->display_name }}</title>
 @include('exports.partials._pdf-head')
 </head>
 <body>
@@ -15,7 +15,7 @@
         <tr>
             <td>
                 <div class="db-title">Customer Profile</div>
-                <div class="db-sub">{{ $customer->customer_name }}</div>
+                <div class="db-sub">{{ $customer->display_name }}</div>
             </td>
             <td class="db-right">
                 @if($customer->status)
@@ -35,14 +35,10 @@
             <div class="info-section">
                 <h3>Contact Information</h3>
                 <table class="info-grid">
+                    <tr><td class="info-label">Brand</td><td class="info-value">{{ $customer->display_name }}</td></tr>
                     <tr><td class="info-label">Customer Name</td><td class="info-value">{{ $customer->customer_name }}</td></tr>
                     <tr><td class="info-label">Contact Person</td><td class="info-value">{{ $customer->contact_person ?? '—' }}</td></tr>
-                    <tr><td class="info-label">Phone</td><td class="info-value">{{ $customer->phone ?? '—' }}</td></tr>
-                    <tr><td class="info-label">Email</td><td class="info-value">{{ $customer->email ?? '—' }}</td></tr>
                     <tr><td class="info-label">Address</td><td class="info-value">{{ $customer->address ?? '—' }}</td></tr>
-                    @if($customer->brand)
-                    <tr><td class="info-label">Brand</td><td class="info-value">{{ $customer->brand }}</td></tr>
-                    @endif
                 </table>
             </div>
         </td>

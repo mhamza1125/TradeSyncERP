@@ -25,7 +25,8 @@ class CustomerOrderController extends Controller
     public function index(Request $request)
     {
         $orders = CustomerOrder::with('customer')
-            ->when($request->search, fn ($q) => $q->where('order_code', 'like', "%{$request->search}%"))
+            ->when($request->search, fn ($q) => $q->where('order_code', 'like', "%{$request->search}%")
+                ->orWhere('order_number', 'like', "%{$request->search}%"))
             ->when($request->customer_id, fn ($q) => $q->where('customer_id', $request->customer_id))
             ->when($request->status, fn ($q) => $q->where('status', $request->status))
             ->when($request->from_date, fn ($q) => $q->where('order_date', '>=', $request->from_date))
@@ -66,7 +67,7 @@ class CustomerOrderController extends Controller
 
     public function show(CustomerOrder $customerOrder)
     {
-        $customerOrder->load(['customer', 'items.productCategory']);
+        $customerOrder->load(['customer', 'items.productCategory', 'attachments']);
 
         return view('operations.customer-orders.show', compact('customerOrder'));
     }
@@ -107,7 +108,8 @@ class CustomerOrderController extends Controller
     public function exportListPdf(Request $request)
     {
         $orders = CustomerOrder::with(['customer', 'items'])
-            ->when($request->search, fn ($q) => $q->where('order_code', 'like', "%{$request->search}%"))
+            ->when($request->search, fn ($q) => $q->where('order_code', 'like', "%{$request->search}%")
+                ->orWhere('order_number', 'like', "%{$request->search}%"))
             ->when($request->customer_id, fn ($q) => $q->where('customer_id', $request->customer_id))
             ->when($request->status, fn ($q) => $q->where('status', $request->status))
             ->latest()

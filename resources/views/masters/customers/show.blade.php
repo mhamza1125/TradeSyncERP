@@ -1,6 +1,6 @@
 @extends('index')
 
-@section('title', 'Customer: ' . $customer->customer_name . ' - TradeSyncERP')
+@section('title', 'Customer: ' . $customer->display_name . ' - TradeSyncERP')
 
 @section('content')
 <div class="nxl-content">
@@ -13,7 +13,7 @@
             <ul class="breadcrumb">
                 <li class="breadcrumb-item"><a href="{{ route('dashboard') }}">Home</a></li>
                 <li class="breadcrumb-item"><a href="{{ route('masters.customers.index') }}">Customers</a></li>
-                <li class="breadcrumb-item">{{ $customer->customer_name }}</li>
+                <li class="breadcrumb-item">{{ $customer->display_name }}</li>
             </ul>
         </div>
         <div class="page-header-right ms-auto">
@@ -57,10 +57,10 @@
                     <div class="card-body">
                         <div class="mb-4 text-center">
                             <div class="wd-100 ht-100 mx-auto mb-3 avatar-text avatar-lg bg-soft-primary text-primary fs-2 rounded-circle d-flex align-items-center justify-content-center">
-                                {{ strtoupper(substr($customer->customer_name, 0, 2)) }}
+                                {{ strtoupper(substr($customer->display_name, 0, 2)) }}
                             </div>
-                            <a href="javascript:void(0);" class="fs-14 fw-bold d-block">{{ $customer->customer_name }}</a>
-                            <a href="javascript:void(0);" class="fs-12 fw-normal text-muted d-block">{{ $customer->email ?? 'No email' }}</a>
+                            <a href="javascript:void(0);" class="fs-14 fw-bold d-block">{{ $customer->display_name }}</a>
+                            <a href="javascript:void(0);" class="fs-12 fw-normal text-muted d-block">{{ $customer->customer_name }}</a>
                             @if($customer->status)
                                 <span class="badge bg-soft-success text-success mt-2">Active</span>
                             @else
@@ -69,19 +69,13 @@
                         </div>
                         <ul class="list-unstyled mb-4">
                             <li class="hstack justify-content-between mb-3">
+                                <span class="text-muted fw-medium hstack gap-3"><i class="feather-briefcase"></i>Company Name</span>
+                                <span class="fw-semibold">{{ $customer->customer_name }}</span>
+                            </li>
+                            <li class="hstack justify-content-between mb-3">
                                 <span class="text-muted fw-medium hstack gap-3"><i class="feather-user"></i>Contact Person</span>
                                 <span class="fw-semibold">{{ $customer->contact_person }}</span>
                             </li>
-                            <li class="hstack justify-content-between mb-3">
-                                <span class="text-muted fw-medium hstack gap-3"><i class="feather-phone"></i>Phone</span>
-                                <a href="tel:{{ $customer->phone }}">{{ $customer->phone }}</a>
-                            </li>
-                            @if($customer->email)
-                            <li class="hstack justify-content-between mb-3">
-                                <span class="text-muted fw-medium hstack gap-3"><i class="feather-mail"></i>Email</span>
-                                <a href="mailto:{{ $customer->email }}">{{ $customer->email }}</a>
-                            </li>
-                            @endif
                             <li class="hstack justify-content-between mb-3">
                                 <span class="text-muted fw-medium hstack gap-3"><i class="feather-dollar-sign"></i>Currency</span>
                                 <span>{{ $customer->currency?->currency_code ?? '—' }}</span>
@@ -145,20 +139,16 @@
                                     @endcan
                                 </div>
                                 <div class="row g-0 mb-3">
+                                    <div class="col-sm-5 text-muted">Brand:</div>
+                                    <div class="col-sm-7 fw-semibold">{{ $customer->display_name }}</div>
+                                </div>
+                                <div class="row g-0 mb-3">
                                     <div class="col-sm-5 text-muted">Customer Name:</div>
                                     <div class="col-sm-7 fw-semibold">{{ $customer->customer_name }}</div>
                                 </div>
                                 <div class="row g-0 mb-3">
                                     <div class="col-sm-5 text-muted">Contact Person:</div>
                                     <div class="col-sm-7 fw-semibold">{{ $customer->contact_person }}</div>
-                                </div>
-                                <div class="row g-0 mb-3">
-                                    <div class="col-sm-5 text-muted">Phone:</div>
-                                    <div class="col-sm-7 fw-semibold">{{ $customer->phone }}</div>
-                                </div>
-                                <div class="row g-0 mb-3">
-                                    <div class="col-sm-5 text-muted">Email:</div>
-                                    <div class="col-sm-7 fw-semibold">{{ $customer->email ?? '—' }}</div>
                                 </div>
                                 <div class="row g-0 mb-3">
                                     <div class="col-sm-5 text-muted">Address:</div>

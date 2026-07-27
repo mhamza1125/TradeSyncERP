@@ -36,8 +36,6 @@
                 <h3>Contact Information</h3>
                 <table class="info-grid">
                     <tr><td class="info-label">Supplier Name</td><td class="info-value">{{ $supplier->name }}</td></tr>
-                    <tr><td class="info-label">Phone</td><td class="info-value">{{ $supplier->phone ?? '—' }}</td></tr>
-                    <tr><td class="info-label">Email</td><td class="info-value">{{ $supplier->email ?? '—' }}</td></tr>
                     <tr><td class="info-label">Address</td><td class="info-value">{{ $supplier->address ?? '—' }}</td></tr>
                     <tr><td class="info-label">City</td><td class="info-value">{{ $supplier->city ?? '—' }}</td></tr>
                     <tr><td class="info-label">Country</td><td class="info-value">{{ $supplier->country ?? '—' }}</td></tr>
@@ -71,17 +69,15 @@
         <thead>
             <tr>
                 <th style="width:6%">#</th>
-                <th style="width:50%">Customer Name</th>
-                <th style="width:26%">Phone</th>
-                <th style="width:18%">Status</th>
+                <th style="width:70%">Brand / Customer</th>
+                <th style="width:24%">Status</th>
             </tr>
         </thead>
         <tbody>
             @foreach($supplier->customers as $i => $c)
             <tr>
                 <td>{{ $i + 1 }}</td>
-                <td class="fw-bold">{{ Illuminate\Support\Str::limit($c->customer_name, 34) }}</td>
-                <td>{{ $c->phone ?? '—' }}</td>
+                <td class="fw-bold">{{ Illuminate\Support\Str::limit($c->display_name, 40) }}</td>
                 <td><span class="badge badge-{{ $c->status ? 'success' : 'danger' }}">{{ $c->status ? 'Active' : 'Inactive' }}</span></td>
             </tr>
             @endforeach

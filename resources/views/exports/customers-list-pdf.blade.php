@@ -28,22 +28,20 @@
     <thead>
         <tr>
             <th style="width:4%">#</th>
-            <th style="width:21%">Customer Name</th>
-            <th style="width:16%">Contact Person</th>
-            <th style="width:14%">Phone</th>
-            <th style="width:20%">Email</th>
-            <th class="text-right" style="width:15%">Opening Bal.</th>
-            <th style="width:10%">Status</th>
+            <th style="width:24%">Brand</th>
+            <th style="width:22%">Customer Name</th>
+            <th style="width:19%">Contact Person</th>
+            <th class="text-right" style="width:19%">Opening Bal.</th>
+            <th style="width:12%">Status</th>
         </tr>
     </thead>
     <tbody>
         @forelse($customers as $i => $customer)
         <tr>
             <td>{{ $i + 1 }}</td>
-            <td class="fw-bold">{{ Illuminate\Support\Str::limit($customer->customer_name, 24) }}</td>
-            <td>{{ Illuminate\Support\Str::limit($customer->contact_person ?? '—', 18) }}</td>
-            <td>{{ $customer->phone ?? '—' }}</td>
-            <td class="text-muted" style="font-size:7.5pt;">{{ Illuminate\Support\Str::limit($customer->email ?? '—', 24) }}</td>
+            <td class="fw-bold">{{ Illuminate\Support\Str::limit($customer->display_name, 26) }}</td>
+            <td>{{ Illuminate\Support\Str::limit($customer->customer_name, 24) }}</td>
+            <td>{{ Illuminate\Support\Str::limit($customer->contact_person ?? '—', 20) }}</td>
             <td class="text-right">{{ number_format($customer->opening_balance, 2) }} {{ $customer->currency?->currency_code ?? 'PKR' }}</td>
             <td class="text-center">
                 @if($customer->status)
@@ -54,7 +52,7 @@
             </td>
         </tr>
         @empty
-        <tr><td colspan="7" class="no-data">No customers found.</td></tr>
+        <tr><td colspan="6" class="no-data">No customers found.</td></tr>
         @endforelse
     </tbody>
 </table>

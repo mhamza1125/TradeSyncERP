@@ -45,14 +45,6 @@
                                 <div class="fw-semibold">{{ $supplier->name }}</div>
                             </div>
                             <div class="col-md-4">
-                                <div class="text-muted fs-12">Phone</div>
-                                <div class="fw-semibold">{{ $supplier->phone ?? '—' }}</div>
-                            </div>
-                            <div class="col-md-4">
-                                <div class="text-muted fs-12">Email</div>
-                                <div class="fw-semibold">{{ $supplier->email ?? '—' }}</div>
-                            </div>
-                            <div class="col-md-4">
                                 <div class="text-muted fs-12">City</div>
                                 <div class="fw-semibold">{{ $supplier->city ?? '—' }}</div>
                             </div>
@@ -110,7 +102,7 @@
                                             <a href="{{ route('samples.show', $sample) }}">{{ $sample->sample_code }}</a>
                                         </td>
                                         <td>{{ $sample->product_name }}</td>
-                                        <td>{{ $sample->customer?->customer_name ?? '—' }}</td>
+                                        <td>{{ $sample->customer?->display_name ?? '—' }}</td>
                                         <td><span class="badge bg-soft-secondary text-secondary">{{ $sample->status }}</span></td>
                                     </tr>
                                     @endforeach
@@ -131,11 +123,11 @@
                         @forelse($supplier->customers as $customer)
                         <div class="d-flex align-items-center mb-3">
                             <div class="avatar-text avatar-md bg-soft-primary text-primary me-3">
-                                {{ strtoupper(substr($customer->customer_name, 0, 1)) }}
+                                {{ strtoupper(substr($customer->display_name, 0, 1)) }}
                             </div>
                             <div>
-                                <div class="fw-semibold">{{ $customer->customer_name }}</div>
-                                <small class="text-muted">{{ $customer->phone }}</small>
+                                <div class="fw-semibold">{{ $customer->display_name }}</div>
+                                <small class="text-muted">{{ $customer->customer_name }}</small>
                             </div>
                         </div>
                         @empty

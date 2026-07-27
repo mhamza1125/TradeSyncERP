@@ -31,7 +31,7 @@
         <tr>
             <td>
                 <div class="db-title">Payment Receipt</div>
-                <div class="db-sub">{{ $payment->customer?->customer_name ?? 'Deleted Customer' }}</div>
+                <div class="db-sub">{{ $payment->customer?->display_name ?? 'Deleted Customer' }}</div>
             </td>
             <td class="db-right">
                 <div class="db-code">#{{ $payment->id }}</div>
@@ -47,12 +47,9 @@
         <td>
             <p style="font-size:7.5pt; text-transform:uppercase; color:#757575; margin-bottom:4px;">Received From:</p>
             @if($payment->customer)
-            <div style="font-size:12pt; font-weight:bold; color:#1a3560;">{{ $payment->customer->customer_name }}</div>
+            <div style="font-size:12pt; font-weight:bold; color:#1a3560;">{{ $payment->customer->display_name }}</div>
             @if($payment->customer->contact_person)
             <div style="font-size:8.5pt; color:#424242;">{{ $payment->customer->contact_person }}</div>
-            @endif
-            @if($payment->customer->phone)
-            <div style="font-size:8.5pt; color:#757575;">{{ $payment->customer->phone }}</div>
             @endif
             @else
             <div style="font-size:12pt; font-weight:bold; color:#1a3560;">Deleted Customer</div>

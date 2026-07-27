@@ -56,8 +56,7 @@
                     <div class="col-sm-6">
                         <h6 class="text-muted mb-1">Customer</h6>
                         @if($customerInvoice->customer)
-                        <p class="fw-semibold mb-0">{{ $customerInvoice->customer->customer_name }}</p>
-                        <p class="text-muted mb-0">{{ $customerInvoice->customer->phone }}</p>
+                        <p class="fw-semibold mb-0">{{ $customerInvoice->customer->display_name }}</p>
                         @if($customerInvoice->customer->currency)
                         <p class="text-muted mb-0">Currency: <span class="fw-semibold text-dark">{{ $customerInvoice->customer->currency->code }}</span></p>
                         @endif

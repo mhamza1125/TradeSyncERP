@@ -69,8 +69,6 @@
                                 <thead>
                                     <tr>
                                         <th>Supplier</th>
-                                        <th>Phone</th>
-                                        <th>Email</th>
                                         <th>City</th>
                                         <th>Country</th>
                                         <th>Status</th>
@@ -85,8 +83,6 @@
                                                 {{ $supplier->name }}
                                             </a>
                                         </td>
-                                        <td>{{ $supplier->phone ?? '—' }}</td>
-                                        <td>{{ $supplier->email ?? '—' }}</td>
                                         <td>{{ $supplier->city ?? '—' }}</td>
                                         <td>{{ $supplier->country ?? '—' }}</td>
                                         <td>
@@ -134,7 +130,7 @@
                                     </tr>
                                     @empty
                                     <tr>
-                                        <td colspan="7" class="text-center py-5 text-muted">
+                                        <td colspan="5" class="text-center py-5 text-muted">
                                             <i class="feather-truck fs-1 d-block mb-2"></i>
                                             No suppliers found.
                                             @can('suppliers.create')

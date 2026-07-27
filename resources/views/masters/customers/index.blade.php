@@ -52,7 +52,7 @@
             <form method="GET" action="{{ route('masters.customers.index') }}">
                 <div class="row g-3">
                     <div class="col-md-4">
-                        <input type="text" name="search" class="form-control" placeholder="Search by name or phone..." value="{{ request('search') }}">
+                        <input type="text" name="search" class="form-control" placeholder="Search by brand or name..." value="{{ request('search') }}">
                     </div>
                     <div class="col-md-3">
                         <select name="status" class="form-select">
@@ -87,9 +87,8 @@
                             <table class="table table-hover" id="customerList">
                                 <thead>
                                     <tr>
-                                        <th>Customer</th>
+                                        <th>Brand</th>
                                         <th>Contact Person</th>
-                                        <th>Phone</th>
                                         <th>Currency</th>
                                         <th>Opening Balance</th>
                                         <th>Status</th>
@@ -102,16 +101,15 @@
                                         <td>
                                             <a href="{{ route('masters.customers.show', $customer) }}" class="hstack gap-3">
                                                 <div class="avatar-text avatar-md bg-soft-primary text-primary">
-                                                    {{ strtoupper(substr($customer->customer_name, 0, 1)) }}
+                                                    {{ strtoupper(substr($customer->display_name, 0, 1)) }}
                                                 </div>
                                                 <div>
-                                                    <span class="fw-semibold d-block text-truncate-1-line">{{ $customer->customer_name }}</span>
-                                                    <small class="fs-12 fw-normal text-muted">{{ $customer->email }}</small>
+                                                    <span class="fw-semibold d-block text-truncate-1-line">{{ $customer->display_name }}</span>
+                                                    <small class="fs-12 fw-normal text-muted">{{ $customer->customer_name }}</small>
                                                 </div>
                                             </a>
                                         </td>
                                         <td>{{ $customer->contact_person }}</td>
-                                        <td>{{ $customer->phone }}</td>
                                         <td>
                                             @if($customer->currency)
                                                 <span class="fw-semibold">{{ $customer->currency->currency_code }}</span>
@@ -170,7 +168,7 @@
                                     </tr>
                                     @empty
                                     <tr>
-                                        <td colspan="7" class="text-center py-5 text-muted">
+                                        <td colspan="6" class="text-center py-5 text-muted">
                                             <i class="feather-users fs-1 d-block mb-2"></i>
                                             No customers found.
                                             @can('customers.create')

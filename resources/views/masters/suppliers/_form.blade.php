@@ -11,18 +11,6 @@
                         @error('name')<div class="invalid-feedback">{{ $message }}</div>@enderror
                     </div>
                     <div class="col-lg-6 mb-4">
-                        <label class="form-label">Phone</label>
-                        <input type="text" name="phone" class="form-control @error('phone') is-invalid @enderror"
-                               placeholder="+92 300 0000000" value="{{ old('phone', $supplier->phone ?? '') }}">
-                        @error('phone')<div class="invalid-feedback">{{ $message }}</div>@enderror
-                    </div>
-                    <div class="col-lg-6 mb-4">
-                        <label class="form-label">Email</label>
-                        <input type="email" name="email" class="form-control @error('email') is-invalid @enderror"
-                               placeholder="supplier@example.com" value="{{ old('email', $supplier->email ?? '') }}">
-                        @error('email')<div class="invalid-feedback">{{ $message }}</div>@enderror
-                    </div>
-                    <div class="col-lg-6 mb-4">
                         <label class="form-label">City</label>
                         <input type="text" name="city" class="form-control @error('city') is-invalid @enderror"
                                value="{{ old('city', $supplier->city ?? '') }}">

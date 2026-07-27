@@ -60,7 +60,7 @@
                                 <select name="customer_id" class="form-select">
                                     <option value="">All Customers</option>
                                     @foreach($customers as $c)
-                                    <option value="{{ $c->id }}" @selected(request('customer_id') == $c->id)>{{ $c->customer_name }}</option>
+                                    <option value="{{ $c->id }}" @selected(request('customer_id') == $c->id)>{{ $c->display_name }}</option>
                                     @endforeach
                                 </select>
                             </div>
@@ -116,7 +116,7 @@
                                         {{ $invoice->invoice_number }}
                                     </a>
                                 </td>
-                                <td>{{ $invoice->customer?->customer_name ?? '—' }}</td>
+                                <td>{{ $invoice->customer?->display_name ?? '—' }}</td>
                                 <td>{{ $invoice->invoice_date->format('d M Y') }}</td>
                                 <td>{{ $invoice->due_date?->format('d M Y') ?? '—' }}</td>
                                 <td class="text-end">{{ number_format($invoice->total_amount, 2) }}</td>

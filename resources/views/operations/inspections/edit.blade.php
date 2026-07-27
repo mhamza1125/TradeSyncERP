@@ -102,7 +102,7 @@
                                     @endif
                                 </td>
                                 <td class="text-muted fs-13">
-                                    {{ $run->sample?->customer?->customer_name ?? '—' }}
+                                    {{ $run->sample?->customer?->display_name ?? '—' }}
                                 </td>
                                 <td class="text-center">
                                     @php $sectionCount = $run->runSections->count() @endphp

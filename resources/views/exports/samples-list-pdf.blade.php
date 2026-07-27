@@ -42,7 +42,7 @@
             <td>{{ $i + 1 }}</td>
             <td class="fw-bold">{{ $sample->sample_code }}</td>
             <td>{{ Illuminate\Support\Str::limit($sample->product_name ?? '—', 22) }}</td>
-            <td>{{ Illuminate\Support\Str::limit($sample->customer?->customer_name ?? '—', 18) }}</td>
+            <td>{{ Illuminate\Support\Str::limit($sample->customer?->display_name ?? '—', 18) }}</td>
             <td class="text-muted">{{ Illuminate\Support\Str::limit($sample->category?->category_name ?? '—', 14) }}</td>
             <td>{{ $sample->receive_date->format('d M Y') }}</td>
             <td class="text-center">

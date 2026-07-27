@@ -23,7 +23,7 @@
                 @if(!empty($account))
                 <div class="db-sub">{{ $account->account_name }} ({{ $account->account_type }})</div>
                 @elseif(!empty($customer))
-                <div class="db-sub">{{ $customer->customer_name }}</div>
+                <div class="db-sub">{{ $customer->display_name }}</div>
                 @endif
             </td>
             <td class="db-right">
@@ -69,9 +69,8 @@
     <tr>
         <td>
             <table class="info-grid">
-                <tr><td class="info-label">Customer</td><td class="info-value">{{ $customer->customer_name }}</td></tr>
+                <tr><td class="info-label">Customer</td><td class="info-value">{{ $customer->display_name }}</td></tr>
                 <tr><td class="info-label">Contact</td><td class="info-value">{{ $customer->contact_person ?? '—' }}</td></tr>
-                <tr><td class="info-label">Phone</td><td class="info-value">{{ $customer->phone ?? '—' }}</td></tr>
                 <tr><td class="info-label">Currency</td><td class="info-value">{{ $customer->currency?->currency_code ?? 'PKR' }}</td></tr>
             </table>
         </td>

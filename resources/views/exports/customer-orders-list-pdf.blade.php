@@ -28,10 +28,11 @@
     <thead>
         <tr>
             <th style="width:4%">#</th>
-            <th style="width:14%">Order Code</th>
-            <th style="width:26%">Customer</th>
-            <th style="width:13%">Order Date</th>
-            <th style="width:13%">Required Date</th>
+            <th style="width:12%">Order Code</th>
+            <th style="width:12%">Order Number</th>
+            <th style="width:20%">Brand</th>
+            <th style="width:11%">Order Date</th>
+            <th style="width:11%">ETD</th>
             <th style="width:14%; text-align:center;">Status</th>
             <th class="text-right" style="width:16%">Items</th>
         </tr>
@@ -41,15 +42,14 @@
         <tr>
             <td>{{ $i + 1 }}</td>
             <td class="fw-bold">{{ $order->order_code }}</td>
-            <td>{{ Illuminate\Support\Str::limit($order->customer?->customer_name ?? '—', 26) }}</td>
+            <td>{{ $order->order_number ?? '—' }}</td>
+            <td>{{ Illuminate\Support\Str::limit($order->customer?->display_name ?? '—', 20) }}</td>
             <td>{{ $order->order_date->format('d M Y') }}</td>
             <td>{{ $order->required_by ? $order->required_by->format('d M Y') : '—' }}</td>
             <td class="text-center">
                 @php
                     $sc = match($order->status) {
-                        'Confirmed','Processing' => 'primary',
-                        'Dispatched' => 'success',
-                        'Cancelled' => 'danger',
+                        'Done' => 'success',
                         default => 'secondary',
                     };
                 @endphp
@@ -58,7 +58,7 @@
             <td class="text-right">{{ $order->items->count() }}</td>
         </tr>
         @empty
-        <tr><td colspan="7" class="no-data">No orders found.</td></tr>
+        <tr><td colspan="8" class="no-data">No orders found.</td></tr>
         @endforelse
     </tbody>
 </table>

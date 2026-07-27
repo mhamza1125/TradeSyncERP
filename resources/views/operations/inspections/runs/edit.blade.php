@@ -426,7 +426,7 @@ foreach ($visibleRunSections as $rs) {
                             <div class="text-muted fs-12">{{ $run->sample->product_name }}</div>
                             <div class="d-flex gap-2 mt-1">
                                 @if($run->sample->customer)
-                                    <span class="badge bg-soft-secondary text-secondary">{{ $run->sample->customer->customer_name }}</span>
+                                    <span class="badge bg-soft-secondary text-secondary">{{ $run->sample->customer->display_name }}</span>
                                 @endif
                                 @if($run->sample->category)
                                     <span class="badge bg-soft-primary text-primary">{{ $run->sample->category->category_name }}</span>

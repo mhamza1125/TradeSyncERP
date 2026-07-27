@@ -1,6 +1,6 @@
 @extends('index')
 
-@section('title', 'Customer Ledger — ' . $customer->customer_name . ' - TradeSyncERP')
+@section('title', 'Customer Ledger — ' . $customer->display_name . ' - TradeSyncERP')
 
 @section('content')
 <div class="nxl-content">
@@ -10,7 +10,7 @@
             <ul class="breadcrumb">
                 <li class="breadcrumb-item"><a href="{{ route('dashboard') }}">Home</a></li>
                 <li class="breadcrumb-item">Reports</li>
-                <li class="breadcrumb-item">{{ $customer->customer_name }}</li>
+                <li class="breadcrumb-item">{{ $customer->display_name }}</li>
             </ul>
         </div>
         <div class="page-header-right ms-auto">
@@ -71,16 +71,10 @@
                     <div class="card-body py-3">
                         <div class="d-flex align-items-center gap-3">
                             <div class="avatar-text avatar-lg bg-success text-white rounded">
-                                {{ strtoupper(substr($customer->customer_name, 0, 1)) }}
+                                {{ strtoupper(substr($customer->display_name, 0, 1)) }}
                             </div>
                             <div>
-                                <div class="fw-bold fs-6">{{ $customer->customer_name }}</div>
-                                @if($customer->email)
-                                <div class="text-muted small"><i class="feather-mail me-1"></i>{{ $customer->email }}</div>
-                                @endif
-                                @if($customer->phone)
-                                <div class="text-muted small"><i class="feather-phone me-1"></i>{{ $customer->phone }}</div>
-                                @endif
+                                <div class="fw-bold fs-6">{{ $customer->display_name }}</div>
                             </div>
                         </div>
                     </div>

@@ -24,7 +24,7 @@ class CustomerController extends Controller
     {
         $customers = Customer::query()
             ->when($request->search, fn ($q, $s) => $q->where('customer_name', 'like', "%{$s}%")
-                ->orWhere('phone', 'like', "%{$s}%"))
+                ->orWhere('brand', 'like', "%{$s}%"))
             ->when($request->status !== null && $request->status !== '', fn ($q) => $q->where('status', $request->status))
             ->with('currency')
             ->latest()
@@ -82,7 +82,8 @@ class CustomerController extends Controller
     public function exportPdf(Request $request)
     {
         $customers = Customer::with('currency')
-            ->when($request->search, fn ($q, $s) => $q->where('customer_name', 'like', "%{$s}%"))
+            ->when($request->search, fn ($q, $s) => $q->where('customer_name', 'like', "%{$s}%")
+                ->orWhere('brand', 'like', "%{$s}%"))
             ->when($request->status !== null && $request->status !== '', fn ($q) => $q->where('status', $request->status))
             ->orderBy('customer_name')
             ->get();

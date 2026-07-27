@@ -66,9 +66,8 @@
                                     <h6 class="fw-bold mb-2">Received From:</h6>
                                     <address class="text-muted lh-lg">
                                         @if($customerPayment->customer)
-                                        <strong class="text-dark">{{ $customerPayment->customer->customer_name }}</strong><br>
-                                        {{ $customerPayment->customer->contact_person }}<br>
-                                        {{ $customerPayment->customer->phone }}
+                                        <strong class="text-dark">{{ $customerPayment->customer->display_name }}</strong><br>
+                                        {{ $customerPayment->customer->contact_person }}
                                         @else
                                         <strong class="text-dark">Deleted Customer</strong>
                                         @endif

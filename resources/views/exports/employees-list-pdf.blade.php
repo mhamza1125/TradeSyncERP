@@ -1,7 +1,7 @@
 ﻿<!DOCTYPE html>
 <html lang="en">
 <head>
-<title>Employee Directory</title>
+<title>Employee Record Directory</title>
 @include('exports.partials._pdf-head')
 </head>
 <body>
@@ -14,7 +14,7 @@
     <table>
         <tr>
             <td>
-                <div class="db-title">Employee Directory</div>
+                <div class="db-title">Employee Record Directory</div>
                 <div class="db-sub">{{ $employees->count() }} employee{{ $employees->count() !== 1 ? 's' : '' }} listed</div>
             </td>
             <td class="db-right">
@@ -28,11 +28,12 @@
     <thead>
         <tr>
             <th style="width:4%">#</th>
-            <th style="width:18%">Employee Name</th>
-            <th style="width:13%">Department</th>
-            <th style="width:15%">Designation</th>
-            <th style="width:13%">Phone</th>
-            <th style="width:12%">Joining Date</th>
+            <th style="width:16%">Employee Name</th>
+            <th style="width:12%">Department</th>
+            <th style="width:13%">Designation</th>
+            <th style="width:11%">Type</th>
+            <th style="width:12%">Phone</th>
+            <th style="width:11%">Joining Date</th>
             <th class="text-right" style="width:13%">Basic Salary</th>
             <th style="width:12%; text-align:center;">Status</th>
         </tr>
@@ -43,7 +44,8 @@
             <td>{{ $i + 1 }}</td>
             <td class="fw-bold">{{ Illuminate\Support\Str::limit($emp->employee_name, 20) }}</td>
             <td>{{ Illuminate\Support\Str::limit($emp->department ?? '—', 15) }}</td>
-            <td>{{ Illuminate\Support\Str::limit($emp->designation ?? $emp->job_title ?? '—', 17) }}</td>
+            <td>{{ Illuminate\Support\Str::limit($emp->designation ?? '—', 17) }}</td>
+            <td>{{ $emp->employee_type ? ucfirst(strtolower($emp->employee_type)) : '—' }}</td>
             <td>{{ $emp->phone ?? '—' }}</td>
             <td>{{ $emp->joining_date ? $emp->joining_date->format('d M Y') : '—' }}</td>
             <td class="text-right">{{ number_format($emp->basic_salary, 0) }}</td>
@@ -56,13 +58,13 @@
             </td>
         </tr>
         @empty
-        <tr><td colspan="8" class="no-data">No employees found.</td></tr>
+        <tr><td colspan="9" class="no-data">No employee records found.</td></tr>
         @endforelse
     </tbody>
     @if($employees->count())
     <tfoot>
         <tr>
-            <td colspan="6" class="text-right">Total Basic Salary</td>
+            <td colspan="7" class="text-right">Total Basic Salary</td>
             <td class="text-right">{{ number_format($employees->sum('basic_salary'), 0) }}</td>
             <td></td>
         </tr>

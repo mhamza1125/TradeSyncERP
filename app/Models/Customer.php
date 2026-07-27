@@ -14,8 +14,6 @@ class Customer extends Model
     protected $fillable = [
         'customer_name',
         'contact_person',
-        'phone',
-        'email',
         'address',
         'brand',
         'currency_id',
@@ -34,6 +32,11 @@ class Customer extends Model
             ->logFillable()
             ->logOnlyDirty()
             ->dontSubmitEmptyLogs();
+    }
+
+    public function getDisplayNameAttribute(): string
+    {
+        return $this->brand ?: $this->customer_name;
     }
 
     public function currency()

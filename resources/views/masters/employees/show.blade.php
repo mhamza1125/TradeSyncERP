@@ -1,15 +1,15 @@
 @extends('index')
 
-@section('title', 'Employee: ' . $employee->employee_name . ' - TradeSyncERP')
+@section('title', 'Employee Record: ' . $employee->employee_name . ' - TradeSyncERP')
 
 @section('content')
 <div class="nxl-content">
     <div class="page-header">
         <div class="page-header-left d-flex align-items-center">
-            <div class="page-header-title"><h5 class="m-b-10">Employees</h5></div>
+            <div class="page-header-title"><h5 class="m-b-10">Employee Record</h5></div>
             <ul class="breadcrumb">
                 <li class="breadcrumb-item"><a href="{{ route('dashboard') }}">Home</a></li>
-                <li class="breadcrumb-item"><a href="{{ route('masters.employees.index') }}">Employees</a></li>
+                <li class="breadcrumb-item"><a href="{{ route('masters.employees.index') }}">Employee Record</a></li>
                 <li class="breadcrumb-item">{{ $employee->employee_name }}</li>
             </ul>
         </div>
@@ -51,6 +51,9 @@
                             <a href="javascript:void(0);" class="fs-14 fw-bold d-block">{{ $employee->employee_name }}</a>
                             <span class="fs-12 fw-normal text-muted d-block">{{ $employee->designation }}</span>
                             <span class="fs-12 fw-normal text-muted d-block">{{ $employee->department }}</span>
+                            @if($employee->employee_type)
+                                <span class="badge bg-soft-info text-info mt-2">{{ ucfirst(strtolower($employee->employee_type)) }}</span>
+                            @endif
                             @if($employee->status)
                                 <span class="badge bg-soft-success text-success mt-2">Active</span>
                             @else
@@ -117,6 +120,7 @@
                             <div class="row g-0 mb-3"><div class="col-sm-5 text-muted">Employee Name:</div><div class="col-sm-7 fw-semibold">{{ $employee->employee_name }}</div></div>
                             <div class="row g-0 mb-3"><div class="col-sm-5 text-muted">Department:</div><div class="col-sm-7 fw-semibold">{{ $employee->department }}</div></div>
                             <div class="row g-0 mb-3"><div class="col-sm-5 text-muted">Designation:</div><div class="col-sm-7 fw-semibold">{{ $employee->designation }}</div></div>
+                            <div class="row g-0 mb-3"><div class="col-sm-5 text-muted">Employee Type:</div><div class="col-sm-7 fw-semibold">{{ $employee->employee_type ? ucfirst(strtolower($employee->employee_type)) : '—' }}</div></div>
                             <div class="row g-0 mb-3"><div class="col-sm-5 text-muted">Phone:</div><div class="col-sm-7 fw-semibold">{{ $employee->phone }}</div></div>
                             <div class="row g-0 mb-3"><div class="col-sm-5 text-muted">Joining Date:</div><div class="col-sm-7 fw-semibold">{{ \Carbon\Carbon::parse($employee->joining_date)->format('d M Y') }}</div></div>
                             <div class="row g-0 mb-3"><div class="col-sm-5 text-muted">Basic Salary:</div><div class="col-sm-7 fw-semibold">{{ number_format($employee->basic_salary, 2) }}</div></div>

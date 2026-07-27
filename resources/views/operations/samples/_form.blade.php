@@ -13,7 +13,7 @@
                             <option value="">— Select Customer —</option>
                             @foreach($customers as $customer)
                                 <option value="{{ $customer->id }}" @selected(old('customer_id', $sample->customer_id ?? '') == $customer->id)>
-                                    {{ $customer->customer_name }}
+                                    {{ $customer->display_name }}
                                 </option>
                             @endforeach
                         </select>

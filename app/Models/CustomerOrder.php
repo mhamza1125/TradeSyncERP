@@ -11,8 +11,15 @@ class CustomerOrder extends Model
 {
     use SoftDeletes, LogsActivity;
 
+    const STATUS_DUE = 'Due';
+
+    const STATUS_DONE = 'Done';
+
+    const STATUSES = [self::STATUS_DUE, self::STATUS_DONE];
+
     protected $fillable = [
         'order_code',
+        'order_number',
         'customer_id',
         'order_date',
         'required_by',
@@ -46,5 +53,10 @@ class CustomerOrder extends Model
     public function items()
     {
         return $this->hasMany(CustomerOrderItem::class);
+    }
+
+    public function attachments()
+    {
+        return $this->morphMany(Attachment::class, 'attachable');
     }
 }

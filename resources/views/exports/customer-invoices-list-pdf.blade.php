@@ -42,7 +42,7 @@
         <tr>
             <td>{{ $i + 1 }}</td>
             <td class="fw-bold">{{ $invoice->invoice_number }}</td>
-            <td>{{ Illuminate\Support\Str::limit($invoice->customer?->customer_name ?? '—', 26) }}</td>
+            <td>{{ Illuminate\Support\Str::limit($invoice->customer?->display_name ?? '—', 26) }}</td>
             <td>{{ $invoice->invoice_date->format('d M Y') }}</td>
             <td>{{ $invoice->due_date ? $invoice->due_date->format('d M Y') : '—' }}</td>
             <td class="text-right">{{ number_format($invoice->total_amount, 2) }}</td>

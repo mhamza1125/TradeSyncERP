@@ -51,7 +51,7 @@
                         <select name="customer_id" class="form-select">
                             <option value="">All Customers</option>
                             @foreach($customers as $c)
-                            <option value="{{ $c->id }}" @selected(request('customer_id') == $c->id)>{{ $c->customer_name }}</option>
+                            <option value="{{ $c->id }}" @selected(request('customer_id') == $c->id)>{{ $c->display_name }}</option>
                             @endforeach
                         </select>
                     </div>
@@ -107,7 +107,7 @@
                                                 <span class="text-muted">—</span>
                                             @endif
                                         </td>
-                                        <td>{{ $payment->customer?->customer_name ?? '—' }}</td>
+                                        <td>{{ $payment->customer?->display_name ?? '—' }}</td>
                                         <td>{{ $payment->foreign_currency }}</td>
                                         <td class="fw-semibold">{{ number_format($payment->received_fc, 2) }}</td>
                                         <td>{{ number_format($payment->exchange_rate, 4) }}</td>

@@ -41,7 +41,7 @@
         @forelse($payments as $i => $payment)
         <tr>
             <td>{{ $i + 1 }}</td>
-            <td class="fw-bold">{{ Illuminate\Support\Str::limit($payment->customer?->customer_name ?? '—', 22) }}</td>
+            <td class="fw-bold">{{ Illuminate\Support\Str::limit($payment->customer?->display_name ?? '—', 22) }}</td>
             <td>{{ \Carbon\Carbon::parse($payment->payment_date)->format('d M Y') }}</td>
             <td class="text-center">{{ $payment->foreign_currency }}</td>
             <td class="text-right">{{ number_format($payment->received_fc, 2) }}</td>

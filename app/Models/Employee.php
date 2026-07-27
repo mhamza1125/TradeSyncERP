@@ -16,7 +16,7 @@ class Employee extends Model
         'father_name',
         'department',
         'designation',
-        'job_title',
+        'employee_type',
         'phone',
         'nic',
         'dob',
@@ -28,17 +28,21 @@ class Employee extends Model
         'country',
         'postal_code',
         'joining_date',
-        'hire_date',
         'basic_salary',
         'salary',
         'status',
         'remarks',
     ];
 
+    const TYPE_CONTRACTUAL = 'CONTRACTUAL';
+
+    const TYPE_PERMANENT = 'PERMANENT';
+
+    const TYPES = [self::TYPE_CONTRACTUAL, self::TYPE_PERMANENT];
+
     protected $casts = [
         'dob'          => 'date',
         'joining_date' => 'date',
-        'hire_date'    => 'date',
         'basic_salary' => 'decimal:2',
         'salary'       => 'decimal:2',
         'status'       => 'boolean',
@@ -50,11 +54,6 @@ class Employee extends Model
             ->logFillable()
             ->logOnlyDirty()
             ->dontSubmitEmptyLogs();
-    }
-
-    public function experiences()
-    {
-        return $this->hasMany(EmployeeExperience::class);
     }
 
     public function salaryRunLines()

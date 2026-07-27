@@ -28,23 +28,19 @@
     <thead>
         <tr>
             <th style="width:4%">#</th>
-            <th style="width:22%">Supplier Name</th>
-            <th style="width:15%">Phone</th>
-            <th style="width:22%">Email</th>
-            <th style="width:14%">City</th>
-            <th style="width:13%">Country</th>
-            <th style="width:10%; text-align:center;">Status</th>
+            <th style="width:35%">Supplier Name</th>
+            <th style="width:24%">City</th>
+            <th style="width:22%">Country</th>
+            <th style="width:15%; text-align:center;">Status</th>
         </tr>
     </thead>
     <tbody>
         @forelse($suppliers as $i => $supplier)
         <tr>
             <td>{{ $i + 1 }}</td>
-            <td class="fw-bold">{{ Illuminate\Support\Str::limit($supplier->name, 24) }}</td>
-            <td>{{ $supplier->phone ?? '—' }}</td>
-            <td class="text-muted" style="font-size:7.5pt;">{{ Illuminate\Support\Str::limit($supplier->email ?? '—', 24) }}</td>
-            <td>{{ Illuminate\Support\Str::limit($supplier->city ?? '—', 14) }}</td>
-            <td>{{ Illuminate\Support\Str::limit($supplier->country ?? '—', 12) }}</td>
+            <td class="fw-bold">{{ Illuminate\Support\Str::limit($supplier->name, 30) }}</td>
+            <td>{{ Illuminate\Support\Str::limit($supplier->city ?? '—', 20) }}</td>
+            <td>{{ Illuminate\Support\Str::limit($supplier->country ?? '—', 18) }}</td>
             <td class="text-center">
                 @if($supplier->status)
                     <span class="badge badge-success">Active</span>
@@ -54,7 +50,7 @@
             </td>
         </tr>
         @empty
-        <tr><td colspan="7" class="no-data">No suppliers found.</td></tr>
+        <tr><td colspan="5" class="no-data">No suppliers found.</td></tr>
         @endforelse
     </tbody>
 </table>

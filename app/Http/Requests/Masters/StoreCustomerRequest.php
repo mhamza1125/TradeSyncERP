@@ -16,10 +16,8 @@ class StoreCustomerRequest extends FormRequest
         return [
             'customer_name'            => ['required', 'string', 'max:255'],
             'contact_person'           => ['required', 'string', 'max:255'],
-            'phone'                    => ['required', 'string', 'max:50'],
-            'email'                    => ['nullable', 'email', 'max:255'],
             'address'                  => ['nullable', 'string'],
-            'brand'                    => ['nullable', 'string', 'max:255'],
+            'brand'                    => ['required', 'string', 'max:255'],
             'currency_id'     => ['nullable', 'exists:currencies,id'],
             'opening_balance' => ['nullable', 'numeric', 'min:0'],
             'status'                   => ['boolean'],

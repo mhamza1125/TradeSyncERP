@@ -43,20 +43,20 @@
             <form method="GET" action="{{ route('customer-orders.index') }}">
                 <div class="row g-3">
                     <div class="col-md-3">
-                        <input type="text" name="search" class="form-control" placeholder="Order code..." value="{{ request('search') }}">
+                        <input type="text" name="search" class="form-control" placeholder="Order code or number..." value="{{ request('search') }}">
                     </div>
                     <div class="col-md-2">
                         <select name="customer_id" class="form-select">
                             <option value="">All Customers</option>
                             @foreach($customers as $c)
-                            <option value="{{ $c->id }}" @selected(request('customer_id') == $c->id)>{{ $c->customer_name }}</option>
+                            <option value="{{ $c->id }}" @selected(request('customer_id') == $c->id)>{{ $c->display_name }}</option>
                             @endforeach
                         </select>
                     </div>
                     <div class="col-md-2">
                         <select name="status" class="form-select">
                             <option value="">All Status</option>
-                            @foreach(['Draft','Confirmed','Processing','Dispatched','Cancelled'] as $s)
+                            @foreach(\App\Models\CustomerOrder::STATUSES as $s)
                             <option value="{{ $s }}" @selected(request('status') == $s)>{{ $s }}</option>
                             @endforeach
                         </select>
@@ -87,10 +87,10 @@
                                 <thead>
                                     <tr>
                                         <th>Order Code</th>
-                                        <th>Customer</th>
+                                        <th>Order Number</th>
                                         <th>Brand</th>
                                         <th>Order Date</th>
-                                        <th>Required By</th>
+                                        <th>ETD</th>
                                         <th>Items</th>
                                         <th>Status</th>
                                         <th class="text-end">Actions</th>
@@ -100,11 +100,8 @@
                                     @forelse($orders as $order)
                                     @php
                                         $statusColors = [
-                                            'Draft'      => 'secondary',
-                                            'Confirmed'  => 'primary',
-                                            'Processing' => 'warning',
-                                            'Dispatched' => 'success',
-                                            'Cancelled'  => 'danger',
+                                            'Due'  => 'warning',
+                                            'Done' => 'success',
                                         ];
                                     @endphp
                                     <tr class="single-item">
@@ -113,8 +110,8 @@
                                                 {{ $order->order_code }}
                                             </a>
                                         </td>
-                                        <td>{{ $order->customer?->customer_name ?? '—' }}</td>
-                                        <td>{{ $order->brand?->brand_name ?? '—' }}</td>
+                                        <td>{{ $order->order_number ?? '—' }}</td>
+                                        <td>{{ $order->customer?->display_name ?? '—' }}</td>
                                         <td>{{ $order->order_date->format('d M Y') }}</td>
                                         <td>{{ $order->required_by?->format('d M Y') ?? '—' }}</td>
                                         <td>{{ $order->items_count ?? $order->items->count() }}</td>

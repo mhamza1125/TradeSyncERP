@@ -941,7 +941,7 @@ uasort($summaryRows, fn($a, $b) => $a['sortPriority'] <=> $b['sortPriority']);
                 <td style="text-align:center; font-weight:bold; color:#1565C0">{{ $r->run_number }}</td>
                 <td style="font-weight:500">{{ $r->sample?->sample_code ?? '—' }}</td>
                 <td>{{ $r->sample?->product_name ?? '—' }}</td>
-                <td style="color:#546E7A">{{ $r->sample?->customer?->customer_name ?? '—' }}</td>
+                <td style="color:#546E7A">{{ $r->sample?->customer?->display_name ?? '—' }}</td>
                 <td style="text-align:center"><span class="{{ $rvc }}">{{ $r->verdict ?? 'Pending' }}</span></td>
                 <td style="font-size:8pt; color:#9E9E9E">{{ $r->completed_at?->format('d M Y') ?? 'In Progress' }}</td>
             </tr>
@@ -991,7 +991,7 @@ uasort($summaryRows, fn($a, $b) => $a['sortPriority'] <=> $b['sortPriority']);
                 <div class="rph-meta">
                     @if($run->sample)
                         Sample: {{ $run->sample->sample_code }}
-                        @if($run->sample->customer) &nbsp;&bull;&nbsp; Customer: {{ $run->sample->customer->customer_name }} @endif
+                        @if($run->sample->customer) &nbsp;&bull;&nbsp; Customer: {{ $run->sample->customer->display_name }} @endif
                         @if($run->sample->category) &nbsp;&bull;&nbsp; Category: {{ $run->sample->category->category_name }} @endif
                     @endif
                     @if($run->completed_at) &nbsp;&bull;&nbsp; Completed: {{ $run->completed_at->format('d M Y H:i') }} @endif

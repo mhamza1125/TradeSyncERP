@@ -14,29 +14,17 @@
                         @error('customer_name')<div class="invalid-feedback">{{ $message }}</div>@enderror
                     </div>
                     <div class="col-lg-6 mb-4">
-                        <label class="form-label">Contact Person <span class="text-danger">*</span></label>
-                        <input type="text" name="contact_person" class="form-control @error('contact_person') is-invalid @enderror"
-                               placeholder="Primary contact name" value="{{ old('contact_person', $customer->contact_person ?? '') }}">
-                        @error('contact_person')<div class="invalid-feedback">{{ $message }}</div>@enderror
-                    </div>
-                    <div class="col-lg-6 mb-4">
-                        <label class="form-label">Phone <span class="text-danger">*</span></label>
-                        <input type="text" name="phone" class="form-control @error('phone') is-invalid @enderror"
-                               placeholder="+92 300 0000000" value="{{ old('phone', $customer->phone ?? '') }}">
-                        @error('phone')<div class="invalid-feedback">{{ $message }}</div>@enderror
-                    </div>
-                    <div class="col-lg-6 mb-4">
-                        <label class="form-label">Email</label>
-                        <input type="email" name="email" class="form-control @error('email') is-invalid @enderror"
-                               placeholder="customer@example.com" value="{{ old('email', $customer->email ?? '') }}">
-                        @error('email')<div class="invalid-feedback">{{ $message }}</div>@enderror
-                    </div>
-                    <div class="col-lg-6 mb-4">
-                        <label class="form-label">Brand</label>
+                        <label class="form-label">Brand <span class="text-danger">*</span></label>
                         <input type="text" name="brand" class="form-control @error('brand') is-invalid @enderror"
                                placeholder="Brand name" value="{{ old('brand', $customer->brand ?? '') }}">
                         <small class="text-muted">The brand this customer represents.</small>
                         @error('brand')<div class="invalid-feedback">{{ $message }}</div>@enderror
+                    </div>
+                    <div class="col-lg-6 mb-4">
+                        <label class="form-label">Contact Person <span class="text-danger">*</span></label>
+                        <input type="text" name="contact_person" class="form-control @error('contact_person') is-invalid @enderror"
+                               placeholder="Primary contact name" value="{{ old('contact_person', $customer->contact_person ?? '') }}">
+                        @error('contact_person')<div class="invalid-feedback">{{ $message }}</div>@enderror
                     </div>
                     <div class="col-12 mb-4">
                         <label class="form-label">Address</label>

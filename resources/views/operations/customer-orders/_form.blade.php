@@ -13,11 +13,18 @@
                             <option value="">— Select Customer —</option>
                             @foreach($customers as $c)
                             <option value="{{ $c->id }}" @selected(old('customer_id', $customerOrder->customer_id ?? '') == $c->id)>
-                                {{ $c->customer_name }}
+                                {{ $c->display_name }}
                             </option>
                             @endforeach
                         </select>
                         @error('customer_id')<div class="invalid-feedback">{{ $message }}</div>@enderror
+                    </div>
+                    <div class="col-lg-4 mb-4">
+                        <label class="form-label">Order Number</label>
+                        <input type="text" name="order_number"
+                               class="form-control @error('order_number') is-invalid @enderror"
+                               placeholder="e.g. customer PO number" value="{{ old('order_number', $customerOrder->order_number ?? '') }}">
+                        @error('order_number')<div class="invalid-feedback">{{ $message }}</div>@enderror
                     </div>
                     <div class="col-lg-4 mb-4">
                         <label class="form-label">Order Date <span class="text-danger">*</span></label>
@@ -29,14 +36,14 @@
                     <div class="col-lg-4 mb-4">
                         <label class="form-label">Status <span class="text-danger">*</span></label>
                         <select name="status" class="form-select @error('status') is-invalid @enderror">
-                            @foreach(['Draft','Confirmed','Processing','Dispatched','Cancelled'] as $s)
-                            <option value="{{ $s }}" @selected(old('status', $customerOrder->status ?? 'Draft') == $s)>{{ $s }}</option>
+                            @foreach(\App\Models\CustomerOrder::STATUSES as $s)
+                            <option value="{{ $s }}" @selected(old('status', $customerOrder->status ?? 'Due') == $s)>{{ $s }}</option>
                             @endforeach
                         </select>
                         @error('status')<div class="invalid-feedback">{{ $message }}</div>@enderror
                     </div>
                     <div class="col-lg-4 mb-4">
-                        <label class="form-label">Required Date</label>
+                        <label class="form-label">ETD (Estimated Time of Departure)</label>
                         <input type="date" name="required_by"
                                class="form-control @error('required_by') is-invalid @enderror"
                                value="{{ old('required_by', isset($customerOrder) ? $customerOrder->required_by?->toDateString() : '') }}">
