@@ -98,12 +98,12 @@
                                     <tr>
                                         <td class="text-muted">{{ $movements->firstItem() + $loop->index }}</td>
                                         <td>
-                                            @php $itemCount = $m->items->count(); @endphp
-                                            <span class="fw-semibold">{{ $itemCount }} line{{ $itemCount !== 1 ? 's' : '' }}</span>
+                                            @php $sampleCount = $m->items->pluck('sample_id')->unique()->count(); @endphp
+                                            <span class="fw-semibold">{{ $sampleCount }} Sample{{ $sampleCount !== 1 ? 's' : '' }}</span>
                                             @if($m->items->count())
                                             <div class="text-muted fs-12">
                                                 {{ $m->items->take(2)->map(fn($i) => $i->sample?->sample_code ?? '?')->unique()->join(', ') }}
-                                                @if($itemCount > 2)<span>+{{ $itemCount - 2 }} more</span>@endif
+                                                @if($sampleCount > 2)<span>+{{ $sampleCount - 2 }} more</span>@endif
                                             </div>
                                             @endif
                                         </td>
