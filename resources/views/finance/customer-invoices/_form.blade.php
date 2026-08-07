@@ -37,6 +37,19 @@
                         </div>
                     </div>
                     <div class="col-lg-4 mb-4">
+                        <label class="form-label">Bank (for Payment Details)</label>
+                        <select name="bank_id" class="form-select @error('bank_id') is-invalid @enderror">
+                            <option value="">— No Bank —</option>
+                            @foreach($banks as $bankOption)
+                            <option value="{{ $bankOption->id }}"
+                                @selected(old('bank_id', $customerInvoice->bank_id ?? '') == $bankOption->id)>
+                                {{ $bankOption->bank_name }}@if($bankOption->account_number) &mdash; {{ $bankOption->account_number }}@endif
+                            </option>
+                            @endforeach
+                        </select>
+                        @error('bank_id')<div class="invalid-feedback">{{ $message }}</div>@enderror
+                    </div>
+                    <div class="col-lg-4 mb-4">
                         <label class="form-label">Invoice Date <span class="text-danger">*</span></label>
                         <input type="date" name="invoice_date" class="form-control @error('invoice_date') is-invalid @enderror"
                                value="{{ old('invoice_date', isset($customerInvoice) ? $customerInvoice->invoice_date?->toDateString() : now()->toDateString()) }}">

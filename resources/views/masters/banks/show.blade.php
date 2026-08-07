@@ -49,6 +49,10 @@
                             <div class="col-sm-7 fw-semibold text-dark">{{ $bank->bank_name }}</div>
                         </div>
                         <div class="row g-0 mb-3">
+                            <div class="col-sm-5 text-muted">Account Title</div>
+                            <div class="col-sm-7">{{ $bank->account_title ?? '—' }}</div>
+                        </div>
+                        <div class="row g-0 mb-3">
                             <div class="col-sm-5 text-muted">Branch</div>
                             <div class="col-sm-7">{{ $bank->branch_name ?? '—' }}</div>
                         </div>
@@ -57,7 +61,11 @@
                             <div class="col-sm-7">{{ $bank->account_number ?? '—' }}</div>
                         </div>
                         <div class="row g-0 mb-3">
-                            <div class="col-sm-5 text-muted">SWIFT Code</div>
+                            <div class="col-sm-5 text-muted">IBAN</div>
+                            <div class="col-sm-7">{{ $bank->iban ?? '—' }}</div>
+                        </div>
+                        <div class="row g-0 mb-3">
+                            <div class="col-sm-5 text-muted">SWIFT / BIC Code</div>
                             <div class="col-sm-7">{{ $bank->swift_code ?? '—' }}</div>
                         </div>
                     </div>

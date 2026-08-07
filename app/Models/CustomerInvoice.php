@@ -9,11 +9,12 @@ use Spatie\Activitylog\Traits\LogsActivity;
 
 class CustomerInvoice extends Model
 {
-    use SoftDeletes, LogsActivity;
+    use LogsActivity, SoftDeletes;
 
     protected $fillable = [
         'invoice_number',
         'customer_id',
+        'bank_id',
         'invoice_date',
         'due_date',
         'subtotal',
@@ -27,14 +28,14 @@ class CustomerInvoice extends Model
     ];
 
     protected $casts = [
-        'invoice_date'    => 'date',
-        'due_date'        => 'date',
-        'subtotal'        => 'decimal:2',
-        'tax_amount'      => 'decimal:2',
+        'invoice_date' => 'date',
+        'due_date' => 'date',
+        'subtotal' => 'decimal:2',
+        'tax_amount' => 'decimal:2',
         'discount_amount' => 'decimal:2',
-        'total_amount'    => 'decimal:2',
-        'amount_paid'     => 'decimal:2',
-        'amount_due'      => 'decimal:2',
+        'total_amount' => 'decimal:2',
+        'amount_paid' => 'decimal:2',
+        'amount_due' => 'decimal:2',
     ];
 
     public function getActivitylogOptions(): LogOptions
@@ -50,6 +51,11 @@ class CustomerInvoice extends Model
         return $this->belongsTo(Customer::class);
     }
 
+    public function bank()
+    {
+        return $this->belongsTo(Bank::class);
+    }
+
     public function items()
     {
         return $this->hasMany(CustomerInvoiceItem::class);
@@ -62,7 +68,7 @@ class CustomerInvoice extends Model
 
     public function isOverdue(): bool
     {
-        return !in_array($this->status, ['Paid', 'Cancelled'])
+        return ! in_array($this->status, ['Paid', 'Cancelled'])
             && $this->due_date
             && $this->due_date->isPast();
     }

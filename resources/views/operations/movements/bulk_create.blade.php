@@ -142,43 +142,80 @@
                 {{-- ── Sidebar ──────────────────────────────────────────────────── --}}
                 <div class="col-xl-4">
 
-                    {{-- ── Assigned Employees ───────────────────────────────────── --}}
+                    {{-- ── Recipient ────────────────────────────────────────────── --}}
                     <div class="card mb-4">
                         <div class="card-header d-flex align-items-center justify-content-between">
                             <h5 class="card-title mb-0">
-                                Assigned Employees <span class="text-danger">*</span>
+                                Recipient <span class="text-danger">*</span>
                             </h5>
-                            <small class="text-muted">Add one by one.</small>
+                            <small class="text-muted">Who received the samples</small>
                         </div>
                         <div class="card-body">
-                            @error('employee_ids')
-                            <div class="alert alert-danger py-2 mb-3">{{ $message }}</div>
-                            @enderror
+                            <div class="mb-3">
+                                <label class="form-label">Recipient Type</label>
+                                <select name="recipient_type" id="recipientType"
+                                        class="form-select @error('recipient_type') is-invalid @enderror">
+                                    <option value="Employee" @selected(old('recipient_type', 'Employee') === 'Employee')>Employee</option>
+                                    <option value="Supplier" @selected(old('recipient_type') === 'Supplier')>Supplier / Factory</option>
+                                    <option value="Customer" @selected(old('recipient_type') === 'Customer')>Customer</option>
+                                </select>
+                                @error('recipient_type')<div class="invalid-feedback">{{ $message }}</div>@enderror
+                            </div>
 
-                            <div class="d-flex gap-2 mb-3">
-                                <div class="flex-grow-1">
-                                    <select id="employeeDropdown" placeholder="Search employees…"></select>
+                            {{-- Employee: existing multi-add assignment widget --}}
+                            <div id="recipientEmployeePanel" class="recipient-panel">
+                                @error('employee_ids')
+                                <div class="alert alert-danger py-2 mb-3">{{ $message }}</div>
+                                @enderror
+
+                                <div class="d-flex gap-2 mb-3">
+                                    <div class="flex-grow-1">
+                                        <select id="employeeDropdown" placeholder="Search employees…"></select>
+                                    </div>
+                                    <button type="button" id="addEmployeeBtn" class="btn btn-light-brand">
+                                        <i class="feather-plus me-1"></i>Add
+                                    </button>
                                 </div>
-                                <button type="button" id="addEmployeeBtn" class="btn btn-light-brand">
-                                    <i class="feather-plus me-1"></i>Add
-                                </button>
+
+                                <div id="employeesTableWrap" class="border rounded insp-table-wrap" style="display:none">
+                                    <table class="table table-sm table-hover mb-0">
+                                        <thead class="table-light">
+                                            <tr>
+                                                <th style="width:36px">#</th>
+                                                <th>Employee</th>
+                                                <th>Designation</th>
+                                                <th style="width:40px"></th>
+                                            </tr>
+                                        </thead>
+                                        <tbody id="employeesTableBody"></tbody>
+                                    </table>
+                                </div>
+                                <div id="noEmployeesMsg" class="text-muted fs-12 mt-1">No employees added yet.</div>
+                                <div id="employeeHiddenInputs"></div>
                             </div>
 
-                            <div id="employeesTableWrap" class="border rounded insp-table-wrap" style="display:none">
-                                <table class="table table-sm table-hover mb-0">
-                                    <thead class="table-light">
-                                        <tr>
-                                            <th style="width:36px">#</th>
-                                            <th>Employee</th>
-                                            <th>Designation</th>
-                                            <th style="width:40px"></th>
-                                        </tr>
-                                    </thead>
-                                    <tbody id="employeesTableBody"></tbody>
-                                </table>
+                            {{-- Supplier: single recipient select --}}
+                            <div id="recipientSupplierPanel" class="recipient-panel" style="display:none">
+                                <select name="recipient_id" id="recipientSupplierSelect"
+                                        class="form-select @error('recipient_id') is-invalid @enderror">
+                                    <option value="">— Select Supplier —</option>
+                                    @foreach($suppliers as $s)
+                                    <option value="{{ $s->id }}" @selected(old('recipient_type') === 'Supplier' && old('recipient_id') == $s->id)>{{ $s->name }}</option>
+                                    @endforeach
+                                </select>
                             </div>
-                            <div id="noEmployeesMsg" class="text-muted fs-12 mt-1">No employees added yet.</div>
-                            <div id="employeeHiddenInputs"></div>
+
+                            {{-- Customer: single recipient select --}}
+                            <div id="recipientCustomerPanel" class="recipient-panel" style="display:none">
+                                <select name="recipient_id" id="recipientCustomerSelect"
+                                        class="form-select @error('recipient_id') is-invalid @enderror">
+                                    <option value="">— Select Customer —</option>
+                                    @foreach($customers as $c)
+                                    <option value="{{ $c->id }}" @selected(old('recipient_type') === 'Customer' && old('recipient_id') == $c->id)>{{ $c->display_name }}</option>
+                                    @endforeach
+                                </select>
+                            </div>
+                            @error('recipient_id')<div class="invalid-feedback d-block">{{ $message }}</div>@enderror
                         </div>
                     </div>
 
@@ -421,6 +458,7 @@ function addEmployee(empId) {
     input.name  = 'employee_ids[]';
     input.value = empId;
     input.id    = `emp_hidden_${empId}`;
+    input.disabled = recipientType.value !== 'Employee'; // stay inert if a non-Employee recipient is active
     employeeHiddenInputs.appendChild(input);
 
     employeesTableWrap.style.display = '';
@@ -460,6 +498,28 @@ if (inspRunSelect) {
         if (run) (run.employeeIds || []).forEach(id => addEmployee(String(id)));
     });
 }
+
+// ── Recipient type toggle ───────────────────────────────────────────────────────
+// Only the active panel's fields are enabled, so only its inputs submit —
+// this is what makes "Assigned Employees" required for Employee recipients
+// only, and the Supplier/Customer select required for those types.
+const recipientType = document.getElementById('recipientType');
+const recipientPanels = {
+    Employee: document.getElementById('recipientEmployeePanel'),
+    Supplier: document.getElementById('recipientSupplierPanel'),
+    Customer: document.getElementById('recipientCustomerPanel'),
+};
+
+function toggleRecipientPanels() {
+    const val = recipientType.value || 'Employee';
+    Object.entries(recipientPanels).forEach(([k, el]) => {
+        const active = k === val;
+        el.style.display = active ? 'block' : 'none';
+        el.querySelectorAll('input, select, button').forEach(i => { i.disabled = !active; });
+    });
+}
+recipientType.addEventListener('change', toggleRecipientPanels);
+toggleRecipientPanels();
 
 // ── Pre-populate from server (inspection run context) ─────────────────────────
 PRESELECTED_SAMPLE_IDS.forEach(id  => addSample(id));

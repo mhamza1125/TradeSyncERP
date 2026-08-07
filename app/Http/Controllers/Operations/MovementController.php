@@ -5,10 +5,12 @@ namespace App\Http\Controllers\Operations;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Operations\StoreMovementRequest;
 use App\Http\Requests\Operations\UpdateMovementRequest;
+use App\Models\Customer;
 use App\Models\Employee;
 use App\Models\InspectionRun;
 use App\Models\Movement;
 use App\Models\Sample;
+use App\Models\Supplier;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Http\Request;
 
@@ -43,6 +45,8 @@ class MovementController extends Controller
             ->get();
 
         $employees = Employee::where('status', true)->orderBy('employee_name')->get();
+        $suppliers = Supplier::where('status', true)->orderBy('name')->get();
+        $customers = Customer::where('status', true)->orderBy('customer_name')->get();
 
         $inspectionRuns = InspectionRun::with('inspection')->latest()->get();
 
@@ -83,7 +87,7 @@ class MovementController extends Controller
         ]);
 
         return view('operations.movements.bulk_create', compact(
-            'samples', 'employees', 'inspectionRuns',
+            'samples', 'employees', 'suppliers', 'customers', 'inspectionRuns',
             'samplesJson', 'inspectionRunsJson',
             'preselectedRun', 'preselectedEmployeeIds'
         ));
@@ -93,15 +97,20 @@ class MovementController extends Controller
     {
         $data = $request->validated();
 
+        $isEmployeeRecipient = $data['recipient_type'] === 'Employee';
+
         $movement = Movement::create([
             'inspection_run_id' => $data['inspection_run_id'] ?? null,
+            'recipient_type' => $data['recipient_type'],
+            // Employee recipients are tracked via the employees pivot below, not this FK.
+            'recipient_id' => $isEmployeeRecipient ? null : $data['recipient_id'],
             'issue_date' => $data['issue_date'],
             'expected_return_date' => $data['expected_return_date'] ?? null,
             'alert_days' => $data['alert_days'] ?? null,
             'remarks' => $data['remarks'] ?? null,
         ]);
 
-        $movement->employees()->sync($data['employee_ids']);
+        $movement->employees()->sync($isEmployeeRecipient ? $data['employee_ids'] : []);
 
         $itemsCreated = 0;
         foreach ($data['items'] as $itemData) {
@@ -139,6 +148,7 @@ class MovementController extends Controller
             'items.variation.size',
             'employees',
             'inspectionRun.inspection',
+            'attachments',
         ]);
 
         return view('operations.movements.show', compact('movement'));
@@ -158,6 +168,8 @@ class MovementController extends Controller
 
         $samples = Sample::with(['customer', 'variations.color', 'variations.size'])->orderBy('sample_code')->get();
         $employees = Employee::where('status', true)->orderBy('employee_name')->get();
+        $suppliers = Supplier::where('status', true)->orderBy('name')->get();
+        $customers = Customer::where('status', true)->orderBy('customer_name')->get();
         $inspectionRuns = InspectionRun::with('inspection')->latest()->get();
 
         // Build same JSON structures as create for the JS
@@ -180,7 +192,7 @@ class MovementController extends Controller
         ]);
 
         return view('operations.movements.edit', compact(
-            'movement', 'samples', 'employees', 'inspectionRuns',
+            'movement', 'samples', 'employees', 'suppliers', 'customers', 'inspectionRuns',
             'samplesJson', 'inspectionRunsJson'
         ));
     }
@@ -189,8 +201,13 @@ class MovementController extends Controller
     {
         $data = $request->validated();
 
+        $isEmployeeRecipient = $data['recipient_type'] === 'Employee';
+
         $movement->update([
             'inspection_run_id' => $data['inspection_run_id'] ?? null,
+            'recipient_type' => $data['recipient_type'],
+            // Employee recipients are tracked via the employees pivot below, not this FK.
+            'recipient_id' => $isEmployeeRecipient ? null : $data['recipient_id'],
             'issue_date' => $data['issue_date'],
             'expected_return_date' => $data['expected_return_date'] ?? null,
             'alert_days' => $data['alert_days'] ?? null,
@@ -199,7 +216,7 @@ class MovementController extends Controller
             'remarks' => $data['remarks'] ?? null,
         ]);
 
-        $movement->employees()->sync($data['employee_ids']);
+        $movement->employees()->sync($isEmployeeRecipient ? $data['employee_ids'] : []);
 
         // Capture old sample IDs before replacing
         $oldSampleIds = $movement->items()->pluck('sample_id')->toArray();

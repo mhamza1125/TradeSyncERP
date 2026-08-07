@@ -10,8 +10,17 @@ class Movement extends Model
 {
     use LogsActivity;
 
+    /** Allowed values for recipient_type — who the samples were physically handed to. */
+    public const RECIPIENT_TYPES = [
+        'Employee' => Employee::class,
+        'Supplier' => Supplier::class,
+        'Customer' => Customer::class,
+    ];
+
     protected $fillable = [
         'inspection_run_id',
+        'recipient_type',
+        'recipient_id',
         'issue_date',
         'expected_return_date',
         'actual_return_date',
@@ -21,9 +30,9 @@ class Movement extends Model
     ];
 
     protected $casts = [
-        'issue_date'           => 'date',
+        'issue_date' => 'date',
         'expected_return_date' => 'date',
-        'actual_return_date'   => 'date',
+        'actual_return_date' => 'date',
     ];
 
     public function getActivitylogOptions(): LogOptions
@@ -44,6 +53,44 @@ class Movement extends Model
     public function inspectionRun()
     {
         return $this->belongsTo(InspectionRun::class);
+    }
+
+    public function attachments()
+    {
+        return $this->morphMany(Attachment::class, 'attachable');
+    }
+
+    /**
+     * Resolve the recipient model instance (Employee/Supplier/Customer) that the
+     * samples were handed to. recipient_type/recipient_id use simple aliases
+     * (see RECIPIENT_TYPES) rather than FQCNs, matching the legacy
+     * SampleMovement::moved_by_type/assigned_to_type convention.
+     */
+    public function getRecipientAttribute(): ?Model
+    {
+        if (! $this->recipient_type || ! $this->recipient_id) {
+            return null;
+        }
+
+        $modelClass = self::RECIPIENT_TYPES[$this->recipient_type] ?? null;
+
+        return $modelClass ? $modelClass::find($this->recipient_id) : null;
+    }
+
+    public function getRecipientNameAttribute(): ?string
+    {
+        $recipient = $this->recipient;
+
+        if (! $recipient) {
+            return null;
+        }
+
+        return match ($this->recipient_type) {
+            'Employee' => $recipient->employee_name,
+            'Customer' => $recipient->display_name,
+            'Supplier' => $recipient->name,
+            default => null,
+        };
     }
 
     public function isOverdue(): bool

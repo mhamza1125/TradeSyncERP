@@ -15,6 +15,14 @@
                         @error('bank_name')<div class="invalid-feedback">{{ $message }}</div>@enderror
                     </div>
                     <div class="col-lg-6 mb-4">
+                        <label class="form-label">Account Title</label>
+                        <input type="text" name="account_title"
+                               class="form-control @error('account_title') is-invalid @enderror"
+                               placeholder="e.g. TradeSync ERP (Pvt) Ltd"
+                               value="{{ old('account_title', $bank->account_title ?? '') }}">
+                        @error('account_title')<div class="invalid-feedback">{{ $message }}</div>@enderror
+                    </div>
+                    <div class="col-lg-6 mb-4">
                         <label class="form-label">Branch Name</label>
                         <input type="text" name="branch_name"
                                class="form-control @error('branch_name') is-invalid @enderror"
@@ -30,8 +38,16 @@
                                value="{{ old('account_number', $bank->account_number ?? '') }}">
                         @error('account_number')<div class="invalid-feedback">{{ $message }}</div>@enderror
                     </div>
+                    <div class="col-lg-6 mb-4">
+                        <label class="form-label">IBAN</label>
+                        <input type="text" name="iban"
+                               class="form-control @error('iban') is-invalid @enderror"
+                               placeholder="e.g. PK36HABB0000001234567890"
+                               value="{{ old('iban', $bank->iban ?? '') }}">
+                        @error('iban')<div class="invalid-feedback">{{ $message }}</div>@enderror
+                    </div>
                     <div class="col-lg-3 mb-4">
-                        <label class="form-label">SWIFT Code</label>
+                        <label class="form-label">SWIFT / BIC Code</label>
                         <input type="text" name="swift_code"
                                class="form-control @error('swift_code') is-invalid @enderror"
                                placeholder="e.g. HABBPKKA"

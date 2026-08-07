@@ -163,8 +163,40 @@
             </div>
         </div>
 
-        {{-- Secondary cards: FC details + Attachments side by side if both exist --}}
+        {{-- Secondary cards: Bank + FC details + Attachments --}}
         @php $customerCurrency = $customerInvoice->customer?->currency; @endphp
+        @if($customerInvoice->bank)
+        <div class="row">
+            <div class="col-md-6 mb-4">
+                <div class="card stretch stretch-full h-100">
+                    <div class="card-header">
+                        <h5 class="card-title">Payment Details</h5>
+                    </div>
+                    <div class="card-body">
+                        <dl class="row mb-0">
+                            <dt class="col-5 text-muted">Bank Name</dt>
+                            <dd class="col-7">{{ $customerInvoice->bank->bank_name }}</dd>
+                            <dt class="col-5 text-muted">Account Title</dt>
+                            <dd class="col-7">{{ $customerInvoice->bank->account_title ?? '—' }}</dd>
+                            <dt class="col-5 text-muted">Account Number</dt>
+                            <dd class="col-7">{{ $customerInvoice->bank->account_number ?? '—' }}</dd>
+                            <dt class="col-5 text-muted">IBAN</dt>
+                            <dd class="col-7">{{ $customerInvoice->bank->iban ?? '—' }}</dd>
+                            @if($customerInvoice->bank->swift_code)
+                            <dt class="col-5 text-muted">SWIFT / BIC</dt>
+                            <dd class="col-7">{{ $customerInvoice->bank->swift_code }}</dd>
+                            @endif
+                            @if($customerInvoice->bank->branch_name)
+                            <dt class="col-5 text-muted">Branch</dt>
+                            <dd class="col-7">{{ $customerInvoice->bank->branch_name }}</dd>
+                            @endif
+                        </dl>
+                    </div>
+                </div>
+            </div>
+        </div>
+        @endif
+
         @if($customerCurrency || $customerInvoice->attachments->count())
         <div class="row">
             @if($customerCurrency && $customerInvoice->foreign_amount)

@@ -104,6 +104,16 @@
                 <div class="text-muted" style="font-size:8.5pt;">No assignees recorded.</div>
                 @endforelse
 
+                <h3 style="margin-top:12px;">Recipient</h3>
+                @if($movement->recipient_type && $movement->recipient_name)
+                <div style="font-size:8.5pt;">
+                    <span class="badge badge-info">{{ $movement->recipient_type }}</span>
+                    <span style="font-weight:bold;">{{ $movement->recipient_name }}</span>
+                </div>
+                @else
+                <div class="text-muted" style="font-size:8.5pt;">Not specified.</div>
+                @endif
+
                 <h3 style="margin-top:12px;">Linked Inspection Run</h3>
                 @if($movement->inspectionRun)
                 <div style="font-size:8.5pt; font-weight:bold; color:#212121;">{{ $movement->inspectionRun?->inspection?->report_number ?? 'Run #'.$movement->inspection_run_id }}</div>

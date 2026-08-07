@@ -202,6 +202,44 @@
 </div>
 @endif
 
+@if($invoice->bank)
+<div class="summary-box" style="margin-top:16px;">
+    <p style="font-size:8pt; font-weight:bold; text-transform:uppercase; letter-spacing:0.4px; color:#1a3560; margin-bottom:8px;">
+        Payment Details &mdash; Please Transfer To
+    </p>
+    <table class="info-grid" style="width:100%;">
+        <tr>
+            <td class="info-label" style="width:22%;">Bank Name</td>
+            <td class="info-value">{{ $invoice->bank->bank_name }}</td>
+            <td class="info-label" style="width:22%;">Account Title</td>
+            <td class="info-value">{{ $invoice->bank->account_title ?? '—' }}</td>
+        </tr>
+        <tr>
+            <td class="info-label">Account Number</td>
+            <td class="info-value">{{ $invoice->bank->account_number ?? '—' }}</td>
+            <td class="info-label">IBAN</td>
+            <td class="info-value">{{ $invoice->bank->iban ?? '—' }}</td>
+        </tr>
+        @if($invoice->bank->swift_code || $invoice->bank->branch_name)
+        <tr>
+            @if($invoice->bank->swift_code)
+            <td class="info-label">SWIFT / BIC</td>
+            <td class="info-value">{{ $invoice->bank->swift_code }}</td>
+            @else
+            <td></td><td></td>
+            @endif
+            @if($invoice->bank->branch_name)
+            <td class="info-label">Branch</td>
+            <td class="info-value">{{ $invoice->bank->branch_name }}</td>
+            @else
+            <td></td><td></td>
+            @endif
+        </tr>
+        @endif
+    </table>
+</div>
+@endif
+
 @if($invoice->remarks)
 <div class="info-section" style="margin-top:14px;">
     <h3>Remarks</h3>

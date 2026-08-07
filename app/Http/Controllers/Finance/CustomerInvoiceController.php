@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Finance;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Finance\StoreCustomerInvoiceRequest;
 use App\Http\Requests\Finance\UpdateCustomerInvoiceRequest;
+use App\Models\Bank;
 use App\Models\Customer;
 use App\Models\CustomerInvoice;
 use App\Models\CustomerPayment;
@@ -46,8 +47,9 @@ class CustomerInvoiceController extends Controller
         $customers = Customer::with('currency')->where('status', true)->orderBy('customer_name')->get();
         $suppliers = Supplier::orderBy('name')->get();
         $inspectionTypes = InspectionType::where('status', true)->orderBy('name')->get();
+        $banks = Bank::where('status', true)->orderBy('bank_name')->get();
 
-        return view('finance.customer-invoices.create', compact('customers', 'suppliers', 'inspectionTypes'));
+        return view('finance.customer-invoices.create', compact('customers', 'suppliers', 'inspectionTypes', 'banks'));
     }
 
     public function store(StoreCustomerInvoiceRequest $request)
@@ -76,7 +78,7 @@ class CustomerInvoiceController extends Controller
 
     public function show(CustomerInvoice $customerInvoice)
     {
-        $customerInvoice->load(['customer.currency', 'items.supplier', 'items.inspectionType', 'attachments']);
+        $customerInvoice->load(['customer.currency', 'bank', 'items.supplier', 'items.inspectionType', 'attachments']);
 
         return view('finance.customer-invoices.show', compact('customerInvoice'));
     }
@@ -86,9 +88,10 @@ class CustomerInvoiceController extends Controller
         $customers = Customer::with('currency')->where('status', true)->orderBy('customer_name')->get();
         $suppliers = Supplier::orderBy('name')->get();
         $inspectionTypes = InspectionType::where('status', true)->orderBy('name')->get();
+        $banks = Bank::where('status', true)->orderBy('bank_name')->get();
         $customerInvoice->load(['items', 'attachments']);
 
-        return view('finance.customer-invoices.edit', compact('customerInvoice', 'customers', 'suppliers', 'inspectionTypes'));
+        return view('finance.customer-invoices.edit', compact('customerInvoice', 'customers', 'suppliers', 'inspectionTypes', 'banks'));
     }
 
     public function update(UpdateCustomerInvoiceRequest $request, CustomerInvoice $customerInvoice)
@@ -159,7 +162,7 @@ class CustomerInvoiceController extends Controller
 
     public function exportPdf(CustomerInvoice $customerInvoice)
     {
-        $customerInvoice->load(['customer.currency', 'items.supplier', 'items.inspectionType']);
+        $customerInvoice->load(['customer.currency', 'bank', 'items.supplier', 'items.inspectionType']);
 
         $pdf = Pdf::loadView('exports.customer-invoice-pdf', ['invoice' => $customerInvoice])
             ->setPaper('a4', 'portrait')

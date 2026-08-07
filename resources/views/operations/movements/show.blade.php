@@ -203,6 +203,21 @@
                     </div>
                 </div>
 
+                {{-- Recipient --}}
+                <div class="card mb-4">
+                    <div class="card-header"><h5 class="card-title mb-0">Recipient</h5></div>
+                    <div class="card-body">
+                        @if($movement->recipient_type && $movement->recipient_name)
+                        <div class="d-flex align-items-center gap-2">
+                            <span class="badge bg-soft-info text-info">{{ $movement->recipient_type }}</span>
+                            <span class="fs-13 fw-semibold">{{ $movement->recipient_name }}</span>
+                        </div>
+                        @else
+                        <span class="text-muted fs-12">Not specified.</span>
+                        @endif
+                    </div>
+                </div>
+
                 {{-- Actions --}}
                 <div class="card">
                     <div class="card-header"><h5 class="card-title mb-0">Actions</h5></div>
@@ -226,6 +241,13 @@
 
             </div>
         </div>
+
+        {{-- Attachment Panel --}}
+        @include('partials.attachment-panel', [
+            'attachEntity'     => $movement,
+            'attachEntityType' => 'movements',
+            'attachLabel'      => 'Movement Attachments',
+        ])
     </div>
 </div>
 @endsection
