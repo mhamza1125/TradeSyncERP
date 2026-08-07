@@ -19,6 +19,7 @@ class ExpenseHeadsSeeder extends Seeder
             'Internet & Telecom',
             'Office Supplies',
             'Travel & Transport',
+            'Purchase Orders',
         ];
 
         foreach ($heads as $name) {

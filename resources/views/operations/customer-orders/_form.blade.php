@@ -20,6 +20,18 @@
                         @error('customer_id')<div class="invalid-feedback">{{ $message }}</div>@enderror
                     </div>
                     <div class="col-lg-4 mb-4">
+                        <label class="form-label">Supplier</label>
+                        <select name="supplier_id" class="form-select @error('supplier_id') is-invalid @enderror">
+                            <option value="">— Select Supplier —</option>
+                            @foreach($suppliers as $s)
+                            <option value="{{ $s->id }}" @selected(old('supplier_id', $customerOrder->supplier_id ?? '') == $s->id)>
+                                {{ $s->name }}
+                            </option>
+                            @endforeach
+                        </select>
+                        @error('supplier_id')<div class="invalid-feedback">{{ $message }}</div>@enderror
+                    </div>
+                    <div class="col-lg-4 mb-4">
                         <label class="form-label">Order Number</label>
                         <input type="text" name="order_number"
                                class="form-control @error('order_number') is-invalid @enderror"

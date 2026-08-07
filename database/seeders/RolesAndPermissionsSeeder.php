@@ -5,12 +5,13 @@ namespace Database\Seeders;
 use Illuminate\Database\Seeder;
 use Spatie\Permission\Models\Permission;
 use Spatie\Permission\Models\Role;
+use Spatie\Permission\PermissionRegistrar;
 
 class RolesAndPermissionsSeeder extends Seeder
 {
     public function run(): void
     {
-        app()[\Spatie\Permission\PermissionRegistrar::class]->forgetCachedPermissions();
+        app()[PermissionRegistrar::class]->forgetCachedPermissions();
 
         $permissions = [
             // Master data
@@ -39,6 +40,7 @@ class RolesAndPermissionsSeeder extends Seeder
 
             // Finance
             'expenses.index', 'expenses.create', 'expenses.edit', 'expenses.delete', 'expenses.view',
+            'purchase-orders.index', 'purchase-orders.create', 'purchase-orders.edit', 'purchase-orders.delete', 'purchase-orders.pay', 'purchase-orders.view',
             'salary.index', 'salary.create', 'salary.edit', 'salary.delete', 'salary.pay', 'salary.view',
             'customer-payments.index', 'customer-payments.create', 'customer-payments.edit', 'customer-payments.delete', 'customer-payments.view',
             'customer-invoices.index', 'customer-invoices.create', 'customer-invoices.edit', 'customer-invoices.delete', 'customer-invoices.view',
@@ -75,6 +77,7 @@ class RolesAndPermissionsSeeder extends Seeder
             'inspections.index', 'inspections.create', 'inspections.edit', 'inspections.delete', 'inspections.view',
             'inspection-sections.index', 'inspection-sections.create', 'inspection-sections.edit', 'inspection-sections.delete',
             'expenses.index', 'expenses.view',
+            'purchase-orders.index', 'purchase-orders.view',
             'salary.index', 'salary.view',
             'customer-payments.index', 'customer-payments.view',
             'customer-invoices.index', 'customer-invoices.view',
@@ -96,6 +99,7 @@ class RolesAndPermissionsSeeder extends Seeder
             'inspections.index', 'inspections.view',
             'inspection-sections.index',
             'expenses.index', 'expenses.create', 'expenses.edit', 'expenses.delete', 'expenses.view',
+            'purchase-orders.index', 'purchase-orders.create', 'purchase-orders.edit', 'purchase-orders.delete', 'purchase-orders.pay', 'purchase-orders.view',
             'salary.index', 'salary.create', 'salary.edit', 'salary.delete', 'salary.pay', 'salary.view',
             'customer-payments.index', 'customer-payments.create', 'customer-payments.edit', 'customer-payments.delete', 'customer-payments.view',
             'customer-invoices.index', 'customer-invoices.create', 'customer-invoices.edit', 'customer-invoices.delete', 'customer-invoices.view',

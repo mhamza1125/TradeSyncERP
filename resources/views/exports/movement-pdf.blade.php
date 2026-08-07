@@ -86,6 +86,18 @@
                         <td class="info-value">{{ $movement->alert_days }} days</td>
                     </tr>
                     @endif
+                    @if($movement->order_number)
+                    <tr>
+                        <td class="info-label">Order Number</td>
+                        <td class="info-value">{{ $movement->order_number }}</td>
+                    </tr>
+                    @endif
+                    @if($movement->inspectionType)
+                    <tr>
+                        <td class="info-label">Inspection Type</td>
+                        <td class="info-value">{{ $movement->inspectionType->name }}</td>
+                    </tr>
+                    @endif
                     <tr>
                         <td class="info-label">Status</td>
                         <td class="info-value">

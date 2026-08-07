@@ -149,7 +149,9 @@
                             <div class="row g-0 mb-3"><div class="col-sm-5 text-muted">Category:</div><div class="col-sm-7 fw-semibold">{{ $sample->category->category_name }}</div></div>
                             <div class="row g-0 mb-3"><div class="col-sm-5 text-muted">Total Quantity:</div><div class="col-sm-7 fw-semibold">{{ $sample->variations->sum('quantity') }}</div></div>
                             <div class="row g-0 mb-3"><div class="col-sm-5 text-muted">Receive Date:</div><div class="col-sm-7 fw-semibold">{{ \Carbon\Carbon::parse($sample->receive_date)->format('d M Y') }}</div></div>
-                            <div class="row g-0 mb-3"><div class="col-sm-5 text-muted">Shipment Ref:</div><div class="col-sm-7 fw-semibold">{{ $sample->sample_reference ?? '—' }}</div></div>
+                            <div class="row g-0 mb-3"><div class="col-sm-5 text-muted">Sample Reference:</div><div class="col-sm-7 fw-semibold">{{ $sample->sample_reference ?? '—' }}</div></div>
+                            <div class="row g-0 mb-3"><div class="col-sm-5 text-muted">Company Stripe Number:</div><div class="col-sm-7 fw-semibold">{{ $sample->company_stripe_number ?? '—' }}</div></div>
+                            <div class="row g-0 mb-3"><div class="col-sm-5 text-muted">Customer Stripe Number:</div><div class="col-sm-7 fw-semibold">{{ $sample->customer_stripe_number ?? '—' }}</div></div>
                             <div class="row g-0 mb-3"><div class="col-sm-5 text-muted">Alert Days:</div><div class="col-sm-7 fw-semibold">{{ $sample->alert_days }}</div></div>
                             @if($sample->remarks)
                             <div class="row g-0 mb-3"><div class="col-sm-5 text-muted">Remarks:</div><div class="col-sm-7">{{ $sample->remarks }}</div></div>

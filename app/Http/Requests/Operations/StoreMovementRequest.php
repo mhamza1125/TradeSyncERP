@@ -28,6 +28,8 @@ class StoreMovementRequest extends FormRequest
             'items.*.variation_id' => ['nullable', 'exists:sample_variations,id'],
             'items.*.quantity' => ['required', 'integer', 'min:0'],
             'inspection_run_id' => ['nullable', 'exists:inspection_runs,id'],
+            'order_number' => ['nullable', 'string', 'max:255'],
+            'inspection_type_id' => ['nullable', 'exists:inspection_types,id'],
             'recipient_type' => ['required', Rule::in(array_keys(Movement::RECIPIENT_TYPES))],
             'recipient_id' => [
                 'nullable',

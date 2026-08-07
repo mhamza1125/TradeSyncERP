@@ -121,7 +121,7 @@
                 @endcanany
 
                 {{-- ─── Finance ─────────────────────────────────────────────────── --}}
-                @canany(['customer-invoices.index','customer-payments.index','expenses.index','salary.index'])
+                @canany(['customer-invoices.index','customer-payments.index','expenses.index','purchase-orders.index','salary.index'])
                 <li class="nxl-item nxl-caption">
                     <label>Finance</label>
                 </li>
@@ -149,6 +149,15 @@
                     <a href="{{ route('expenses.index') }}" class="nxl-link">
                         <span class="nxl-micon"><i class="feather-trending-down"></i></span>
                         <span class="nxl-mtext">Expenses</span>
+                    </a>
+                </li>
+                @endcan
+
+                @can('purchase-orders.index')
+                <li class="nxl-item {{ $is('purchase-orders.*') ? 'active' : '' }}">
+                    <a href="{{ route('purchase-orders.index') }}" class="nxl-link">
+                        <span class="nxl-micon"><i class="feather-shopping-cart"></i></span>
+                        <span class="nxl-mtext">Purchase Orders</span>
                     </a>
                 </li>
                 @endcan

@@ -82,6 +82,12 @@
                         <td class="info-value">{{ $order->customer->contact_person }}</td>
                     </tr>
                     @endif
+                    @if($order->supplier)
+                    <tr>
+                        <td class="info-label">Supplier</td>
+                        <td class="info-value">{{ $order->supplier->name }}</td>
+                    </tr>
+                    @endif
                 </table>
             </div>
         </td>

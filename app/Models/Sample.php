@@ -11,6 +11,9 @@ class Sample extends Model
 {
     use LogsActivity, SoftDeletes;
 
+    /** Values for sample_reference — stored as a DB enum on the samples table. */
+    public const REFERENCE_CATEGORIES = ['From Shipment', 'Gold Seal', 'Red Seal', 'Silver Seal'];
+
     protected $fillable = [
         'sample_code',
         'category_id',
@@ -20,6 +23,8 @@ class Sample extends Model
         'product_name',
         'article',
         'sample_reference',
+        'company_stripe_number',
+        'customer_stripe_number',
         'physical_location',
         'source',
         'rack',

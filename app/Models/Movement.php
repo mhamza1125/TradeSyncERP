@@ -21,6 +21,8 @@ class Movement extends Model
         'inspection_run_id',
         'recipient_type',
         'recipient_id',
+        'order_number',
+        'inspection_type_id',
         'issue_date',
         'expected_return_date',
         'actual_return_date',
@@ -53,6 +55,12 @@ class Movement extends Model
     public function inspectionRun()
     {
         return $this->belongsTo(InspectionRun::class);
+    }
+
+    /** The inspection type this movement's samples are being issued for (e.g. Inline, Final QC). */
+    public function inspectionType()
+    {
+        return $this->belongsTo(InspectionType::class);
     }
 
     public function attachments()

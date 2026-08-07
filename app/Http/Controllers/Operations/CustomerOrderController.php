@@ -8,6 +8,7 @@ use App\Http\Requests\Operations\UpdateCustomerOrderRequest;
 use App\Models\Customer;
 use App\Models\CustomerOrder;
 use App\Models\ProductCategory;
+use App\Models\Supplier;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -43,9 +44,10 @@ class CustomerOrderController extends Controller
     public function create()
     {
         $customers = Customer::where('status', true)->orderBy('customer_name')->get();
+        $suppliers = Supplier::where('status', true)->orderBy('name')->get();
         $categories = ProductCategory::orderBy('category_name')->get();
 
-        return view('operations.customer-orders.create', compact('customers', 'categories'));
+        return view('operations.customer-orders.create', compact('customers', 'suppliers', 'categories'));
     }
 
     public function store(StoreCustomerOrderRequest $request)
@@ -67,7 +69,7 @@ class CustomerOrderController extends Controller
 
     public function show(CustomerOrder $customerOrder)
     {
-        $customerOrder->load(['customer', 'items.productCategory', 'attachments']);
+        $customerOrder->load(['customer', 'supplier', 'items.productCategory', 'attachments']);
 
         return view('operations.customer-orders.show', compact('customerOrder'));
     }
@@ -76,9 +78,10 @@ class CustomerOrderController extends Controller
     {
         $customerOrder->load('items');
         $customers = Customer::where('status', true)->orderBy('customer_name')->get();
+        $suppliers = Supplier::where('status', true)->orderBy('name')->get();
         $categories = ProductCategory::orderBy('category_name')->get();
 
-        return view('operations.customer-orders.edit', compact('customerOrder', 'customers', 'categories'));
+        return view('operations.customer-orders.edit', compact('customerOrder', 'customers', 'suppliers', 'categories'));
     }
 
     public function update(UpdateCustomerOrderRequest $request, CustomerOrder $customerOrder)
@@ -126,7 +129,7 @@ class CustomerOrderController extends Controller
 
     public function exportPdf(CustomerOrder $customerOrder)
     {
-        $customerOrder->load(['customer', 'items.productCategory']);
+        $customerOrder->load(['customer', 'supplier', 'items.productCategory']);
 
         $pdf = Pdf::loadView('exports.customer-order-pdf', ['order' => $customerOrder])
             ->setPaper('a4', 'portrait')

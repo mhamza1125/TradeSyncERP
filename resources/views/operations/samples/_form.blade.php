@@ -57,9 +57,25 @@
                     </div>
                     <div class="col-lg-6 mb-4">
                         <label class="form-label">Sample Reference</label>
-                        <input type="text" name="sample_reference" class="form-control @error('sample_reference') is-invalid @enderror"
-                               placeholder="AWB / BL / Reference no." value="{{ old('sample_reference', $sample->sample_reference ?? '') }}">
+                        <select name="sample_reference" class="form-select @error('sample_reference') is-invalid @enderror">
+                            <option value="">— Not Specified —</option>
+                            @foreach(\App\Models\Sample::REFERENCE_CATEGORIES as $ref)
+                            <option value="{{ $ref }}" @selected(old('sample_reference', $sample->sample_reference ?? '') == $ref)>{{ $ref }}</option>
+                            @endforeach
+                        </select>
                         @error('sample_reference')<div class="invalid-feedback">{{ $message }}</div>@enderror
+                    </div>
+                    <div class="col-lg-6 mb-4">
+                        <label class="form-label">Company Stripe Number</label>
+                        <input type="text" name="company_stripe_number" class="form-control @error('company_stripe_number') is-invalid @enderror"
+                               placeholder="Optional" value="{{ old('company_stripe_number', $sample->company_stripe_number ?? '') }}">
+                        @error('company_stripe_number')<div class="invalid-feedback">{{ $message }}</div>@enderror
+                    </div>
+                    <div class="col-lg-6 mb-4">
+                        <label class="form-label">Customer Stripe Number</label>
+                        <input type="text" name="customer_stripe_number" class="form-control @error('customer_stripe_number') is-invalid @enderror"
+                               placeholder="Optional" value="{{ old('customer_stripe_number', $sample->customer_stripe_number ?? '') }}">
+                        @error('customer_stripe_number')<div class="invalid-feedback">{{ $message }}</div>@enderror
                     </div>
                     <div class="col-lg-6 mb-4">
                         <label class="form-label">Physical Location</label>

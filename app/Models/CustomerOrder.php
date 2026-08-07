@@ -9,7 +9,7 @@ use Spatie\Activitylog\Traits\LogsActivity;
 
 class CustomerOrder extends Model
 {
-    use SoftDeletes, LogsActivity;
+    use LogsActivity, SoftDeletes;
 
     const STATUS_DUE = 'Due';
 
@@ -21,6 +21,7 @@ class CustomerOrder extends Model
         'order_code',
         'order_number',
         'customer_id',
+        'supplier_id',
         'order_date',
         'required_by',
         'status',
@@ -28,7 +29,7 @@ class CustomerOrder extends Model
     ];
 
     protected $casts = [
-        'order_date'  => 'date',
+        'order_date' => 'date',
         'required_by' => 'date',
     ];
 
@@ -43,6 +44,11 @@ class CustomerOrder extends Model
     public function customer()
     {
         return $this->belongsTo(Customer::class);
+    }
+
+    public function supplier()
+    {
+        return $this->belongsTo(Supplier::class);
     }
 
     public function inspections()

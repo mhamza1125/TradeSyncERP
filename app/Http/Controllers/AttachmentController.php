@@ -8,6 +8,7 @@ use App\Models\CustomerInvoice;
 use App\Models\CustomerOrder;
 use App\Models\Employee;
 use App\Models\Movement;
+use App\Models\PurchaseOrder;
 use App\Models\Sample;
 use App\Models\Supplier;
 use App\Models\Transaction;
@@ -26,6 +27,7 @@ class AttachmentController extends Controller
         'customer-invoices' => CustomerInvoice::class,
         'customer-orders' => CustomerOrder::class,
         'movements' => Movement::class,
+        'purchase-orders' => PurchaseOrder::class,
     ];
 
     public function store(Request $request, string $type, int $id)

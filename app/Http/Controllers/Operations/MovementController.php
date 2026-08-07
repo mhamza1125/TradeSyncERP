@@ -8,6 +8,7 @@ use App\Http\Requests\Operations\UpdateMovementRequest;
 use App\Models\Customer;
 use App\Models\Employee;
 use App\Models\InspectionRun;
+use App\Models\InspectionType;
 use App\Models\Movement;
 use App\Models\Sample;
 use App\Models\Supplier;
@@ -47,6 +48,7 @@ class MovementController extends Controller
         $employees = Employee::where('status', true)->orderBy('employee_name')->get();
         $suppliers = Supplier::where('status', true)->orderBy('name')->get();
         $customers = Customer::where('status', true)->orderBy('customer_name')->get();
+        $inspectionTypes = InspectionType::where('status', true)->orderBy('name')->get();
 
         $inspectionRuns = InspectionRun::with('inspection')->latest()->get();
 
@@ -87,7 +89,7 @@ class MovementController extends Controller
         ]);
 
         return view('operations.movements.bulk_create', compact(
-            'samples', 'employees', 'suppliers', 'customers', 'inspectionRuns',
+            'samples', 'employees', 'suppliers', 'customers', 'inspectionRuns', 'inspectionTypes',
             'samplesJson', 'inspectionRunsJson',
             'preselectedRun', 'preselectedEmployeeIds'
         ));
@@ -101,6 +103,8 @@ class MovementController extends Controller
 
         $movement = Movement::create([
             'inspection_run_id' => $data['inspection_run_id'] ?? null,
+            'order_number' => $data['order_number'] ?? null,
+            'inspection_type_id' => $data['inspection_type_id'] ?? null,
             'recipient_type' => $data['recipient_type'],
             // Employee recipients are tracked via the employees pivot below, not this FK.
             'recipient_id' => $isEmployeeRecipient ? null : $data['recipient_id'],
@@ -148,6 +152,7 @@ class MovementController extends Controller
             'items.variation.size',
             'employees',
             'inspectionRun.inspection',
+            'inspectionType',
             'attachments',
         ]);
 
@@ -170,6 +175,7 @@ class MovementController extends Controller
         $employees = Employee::where('status', true)->orderBy('employee_name')->get();
         $suppliers = Supplier::where('status', true)->orderBy('name')->get();
         $customers = Customer::where('status', true)->orderBy('customer_name')->get();
+        $inspectionTypes = InspectionType::where('status', true)->orderBy('name')->get();
         $inspectionRuns = InspectionRun::with('inspection')->latest()->get();
 
         // Build same JSON structures as create for the JS
@@ -192,7 +198,7 @@ class MovementController extends Controller
         ]);
 
         return view('operations.movements.edit', compact(
-            'movement', 'samples', 'employees', 'suppliers', 'customers', 'inspectionRuns',
+            'movement', 'samples', 'employees', 'suppliers', 'customers', 'inspectionRuns', 'inspectionTypes',
             'samplesJson', 'inspectionRunsJson'
         ));
     }
@@ -205,6 +211,8 @@ class MovementController extends Controller
 
         $movement->update([
             'inspection_run_id' => $data['inspection_run_id'] ?? null,
+            'order_number' => $data['order_number'] ?? null,
+            'inspection_type_id' => $data['inspection_type_id'] ?? null,
             'recipient_type' => $data['recipient_type'],
             // Employee recipients are tracked via the employees pivot below, not this FK.
             'recipient_id' => $isEmployeeRecipient ? null : $data['recipient_id'],
@@ -289,6 +297,7 @@ class MovementController extends Controller
             'items.variation.size',
             'employees',
             'inspectionRun.inspection',
+            'inspectionType',
         ]);
 
         $pdf = Pdf::loadView('exports.movement-pdf', compact('movement'))

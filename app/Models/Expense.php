@@ -12,6 +12,7 @@ class Expense extends Model
 
     protected $fillable = [
         'expense_head_id',
+        'purchase_order_id',
         'account_id',
         'transaction_id',
         'amount',
@@ -22,7 +23,7 @@ class Expense extends Model
 
     protected $casts = [
         'expense_date' => 'date',
-        'amount'       => 'decimal:2',
+        'amount' => 'decimal:2',
     ];
 
     public function getActivitylogOptions(): LogOptions
@@ -36,6 +37,11 @@ class Expense extends Model
     public function expenseHead()
     {
         return $this->belongsTo(ExpenseHead::class);
+    }
+
+    public function purchaseOrder()
+    {
+        return $this->belongsTo(PurchaseOrder::class);
     }
 
     public function account()

@@ -176,6 +176,18 @@
                                 <strong>{{ $movement->alert_days }} days</strong>
                             </li>
                             @endif
+                            @if($movement->order_number)
+                            <li class="list-group-item px-0 d-flex justify-content-between">
+                                <span class="text-muted fs-12">Order Number</span>
+                                <strong>{{ $movement->order_number }}</strong>
+                            </li>
+                            @endif
+                            @if($movement->inspectionType)
+                            <li class="list-group-item px-0 d-flex justify-content-between">
+                                <span class="text-muted fs-12">Inspection Type</span>
+                                <strong>{{ $movement->inspectionType->name }}</strong>
+                            </li>
+                            @endif
                         </ul>
                         @if($movement->remarks)
                         <div class="mt-3 pt-2 border-top">

@@ -57,6 +57,10 @@
                                 <div class="fw-semibold">{{ $customerOrder->customer?->display_name ?? '—' }}</div>
                             </div>
                             <div class="col-md-4">
+                                <div class="text-muted fs-12">Supplier</div>
+                                <div class="fw-semibold">{{ $customerOrder->supplier?->name ?? '—' }}</div>
+                            </div>
+                            <div class="col-md-4">
                                 <div class="text-muted fs-12">Order Date</div>
                                 <div class="fw-semibold">{{ $customerOrder->order_date->format('d M Y') }}</div>
                             </div>

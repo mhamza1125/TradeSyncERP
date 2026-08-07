@@ -128,6 +128,23 @@
                                            value="{{ old('actual_return_date', $movement->actual_return_date?->toDateString()) }}">
                                     @error('actual_return_date')<div class="invalid-feedback">{{ $message }}</div>@enderror
                                 </div>
+                                <div class="col-lg-6 mb-4">
+                                    <label class="form-label">Order Number</label>
+                                    <input type="text" name="order_number"
+                                           class="form-control @error('order_number') is-invalid @enderror"
+                                           placeholder="Optional" value="{{ old('order_number', $movement->order_number ?? '') }}">
+                                    @error('order_number')<div class="invalid-feedback">{{ $message }}</div>@enderror
+                                </div>
+                                <div class="col-lg-6 mb-4">
+                                    <label class="form-label">Inspection Type</label>
+                                    <select name="inspection_type_id" class="form-select @error('inspection_type_id') is-invalid @enderror">
+                                        <option value="">— Not Specified —</option>
+                                        @foreach($inspectionTypes as $type)
+                                        <option value="{{ $type->id }}" @selected(old('inspection_type_id', $movement->inspection_type_id) == $type->id)>{{ $type->name }}</option>
+                                        @endforeach
+                                    </select>
+                                    @error('inspection_type_id')<div class="invalid-feedback">{{ $message }}</div>@enderror
+                                </div>
                                 <div class="col-12">
                                     <label class="form-label">Remarks</label>
                                     <textarea name="remarks" rows="2"
