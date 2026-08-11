@@ -27,7 +27,7 @@ class AqlCalculationService
         [10001,      35000,      'K', 'M', 'N', 'C', 'D', 'F', 'H'],
         [35001,      150000,     'L', 'N', 'P', 'D', 'E', 'G', 'J'],
         [150001,     500000,     'M', 'P', 'Q', 'D', 'E', 'G', 'J'],
-        [500001,     PHP_INT_MAX,'N', 'Q', 'R', 'D', 'E', 'H', 'K'],
+        [500001,     PHP_INT_MAX, 'N', 'Q', 'R', 'D', 'E', 'H', 'K'],
     ];
 
     // Code letter → sample size
@@ -35,7 +35,7 @@ class AqlCalculationService
         'A' => 2,   'B' => 3,   'C' => 5,   'D' => 8,
         'E' => 13,  'F' => 20,  'G' => 32,  'H' => 50,
         'J' => 80,  'K' => 125, 'L' => 200, 'M' => 315,
-        'N' => 500, 'P' => 800, 'Q' => 1250,'R' => 2000,
+        'N' => 500, 'P' => 800, 'Q' => 1250, 'R' => 2000,
     ];
 
     /**
@@ -164,8 +164,10 @@ class AqlCalculationService
                         return ['ac' => $table[$sz][0], 're' => $table[$sz][1]];
                     }
                 }
+
                 return null;
             }
+
             return ['ac' => $entry[0], 're' => $entry[1]];
         }
 
@@ -176,27 +178,27 @@ class AqlCalculationService
      * Full plan calculation for a lot size and set of AQL levels.
      */
     public function calculate(
-        int    $lotSize,
-        string $level     = 'II',
+        int $lotSize,
+        string $level = 'II',
         ?float $aqlCritical = 0.065,
-        ?float $aqlMajor    = 2.5,
-        ?float $aqlMinor    = 4.0
+        ?float $aqlMajor = 2.5,
+        ?float $aqlMinor = 4.0
     ): array {
         $codeLetter = $this->resolveCodeLetter($lotSize, $level);
         $sampleSize = $codeLetter ? $this->sampleSizeFromCode($codeLetter) : 0;
 
         $critical = $aqlCritical !== null ? $this->acReNumbers($aqlCritical, $sampleSize) : null;
-        $major    = $aqlMajor    !== null ? $this->acReNumbers($aqlMajor,    $sampleSize) : null;
-        $minor    = $aqlMinor    !== null ? $this->acReNumbers($aqlMinor,    $sampleSize) : null;
+        $major = $aqlMajor !== null ? $this->acReNumbers($aqlMajor, $sampleSize) : null;
+        $minor = $aqlMinor !== null ? $this->acReNumbers($aqlMinor, $sampleSize) : null;
 
         return [
-            'lot_size'    => $lotSize,
-            'level'       => $level,
+            'lot_size' => $lotSize,
+            'level' => $level,
             'code_letter' => $codeLetter,
             'sample_size' => $sampleSize,
-            'critical'    => $critical,
-            'major'       => $major,
-            'minor'       => $minor,
+            'critical' => $critical,
+            'major' => $major,
+            'minor' => $minor,
         ];
     }
 
@@ -204,9 +206,9 @@ class AqlCalculationService
      * Calculate verdict from found counts vs. accept numbers.
      */
     public function verdict(
-        int  $foundCritical,
-        int  $foundMajor,
-        int  $foundMinor,
+        int $foundCritical,
+        int $foundMajor,
+        int $foundMinor,
         ?int $acCritical,
         ?int $acMajor,
         ?int $acMinor
@@ -219,10 +221,89 @@ class AqlCalculationService
 
         $fail =
             ($acCritical !== null && $foundCritical > $acCritical) ||
-            ($acMajor    !== null && $foundMajor    > $acMajor)    ||
-            ($acMinor    !== null && $foundMinor    > $acMinor);
+            ($acMajor !== null && $foundMajor > $acMajor) ||
+            ($acMinor !== null && $foundMinor > $acMinor);
 
         return $fail ? 'Fail' : 'Pass';
+    }
+
+    /**
+     * Resolve the full sampling plan for a lot, honoring the "Not Allowed" AQL
+     * option (Ac 0 / Re 1, i.e. any defect found fails) alongside the normal
+     * ISO 2859-1 lookups. This is the authoritative, server-side counterpart
+     * to the AQL Calculator's client-side preview.
+     *
+     * @return array{code_letter: ?string, sample_size: int, critical: array{ac:int,re:int}|null, major: array{ac:int,re:int}|null, minor: array{ac:int,re:int}|null}
+     */
+    public function planForLot(
+        int $lotSize,
+        string $level,
+        ?string $aqlCritical,
+        ?string $aqlMajor,
+        ?string $aqlMinor
+    ): array {
+        $codeLetter = $this->resolveCodeLetter($lotSize, $level);
+        $sampleSize = $codeLetter ? $this->sampleSizeFromCode($codeLetter) : 0;
+
+        return [
+            'code_letter' => $codeLetter,
+            'sample_size' => $sampleSize,
+            'critical' => $this->acReForSeverity($aqlCritical, $sampleSize),
+            'major' => $this->acReForSeverity($aqlMajor, $sampleSize),
+            'minor' => $this->acReForSeverity($aqlMinor, $sampleSize),
+        ];
+    }
+
+    /**
+     * Ac/Re numbers for one severity, honoring the "not_allowed" sentinel
+     * (Ac 0 / Re 1 — any defect found is an automatic fail).
+     *
+     * @return array{ac:int,re:int}|null
+     */
+    private function acReForSeverity(?string $aqlValue, int $sampleSize): ?array
+    {
+        if ($aqlValue === null || $aqlValue === '') {
+            return null;
+        }
+
+        if ($aqlValue === 'not_allowed') {
+            return ['ac' => 0, 're' => 1];
+        }
+
+        return $this->acReNumbers((float) $aqlValue, $sampleSize);
+    }
+
+    /**
+     * Proportionally distribute a total sample size across a set of
+     * quantities (e.g. per color/size variation), using largest-remainder
+     * rounding so the parts always sum back to the sample size.
+     *
+     * @param  int[]  $qtys
+     * @return int[] distributed counts, same order/length as $qtys
+     */
+    public function distributeProportionally(int $sampleSize, array $qtys): array
+    {
+        $totalQty = array_sum($qtys);
+
+        if ($totalQty <= 0 || count($qtys) === 0) {
+            return array_fill(0, count($qtys), 0);
+        }
+
+        $raw = array_map(fn ($q) => ($q / $totalQty) * $sampleSize, $qtys);
+        $floored = array_map('intval', array_map('floor', $raw));
+        $remainder = $sampleSize - array_sum($floored);
+
+        $fracs = [];
+        foreach ($raw as $i => $r) {
+            $fracs[] = ['i' => $i, 'frac' => $r - floor($r)];
+        }
+        usort($fracs, fn ($a, $b) => $b['frac'] <=> $a['frac']);
+
+        for ($j = 0; $j < $remainder && $j < count($fracs); $j++) {
+            $floored[$fracs[$j]['i']]++;
+        }
+
+        return $floored;
     }
 
     /**
@@ -231,10 +312,10 @@ class AqlCalculationService
     public function tableForJs(): array
     {
         return [
-            'lotSizeTable'  => self::LOT_SIZE_TABLE,
-            'sampleSizes'   => self::SAMPLE_SIZES,
-            'levelIndex'    => self::LEVEL_INDEX,
-            'aqlTable'      => self::AQL_TABLE,
+            'lotSizeTable' => self::LOT_SIZE_TABLE,
+            'sampleSizes' => self::SAMPLE_SIZES,
+            'levelIndex' => self::LEVEL_INDEX,
+            'aqlTable' => self::AQL_TABLE,
             'supportedAqls' => array_keys(self::AQL_TABLE),
         ];
     }
@@ -247,6 +328,7 @@ class AqlCalculationService
                 return $key;
             }
         }
+
         return null;
     }
 }

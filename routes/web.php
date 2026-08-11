@@ -185,7 +185,12 @@ Route::middleware(['auth', 'verified'])->group(function () {
     });
 
     // ─── Tools ───────────────────────────────────────────────────────────────────
-    Route::get('tools/aql-calculator', AqlCalculatorController::class)->name('tools.aql-calculator');
+    Route::prefix('tools')->name('tools.')->group(function () {
+        Route::get('aql-calculator/{aql_calculation}/export-pdf', [AqlCalculatorController::class, 'exportPdf'])
+            ->name('aql-calculator.export-pdf');
+        Route::resource('aql-calculator', AqlCalculatorController::class)
+            ->parameters(['aql-calculator' => 'aql_calculation']);
+    });
 
     // ─── Ledgers & Reports ───────────────────────────────────────────────────────
     Route::prefix('ledger')->name('ledger.')->group(function () {
