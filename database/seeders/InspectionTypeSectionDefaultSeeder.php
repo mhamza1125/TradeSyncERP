@@ -22,7 +22,7 @@ class InspectionTypeSectionDefaultSeeder extends Seeder
      */
     public function run(): void
     {
-        $sections   = InspectionSection::all()->keyBy('slug');
+        $sections = InspectionSection::all()->keyBy('slug');
         $categories = ProductCategory::all()->keyBy('category_name');
 
         // Format: 'Type name' => [ ['slug', 'required', 'category' (optional)] ]
@@ -78,12 +78,79 @@ class InspectionTypeSectionDefaultSeeder extends Seeder
                 ['slug' => 'overall_article_result',   'required' => true, 'category' => null],
                 ['slug' => 'finish_inspection',        'required' => true, 'category' => null],
             ],
+            'Final Inspection (AQL)' => [
+                ['slug' => 'general_information',      'required' => true, 'category' => null],
+                ['slug' => 'packing_check_si',         'required' => true, 'category' => null],
+                ['slug' => 'carton_dimensions_weight', 'required' => true, 'category' => null],
+                ['slug' => 'product_screening',        'required' => true, 'category' => null],
+                ['slug' => 'barcode_testing',          'required' => true, 'category' => null],
+                ['slug' => 'functional_test',          'required' => false, 'category' => null],
+                ['slug' => 'aql_sampling',             'required' => true, 'category' => null],
+                ['slug' => 'article_results_table',    'required' => true, 'category' => null],
+                ['slug' => 'defect_recording',         'required' => true, 'category' => null],
+                ['slug' => 'variations_sample',        'required' => true, 'category' => null],
+                ['slug' => 'variations_techpack',      'required' => true, 'category' => null],
+                ['slug' => 'overall_article_result',   'required' => true, 'category' => null],
+                ['slug' => 'finish_inspection',        'required' => true, 'category' => null],
+                ['slug' => 'files_to_review',          'required' => false, 'category' => null],
+            ],
+            // Same section set as 'Final Inspection (AQL / Percentage Based)' above —
+            // kept in the same proven workflow order (the list as given was alphabetized,
+            // which would've put Finish Inspection mid-form; reordered General Info
+            // first / Finish Inspection last, matching every other type in this file).
+            'Final Inspection (% Based)' => [
+                ['slug' => 'general_information',      'required' => true, 'category' => null],
+                ['slug' => 'packing_check_si',         'required' => true, 'category' => null],
+                ['slug' => 'carton_dimensions_weight', 'required' => true, 'category' => null],
+                ['slug' => 'product_screening',        'required' => true, 'category' => null],
+                ['slug' => 'barcode_testing',          'required' => true, 'category' => null],
+                ['slug' => 'functional_test',          'required' => false, 'category' => null],
+                ['slug' => 'aql_sampling',             'required' => true, 'category' => null],
+                ['slug' => 'article_results_table',    'required' => true, 'category' => null],
+                ['slug' => 'defect_recording',         'required' => true, 'category' => null],
+                ['slug' => 'variations_sample',        'required' => true, 'category' => null],
+                ['slug' => 'variations_techpack',      'required' => true, 'category' => null],
+                ['slug' => 'overall_article_result',   'required' => true, 'category' => null],
+                ['slug' => 'finish_inspection',        'required' => true, 'category' => null],
+            ],
             'Final Inspection (100%)' => [
                 ['slug' => 'article_results_table',  'required' => true, 'category' => null],
                 ['slug' => 'defect_recording',       'required' => true, 'category' => null],
                 ['slug' => 'overall_article_result', 'required' => true, 'category' => null],
                 ['slug' => 'inspection_conclusion',  'required' => true, 'category' => null],
                 ['slug' => 'finish_inspection',      'required' => true, 'category' => null],
+            ],
+            // Given as an alphabetized list (Article Inspection Results Table ... Shipment
+            // Verification) — same 25-section set, reordered here into the workflow
+            // sequence used by every other type: General Info → cover/reference →
+            // packing/label/marking checks → carton & quantity checks → article
+            // results → container/shipment checks → conclusion → finish.
+            'Packing Evaluation' => [
+                ['slug' => 'general_information',             'required' => true, 'category' => null],
+                ['slug' => 'cover_photo',                     'required' => false, 'category' => null],
+                ['slug' => 'files_to_review',                 'required' => false, 'category' => null],
+                ['slug' => 'packing_check_si',                'required' => true, 'category' => null],
+                ['slug' => 'packing_check_ce_si',             'required' => false, 'category' => null],
+                ['slug' => 'packaging_check',                 'required' => true, 'category' => null],
+                ['slug' => 'labels_check',                    'required' => true, 'category' => null],
+                ['slug' => 'labels_check_ce_si',              'required' => false, 'category' => null],
+                ['slug' => 'marking_check_si',                'required' => true, 'category' => null],
+                ['slug' => 'barcode_testing',                 'required' => true, 'category' => null],
+                ['slug' => 'carton_dimensions_weight',        'required' => true, 'category' => null],
+                ['slug' => 'carton_verification',             'required' => true, 'category' => null],
+                ['slug' => 'quantity_sampling',                'required' => true, 'category' => null],
+                ['slug' => 'selected_cartons_si',             'required' => true, 'category' => null],
+                ['slug' => 'article_results_table',           'required' => true, 'category' => null],
+                ['slug' => 'order_quantity_vs_packing_list',  'required' => true, 'category' => null],
+                ['slug' => 'loading_schedule_and_timing',     'required' => true, 'category' => null],
+                ['slug' => 'container_details',               'required' => true, 'category' => null],
+                ['slug' => 'inner_conditions_of_container',   'required' => true, 'category' => null],
+                ['slug' => 'overall_carton_condition',        'required' => true, 'category' => null],
+                ['slug' => 'seal_verification',               'required' => true, 'category' => null],
+                ['slug' => 'shipment_verification',           'required' => true, 'category' => null],
+                ['slug' => 'inspection_conclusion',           'required' => true, 'category' => null],
+                ['slug' => 'final_review',                    'required' => true, 'category' => null],
+                ['slug' => 'finish_inspection',               'required' => true, 'category' => null],
             ],
             'Re-Inspection' => [
                 ['slug' => 'general_information',    'required' => true, 'category' => null],
@@ -161,12 +228,12 @@ class InspectionTypeSectionDefaultSeeder extends Seeder
 
                 InspectionTypeSectionDefault::updateOrCreate(
                     [
-                        'inspection_type_id'    => $type->id,
+                        'inspection_type_id' => $type->id,
                         'inspection_section_id' => $section->id,
-                        'category_id'           => $categoryId,
+                        'category_id' => $categoryId,
                     ],
                     [
-                        'sort_order'  => ($order + 1) * 10,
+                        'sort_order' => ($order + 1) * 10,
                         'is_required' => $entry['required'],
                     ]
                 );

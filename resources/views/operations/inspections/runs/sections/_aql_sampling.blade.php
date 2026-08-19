@@ -6,6 +6,19 @@
     $dispCritical = ($a && $a->aql_critical == -1) ? 'not_allowed' : ($a?->aql_critical ?? 0.065);
     $dispMajor    = ($a && $a->aql_major    == -1) ? 'not_allowed' : ($a?->aql_major    ?? 2.5);
     $dispMinor    = ($a && $a->aql_minor    == -1) ? 'not_allowed' : ($a?->aql_minor    ?? 4.0);
+
+    // Per-size checked/error breakdown — one row per declared size for this
+    // run's sample+color (from sample_variations), pre-filled with any
+    // already-saved counts. Purely additive input detail; does not drive
+    // lot_size/sample_size/found_* above.
+    $savedBreakdown = collect($a?->sizeBreakdowns ?? [])->keyBy('size_label');
+    $breakdownSizes = collect($sizeOptions ?? [])->merge($savedBreakdown->keys())->unique()->values();
+    $sizeBreakdownRows = $breakdownSizes->map(fn ($label) => [
+        'size_label'  => $label,
+        'order_qty'   => $savedBreakdown->get($label)?->order_qty ?? 0,
+        'checked_qty' => $savedBreakdown->get($label)?->checked_qty ?? 0,
+        'error_qty'   => $savedBreakdown->get($label)?->error_qty ?? 0,
+    ])->values();
 @endphp
 
 <div id="aql-calculator-form">
@@ -248,6 +261,46 @@
             </div>
         </div>
     </div>
+
+    {{-- ── Per-size checked / error breakdown ──────────────────────────────── --}}
+    <hr class="my-4">
+    <div class="d-flex align-items-center justify-content-between mb-3">
+        <h6 class="fw-semibold mb-0">
+            <i class="feather-list me-2 text-primary"></i>Per-Size Checked / Error Breakdown
+        </h6>
+        <button type="button" id="aql-add-size-row-btn" class="btn btn-sm btn-light-primary">
+            <i class="feather-plus me-1"></i>Add Size
+        </button>
+    </div>
+    <div class="table-responsive">
+        <table class="table table-bordered table-sm mb-0 align-middle" id="aql-size-breakdown-table">
+            <thead class="table-light">
+                <tr>
+                    <th style="width:34%">Size</th>
+                    <th style="width:20%" class="text-center">Order Qty</th>
+                    <th style="width:20%" class="text-center">Checked Qty</th>
+                    <th style="width:18%" class="text-center">Error Qty</th>
+                    <th style="width:8%" class="text-center"></th>
+                </tr>
+            </thead>
+            <tbody id="aql-size-breakdown-tbody">
+                {{-- Rows rendered by JS --}}
+            </tbody>
+            <tfoot>
+                <tr class="table-light fw-semibold">
+                    <td class="text-end text-muted fs-12">Total</td>
+                    <td class="text-center" id="aql-sb-total-order">—</td>
+                    <td class="text-center" id="aql-sb-total-checked">—</td>
+                    <td class="text-center" id="aql-sb-total-error">—</td>
+                    <td></td>
+                </tr>
+            </tfoot>
+        </table>
+    </div>
+    <small class="text-muted fs-11">
+        <i class="feather-info me-1"></i>
+        For coverage/defect-rate reporting only — doesn't change the sample size or Ac/Re numbers above.
+    </small>
 
 </div>
 
@@ -537,6 +590,86 @@
         aqlRenderVariations();
         aqlRecalculate();
     });
+
+    // ── Per-size checked/error breakdown ─────────────────────────────────────
+    let aqlSizeRows = @json($sizeBreakdownRows ?? []);
+    if (!Array.isArray(aqlSizeRows)) aqlSizeRows = [];
+    aqlSizeRows = aqlSizeRows.map(r => ({
+        size_label:  r.size_label || '',
+        order_qty:   parseInt(r.order_qty)   || 0,
+        checked_qty: parseInt(r.checked_qty) || 0,
+        error_qty:   parseInt(r.error_qty)   || 0,
+    }));
+
+    function aqlRenderSizeBreakdown() {
+        const tbody = document.getElementById('aql-size-breakdown-tbody');
+        if (!tbody) return;
+
+        if (aqlSizeRows.length === 0) {
+            tbody.innerHTML = '<tr><td colspan="5" class="text-center text-muted py-3 fs-12">No sizes yet. Click <strong>Add Size</strong> to start.</td></tr>';
+        } else {
+            tbody.innerHTML = aqlSizeRows.map((r, i) => `
+                <tr>
+                    <td><input type="text" class="form-control form-control-sm"
+                               name="aql[size_breakdown][${i}][size_label]"
+                               value="${escHtml(r.size_label)}" placeholder="e.g. M"
+                               oninput="aqlUpdateSizeRow(${i},'size_label',this.value)"></td>
+                    <td><input type="number" class="form-control form-control-sm text-center"
+                               name="aql[size_breakdown][${i}][order_qty]"
+                               value="${r.order_qty}" min="0"
+                               oninput="aqlUpdateSizeRow(${i},'order_qty',parseInt(this.value)||0)"></td>
+                    <td><input type="number" class="form-control form-control-sm text-center"
+                               name="aql[size_breakdown][${i}][checked_qty]"
+                               value="${r.checked_qty}" min="0"
+                               oninput="aqlUpdateSizeRow(${i},'checked_qty',parseInt(this.value)||0)"></td>
+                    <td><input type="number" class="form-control form-control-sm text-center"
+                               name="aql[size_breakdown][${i}][error_qty]"
+                               value="${r.error_qty}" min="0"
+                               oninput="aqlUpdateSizeRow(${i},'error_qty',parseInt(this.value)||0)"></td>
+                    <td class="text-center">
+                        <button type="button" class="btn btn-sm btn-icon btn-light-danger"
+                                onclick="aqlRemoveSizeRow(${i})" title="Remove">
+                            <i class="feather-x"></i>
+                        </button>
+                    </td>
+                </tr>
+            `).join('');
+        }
+
+        aqlRecalculateSizeTotals();
+    }
+
+    function aqlRecalculateSizeTotals() {
+        const totals = aqlSizeRows.reduce((acc, r) => {
+            acc.order   += r.order_qty;
+            acc.checked += r.checked_qty;
+            acc.error   += r.error_qty;
+            return acc;
+        }, { order: 0, checked: 0, error: 0 });
+
+        const set = (id, val) => { const el = document.getElementById(id); if (el) el.textContent = val > 0 ? val.toLocaleString() : '—'; };
+        set('aql-sb-total-order', totals.order);
+        set('aql-sb-total-checked', totals.checked);
+        set('aql-sb-total-error', totals.error);
+    }
+
+    window.aqlUpdateSizeRow = function(idx, field, value) {
+        if (!aqlSizeRows[idx]) return;
+        aqlSizeRows[idx][field] = value;
+        aqlRecalculateSizeTotals();
+    };
+
+    window.aqlRemoveSizeRow = function(idx) {
+        aqlSizeRows.splice(idx, 1);
+        aqlRenderSizeBreakdown();
+    };
+
+    document.getElementById('aql-add-size-row-btn')?.addEventListener('click', function() {
+        aqlSizeRows.push({ size_label: '', order_qty: 0, checked_qty: 0, error_qty: 0 });
+        aqlRenderSizeBreakdown();
+    });
+
+    aqlRenderSizeBreakdown();
 
     // ── Wire up lot_size manual change ───────────────────────────────────────
     document.getElementById('aql_lot_size')?.addEventListener('input', function() {

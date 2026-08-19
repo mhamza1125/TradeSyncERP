@@ -34,6 +34,11 @@ class InspectionRunSection extends Model
         return $this->morphMany(Attachment::class, 'attachable');
     }
 
+    public function defects()
+    {
+        return $this->hasMany(InspectionRunDefect::class)->orderBy('sort_order');
+    }
+
     public function isComplete(): bool
     {
         return $this->status === 'complete';

@@ -1,8 +1,6 @@
 {{-- Defects Recording (covers denim_textile_defects + defect_recording slugs) --}}
-{{-- Expects: $runSection, $defects, $uploadUrl, $inspection, $run --}}
+{{-- Expects: $runSection, $defects, $uploadUrl, $inspection, $run, $sizeOptions --}}
 @php
-    $d          = $runSection->data ?? [];
-    $selections = collect($d['selections'] ?? [])->filter(fn($s) => !empty($s['selected']) && !empty($s['defect_id']))->values();
     $rsId       = $runSection->id;
     $attsByTask = $runSection->attachments->groupBy(fn($a) => $a->task_key ?? '__none__');
     $defectsMap = $defects->mapWithKeys(fn($def) => [
@@ -12,11 +10,19 @@
         ],
     ]);
     $deleteUrlTpl = route('inspections.runs.attachments.delete', [$inspection, $run, '__ATT__']);
-    $savedSelections = $selections->map(fn($s) => [
-        'defect_id' => (int) $s['defect_id'],
-        'quantity'  => (int) ($s['quantity'] ?? 1),
-        'comment'   => $s['comment'] ?? '',
-        'attachments' => $attsByTask->get('defect_' . $s['defect_id'], collect())->map(fn($a) => [
+    $sizeOptionList = collect($sizeOptions ?? [])->values();
+
+    $savedRows = $runSection->defects->map(fn ($row) => [
+        'id'                => $row->id,
+        'defect_id'         => $row->defect_id,
+        'severity'          => $row->severity,
+        'size'              => $row->size,
+        'qty'               => $row->qty,
+        'carton_no'         => $row->carton_no,
+        'status'            => $row->status,
+        'disposition_code'  => $row->disposition_code,
+        'notes'             => $row->notes,
+        'attachments' => $attsByTask->get('defect_row_' . $row->id, collect())->map(fn($a) => [
             'id'      => $a->id,
             'url'     => $a->url,
             'isImage' => $a->isImage(),
@@ -33,8 +39,8 @@
 </div>
 @else
 <p class="text-muted fs-13 mb-3">
-    Search and add each defect found during inspection. Set its severity, add a comment,
-    and attach photos as evidence.
+    Search and add each defect found during inspection. A defect can be added more than once
+    (e.g. found in different sizes or cartons) — set its size, quantity, carton, and status for each entry.
 </p>
 
 <div class="d-flex gap-2 mb-3">
@@ -46,23 +52,27 @@
     </button>
 </div>
 
-<div id="defectsTableWrap-{{ $rsId }}" class="border rounded" style="{{ $selections->isEmpty() ? 'display:none' : '' }}">
+<div id="defectsTableWrap-{{ $rsId }}" class="border rounded" style="{{ $savedRows->isEmpty() ? 'display:none' : '' }}">
     <table class="table table-sm table-hover align-middle mb-0">
         <thead class="table-light">
             <tr>
-                <th style="width:36px">#</th>
+                <th style="width:32px">#</th>
                 <th>Defect</th>
-                <th style="width:100px">Severity</th>
-                <th style="width:90px">Qty Affected</th>
-                <th style="width:220px">Comment</th>
-                <th style="width:200px">Photos</th>
-                <th style="width:40px"></th>
+                <th style="width:90px">Severity</th>
+                <th style="width:100px">Size</th>
+                <th style="width:70px">Qty</th>
+                <th style="width:100px">Carton #</th>
+                <th style="width:110px">Status</th>
+                <th style="width:110px">Disposition</th>
+                <th style="width:160px">Notes</th>
+                <th style="width:160px">Photos</th>
+                <th style="width:36px"></th>
             </tr>
         </thead>
         <tbody id="defectsTableBody-{{ $rsId }}"></tbody>
     </table>
 </div>
-<div id="noDefectsMsg-{{ $rsId }}" class="text-muted fs-12 mt-1" style="{{ $selections->isEmpty() ? '' : 'display:none' }}">
+<div id="noDefectsMsg-{{ $rsId }}" class="text-muted fs-12 mt-1" style="{{ $savedRows->isEmpty() ? '' : 'display:none' }}">
     No defects recorded yet.
 </div>
 <div id="defectHiddenInputs-{{ $rsId }}"></div>
@@ -83,9 +93,11 @@
     const uploadUrl   = @json($uploadUrl);
     const deleteUrlTpl = @json($deleteUrlTpl);
     const DEFECTS_MAP = @json($defectsMap);
-    const SAVED_SELECTIONS = @json($savedSelections);
+    const SAVED_ROWS  = @json($savedRows);
+    const SIZE_OPTIONS = @json($sizeOptionList);
+    const STATUSES = ['open', 'rectified', 'rejected'];
+    const DISPOSITION_CODES = ['MACDF', 'MACSO', 'MACDE'];
 
-    let addedDefects = new Set();
     let rowNum = 0;
 
     const SEVERITY_COLORS = { critical: 'danger', major: 'warning', minor: 'info', functional: 'secondary' };
@@ -119,10 +131,34 @@
             .replace(/"/g, '&quot;');
     }
 
+    function sizeOptionsHtml(selected) {
+        let html = '<option value="">—</option>';
+        SIZE_OPTIONS.forEach(sz => {
+            html += `<option value="${escHtml(sz)}"${selected === sz ? ' selected' : ''}>${escHtml(sz)}</option>`;
+        });
+        // Keep a saved value visible even if it's since fallen outside the declared size list.
+        if (selected && !SIZE_OPTIONS.includes(selected)) {
+            html += `<option value="${escHtml(selected)}" selected>${escHtml(selected)}</option>`;
+        }
+        return html;
+    }
+
+    function statusOptionsHtml(selected) {
+        return STATUSES.map(s =>
+            `<option value="${s}"${selected === s ? ' selected' : ''}>${s.charAt(0).toUpperCase() + s.slice(1)}</option>`
+        ).join('');
+    }
+
+    function dispositionOptionsHtml(selected) {
+        return '<option value="">—</option>' + DISPOSITION_CODES.map(c =>
+            `<option value="${c}"${selected === c ? ' selected' : ''}>${c}</option>`
+        ).join('');
+    }
+
     function attachmentThumbHtml(att) {
         const inner = att.isImage
-            ? `<a href="${att.url}" target="_blank" rel="noopener noreferrer"><img src="${att.url}" class="rounded border" style="width:40px;height:40px;object-fit:cover" alt=""></a>`
-            : `<a href="${att.url}" target="_blank" rel="noopener noreferrer" class="d-flex align-items-center justify-content-center border rounded bg-light text-decoration-none" style="width:40px;height:40px"><i class="feather-file text-muted" style="font-size:13px"></i></a>`;
+            ? `<a href="${att.url}" target="_blank" rel="noopener noreferrer"><img src="${att.url}" class="rounded border" style="width:36px;height:36px;object-fit:cover" alt=""></a>`
+            : `<a href="${att.url}" target="_blank" rel="noopener noreferrer" class="d-flex align-items-center justify-content-center border rounded bg-light text-decoration-none" style="width:36px;height:36px"><i class="feather-file text-muted" style="font-size:12px"></i></a>`;
         return `<div class="att-thumb position-relative d-inline-block" id="att-${att.id}">
             ${inner}
             <button type="button" class="att-delete-btn btn btn-danger btn-sm p-0 position-absolute top-0 end-0 d-flex align-items-center justify-content-center"
@@ -132,46 +168,73 @@
         </div>`;
     }
 
-    function addDefectRow(id, saved) {
-        id = String(id);
-        if (addedDefects.has(id)) { defectDropdown.clear(); return; }
-        const def = DEFECTS_MAP[id];
+    function toggleDispositionVisibility(tr) {
+        const statusSel = tr.querySelector('.defect-status-select');
+        const dispoTd = tr.querySelector('.defect-disposition-cell');
+        if (!statusSel || !dispoTd) return;
+        dispoTd.style.display = statusSel.value === 'rejected' ? '' : 'none';
+    }
+
+    function addDefectRow(defectId, saved) {
+        defectId = String(defectId);
+        const def = DEFECTS_MAP[defectId];
         if (!def) return;
 
         saved = saved || {};
-        addedDefects.add(id);
         rowNum++;
         const idx      = rowNum - 1;
-        const taskKey  = 'defect_' + id;
+        // Photos attach to a specific saved row (task_key = defect_row_{id}).
+        // A row that hasn't been saved yet has no id to key photos against,
+        // so photo upload is only offered once this row exists in the DB —
+        // save the run, then attach photos to it on the next edit.
+        const taskKey  = saved.id ? ('defect_row_' + saved.id) : null;
         const previews = (saved.attachments || []).map(attachmentThumbHtml).join('');
+        const status   = saved.status || 'open';
 
-        const sev      = def.severity ?? 'minor';
+        const sev      = saved.severity || def.severity || 'minor';
         const sevColor = SEVERITY_COLORS[sev] ?? 'secondary';
         const sevLabel = sev.charAt(0).toUpperCase() + sev.slice(1);
 
         const tr = document.createElement('tr');
-        tr.dataset.defectId = id;
         tr.innerHTML = `
             <td class="text-muted row-num">${rowNum}</td>
             <td class="fw-semibold fs-13">
                 ${escHtml(def.name)}
-                <input type="hidden" name="sections[${rsId}][data][selections][${idx}][defect_id]" value="${id}">
-                <input type="hidden" name="sections[${rsId}][data][selections][${idx}][selected]" value="1">
-                <input type="hidden" name="sections[${rsId}][data][selections][${idx}][severity]" value="${sev}">
+                <input type="hidden" name="sections[${rsId}][defects][${idx}][id]" value="${saved.id || ''}">
+                <input type="hidden" name="sections[${rsId}][defects][${idx}][defect_id]" value="${defectId}">
+                <input type="hidden" name="sections[${rsId}][defects][${idx}][severity]" value="${sev}">
+            </td>
+            <td><span class="badge bg-soft-${sevColor} text-${sevColor}">${sevLabel}</span></td>
+            <td>
+                <select name="sections[${rsId}][defects][${idx}][size]" class="form-select form-select-sm">
+                    ${sizeOptionsHtml(saved.size || '')}
+                </select>
             </td>
             <td>
-                <span class="badge bg-soft-${sevColor} text-${sevColor}">${sevLabel}</span>
-            </td>
-            <td>
-                <input type="number" name="sections[${rsId}][data][selections][${idx}][quantity]"
+                <input type="number" name="sections[${rsId}][defects][${idx}][qty]"
                        class="form-control form-control-sm text-center"
-                       value="${saved.quantity || 1}" min="1" placeholder="1">
+                       value="${saved.qty || 1}" min="1" placeholder="1">
             </td>
             <td>
-                <input type="text" name="sections[${rsId}][data][selections][${idx}][comment]"
-                       class="form-control form-control-sm" value="${escHtml(saved.comment || '')}" placeholder="Observation…">
+                <input type="text" name="sections[${rsId}][defects][${idx}][carton_no]"
+                       class="form-control form-control-sm" value="${escHtml(saved.carton_no || '')}" placeholder="e.g. 12">
             </td>
             <td>
+                <select name="sections[${rsId}][defects][${idx}][status]" class="form-select form-select-sm defect-status-select">
+                    ${statusOptionsHtml(status)}
+                </select>
+            </td>
+            <td class="defect-disposition-cell" style="${status === 'rejected' ? '' : 'display:none'}">
+                <select name="sections[${rsId}][defects][${idx}][disposition_code]" class="form-select form-select-sm">
+                    ${dispositionOptionsHtml(saved.disposition_code || '')}
+                </select>
+            </td>
+            <td>
+                <input type="text" name="sections[${rsId}][defects][${idx}][notes]"
+                       class="form-control form-control-sm" value="${escHtml(saved.notes || '')}" placeholder="Observation…">
+            </td>
+            <td>
+                ${taskKey ? `
                 <div class="attachment-area" data-upload-url="${uploadUrl}" data-task-key="${taskKey}">
                     <div class="att-previews d-flex flex-wrap gap-1 mb-1">${previews}</div>
                     <button type="button" class="add-files-btn btn btn-sm btn-light border" style="font-size:10px">
@@ -179,13 +242,16 @@
                     </button>
                     <input type="file" class="att-file-input d-none" multiple accept="image/*,.pdf">
                 </div>
+                ` : `<small class="text-muted fs-11">Save the run to attach photos</small>`}
             </td>
             <td>
-                <button type="button" class="btn btn-sm btn-light-danger remove-defect-btn" data-id="${id}" title="Remove">
+                <button type="button" class="btn btn-sm btn-light-danger remove-defect-btn" title="Remove">
                     <i class="feather-x"></i>
                 </button>
             </td>`;
         tableBody.appendChild(tr);
+
+        tr.querySelector('.defect-status-select')?.addEventListener('change', () => toggleDispositionVisibility(tr));
 
         tableWrap.style.display = '';
         noMsg.style.display     = 'none';
@@ -196,12 +262,10 @@
         }
     }
 
-    function removeDefectRow(id) {
-        id = String(id);
-        addedDefects.delete(id);
-        tableBody.querySelectorAll(`[data-defect-id="${id}"]`).forEach(r => r.remove());
+    function removeDefectRow(tr) {
+        tr.remove();
         renumberRows();
-        if (addedDefects.size === 0) {
+        if (tableBody.children.length === 0) {
             tableWrap.style.display = 'none';
             noMsg.style.display     = '';
         }
@@ -215,8 +279,8 @@
             if (numCell) numCell.textContent = i;
             tr.querySelectorAll('[name]').forEach(el => {
                 el.name = el.name.replace(
-                    /sections\[(\d+)\]\[data\]\[selections\]\[\d+\]/,
-                    `sections[${rsId}][data][selections][${i - 1}]`
+                    /sections\[(\d+)\]\[defects\]\[\d+\]/,
+                    `sections[${rsId}][defects][${i - 1}]`
                 );
             });
         });
@@ -229,14 +293,10 @@
     });
     tableBody.addEventListener('click', e => {
         const btn = e.target.closest('.remove-defect-btn');
-        if (btn) removeDefectRow(btn.dataset.id);
+        if (btn) removeDefectRow(btn.closest('tr'));
     });
 
-    SAVED_SELECTIONS.forEach(sel => addDefectRow(sel.defect_id, {
-        quantity: sel.quantity,
-        comment:  sel.comment,
-        attachments: sel.attachments,
-    }));
+    SAVED_ROWS.forEach(row => addDefectRow(row.defect_id, row));
     hiddenWrap.remove();
 })();
 </script>

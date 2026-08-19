@@ -40,29 +40,30 @@
 
                     <div class="card">
                         <div class="card-header">
-                            <h5 class="card-title mb-0">Select Sample for This Run</h5>
+                            <h5 class="card-title mb-0">Select Sample &amp; Color for This Run</h5>
                             <small class="text-muted d-block mt-1">
-                                Each run tests exactly one sample. Inspection sections will be automatically
-                                applied based on the
+                                Each run tests exactly one sample in one color. Inspection sections will be
+                                automatically applied based on the
                                 @if($inspection->inspectionType)
                                     <strong>{{ $inspection->inspectionType->name }}</strong> type
                                 @else
                                     inspection type
                                 @endif
-                                and the sample's product category.
+                                and the sample's product category. Sizes for the chosen color are handled
+                                inside the AQL and defect sections of the run itself.
                             </small>
                         </div>
                         <div class="card-body pb-5">
                             <div class="mb-3">
-                                <label class="form-label fw-semibold">Sample <span class="text-danger">*</span></label>
+                                <label class="form-label fw-semibold">Sample — Color <span class="text-danger">*</span></label>
                                 <select id="sampleSelect"
                                         name="sample_id"
                                         class="form-select @error('sample_id') is-invalid @enderror"
                                         required>
-                                    <option value="">— Search and select a sample —</option>
+                                    <option value="">— Search and select a sample &amp; color —</option>
                                     @foreach($samples as $s)
-                                        <option value="{{ $s['id'] }}"
-                                                @selected(old('sample_id') == $s['id'])>
+                                        <option value="{{ $s['value'] }}"
+                                                @selected(old('sample_id') == $s['value'])>
                                             {{ $s['text'] }}
                                         </option>
                                     @endforeach

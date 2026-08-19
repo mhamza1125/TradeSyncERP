@@ -626,6 +626,7 @@ foreach ($visibleRunSections as $rs) {
                                         'uploadUrl'   => $uploadUrl,
                                         'inspection'  => $inspection,
                                         'run'         => $run,
+                                        'sizeOptions' => $sizeOptions,
                                     ])
                                 @break
 
@@ -691,9 +692,10 @@ foreach ($visibleRunSections as $rs) {
                                         ])
                                     @elseif($sec->section_type === 'aql')
                                         @include('operations.inspections.runs.sections._aql_sampling', [
-                                            'runSection' => $runSection,
-                                            'aql'        => $run->aql,
-                                            'aqlJsData'  => $aqlJsData,
+                                            'runSection'  => $runSection,
+                                            'aql'         => $run->aql,
+                                            'aqlJsData'   => $aqlJsData,
+                                            'sizeOptions' => $sizeOptions,
                                         ])
                                     @elseif($sec->section_type === 'images')
                                         @include('operations.inspections.runs.sections._product_screening', [

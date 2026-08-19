@@ -307,6 +307,32 @@ class AqlCalculationService
     }
 
     /**
+     * Sum checked_qty/error_qty across a run's per-size AQL breakdown rows.
+     *
+     * Purely additive: this does not feed into calculate()/verdict()/
+     * planForLot() and does not alter lot_size, sample_size, or the
+     * found_critical/major/minor fields — those still come from whatever
+     * the inspector enters (manually, or via the color/size "variations"
+     * distribution that already existed). It only produces the aggregate
+     * checked/error totals for display and future reporting.
+     *
+     * @param  array<int, array{checked_qty?: int|string, error_qty?: int|string}>  $rows
+     * @return array{checked_qty: int, error_qty: int}
+     */
+    public function summarizeSizeBreakdown(array $rows): array
+    {
+        $checked = 0;
+        $error = 0;
+
+        foreach ($rows as $row) {
+            $checked += (int) ($row['checked_qty'] ?? 0);
+            $error += (int) ($row['error_qty'] ?? 0);
+        }
+
+        return ['checked_qty' => $checked, 'error_qty' => $error];
+    }
+
+    /**
      * Return the AQL table as a JSON-safe structure for use in JavaScript.
      */
     public function tableForJs(): array

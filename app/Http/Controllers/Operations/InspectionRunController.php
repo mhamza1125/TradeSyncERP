@@ -8,6 +8,7 @@ use App\Models\Defect;
 use App\Models\Inspection;
 use App\Models\InspectionRun;
 use App\Models\InspectionRunAql;
+use App\Models\InspectionRunDefect;
 use App\Models\InspectionRunSection;
 use App\Models\InspectionSection;
 use App\Models\InspectionTypeSectionDefault;
@@ -26,46 +27,71 @@ class InspectionRunController extends Controller
         $this->middleware('permission:inspections.edit');
     }
 
-    // ── Create: sample picker ────────────────────────────────────────────────
+    // ── Create: sample + color-variant picker ────────────────────────────────
 
     public function create(Inspection $inspection)
     {
         $inspection->load('inspectionType');
 
-        $samples = Sample::with('customer', 'category')
+        $samples = Sample::with('customer', 'category', 'variations.color')
             ->orderBy('sample_code')
             ->get()
-            ->map(fn ($s) => [
-                'id' => $s->id,
-                'text' => $s->sample_code
+            ->flatMap(function ($s) {
+                $label = $s->sample_code
                     .($s->product_name ? ' — '.$s->product_name : '')
-                    .($s->customer ? ' ('.$s->customer->customer_name.')' : ''),
-            ]);
+                    .($s->customer ? ' ('.$s->customer->customer_name.')' : '');
+
+                $colors = $s->variations->pluck('color')->filter()->unique('id')->sortBy('name');
+
+                // No colors recorded for this sample — still allow selecting it,
+                // just without a color component (option value has no color id).
+                if ($colors->isEmpty()) {
+                    return [[
+                        'value' => $s->id.':',
+                        'text' => $label,
+                    ]];
+                }
+
+                return $colors->map(fn ($c) => [
+                    'value' => $s->id.':'.$c->id,
+                    'text' => $label.' — '.$c->name,
+                ])->values()->all();
+            });
 
         return view('operations.inspections.runs.create', compact('inspection', 'samples'));
     }
 
-    // ── Store: create run with single sample, auto-resolve sections ──────────
+    // ── Store: create run for one sample + color variant, auto-resolve sections ──
 
     public function store(Request $request, Inspection $inspection)
     {
         $request->validate([
-            'sample_id' => ['required', 'exists:samples,id'],
+            'sample_id' => ['required', 'string'],
             'review_files' => ['nullable', 'array', 'max:20'],
             'review_files.*' => ['nullable', 'file', 'max:20480', 'mimes:jpg,jpeg,png,gif,webp,pdf,doc,docx,xls,xlsx'],
         ]);
 
-        return DB::transaction(function () use ($request, $inspection) {
+        // The picker submits "sampleId:colorId" (colorId empty when the
+        // sample has no recorded color variations).
+        [$sampleId, $colorId] = array_pad(explode(':', $request->input('sample_id'), 2), 2, null);
+
+        abort_unless(Sample::whereKey($sampleId)->exists(), 422, 'Invalid sample selected.');
+        if ($colorId) {
+            abort_unless(SampleColor::whereKey($colorId)->exists(), 422, 'Invalid color selected.');
+        }
+
+        return DB::transaction(function () use ($sampleId, $colorId, $request, $inspection) {
             $inspection->load('inspectionType');
             $runNumber = $inspection->runs()->max('run_number') + 1;
 
             $run = $inspection->runs()->create([
-                'sample_id' => $request->sample_id,
+                'sample_id' => $sampleId,
+                'sample_color_id' => $colorId ?: null,
                 'run_number' => $runNumber,
                 'verdict' => 'Pending',
             ]);
 
-            $this->resolveRunSections($run, $request->sample_id, $inspection->inspection_type_id);
+            $this->resolveRunSections($run, $sampleId, $inspection->inspection_type_id);
 
             $reviewFiles = $request->file('review_files', []);
             if (! empty($reviewFiles)) {
@@ -94,14 +120,18 @@ class InspectionRunController extends Controller
         $run->load([
             'sample.customer',
             'sample.category',
+            'sampleColor',
             'runSections.section',
             'runSections.attachments',
-            'aql',
+            'runSections.defects.defect',
+            'aql.sizeBreakdowns',
         ]);
 
         $defects = Defect::where('status', true)
             ->orderBy('defect_name')
             ->get();
+
+        $sizeOptions = $run->declaredSizeOptions();
 
         // Map run sections by slug for view access
         $sectionMap = $run->runSections->mapWithKeys(
@@ -113,7 +143,7 @@ class InspectionRunController extends Controller
         $sizes = SampleSize::orderBy('name')->get();
 
         return view('operations.inspections.runs.edit', compact(
-            'inspection', 'run', 'defects', 'sectionMap', 'aqlJsData', 'colors', 'sizes'
+            'inspection', 'run', 'defects', 'sectionMap', 'aqlJsData', 'colors', 'sizes', 'sizeOptions'
         ));
     }
 
@@ -137,12 +167,27 @@ class InspectionRunController extends Controller
             'aql.variations.*.size' => ['nullable', 'string', 'max:100'],
             'aql.variations.*.order_qty' => ['nullable', 'integer', 'min:0'],
             'aql.variations.*.inspect_qty' => ['nullable', 'integer', 'min:0'],
+            'aql.size_breakdown' => ['nullable', 'array'],
+            'aql.size_breakdown.*.size_label' => ['nullable', 'string', 'max:50'],
+            'aql.size_breakdown.*.order_qty' => ['nullable', 'integer', 'min:0'],
+            'aql.size_breakdown.*.checked_qty' => ['nullable', 'integer', 'min:0'],
+            'aql.size_breakdown.*.error_qty' => ['nullable', 'integer', 'min:0'],
 
             // Dynamic sections
             'sections' => ['nullable', 'array'],
             'sections.*.status' => ['nullable', 'in:pending,complete,na'],
             'sections.*.notes' => ['nullable', 'string', 'max:2000'],
             'sections.*.data' => ['nullable', 'array'],
+            'sections.*.defects' => ['nullable', 'array'],
+            'sections.*.defects.*.id' => ['nullable', 'integer'],
+            'sections.*.defects.*.defect_id' => ['nullable', 'exists:defects,id'],
+            'sections.*.defects.*.severity' => ['nullable', 'in:critical,major,minor,functional'],
+            'sections.*.defects.*.size' => ['nullable', 'string', 'max:50'],
+            'sections.*.defects.*.qty' => ['nullable', 'integer', 'min:1'],
+            'sections.*.defects.*.carton_no' => ['nullable', 'string', 'max:50'],
+            'sections.*.defects.*.status' => ['nullable', 'in:open,rectified,rejected'],
+            'sections.*.defects.*.disposition_code' => ['nullable', 'in:MACDF,MACSO,MACDE'],
+            'sections.*.defects.*.notes' => ['nullable', 'string', 'max:2000'],
             'finish_run' => ['nullable', 'boolean'],
         ]);
 
@@ -201,7 +246,7 @@ class InspectionRunController extends Controller
                 $storeAqlMajor = $notAllowedMajor ? -1.0 : $aqlMajor;
                 $storeAqlMinor = $notAllowedMinor ? -1.0 : $aqlMinor;
 
-                InspectionRunAql::updateOrCreate(
+                $runAql = InspectionRunAql::updateOrCreate(
                     ['inspection_run_id' => $run->id],
                     [
                         'lot_size' => $lotSize,
@@ -224,6 +269,25 @@ class InspectionRunController extends Controller
                         'variations' => $variations,
                     ]
                 );
+
+                // ── Per-size checked/error breakdown (additive input detail) ──
+                // Does not feed lot_size/sample_size/found_* above — those keep
+                // coming from the inputs/variations this section already had.
+                $sizeRows = array_values(array_filter(
+                    $aqlInput['size_breakdown'] ?? [],
+                    fn ($r) => ! empty($r['size_label'])
+                ));
+
+                $runAql->sizeBreakdowns()->delete();
+                foreach ($sizeRows as $i => $row) {
+                    $runAql->sizeBreakdowns()->create([
+                        'size_label' => $row['size_label'],
+                        'order_qty' => (int) ($row['order_qty'] ?? 0),
+                        'checked_qty' => (int) ($row['checked_qty'] ?? 0),
+                        'error_qty' => (int) ($row['error_qty'] ?? 0),
+                        'sort_order' => $i,
+                    ]);
+                }
             }
 
             // ── 3. Dynamic section data ───────────────────────────────────────
@@ -243,6 +307,10 @@ class InspectionRunController extends Controller
                     'notes' => $sectionData['notes'] ?? null,
                     'data' => $mergedData,
                 ]);
+
+                if (array_key_exists('defects', $sectionData)) {
+                    $this->syncSectionDefects($runSection, $sectionData['defects'] ?? []);
+                }
             }
 
             // ── 4. Handle finish flag ─────────────────────────────────────────
@@ -356,6 +424,16 @@ class InspectionRunController extends Controller
             'status' => ['required', 'in:pending,complete,na'],
             'notes' => ['nullable', 'string', 'max:2000'],
             'data' => ['nullable', 'array'],
+            'defects' => ['nullable', 'array'],
+            'defects.*.id' => ['nullable', 'integer'],
+            'defects.*.defect_id' => ['nullable', 'exists:defects,id'],
+            'defects.*.severity' => ['nullable', 'in:critical,major,minor,functional'],
+            'defects.*.size' => ['nullable', 'string', 'max:50'],
+            'defects.*.qty' => ['nullable', 'integer', 'min:1'],
+            'defects.*.carton_no' => ['nullable', 'string', 'max:50'],
+            'defects.*.status' => ['nullable', 'in:open,rectified,rejected'],
+            'defects.*.disposition_code' => ['nullable', 'in:MACDF,MACSO,MACDE'],
+            'defects.*.notes' => ['nullable', 'string', 'max:2000'],
         ]);
 
         $mergedData = array_merge($runSection->data ?? [], $validated['data'] ?? []);
@@ -365,6 +443,10 @@ class InspectionRunController extends Controller
             'notes' => $validated['notes'] ?? $runSection->notes,
             'data' => $mergedData,
         ]);
+
+        if ($request->has('defects')) {
+            $this->syncSectionDefects($runSection, $validated['defects'] ?? []);
+        }
 
         $run->loadMissing('runSections');
         $total = $run->runSections->count();
@@ -401,11 +483,65 @@ class InspectionRunController extends Controller
         return response()->json($plan);
     }
 
+    // ── Sync a defects_check section's rows into inspection_run_defects ──────
+
+    private function syncSectionDefects(InspectionRunSection $runSection, array $rows): void
+    {
+        $existingIds = $runSection->defects()->pluck('id')->all();
+        $keptIds = [];
+
+        foreach (array_values($rows) as $i => $row) {
+            if (empty($row['defect_id'])) {
+                continue;
+            }
+
+            $status = $row['status'] ?? 'open';
+
+            $attrs = [
+                'inspection_run_section_id' => $runSection->id,
+                'defect_id' => $row['defect_id'],
+                'severity' => $row['severity'] ?? null,
+                'size' => $row['size'] ?? null,
+                'qty' => (int) ($row['qty'] ?? 1),
+                'carton_no' => $row['carton_no'] ?? null,
+                'status' => $status,
+                // Disposition code only makes sense once a unit has been rejected.
+                'disposition_code' => $status === 'rejected' ? ($row['disposition_code'] ?? null) : null,
+                'notes' => $row['notes'] ?? null,
+                'sort_order' => $i,
+            ];
+
+            $rowId = ! empty($row['id']) && in_array((int) $row['id'], $existingIds, true)
+                ? (int) $row['id']
+                : null;
+
+            if ($rowId) {
+                InspectionRunDefect::whereKey($rowId)->update($attrs);
+                $keptIds[] = $rowId;
+            } else {
+                $keptIds[] = InspectionRunDefect::create($attrs)->id;
+            }
+        }
+
+        // Remove rows no longer present, cleaning up their photos with them.
+        $removed = InspectionRunDefect::where('inspection_run_section_id', $runSection->id)
+            ->whereNotIn('id', $keptIds)
+            ->get();
+
+        foreach ($removed as $defectRow) {
+            $runSection->attachments()->where('task_key', $defectRow->taskKey())->get()->each(function ($att) {
+                Storage::disk('public')->delete($att->file_path);
+                $att->delete();
+            });
+            $defectRow->delete();
+        }
+    }
+
     // ── Determine a run's final verdict from its Final Review section / AQL ───
 
     private function resolveRunVerdict(InspectionRun $run): string
     {
-        $sections = $run->runSections()->with('section')->get();
+        $sections = $run->runSections()->with(['section', 'defects'])->get();
 
         // 1. Explicit verdict chosen by the inspector in Final Review
         $finalReview = $sections->first(fn ($rs) => $rs->section?->slug === 'final_review');
@@ -429,22 +565,11 @@ class InspectionRunController extends Controller
         }
 
         // 3. Derive from recorded defects (Critical/Major => Fail, Minor only => Conditional, none => Pass)
-        $defectSection = $sections->first(fn ($rs) => $rs->section?->slug === 'defect_recording');
+        // Only depends on each row's severity — size/carton/status/disposition
+        // added alongside the promotion to a real table don't affect this.
+        $defectSection = $sections->first(fn ($rs) => in_array($rs->section?->slug, ['defect_recording', 'denim_textile_defects'], true));
         if ($defectSection) {
-            $defectIds = collect($defectSection->data['selections'] ?? [])
-                ->filter(fn ($s) => ! empty($s['selected']) && ! empty($s['defect_id']))
-                ->pluck('defect_id')
-                ->map(fn ($id) => (int) $id);
-
-            if ($defectIds->isEmpty()) {
-                return 'Pass';
-            }
-
-            $hasCriticalOrMajor = Defect::whereIn('id', $defectIds)
-                ->whereIn('severity', ['critical', 'major'])
-                ->exists();
-
-            return $hasCriticalOrMajor ? 'Fail' : 'Conditional';
+            return InspectionRunDefect::verdictFromSeverities($defectSection->defects->pluck('severity'));
         }
 
         return 'Pending';

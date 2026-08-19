@@ -20,15 +20,15 @@ class InspectionRunAql extends Model
     ];
 
     protected $casts = [
-        'lot_size'       => 'integer',
-        'sample_size'    => 'integer',
-        'aql_critical'   => 'float',
-        'aql_major'      => 'float',
-        'aql_minor'      => 'float',
+        'lot_size' => 'integer',
+        'sample_size' => 'integer',
+        'aql_critical' => 'float',
+        'aql_major' => 'float',
+        'aql_minor' => 'float',
         'found_critical' => 'integer',
-        'found_major'    => 'integer',
-        'found_minor'    => 'integer',
-        'variations'     => 'array',
+        'found_major' => 'integer',
+        'found_minor' => 'integer',
+        'variations' => 'array',
     ];
 
     public function run()
@@ -36,12 +36,18 @@ class InspectionRunAql extends Model
         return $this->belongsTo(InspectionRun::class, 'inspection_run_id');
     }
 
+    public function sizeBreakdowns()
+    {
+        return $this->hasMany(InspectionRunAqlSizeBreakdown::class, 'run_aql_id')
+            ->orderBy('sort_order');
+    }
+
     public function calculateVerdict(): string
     {
         $fail =
             ($this->ac_critical !== null && $this->found_critical > $this->ac_critical) ||
-            ($this->ac_major    !== null && $this->found_major    > $this->ac_major)    ||
-            ($this->ac_minor    !== null && $this->found_minor    > $this->ac_minor);
+            ($this->ac_major !== null && $this->found_major > $this->ac_major) ||
+            ($this->ac_minor !== null && $this->found_minor > $this->ac_minor);
 
         if ($this->found_critical === 0 && $this->found_major === 0 && $this->found_minor === 0) {
             return 'Pending';

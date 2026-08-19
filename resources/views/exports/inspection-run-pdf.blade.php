@@ -226,6 +226,15 @@ body {
     border-radius: 0 3px 3px 0;
 }
 
+/* ── Style group header (bulk export: one per parent sample/style) ──── */
+.style-group-header {
+    border-bottom: 2px solid #0D2B4E;
+    padding-bottom: 6px;
+    margin-bottom: 10px;
+}
+.sgh-title { font-size: 11pt; font-weight: bold; color: #0D2B4E; text-transform: uppercase; }
+.sgh-rollup { font-size: 8pt; color: #546E7A; margin-top: 2px; }
+
 /* ── Run page header ───────────────────────────────────────────────── */
 .run-page-header {
     background: #0D2B4E;
@@ -561,6 +570,10 @@ $defectInfo = function ($defectId) use ($defects) {
     ];
 };
 
+// Runs grouped by parent style/sample (single-run exports don't pass this in —
+// fall back to grouping the one run we have so the template logic stays uniform).
+$runGroups = $runGroups ?? $runs->groupBy('sample_id');
+
 $coverVerdictClass = match($inspection->overall_status) {
     'Pass'             => 'vb-pass',
     'Fail'             => 'vb-fail',
@@ -575,14 +588,15 @@ $headerBadgeClass = match($inspection->overall_status) {
     default            => 'badge-pending',
 };
 
-// Aggregate defect counts across all runs (severity resolved from the Defect master)
+// Aggregate defect counts across all runs (severity is a snapshot on each
+// inspection_run_defects row — falls back to the Defect master for any
+// backfilled row that predates severity being captured per-entry)
 $defCritical = 0; $defMajor = 0; $defMinor = 0;
 foreach ($runs as $_r) {
     foreach ($_r->runSections as $_rs) {
         if ($_rs->section && $_rs->section->section_type === 'defects') {
-            $sels = collect($_rs->data['selections'] ?? [])->filter(fn($s) => !empty($s['selected']) && !empty($s['defect_id']));
-            foreach ($sels as $_sel) {
-                $sev = $_sel['severity'] ?? $defectInfo($_sel['defect_id'])['severity'];
+            foreach ($_rs->defects as $_row) {
+                $sev = $_row->severity ?? $defectInfo($_row->defect_id)['severity'];
                 if ($sev === 'critical') $defCritical++;
                 elseif ($sev === 'major') $defMajor++;
                 elseif ($sev === 'minor') $defMinor++;
@@ -614,7 +628,7 @@ $isSectionEmpty = function($rs, $currentRun): bool {
             => collect($data['items'] ?? [])->every(fn($i) => empty($i['status'])),
 
         $type === 'defects'
-            => collect($data['selections'] ?? [])->filter(fn($s) => !empty($s['selected']) && !empty($s['defect_id']))->isEmpty(),
+            => $rs->defects->isEmpty(),
 
         $type === 'aql'
             => !$currentRun->aql
@@ -730,10 +744,10 @@ foreach ($runs as $sumRun) {
             elseif ($aqlV === 'fail') $summaryRows[$sName]['failCount']++;
             $summaryRows[$sName]['customDetail'] = 'Verdict: '.($sumRun->aql?->verdict ?? 'Pending');
         } elseif ($sType === 'defects') {
-            $dSels  = collect($sumRs->data['selections'] ?? [])->filter(fn($s) => !empty($s['selected']) && !empty($s['defect_id']));
-            $dCritD = $dSels->filter(fn($s) => ($s['severity'] ?? $defectInfo($s['defect_id'])['severity']) === 'critical')->count();
-            $dMajD  = $dSels->filter(fn($s) => ($s['severity'] ?? $defectInfo($s['defect_id'])['severity']) === 'major')->count();
-            $dMinD  = $dSels->filter(fn($s) => ($s['severity'] ?? $defectInfo($s['defect_id'])['severity']) === 'minor')->count();
+            $dRows  = $sumRs->defects;
+            $dCritD = $dRows->filter(fn($r) => ($r->severity ?? $defectInfo($r->defect_id)['severity']) === 'critical')->count();
+            $dMajD  = $dRows->filter(fn($r) => ($r->severity ?? $defectInfo($r->defect_id)['severity']) === 'major')->count();
+            $dMinD  = $dRows->filter(fn($r) => ($r->severity ?? $defectInfo($r->defect_id)['severity']) === 'minor')->count();
             $dTotal = $dCritD + $dMajD + $dMinD;
             $summaryRows[$sName]['customDetail'] = $dTotal > 0
                 ? $dCritD.' Crit, '.$dMajD.' Major, '.$dMinD.' Minor'
@@ -961,7 +975,29 @@ uasort($summaryRows, fn($a, $b) => $a['sortPriority'] <=> $b['sortPriority']);
 
 @foreach($runs as $runIndex => $run)
 
-<div class="page-break"></div>
+@php
+    $isFirstRunOfGroup = $runIndex === 0 || $runs[$runIndex - 1]->sample_id !== $run->sample_id;
+@endphp
+
+@if($isFirstRunOfGroup)
+    @php
+        $styleGroup   = $runGroups->get($run->sample_id, collect([$run]));
+        $groupPassed  = $styleGroup->filter(fn($r) => $r->verdict === 'Pass')->count();
+        $groupTotal   = $styleGroup->count();
+    @endphp
+    <div class="page-break"></div>
+    <div class="style-group-header">
+        <div class="sgh-title">
+            {{ $run->sample?->sample_code }}
+            @if($run->sample?->product_name) &mdash; {{ $run->sample->product_name }} @endif
+        </div>
+        @if($groupTotal > 1)
+        <div class="sgh-rollup">{{ $groupPassed }} of {{ $groupTotal }} colors passed</div>
+        @endif
+    </div>
+@else
+    <div class="page-break"></div>
+@endif
 
 @php
     $runVerdictClass = match($run->verdict) {
@@ -991,6 +1027,7 @@ uasort($summaryRows, fn($a, $b) => $a['sortPriority'] <=> $b['sortPriority']);
                 <div class="rph-meta">
                     @if($run->sample)
                         Sample: {{ $run->sample->sample_code }}
+                        @if($run->sampleColor) &nbsp;&bull;&nbsp; Color: {{ $run->sampleColor->name }} @endif
                         @if($run->sample->customer) &nbsp;&bull;&nbsp; Customer: {{ $run->sample->customer->display_name }} @endif
                         @if($run->sample->category) &nbsp;&bull;&nbsp; Category: {{ $run->sample->category->category_name }} @endif
                     @endif
@@ -1154,18 +1191,16 @@ uasort($summaryRows, fn($a, $b) => $a['sortPriority'] <=> $b['sortPriority']);
         {{-- ════════════ DEFECT RECORDING ════════════ --}}
         @elseif($secType === 'defects')
         @php
-            $selections = collect($data['selections'] ?? [])->filter(
-                fn($s) => !empty($s['selected']) && !empty($s['defect_id'])
-            )->values();
+            $defectRows = $rs->defects;
             $dCrit = 0; $dMaj = 0; $dMin = 0;
-            foreach ($selections as $_s) {
-                $sev = $_s['severity'] ?? $defectInfo($_s['defect_id'])['severity'];
+            foreach ($defectRows as $_row) {
+                $sev = $_row->severity ?? $defectInfo($_row->defect_id)['severity'];
                 if ($sev === 'critical') $dCrit++;
                 elseif ($sev === 'major') $dMaj++;
                 elseif ($sev === 'minor') $dMin++;
             }
         @endphp
-        @if($selections->isEmpty())
+        @if($defectRows->isEmpty())
         <div class="empty-state">No defects recorded for this inspection run.</div>
         @else
         <table style="width:100%; margin-bottom:10px; border-collapse:collapse">
@@ -1193,26 +1228,34 @@ uasort($summaryRows, fn($a, $b) => $a['sortPriority'] <=> $b['sortPriority']);
         <table class="defect-table">
             <thead>
                 <tr>
-                    <th style="width:28px; text-align:center">#</th>
-                    <th style="width:38%">Defect Description</th>
-                    <th style="width:90px; text-align:center">Severity</th>
-                    <th style="width:48px; text-align:center">Qty</th>
-                    <th>Comment / Location</th>
+                    <th style="width:24px; text-align:center">#</th>
+                    <th style="width:26%">Defect Description</th>
+                    <th style="width:70px; text-align:center">Severity</th>
+                    <th style="width:40px; text-align:center">Size</th>
+                    <th style="width:36px; text-align:center">Qty</th>
+                    <th style="width:44px; text-align:center">Carton</th>
+                    <th style="width:60px; text-align:center">Status</th>
+                    <th style="width:56px; text-align:center">Disposition</th>
+                    <th>Notes</th>
                 </tr>
             </thead>
             <tbody>
-                @foreach($selections as $i => $sel)
+                @foreach($defectRows as $i => $row)
                 @php
-                    $defInfo = $defectInfo($sel['defect_id']);
-                    $sev     = $sel['severity'] ?? $defInfo['severity'];
-                    $addGallery($imgsByTask('defect_'.$sel['defect_id']), $defInfo['name']);
+                    $defInfo = $defectInfo($row->defect_id);
+                    $sev     = $row->severity ?? $defInfo['severity'];
+                    $addGallery($imgsByTask('defect_row_'.$row->id), $defInfo['name']);
                 @endphp
                 <tr>
                     <td style="text-align:center; color:#9E9E9E; font-size:8pt">{{ $i+1 }}</td>
                     <td><strong>{{ $defInfo['name'] }}</strong></td>
                     <td style="text-align:center"><span class="sev-{{ $sev }}">{{ ucfirst($sev) }}</span></td>
-                    <td style="text-align:center; font-weight:bold">{{ $sel['quantity'] ?? 1 }}</td>
-                    <td style="color:#546E7A; font-size:8pt">{{ $sel['comment'] ?? '' }}</td>
+                    <td style="text-align:center">{{ $row->size ?? '—' }}</td>
+                    <td style="text-align:center; font-weight:bold">{{ $row->qty ?? 1 }}</td>
+                    <td style="text-align:center">{{ $row->carton_no ?? '—' }}</td>
+                    <td style="text-align:center">{{ ucfirst($row->status ?? 'open') }}</td>
+                    <td style="text-align:center">{{ $row->disposition_code ?? '—' }}</td>
+                    <td style="color:#546E7A; font-size:8pt">{{ $row->notes ?? '' }}</td>
                 </tr>
                 @endforeach
             </tbody>
@@ -1297,6 +1340,29 @@ uasort($summaryRows, fn($a, $b) => $a['sortPriority'] <=> $b['sortPriority']);
                     <td>{{ $var['size'] ?? '—' }}</td>
                     <td style="text-align:center">{{ $var['order_qty'] ?? '—' }}</td>
                     <td style="text-align:center">{{ $var['inspect_qty'] ?? '—' }}</td>
+                </tr>
+                @endforeach
+            </tbody>
+        </table>
+        @endif
+        @if($aql->sizeBreakdowns->isNotEmpty())
+        <div class="sub-heading">Per-Size Checked / Error Breakdown</div>
+        <table class="data-table">
+            <thead>
+                <tr>
+                    <th>Size</th>
+                    <th style="text-align:center">Order Qty</th>
+                    <th style="text-align:center">Checked Qty</th>
+                    <th style="text-align:center">Error Qty</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach($aql->sizeBreakdowns as $sb)
+                <tr>
+                    <td>{{ $sb->size_label }}</td>
+                    <td style="text-align:center">{{ $sb->order_qty }}</td>
+                    <td style="text-align:center">{{ $sb->checked_qty }}</td>
+                    <td style="text-align:center">{{ $sb->error_qty }}</td>
                 </tr>
                 @endforeach
             </tbody>

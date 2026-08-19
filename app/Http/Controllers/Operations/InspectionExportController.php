@@ -25,9 +25,11 @@ class InspectionExportController extends Controller
         $run->load([
             'sample.customer',
             'sample.category',
+            'sampleColor',
             'runSections.section',
             'runSections.attachments',
-            'aql',
+            'runSections.defects.defect',
+            'aql.sizeBreakdowns',
         ]);
 
         $pdf = Pdf::loadView('exports.inspection-run-pdf', [
@@ -57,9 +59,11 @@ class InspectionExportController extends Controller
             ->with([
                 'sample.customer',
                 'sample.category',
+                'sampleColor',
                 'runSections.section',
                 'runSections.attachments',
-                'aql',
+                'runSections.defects.defect',
+                'aql.sizeBreakdowns',
             ])
             ->orderBy('run_number');
 
@@ -73,11 +77,26 @@ class InspectionExportController extends Controller
             return back()->with('error', 'No inspection runs to export.');
         }
 
+        // Group by parent style (sample) so all color variants of one article
+        // render together as a continuous block, ordered alphabetically by
+        // color within the group — run_number is kept as the tie-breaker
+        // (the ordering convention already used everywhere else in the app).
+        $runGroups = $runs
+            ->sortBy(fn ($run) => $run->sampleColor->name ?? '')
+            ->groupBy('sample_id')
+            ->sortBy(fn ($group) => $group->first()->sample?->sample_code ?? '');
+
+        // Re-flatten in that same grouped order — the per-run rendering loop
+        // in the export view stays a flat @foreach, it just now iterates in
+        // style-then-color order instead of raw run_number order.
+        $runs = $runGroups->flatten(1);
+
         $inspection->load(['inspectionType', 'inspectors', 'customerOrders']);
 
         $pdf = Pdf::loadView('exports.inspection-run-pdf', [
             'inspection' => $inspection,
             'runs' => $runs,
+            'runGroups' => $runGroups,
             'imgBase64' => $this->imgBase64Closure(),
             'defects' => Defect::all()->keyBy('id'),
             'logoBase64' => $this->logoBase64(),
