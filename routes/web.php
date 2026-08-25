@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\ActivityController;
+use App\Http\Controllers\Admin\CompanySettingController;
 use App\Http\Controllers\Admin\RoleController;
 use App\Http\Controllers\Admin\UserController as AdminUserController;
 use App\Http\Controllers\AttachmentController;
@@ -182,6 +183,8 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::prefix('admin')->name('admin.')->group(function () {
         Route::resource('users', AdminUserController::class);
         Route::resource('roles', RoleController::class)->except(['show']);
+        Route::get('company-settings', [CompanySettingController::class, 'edit'])->name('company-settings.edit');
+        Route::put('company-settings', [CompanySettingController::class, 'update'])->name('company-settings.update');
     });
 
     // ─── Tools ───────────────────────────────────────────────────────────────────

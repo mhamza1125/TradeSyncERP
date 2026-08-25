@@ -34,7 +34,7 @@
             @csrf
             <div class="row">
                 <div class="col-xl-8">
-                    <div class="card stretch stretch-full">
+                    <div class="card">
                         <div class="card-header"><h5 class="card-title">Account Details</h5></div>
                         <div class="card-body">
                             <div class="row">
@@ -61,26 +61,23 @@
                                     <input type="password" name="password_confirmation" class="form-control"
                                            placeholder="Repeat password" required>
                                 </div>
+                                <div class="col-lg-12">
+                                    <hr class="my-2">
+                                    <div class="form-check form-switch">
+                                        <input class="form-check-input" type="checkbox" name="status" value="1"
+                                               id="statusSwitch" @checked(old('status', true))>
+                                        <label class="form-check-label" for="statusSwitch">Account Active</label>
+                                    </div>
+                                    <small class="text-muted d-block mt-1">Inactive users cannot log in.</small>
+                                </div>
                             </div>
                         </div>
                     </div>
                 </div>
 
                 <div class="col-xl-4">
-                    {{-- Status --}}
-                    <div class="card stretch stretch-full mb-4">
-                        <div class="card-header"><h5 class="card-title">Status</h5></div>
-                        <div class="card-body">
-                            <div class="form-check form-switch">
-                                <input class="form-check-input" type="checkbox" name="status" value="1"
-                                       id="statusSwitch" @checked(old('status', true))>
-                                <label class="form-check-label" for="statusSwitch">Account Active</label>
-                            </div>
-                        </div>
-                    </div>
-
                     {{-- Role Assignment --}}
-                    <div class="card stretch stretch-full @error('roles') border-danger @enderror">
+                    <div class="card @error('roles') border-danger @enderror">
                         <div class="card-header">
                             <h5 class="card-title mb-0">
                                 Assign Role <span class="text-danger">*</span>

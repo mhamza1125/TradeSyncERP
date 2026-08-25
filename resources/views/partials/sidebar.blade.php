@@ -362,6 +362,13 @@
                         </li>
                     </ul>
                 </li>
+
+                <li class="nxl-item {{ $is('admin.company-settings.*') ? 'active' : '' }}">
+                    <a href="{{ route('admin.company-settings.edit') }}" class="nxl-link">
+                        <span class="nxl-micon"><i class="feather-briefcase"></i></span>
+                        <span class="nxl-mtext">Company Settings</span>
+                    </a>
+                </li>
                 @endrole
 
             </ul>
