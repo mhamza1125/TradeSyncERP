@@ -4,6 +4,7 @@
 <title>Payment Receipt #{{ $payment->id }}</title>
 @include('exports.partials._pdf-head')
 <style>
+    .pdf-header { padding-bottom: 10px; }
     .receipt-box {
         border: 1px solid #c8d6f0;
         border-radius: 4px;
@@ -18,6 +19,8 @@
     }
     .gain { color: #155724; }
     .loss { color: #721c24; }
+    .deduct { color: #721c24; }
+    .final-row td { font-size: 11pt; font-weight: bold; color: #1a3560; border-top: 2px solid #1a3560 !important; background: #eef2ff; }
 </style>
 </head>
 <body>
@@ -34,7 +37,13 @@
                 <div class="db-sub">{{ $payment->customer?->display_name ?? 'Deleted Customer' }}</div>
             </td>
             <td class="db-right">
-                <div class="db-code">#{{ $payment->id }}</div>
+                <div class="db-code">
+                    @if($payment->invoice_reference)
+                        Invoice Reference: {{ $payment->invoice_reference }}
+                    @else
+                        Payment #{{ $payment->id }}
+                    @endif
+                </div>
                 <div class="db-date">{{ \Carbon\Carbon::parse($payment->payment_date)->format('d M Y') }}</div>
             </td>
         </tr>
@@ -57,10 +66,6 @@
         </td>
         <td>
             <table class="info-grid">
-                <tr>
-                    <td class="info-label">Payment Date</td>
-                    <td class="info-value">{{ \Carbon\Carbon::parse($payment->payment_date)->format('d M Y') }}</td>
-                </tr>
                 @if($payment->invoice_reference)
                 <tr>
                     <td class="info-label">Invoice Reference</td>
@@ -105,6 +110,15 @@
                             {{ number_format($payment->deduction_fc, 2) }}
                         </td>
                     </tr>
+                    <tr>
+                        <td class="info-label">W/H Tax Deduction ({{ number_format($payment->wh_tax_percent, 2) }}%)</td>
+                        <td class="info-value deduct">- {{ number_format($payment->wh_tax_amount_fc, 2) }}</td>
+                    </tr>
+                    @php $netFc = $payment->received_fc - $payment->wh_tax_amount_fc; @endphp
+                    <tr>
+                        <td class="info-label">Net FC After W/H Tax</td>
+                        <td class="info-value">{{ number_format($netFc, 2) }} {{ $payment->foreign_currency }}</td>
+                    </tr>
                     @if($payment->received_fc > 0)
                     @php
                         $fcWords = \App\Helpers\NumberToWords::convert(
@@ -129,18 +143,16 @@
                         <td class="info-value">{{ number_format($payment->exchange_rate, 4) }}</td>
                     </tr>
                     <tr>
-                        <td class="info-label">Expected PKR</td>
+                        <td class="info-label">Expected PKR (after W/H Tax)</td>
                         <td class="info-value">{{ number_format($payment->expected_pkr, 2) }}</td>
                     </tr>
                     <tr>
-                        <td class="info-label">Actual PKR Received</td>
-                        <td class="info-value gain" style="font-size:11pt;">{{ number_format($payment->actual_pkr_received, 2) }}</td>
+                        <td class="info-label">Remittance Charges</td>
+                        <td class="info-value deduct">- {{ number_format($payment->remittance_charges, 2) }}</td>
                     </tr>
-                    <tr>
-                        <td class="info-label">PKR Gain / Loss</td>
-                        <td class="info-value {{ $payment->pkr_gain_loss > 0 ? 'gain' : ($payment->pkr_gain_loss < 0 ? 'loss' : '') }}">
-                            {{ $payment->pkr_gain_loss > 0 ? '+' : '' }}{{ number_format($payment->pkr_gain_loss, 2) }}
-                        </td>
+                    <tr class="final-row">
+                        <td class="info-label">Final PKR Received</td>
+                        <td class="info-value" style="font-size:11pt;">{{ number_format($payment->actual_pkr_received, 2) }}</td>
                     </tr>
                     @if($payment->actual_pkr_received > 0)
                     @php

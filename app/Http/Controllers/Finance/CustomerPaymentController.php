@@ -58,7 +58,12 @@ class CustomerPaymentController extends Controller
         return DB::transaction(function () use ($request) {
             $data = $request->validated();
 
-            $data['expected_pkr'] = round($data['received_fc'] * $data['exchange_rate'], 2);
+            $data['wh_tax_percent'] = $data['wh_tax_percent'] ?? 1;
+            $data['wh_tax_amount_fc'] = round($data['received_fc'] * $data['wh_tax_percent'] / 100, 2);
+            $netReceivedFc = $data['received_fc'] - $data['wh_tax_amount_fc'];
+
+            $data['remittance_charges'] = $data['remittance_charges'] ?? 0;
+            $data['expected_pkr'] = round($netReceivedFc * $data['exchange_rate'], 2);
             $data['pkr_gain_loss'] = round($data['actual_pkr_received'] - $data['expected_pkr'], 2);
             $data['fc_gain_loss'] = round($data['invoiced_amount_fc'] - $data['received_fc'], 2);
             $data['deduction_fc'] = round($data['invoiced_amount_fc'] - $data['received_fc'], 2);
@@ -114,7 +119,12 @@ class CustomerPaymentController extends Controller
         return DB::transaction(function () use ($request, $customerPayment) {
             $data = $request->validated();
 
-            $data['expected_pkr'] = round($data['received_fc'] * $data['exchange_rate'], 2);
+            $data['wh_tax_percent'] = $data['wh_tax_percent'] ?? 1;
+            $data['wh_tax_amount_fc'] = round($data['received_fc'] * $data['wh_tax_percent'] / 100, 2);
+            $netReceivedFc = $data['received_fc'] - $data['wh_tax_amount_fc'];
+
+            $data['remittance_charges'] = $data['remittance_charges'] ?? 0;
+            $data['expected_pkr'] = round($netReceivedFc * $data['exchange_rate'], 2);
             $data['pkr_gain_loss'] = round($data['actual_pkr_received'] - $data['expected_pkr'], 2);
             $data['fc_gain_loss'] = round($data['invoiced_amount_fc'] - $data['received_fc'], 2);
             $data['deduction_fc'] = round($data['invoiced_amount_fc'] - $data['received_fc'], 2);

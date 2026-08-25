@@ -88,6 +88,7 @@
                         <thead>
                             <tr class="single-item">
                                 <th class="wd-40">#</th>
+                                <th class="wd-90 text-center">Fixed<br>Charge</th>
                                 <th>Supplier</th>
                                 <th>Inspection Type</th>
                                 <th>PO / Invoice No</th>
@@ -101,8 +102,11 @@
                                 @foreach($customerInvoice->items as $i => $item)
                                 <tr class="invoice-item-row">
                                     <td>{{ $i + 1 }}</td>
+                                    <td class="text-center">
+                                        <input type="checkbox" class="form-check-input fixed-charge-toggle" name="items[{{ $i }}][is_fixed_charge]" value="1" @checked(old("items.{$i}.is_fixed_charge", $item->is_fixed_charge))>
+                                    </td>
                                     <td>
-                                        <select name="items[{{ $i }}][supplier_id]" class="form-select form-select-sm">
+                                        <select name="items[{{ $i }}][supplier_id]" class="form-select form-select-sm" @disabled(old("items.{$i}.is_fixed_charge", $item->is_fixed_charge))>
                                             <option value="">— Select —</option>
                                             @foreach($suppliers as $s)
                                             <option value="{{ $s->id }}" @selected(old("items.{$i}.supplier_id", $item->supplier_id) == $s->id)>{{ $s->name }}</option>
@@ -110,14 +114,14 @@
                                         </select>
                                     </td>
                                     <td>
-                                        <select name="items[{{ $i }}][inspection_type_id]" class="form-select form-select-sm">
+                                        <select name="items[{{ $i }}][inspection_type_id]" class="form-select form-select-sm" @disabled(old("items.{$i}.is_fixed_charge", $item->is_fixed_charge))>
                                             <option value="">— Select —</option>
                                             @foreach($inspectionTypes as $t)
                                             <option value="{{ $t->id }}" @selected(old("items.{$i}.inspection_type_id", $item->inspection_type_id) == $t->id)>{{ $t->name }}</option>
                                             @endforeach
                                         </select>
                                     </td>
-                                    <td><input type="text" name="items[{{ $i }}][po_invoice_no]" class="form-control form-control-sm" placeholder="PO / Inv No." value="{{ old("items.{$i}.po_invoice_no", $item->po_invoice_no) }}"></td>
+                                    <td><input type="text" name="items[{{ $i }}][po_invoice_no]" class="form-control form-control-sm" placeholder="PO / Inv No." value="{{ old("items.{$i}.po_invoice_no", $item->po_invoice_no) }}" @disabled(old("items.{$i}.is_fixed_charge", $item->is_fixed_charge))></td>
                                     <td><input type="date" name="items[{{ $i }}][item_date]" class="form-control form-control-sm" value="{{ old("items.{$i}.item_date", $item->item_date?->toDateString()) }}"></td>
                                     <td><input type="number" name="items[{{ $i }}][amount]" class="form-control form-control-sm item-amount" placeholder="0.00" step="0.01" value="{{ old("items.{$i}.amount", $item->amount) }}"></td>
                                     <td><button type="button" class="btn btn-sm btn-light-brand remove-row"><i class="feather-trash-2"></i></button></td>
@@ -126,6 +130,9 @@
                             @else
                             <tr class="invoice-item-row">
                                 <td>1</td>
+                                <td class="text-center">
+                                    <input type="checkbox" class="form-check-input fixed-charge-toggle" name="items[0][is_fixed_charge]" value="1">
+                                </td>
                                 <td>
                                     <select name="items[0][supplier_id]" class="form-select form-select-sm">
                                         <option value="">— Select —</option>
@@ -150,6 +157,9 @@
                             @endif
                         </tbody>
                     </table>
+                    <small class="text-muted d-block mt-2">
+                        Check <strong>Fixed Charge</strong> for a simple fixed-fee line (e.g. a monthly retainer) &mdash; only Date and Amount are needed; Supplier, Inspection Type and PO/Invoice No are disabled and won't be saved.
+                    </small>
                 </div>
                 <div class="d-flex justify-content-between align-items-start mt-3">
                     <button type="button" id="addInvoiceRow" class="btn btn-primary btn-sm">
@@ -230,6 +240,7 @@
         tr.className   = 'invoice-item-row';
         tr.innerHTML   = `
             <td>${rowCount}</td>
+            <td class="text-center"><input type="checkbox" class="form-check-input fixed-charge-toggle" name="items[${invoiceRowIdx}][is_fixed_charge]" value="1"></td>
             <td>${buildSupplierSelect(invoiceRowIdx)}</td>
             <td>${buildInspTypeSelect(invoiceRowIdx)}</td>
             <td><input type="text" name="items[${invoiceRowIdx}][po_invoice_no]" class="form-control form-control-sm" placeholder="PO / Inv No."></td>
@@ -247,5 +258,23 @@
             if (rows.length > 1) { e.target.closest('tr').remove(); calcInvoiceTotals(); }
         }
     });
+
+    // Fixed-charge toggle: disable (and clear) Supplier / Inspection Type / PO-Invoice No for that row
+    function applyFixedChargeState(checkbox) {
+        const row = checkbox.closest('tr');
+        const fields = row.querySelectorAll('select[name*="[supplier_id]"], select[name*="[inspection_type_id]"], input[name*="[po_invoice_no]"]');
+        fields.forEach(field => {
+            field.disabled = checkbox.checked;
+            if (checkbox.checked) field.value = '';
+        });
+    }
+
+    document.getElementById('invoiceItemsBody').addEventListener('change', function (e) {
+        if (e.target.classList.contains('fixed-charge-toggle')) {
+            applyFixedChargeState(e.target);
+        }
+    });
+
+    document.querySelectorAll('.fixed-charge-toggle').forEach(applyFixedChargeState);
 </script>
 @endpush

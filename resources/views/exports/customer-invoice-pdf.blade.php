@@ -4,6 +4,7 @@
 <title>Invoice — {{ $invoice->invoice_number }}</title>
 @include('exports.partials._pdf-head')
 <style>
+    .pdf-header { padding-bottom: 10px; }
     .invoice-to { font-size: 9.5pt; }
     .invoice-to .name { font-size: 12pt; font-weight: bold; color: #1a3560; }
     .totals-box { width: 55%; margin-left: auto; border-collapse: collapse; margin-top: 12px; }
@@ -26,7 +27,6 @@
         <tr>
             <td>
                 <div class="db-title">Tax Invoice</div>
-                <div class="db-sub">TradeSyncERP &mdash; Quality Control &amp; ERP</div>
             </td>
             <td class="db-right">
                 <div class="db-code">{{ $invoice->invoice_number }}</div>
@@ -57,22 +57,6 @@
         </td>
         <td>
             <table class="info-grid">
-                <tr>
-                    <td class="info-label">Invoice Number</td>
-                    <td class="info-value">{{ $invoice->invoice_number }}</td>
-                </tr>
-                <tr>
-                    <td class="info-label">Invoice Date</td>
-                    <td class="info-value">{{ $invoice->invoice_date->format('d M Y') }}</td>
-                </tr>
-                @if($invoice->due_date)
-                <tr>
-                    <td class="info-label">Due Date</td>
-                    <td class="info-value" style="{{ $invoice->isOverdue() ? 'color:#721c24;' : '' }}">
-                        {{ $invoice->due_date->format('d M Y') }}
-                    </td>
-                </tr>
-                @endif
                 <tr>
                     <td class="info-label">Status</td>
                     <td class="info-value">
@@ -115,6 +99,13 @@
             @forelse($invoice->items as $i => $item)
             <tr>
                 <td>{{ $i + 1 }}</td>
+                @if($item->is_fixed_charge)
+                <td><span class="fw-bold">Fixed Monthly Charge</span></td>
+                <td class="text-muted">—</td>
+                <td class="text-muted">—</td>
+                <td>{{ $item->item_date ? $item->item_date->format('d M Y') : '—' }}</td>
+                <td class="text-right fw-bold">{{ number_format($item->amount, 2) }}</td>
+                @else
                 <td>
                     @if($item->supplier)
                     <span class="fw-bold">{{ Illuminate\Support\Str::limit($item->supplier->name, 34) }}</span>
@@ -127,6 +118,7 @@
                 <td class="text-muted">{{ Illuminate\Support\Str::limit($item->po_invoice_no ?? '—', 16) }}</td>
                 <td>{{ $item->item_date ? $item->item_date->format('d M Y') : '—' }}</td>
                 <td class="text-right fw-bold">{{ number_format($item->amount, 2) }}</td>
+                @endif
             </tr>
             @empty
             <tr><td colspan="6" class="no-data">No line items.</td></tr>
@@ -209,31 +201,31 @@
     </p>
     <table class="info-grid" style="width:100%;">
         <tr>
-            <td class="info-label" style="width:22%;">Bank Name</td>
+            <td class="info-label" style="width:30%;">Bank Name</td>
             <td class="info-value">{{ $invoice->bank->bank_name }}</td>
-            <td class="info-label" style="width:22%;">Account Title</td>
+        </tr>
+        <tr>
+            <td class="info-label">Account Title</td>
             <td class="info-value">{{ $invoice->bank->account_title ?? '—' }}</td>
         </tr>
         <tr>
             <td class="info-label">Account Number</td>
             <td class="info-value">{{ $invoice->bank->account_number ?? '—' }}</td>
+        </tr>
+        <tr>
             <td class="info-label">IBAN</td>
             <td class="info-value">{{ $invoice->bank->iban ?? '—' }}</td>
         </tr>
-        @if($invoice->bank->swift_code || $invoice->bank->branch_name)
+        @if($invoice->bank->swift_code)
         <tr>
-            @if($invoice->bank->swift_code)
             <td class="info-label">SWIFT / BIC</td>
             <td class="info-value">{{ $invoice->bank->swift_code }}</td>
-            @else
-            <td></td><td></td>
-            @endif
-            @if($invoice->bank->branch_name)
+        </tr>
+        @endif
+        @if($invoice->bank->branch_name)
+        <tr>
             <td class="info-label">Branch</td>
             <td class="info-value">{{ $invoice->bank->branch_name }}</td>
-            @else
-            <td></td><td></td>
-            @endif
         </tr>
         @endif
     </table>

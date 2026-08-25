@@ -91,6 +91,14 @@
                         @error('received_fc')<div class="invalid-feedback">{{ $message }}</div>@enderror
                     </div>
                     <div class="col-lg-6 mb-4">
+                        <label class="form-label">W/H Tax Deduction (%)</label>
+                        <input type="number" step="0.01" name="wh_tax_percent" id="whTaxPercent"
+                               class="form-control @error('wh_tax_percent') is-invalid @enderror"
+                               placeholder="1.00" value="{{ old('wh_tax_percent', $customerPayment->wh_tax_percent ?? 1) }}">
+                        <small class="text-muted">Deducted from the FC amount received. Default 1%, editable.</small>
+                        @error('wh_tax_percent')<div class="invalid-feedback">{{ $message }}</div>@enderror
+                    </div>
+                    <div class="col-lg-6 mb-4">
                         <label class="form-label">Exchange Rate <span class="text-danger">*</span></label>
                         <input type="number" step="0.000001" name="exchange_rate" id="exchangeRate"
                                class="form-control @error('exchange_rate') is-invalid @enderror"
@@ -98,10 +106,24 @@
                         @error('exchange_rate')<div class="invalid-feedback">{{ $message }}</div>@enderror
                     </div>
                     <div class="col-lg-6 mb-4">
+                        <label class="form-label">Net FC After W/H Tax</label>
+                        <input type="text" id="netFcDisplay" class="form-control" disabled value="0.00">
+                        <small class="text-muted">Received (FC) minus W/H Tax Deduction.</small>
+                    </div>
+                    <div class="col-lg-6 mb-4">
+                        <label class="form-label">Remittance Charges (PKR)</label>
+                        <input type="number" step="0.01" name="remittance_charges" id="remittanceCharges"
+                               class="form-control @error('remittance_charges') is-invalid @enderror"
+                               placeholder="0.00" value="{{ old('remittance_charges', $customerPayment->remittance_charges ?? 0) }}">
+                        <small class="text-muted">Deducted from the converted PKR amount.</small>
+                        @error('remittance_charges')<div class="invalid-feedback">{{ $message }}</div>@enderror
+                    </div>
+                    <div class="col-lg-6 mb-4">
                         <label class="form-label">Actual PKR Received <span class="text-danger">*</span></label>
                         <input type="number" step="0.01" name="actual_pkr_received" id="actualPkr"
                                class="form-control @error('actual_pkr_received') is-invalid @enderror"
                                placeholder="0.00" value="{{ old('actual_pkr_received', $customerPayment->actual_pkr_received ?? '') }}">
+                        <small class="text-muted">Final amount credited to our account. Auto-suggested, editable.</small>
                         @error('actual_pkr_received')<div class="invalid-feedback">{{ $message }}</div>@enderror
                     </div>
                 </div>
@@ -129,6 +151,9 @@
     const foreignCurrency  = document.getElementById('foreignCurrency');
     const currencyDisplay  = document.getElementById('currencyDisplay');
     const receivedFc       = document.getElementById('receivedFc');
+    const whTaxPercent     = document.getElementById('whTaxPercent');
+    const netFcDisplay     = document.getElementById('netFcDisplay');
+    const remittanceCharges = document.getElementById('remittanceCharges');
     const exchangeRate     = document.getElementById('exchangeRate');
     const actualPkr        = document.getElementById('actualPkr');
     const invoicedAmountFc = document.getElementById('invoicedAmountFc');
@@ -227,22 +252,37 @@
         setCurrency(customerSelect.options[customerSelect.selectedIndex].dataset.currency || '');
     }
 
-    // ── PKR calculation ───────────────────────────────────────────────────────
+    // ── PKR calculation: Received (FC) → W/H Tax → Net FC → PKR Conversion → Remittance Charges → Final PKR ──
+    function netFc() {
+        const fc  = parseFloat(receivedFc.value) || 0;
+        const pct = parseFloat(whTaxPercent.value) || 0;
+        return fc - (fc * pct / 100);
+    }
+
     function calcActualPkr() {
-        const fc   = parseFloat(receivedFc.value);
+        const fc = netFc();
+        netFcDisplay.value = fc.toFixed(2);
+
         const rate = parseFloat(exchangeRate.value);
-        if (fc > 0 && rate > 0) actualPkr.value = (fc * rate).toFixed(2);
+        if (fc > 0 && rate > 0) {
+            const remit = parseFloat(remittanceCharges.value) || 0;
+            actualPkr.value = ((fc * rate) - remit).toFixed(2);
+        }
     }
 
     function calcExchangeRate() {
-        const fc  = parseFloat(receivedFc.value);
-        const pkr = parseFloat(actualPkr.value);
-        if (fc > 0 && pkr > 0) exchangeRate.value = (pkr / fc).toFixed(6);
+        const fc   = netFc();
+        const pkr  = parseFloat(actualPkr.value);
+        const remit = parseFloat(remittanceCharges.value) || 0;
+        if (fc > 0 && pkr > 0) exchangeRate.value = ((pkr + remit) / fc).toFixed(6);
     }
 
     receivedFc.addEventListener('input', calcActualPkr);
+    whTaxPercent.addEventListener('input', calcActualPkr);
+    remittanceCharges.addEventListener('input', calcActualPkr);
     exchangeRate.addEventListener('input', calcActualPkr);
     actualPkr.addEventListener('input', calcExchangeRate);
+    calcActualPkr();
 
     // ── On page load: if customer is pre-selected, fetch invoices ─────────────
     if (PREFILL_CUSTOMER) {

@@ -19,9 +19,12 @@ class CustomerPayment extends Model
         'invoiced_amount_fc',
         'deduction_fc',
         'received_fc',
+        'wh_tax_percent',
+        'wh_tax_amount_fc',
         'exchange_rate',
         'expected_pkr',
         'actual_pkr_received',
+        'remittance_charges',
         'pkr_gain_loss',
         'fc_gain_loss',
         'account_id',
@@ -29,15 +32,18 @@ class CustomerPayment extends Model
     ];
 
     protected $casts = [
-        'payment_date'        => 'date',
-        'invoiced_amount_fc'  => 'decimal:2',
-        'deduction_fc'        => 'decimal:2',
-        'received_fc'         => 'decimal:2',
-        'exchange_rate'       => 'decimal:6',
-        'expected_pkr'        => 'decimal:2',
+        'payment_date' => 'date',
+        'invoiced_amount_fc' => 'decimal:2',
+        'deduction_fc' => 'decimal:2',
+        'received_fc' => 'decimal:2',
+        'wh_tax_percent' => 'decimal:2',
+        'wh_tax_amount_fc' => 'decimal:2',
+        'exchange_rate' => 'decimal:6',
+        'expected_pkr' => 'decimal:2',
         'actual_pkr_received' => 'decimal:2',
-        'pkr_gain_loss'       => 'decimal:2',
-        'fc_gain_loss'        => 'decimal:2',
+        'remittance_charges' => 'decimal:2',
+        'pkr_gain_loss' => 'decimal:2',
+        'fc_gain_loss' => 'decimal:2',
     ];
 
     public function getActivitylogOptions(): LogOptions

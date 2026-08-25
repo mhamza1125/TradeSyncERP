@@ -24,6 +24,7 @@ class UpdateCustomerInvoiceRequest extends FormRequest
             'discount_amount' => ['nullable', 'numeric', 'min:0'],
             'remarks' => ['nullable', 'string'],
             'items' => ['required', 'array', 'min:1'],
+            'items.*.is_fixed_charge' => ['nullable', 'boolean'],
             'items.*.supplier_id' => ['nullable', 'exists:suppliers,id'],
             'items.*.inspection_type_id' => ['nullable', 'exists:inspection_types,id'],
             'items.*.po_invoice_no' => ['nullable', 'string', 'max:255'],

@@ -8,6 +8,7 @@ class CustomerInvoiceItem extends Model
 {
     protected $fillable = [
         'customer_invoice_id',
+        'is_fixed_charge',
         'supplier_id',
         'inspection_type_id',
         'po_invoice_no',
@@ -16,8 +17,9 @@ class CustomerInvoiceItem extends Model
     ];
 
     protected $casts = [
+        'is_fixed_charge' => 'boolean',
         'item_date' => 'date',
-        'amount'    => 'decimal:2',
+        'amount' => 'decimal:2',
     ];
 
     public function invoice()

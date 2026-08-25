@@ -92,6 +92,8 @@
                                         <div><span class="text-muted">Invoiced Amount:</span> <span class="fw-bold text-dark">{{ number_format($customerPayment->invoiced_amount_fc, 2) }} {{ $customerPayment->foreign_currency }}</span></div>
                                         <div><span class="text-muted">Received (FC):</span> <span class="fw-bold text-dark">{{ number_format($customerPayment->received_fc, 2) }} {{ $customerPayment->foreign_currency }}</span></div>
                                         <div><span class="text-muted">Deduction (FC):</span> <span class="fw-bold text-{{ $customerPayment->deduction_fc > 0 ? 'danger' : 'muted' }}">{{ number_format($customerPayment->deduction_fc, 2) }}</span></div>
+                                        <div><span class="text-muted">W/H Tax Deduction ({{ number_format($customerPayment->wh_tax_percent, 2) }}%):</span> <span class="fw-bold text-danger">- {{ number_format($customerPayment->wh_tax_amount_fc, 2) }}</span></div>
+                                        <div><span class="text-muted">Net FC After W/H Tax:</span> <span class="fw-bold text-dark">{{ number_format($customerPayment->received_fc - $customerPayment->wh_tax_amount_fc, 2) }} {{ $customerPayment->foreign_currency }}</span></div>
                                         @if($customerPayment->received_fc > 0)
                                         @php
                                             $fcCode   = $customerPayment->foreign_currency ?? 'USD';
@@ -111,7 +113,8 @@
                                     <div class="text-muted lh-lg">
                                         <div><span class="text-muted">Exchange Rate:</span> <span class="fw-bold text-dark">{{ number_format($customerPayment->exchange_rate, 4) }}</span></div>
                                         <div><span class="text-muted">Expected PKR:</span> <span class="fw-bold text-dark">{{ number_format($customerPayment->expected_pkr, 2) }}</span></div>
-                                        <div><span class="text-muted">Actual PKR Received:</span> <span class="fw-bold text-success fs-16">{{ number_format($customerPayment->actual_pkr_received, 2) }}</span></div>
+                                        <div><span class="text-muted">Remittance Charges:</span> <span class="fw-bold text-danger">- {{ number_format($customerPayment->remittance_charges, 2) }}</span></div>
+                                        <div><span class="text-muted">Final PKR Received:</span> <span class="fw-bold text-success fs-16">{{ number_format($customerPayment->actual_pkr_received, 2) }}</span></div>
                                         @if($customerPayment->actual_pkr_received > 0)
                                         @php
                                             $pkrWords = \App\Helpers\NumberToWords::convert(
