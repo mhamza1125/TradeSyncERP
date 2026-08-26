@@ -35,6 +35,7 @@ class CompanySetting extends Model
         'contact_person_phone',
         'contact_person_email',
         'default_terms',
+        'invoice_number_pattern',
     ];
 
     /**
@@ -50,7 +51,7 @@ class CompanySetting extends Model
 
     public function getLogoUrlAttribute(): ?string
     {
-        if (!$this->logo_path) {
+        if (! $this->logo_path) {
             return null;
         }
 
@@ -64,7 +65,7 @@ class CompanySetting extends Model
      */
     public function getLogoAbsolutePathAttribute(): ?string
     {
-        if (!$this->logo_path || !Storage::disk('public')->exists($this->logo_path)) {
+        if (! $this->logo_path || ! Storage::disk('public')->exists($this->logo_path)) {
             return null;
         }
 

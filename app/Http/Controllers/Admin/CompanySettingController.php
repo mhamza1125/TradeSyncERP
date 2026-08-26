@@ -5,11 +5,12 @@ namespace App\Http\Controllers\Admin;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Admin\UpdateCompanySettingRequest;
 use App\Models\CompanySetting;
+use App\Services\Finance\InvoiceNumberService;
 use Illuminate\Support\Facades\Storage;
 
 class CompanySettingController extends Controller
 {
-    public function __construct()
+    public function __construct(private readonly InvoiceNumberService $invoiceNumbers)
     {
         $this->middleware('role:Admin');
     }
@@ -17,7 +18,10 @@ class CompanySettingController extends Controller
     public function edit()
     {
         $companySetting = CompanySetting::current();
-        return view('admin.company-settings.edit', compact('companySetting'));
+        $nextInvoiceId = $this->invoiceNumbers->nextSequentialId();
+        $nextInvoiceNumberPreview = $this->invoiceNumbers->format($companySetting->invoice_number_pattern, $nextInvoiceId);
+
+        return view('admin.company-settings.edit', compact('companySetting', 'nextInvoiceId', 'nextInvoiceNumberPreview'));
     }
 
     public function update(UpdateCompanySettingRequest $request)

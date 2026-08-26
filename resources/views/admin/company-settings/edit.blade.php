@@ -26,11 +26,6 @@
     <div class="main-content">
         @include('partials.flash-messages')
 
-        <p class="text-muted mb-4">
-            These details are used across the system &mdash; invoices, payment receipts, purchase documents,
-            QC/inspection reports, and other official PDF exports &mdash; so nothing has to be hard-coded elsewhere.
-        </p>
-
         <form id="companySettingForm" action="{{ route('admin.company-settings.update') }}" method="POST" enctype="multipart/form-data">
             @csrf @method('PUT')
             <div class="row">
@@ -225,9 +220,59 @@
                             @endif
                         </div>
                     </div>
+
+                    {{-- Invoice Numbering --}}
+                    <div class="card mt-4" x-data="{ pattern: @js(old('invoice_number_pattern', $companySetting->invoice_number_pattern)) }">
+                        <div class="card-header"><h5 class="card-title">Invoice Numbering</h5></div>
+                        <div class="card-body">
+                            <label class="form-label">Invoice Number Pattern <span class="text-danger">*</span></label>
+                            <input type="text" name="invoice_number_pattern" x-model="pattern"
+                                   class="form-control @error('invoice_number_pattern') is-invalid @enderror"
+                                   placeholder="INV-{year}-{id:5}" required>
+                            @error('invoice_number_pattern')<div class="invalid-feedback">{{ $message }}</div>@enderror
+
+                            <div class="mt-3">
+                                <span class="text-muted fs-12">Preview for the next invoice &mdash;</span>
+                                <span class="fw-semibold" x-text="formatInvoiceNumberPattern(pattern, {{ $nextInvoiceId }})">{{ $nextInvoiceNumberPreview }}</span>
+                            </div>
+
+                            <div class="mt-3 fs-12 text-muted">
+                                <div class="fw-semibold mb-1">Placeholders</div>
+                                <div><code>{id}</code> &mdash; sequence number (13)</div>
+                                <div><code>{id:5}</code> &mdash; zero-padded sequence (00013)</div>
+                                <div><code>{year}</code> &mdash; 4-digit year (2026)</div>
+                                <div><code>{yy}</code> &mdash; 2-digit year (26)</div>
+                                <div><code>{month}</code> &mdash; 2-digit month (08)</div>
+                                <div class="mt-1">Existing invoice numbers never change &mdash; only new invoices use the updated pattern.</div>
+                            </div>
+                        </div>
+                    </div>
                 </div>
             </div>
         </form>
     </div>
 </div>
+
+@push('scripts')
+<script>
+    // Mirrors App\Services\Finance\InvoiceNumberService::format() so the
+    // preview updates live as the admin edits the pattern, before saving.
+    function formatInvoiceNumberPattern(pattern, id) {
+        if (!pattern) return '';
+        const now = new Date();
+        const year = String(now.getFullYear());
+        const yy = year.slice(-2);
+        const month = String(now.getMonth() + 1).padStart(2, '0');
+
+        const withId = pattern.replace(/\{id(?::(\d+))?\}/g, (_, pad) => {
+            return pad ? String(id).padStart(parseInt(pad, 10), '0') : String(id);
+        });
+
+        return withId
+            .replaceAll('{year}', year)
+            .replaceAll('{yy}', yy)
+            .replaceAll('{month}', month);
+    }
+</script>
+@endpush
 @endsection

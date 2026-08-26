@@ -11,13 +11,14 @@ use App\Models\CustomerInvoice;
 use App\Models\CustomerPayment;
 use App\Models\InspectionType;
 use App\Models\Supplier;
+use App\Services\Finance\InvoiceNumberService;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 
 class CustomerInvoiceController extends Controller
 {
-    public function __construct()
+    public function __construct(private readonly InvoiceNumberService $invoiceNumbers)
     {
         $this->middleware('permission:customer-invoices.index')->only(['index', 'show', 'byCustomer', 'exportPdf', 'exportListPdf']);
         $this->middleware('permission:customer-invoices.create')->only(['create', 'store']);
@@ -56,7 +57,7 @@ class CustomerInvoiceController extends Controller
     {
         return DB::transaction(function () use ($request) {
             $data = $request->validated();
-            $data['invoice_number'] = $this->generateInvoiceNumber();
+            $data['invoice_number'] = $this->invoiceNumbers->generateNext();
 
             $subtotal = collect($data['items'])->sum('amount');
             $data['subtotal'] = $subtotal;
@@ -170,7 +171,7 @@ class CustomerInvoiceController extends Controller
             ->setOption('isRemoteEnabled', false)
             ->setOption('defaultFont', 'DejaVu Sans');
 
-        return $pdf->stream("Invoice-{$customerInvoice->invoice_number}.pdf");
+        return $pdf->stream('Invoice-'.$this->safeFilenamePart($customerInvoice->invoice_number).'.pdf');
     }
 
     public static function syncInvoiceStatus(?string $invoiceNumber): void
@@ -198,12 +199,15 @@ class CustomerInvoiceController extends Controller
         $invoice->save();
     }
 
-    private function generateInvoiceNumber(): string
+    /**
+     * Make a value safe to use inside a PDF filename. Invoice numbers are
+     * admin-configurable (Company Settings → Invoice Number Pattern) and may
+     * contain "/" (e.g. "TS/26/13"), which Content-Disposition filenames
+     * cannot include — so this strips anything outside a safe filename
+     * character set instead of assuming a fixed invoice number format.
+     */
+    private function safeFilenamePart(string $value): string
     {
-        $year = now()->year;
-        $lastId = CustomerInvoice::withTrashed()->max('id') ?? 0;
-        $nextSeq = str_pad($lastId + 1, 5, '0', STR_PAD_LEFT);
-
-        return "INV-{$year}-{$nextSeq}";
+        return trim(preg_replace('/[^A-Za-z0-9._-]+/', '-', $value), '-');
     }
 }
