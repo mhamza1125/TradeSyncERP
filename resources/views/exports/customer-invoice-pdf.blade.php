@@ -195,39 +195,61 @@
 @endif
 
 @if($invoice->bank)
+@php
+    $companySetting = \App\Models\CompanySetting::current();
+    $signaturePath = public_path('assets/images/sign.png');
+@endphp
 <div class="summary-box" style="margin-top:16px;">
     <p style="font-size:8pt; font-weight:bold; text-transform:uppercase; letter-spacing:0.4px; color:#1a3560; margin-bottom:8px;">
         Payment Details &mdash; Please Transfer To
     </p>
-    <table class="info-grid" style="width:100%;">
+    <table style="width:100%; border-collapse:collapse;">
         <tr>
-            <td class="info-label" style="width:30%;">Bank Name</td>
-            <td class="info-value">{{ $invoice->bank->bank_name }}</td>
+            <td style="width:64%; vertical-align:top; padding-right:16px;">
+                <table class="info-grid">
+                    <tr>
+                        <td class="info-label" style="width:34%;">Bank Name</td>
+                        <td class="info-value">{{ $invoice->bank->bank_name }}</td>
+                    </tr>
+                    <tr>
+                        <td class="info-label">Account Title</td>
+                        <td class="info-value">{{ $invoice->bank->account_title ?? '—' }}</td>
+                    </tr>
+                    <tr>
+                        <td class="info-label">Account Number</td>
+                        <td class="info-value">{{ $invoice->bank->account_number ?? '—' }}</td>
+                    </tr>
+                    <tr>
+                        <td class="info-label">IBAN</td>
+                        <td class="info-value">{{ $invoice->bank->iban ?? '—' }}</td>
+                    </tr>
+                    @if($invoice->bank->swift_code)
+                    <tr>
+                        <td class="info-label">SWIFT / BIC</td>
+                        <td class="info-value">{{ $invoice->bank->swift_code }}</td>
+                    </tr>
+                    @endif
+                    @if($invoice->bank->branch_name)
+                    <tr>
+                        <td class="info-label">Branch</td>
+                        <td class="info-value">{{ $invoice->bank->branch_name }}</td>
+                    </tr>
+                    @endif
+                    @if($companySetting->registration_number)
+                    <tr>
+                        <td class="info-label">CNIC</td>
+                        <td class="info-value">{{ $companySetting->registration_number }}</td>
+                    </tr>
+                    @endif
+                </table>
+            </td>
+            <td style="width:36%; vertical-align:bottom; text-align:center; border-left:1px solid #e0e0e0; padding-left:16px;">
+                @if(file_exists($signaturePath))
+                <img src="{{ $signaturePath }}" alt="Authorized Signature" style="width:200px; height:auto;">
+                @endif
+                <div style="border-top:1px solid #9e9e9e; margin-top:6px; padding-top:4px; font-size:7.5pt; color:#757575; text-transform:uppercase; letter-spacing:0.4px;">Authorized Signatory</div>
+            </td>
         </tr>
-        <tr>
-            <td class="info-label">Account Title</td>
-            <td class="info-value">{{ $invoice->bank->account_title ?? '—' }}</td>
-        </tr>
-        <tr>
-            <td class="info-label">Account Number</td>
-            <td class="info-value">{{ $invoice->bank->account_number ?? '—' }}</td>
-        </tr>
-        <tr>
-            <td class="info-label">IBAN</td>
-            <td class="info-value">{{ $invoice->bank->iban ?? '—' }}</td>
-        </tr>
-        @if($invoice->bank->swift_code)
-        <tr>
-            <td class="info-label">SWIFT / BIC</td>
-            <td class="info-value">{{ $invoice->bank->swift_code }}</td>
-        </tr>
-        @endif
-        @if($invoice->bank->branch_name)
-        <tr>
-            <td class="info-label">Branch</td>
-            <td class="info-value">{{ $invoice->bank->branch_name }}</td>
-        </tr>
-        @endif
     </table>
 </div>
 @endif
