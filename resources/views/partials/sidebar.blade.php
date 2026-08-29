@@ -241,10 +241,11 @@
                 @endcanany
 
                 {{-- ─── Tools ──────────────────────────────────────────────────── --}}
-                @can('aql-calculator.index')
+                @canany(['aql-calculator.index', 'qc-test.index'])
                 <li class="nxl-item nxl-caption">
                     <label>Tools</label>
                 </li>
+                @can('aql-calculator.index')
                 <li class="nxl-item {{ $is('tools.aql-calculator.*') ? 'active' : '' }}">
                     <a href="{{ route('tools.aql-calculator.index') }}" class="nxl-link">
                         <span class="nxl-micon"><i class="feather-cpu"></i></span>
@@ -252,6 +253,15 @@
                     </a>
                 </li>
                 @endcan
+                @can('qc-test.index')
+                <li class="nxl-item {{ $is('tools.qc-test.*') ? 'active' : '' }}">
+                    <a href="{{ route('tools.qc-test.index') }}" class="nxl-link">
+                        <span class="nxl-micon"><i class="feather-image"></i></span>
+                        <span class="nxl-mtext">QC Image Test</span>
+                    </a>
+                </li>
+                @endcan
+                @endcanany
 
                 {{-- ─── Reports ─────────────────────────────────────────────────── --}}
                 @can('reports.view')

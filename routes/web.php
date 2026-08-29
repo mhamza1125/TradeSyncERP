@@ -36,6 +36,7 @@ use App\Http\Controllers\Operations\SampleMovementController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\Reports\LedgerController;
 use App\Http\Controllers\Tools\AqlCalculatorController;
+use App\Http\Controllers\Tools\QcTestController;
 use Illuminate\Support\Facades\Route;
 
 Route::get('/', fn () => redirect()->route('dashboard'));
@@ -193,6 +194,11 @@ Route::middleware(['auth', 'verified'])->group(function () {
             ->name('aql-calculator.export-pdf');
         Route::resource('aql-calculator', AqlCalculatorController::class)
             ->parameters(['aql-calculator' => 'aql_calculation']);
+
+        // QC image TEST tool — no thresholds, no DB storage; see class doc-block.
+        Route::get('qc-test', [QcTestController::class, 'index'])->name('qc-test.index');
+        Route::post('qc-test', [QcTestController::class, 'process'])->name('qc-test.process');
+        Route::delete('qc-test', [QcTestController::class, 'destroy'])->name('qc-test.destroy');
     });
 
     // ─── Ledgers & Reports ───────────────────────────────────────────────────────

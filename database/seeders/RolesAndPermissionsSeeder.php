@@ -31,6 +31,7 @@ class RolesAndPermissionsSeeder extends Seeder
 
             // Tools
             'aql-calculator.index', 'aql-calculator.create', 'aql-calculator.edit', 'aql-calculator.delete', 'aql-calculator.view',
+            'qc-test.index',
 
             // Operations
             'samples.index', 'samples.create', 'samples.edit', 'samples.delete', 'samples.view',
@@ -75,6 +76,7 @@ class RolesAndPermissionsSeeder extends Seeder
             'sizes.index', 'sizes.create', 'sizes.edit', 'sizes.view',
             'defects.index', 'defects.create', 'defects.edit', 'defects.delete', 'defects.view',
             'aql-calculator.index', 'aql-calculator.create', 'aql-calculator.edit', 'aql-calculator.delete', 'aql-calculator.view',
+            'qc-test.index',
             'customer-orders.index', 'customer-orders.create', 'customer-orders.edit', 'customer-orders.delete', 'customer-orders.view',
             'samples.index', 'samples.create', 'samples.edit', 'samples.delete', 'samples.view',
             'sample-movements.index', 'sample-movements.create', 'sample-movements.edit', 'sample-movements.delete', 'sample-movements.view',
