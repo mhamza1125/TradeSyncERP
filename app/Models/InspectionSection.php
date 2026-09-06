@@ -8,7 +8,7 @@ class InspectionSection extends Model
 {
     protected $fillable = [
         'name', 'slug', 'description', 'section_type',
-        'icon', 'default_data', 'sort_order', 'is_active',
+        'icon', 'default_data', 'sort_order', 'is_active', 'skip_policy',
     ];
 
     protected $casts = [
@@ -29,5 +29,10 @@ class InspectionSection extends Model
     public function scopeActive($query)
     {
         return $query->where('is_active', true);
+    }
+
+    public function isSkippable(): bool
+    {
+        return $this->skip_policy === 'skippable';
     }
 }

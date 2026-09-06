@@ -15,13 +15,19 @@
                  class="rounded border shadow-sm"
                  style="max-width:320px;max-height:320px;object-fit:contain"
                  alt="Cover Photo"
-                 id="cover-img-{{ $rsId }}">
+                 id="cover-img-{{ $rsId }}"
+                 data-attachment-id="{{ $existing->id }}">
             <button type="button"
                     class="att-delete-btn btn btn-danger btn-sm position-absolute top-0 end-0 m-2"
                     data-delete-url="{{ route('inspections.runs.attachments.delete', [$inspection, $run, $existing]) }}"
                     data-thumb-id="att-{{ $existing->id }}"
                     onclick="deleteCoverPhoto{{ $rsId }}(this)">
                 <i class="feather-trash-2 me-1"></i>Remove Photo
+            </button>
+            <button type="button"
+                    class="btn btn-primary btn-sm position-absolute bottom-0 end-0 m-2"
+                    onclick="window.openCropModal('{{ $existing->url }}', '{{ route('inspections.runs.attachments.edit', [$inspection, $run, $existing]) }}')">
+                <i class="feather-edit-2 me-1"></i>Edit
             </button>
         </div>
     </div>
@@ -98,13 +104,15 @@
                                 <img src="${att.url}"
                                      class="rounded border shadow-sm"
                                      style="max-width:320px;max-height:320px;object-fit:contain"
-                                     alt="Cover Photo">
+                                     alt="Cover Photo"
+                                     data-attachment-id="${att.id}">
                                 <button type="button"
                                         class="btn btn-danger btn-sm position-absolute top-0 end-0 m-2"
                                         data-delete-url="${att.delete_url}"
                                         onclick="deleteCoverPhoto${rsId}(this)">
                                     <i class="feather-trash-2 me-1"></i>Remove Photo
                                 </button>
+                                ${att.edit_url ? `<button type="button" class="btn btn-primary btn-sm position-absolute bottom-0 end-0 m-2" onclick="window.openCropModal('${att.url}', '${att.edit_url}')"><i class="feather-edit-2 me-1"></i>Edit</button>` : ''}
                             </div>
                         </div>
                         <div class="text-center">

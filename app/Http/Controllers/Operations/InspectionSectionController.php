@@ -3,6 +3,8 @@
 namespace App\Http\Controllers\Operations;
 
 use App\Http\Controllers\Controller;
+use App\Http\Requests\Operations\StoreInspectionSectionRequest;
+use App\Http\Requests\Operations\UpdateInspectionSectionRequest;
 use App\Models\InspectionSection;
 use Illuminate\Http\Request;
 
@@ -40,21 +42,13 @@ class InspectionSectionController extends Controller
         return view('operations.inspection-sections.create');
     }
 
-    public function store(Request $request)
+    public function store(StoreInspectionSectionRequest $request)
     {
-        $data = $request->validate([
-            'name'         => ['required', 'string', 'max:100'],
-            'slug'         => ['required', 'string', 'max:100', 'unique:inspection_sections,slug', 'regex:/^[a-z0-9_]+$/'],
-            'description'  => ['nullable', 'string', 'max:500'],
-            'section_type' => ['required', 'in:images,workmanship,aql,checklist,container,verification,review,task_list,quantity_sampling,cartons,cover_photo,files_review,defects,finish'],
-            'icon'         => ['nullable', 'string', 'max:100'],
-            'sort_order'   => ['nullable', 'integer', 'min:0'],
-            'is_active'    => ['nullable', 'boolean'],
-            'default_data' => ['nullable', 'json'],
-        ]);
+        $data = $request->validated();
 
         $data['is_active']    = $request->boolean('is_active', true);
         $data['sort_order']   = $data['sort_order'] ?? 0;
+        $data['skip_policy']  = $data['skip_policy'] ?? 'mandatory';
         $data['default_data'] = $data['default_data'] ? json_decode($data['default_data'], true) : null;
 
         InspectionSection::create($data);
@@ -68,22 +62,13 @@ class InspectionSectionController extends Controller
         return view('operations.inspection-sections.edit', compact('inspectionSection'));
     }
 
-    public function update(Request $request, InspectionSection $inspectionSection)
+    public function update(UpdateInspectionSectionRequest $request, InspectionSection $inspectionSection)
     {
-        $data = $request->validate([
-            'name'         => ['required', 'string', 'max:100'],
-            'slug'         => ['required', 'string', 'max:100', 'regex:/^[a-z0-9_]+$/',
-                'unique:inspection_sections,slug,' . $inspectionSection->id],
-            'description'  => ['nullable', 'string', 'max:500'],
-            'section_type' => ['required', 'in:images,workmanship,aql,checklist,container,verification,review,task_list,quantity_sampling,cartons,cover_photo,files_review,defects,finish'],
-            'icon'         => ['nullable', 'string', 'max:100'],
-            'sort_order'   => ['nullable', 'integer', 'min:0'],
-            'is_active'    => ['nullable', 'boolean'],
-            'default_data' => ['nullable', 'json'],
-        ]);
+        $data = $request->validated();
 
         $data['is_active']    = $request->boolean('is_active', true);
         $data['sort_order']   = $data['sort_order'] ?? 0;
+        $data['skip_policy']  = $data['skip_policy'] ?? 'mandatory';
         $data['default_data'] = $data['default_data'] ? json_decode($data['default_data'], true) : null;
 
         $inspectionSection->update($data);

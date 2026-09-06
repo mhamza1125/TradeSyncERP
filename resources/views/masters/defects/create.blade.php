@@ -24,7 +24,7 @@
         @include('partials.flash-messages')
 
         <div class="row">
-            <div class="col-lg-8">
+            <div class="col-12">
                 <div class="card">
                     <div class="card-body">
                         <form action="{{ route('masters.defects.store') }}" method="POST">

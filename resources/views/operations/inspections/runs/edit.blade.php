@@ -3,7 +3,52 @@
 @section('title', 'Run #' . $run->run_number . ' — ' . $inspection->report_number . ' — TradeSyncERP')
 
 @push('styles')
+<link rel="stylesheet" href="{{ asset('assets/vendors/css/cropper.min.css') }}">
 <style>
+/* ── Photo edit / drag-reorder ──────────────────────────────── */
+.att-thumb { cursor: grab; }
+.att-thumb img, .att-thumb a {
+    -webkit-user-drag: none;
+    user-select: none;
+}
+.att-thumb .att-drag-handle {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 18px;
+    height: 18px;
+    margin: -4px;
+    border-radius: 50%;
+    background: rgba(0,0,0,.55);
+    color: #fff;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 10px;
+    cursor: grab;
+    z-index: 1;
+}
+.att-thumb .att-edit-btn {
+    position: absolute;
+    bottom: 0;
+    right: 0;
+    width: 18px;
+    height: 18px;
+    margin: -4px;
+    border-radius: 50%;
+    z-index: 1;
+    padding: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 10px;
+}
+.att-thumb.sortable-ghost { opacity: .4; }
+.att-thumb.sortable-chosen { cursor: grabbing; }
+.att-thumb.sortable-chosen img { box-shadow: 0 0 0 2px var(--bs-primary, #4f46e5); }
+#cropTargetImage { display: block; max-width: 100%; }
+.crop-image-wrapper { max-height: 60vh; overflow: hidden; background: #222; }
+
 /* ── Hide global sidebar; inspection sidebar takes its place ─── */
 .nxl-navigation {
     visibility: hidden !important;
@@ -298,7 +343,7 @@ foreach ($visibleRunSections as $rs) {
                     @if($rs->status === 'complete')
                         <i class="feather-check-circle text-success"></i>
                     @elseif($rs->status === 'na')
-                        <span class="text-muted" style="font-size:10px;font-weight:600">N/A</span>
+                        <i class="feather-skip-forward text-warning" title="Skipped"></i>
                     @else
                         <i class="feather-circle text-muted" style="opacity:.35"></i>
                     @endif
@@ -482,8 +527,8 @@ foreach ($visibleRunSections as $rs) {
                     $color     = $typeColors[$sec->section_type] ?? 'secondary';
                     $startOpen = $loopIdx === 0;
 
-                    $statusColors = ['pending' => 'secondary', 'complete' => 'success', 'na' => 'light text-muted'];
-                    $statusLabels = ['pending' => 'Pending', 'complete' => 'Complete', 'na' => 'N/A'];
+                    $statusColors = ['pending' => 'secondary', 'complete' => 'success', 'na' => 'warning'];
+                    $statusLabels = ['pending' => 'Pending', 'complete' => 'Complete', 'na' => 'Skipped'];
 
                     $uploadUrl = route('inspections.runs.sections.upload', [$inspection, $run, $runSection]);
                 @endphp
@@ -793,6 +838,14 @@ foreach ($visibleRunSections as $rs) {
                                         <i class="feather-{{ $runSection->status === 'complete' ? 'rotate-ccw' : 'check' }} me-1 subsection-complete-icon"></i>
                                         <span class="subsection-complete-label">{{ $runSection->status === 'complete' ? 'Mark as Pending' : 'Mark as Complete' }}</span>
                                     </button>
+                                    @if($sec->isSkippable())
+                                    <button type="button"
+                                            class="btn btn-sm btn-outline-warning subsection-skip-btn"
+                                            data-section-id="{{ $runSection->id }}"
+                                            data-section-name="{{ $sec->name }}">
+                                        <i class="feather-skip-forward me-1"></i>Skip Section
+                                    </button>
+                                    @endif
                                 </div>
                             </div>
                             @endunless
@@ -847,9 +900,50 @@ foreach ($visibleRunSections as $rs) {
         </form>
     </div>
 </div>
+
+{{-- ── Shared photo editor modal (crop / rotate / zoom) — reused by every attachment strip ── --}}
+<div class="modal fade" id="imageCropModal" tabindex="-1" aria-hidden="true" data-bs-backdrop="static">
+    <div class="modal-dialog modal-lg modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title"><i class="feather-crop me-2"></i>Edit Photo</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body p-2">
+                <div class="crop-image-wrapper">
+                    <img id="cropTargetImage" src="" alt="">
+                </div>
+            </div>
+            <div class="modal-footer flex-wrap justify-content-center gap-2">
+                <button type="button" class="btn btn-light-brand btn-sm" id="cropRotateLeft" title="Rotate left">
+                    <i class="feather-rotate-ccw me-1"></i>Rotate Left
+                </button>
+                <button type="button" class="btn btn-light-brand btn-sm" id="cropRotateRight" title="Rotate right">
+                    <i class="feather-rotate-cw me-1"></i>Rotate Right
+                </button>
+                <button type="button" class="btn btn-light-brand btn-sm" id="cropZoomIn" title="Zoom in">
+                    <i class="feather-zoom-in me-1"></i>Zoom In
+                </button>
+                <button type="button" class="btn btn-light-brand btn-sm" id="cropZoomOut" title="Zoom out">
+                    <i class="feather-zoom-out me-1"></i>Zoom Out
+                </button>
+                <button type="button" class="btn btn-light-secondary btn-sm" id="cropReset" title="Reset">
+                    <i class="feather-refresh-cw me-1"></i>Reset
+                </button>
+                <span class="flex-grow-1"></span>
+                <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-primary btn-sm" id="cropSaveBtn">
+                    <i class="feather-check me-1"></i>Save
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
 @endsection
 
 @push('scripts')
+<script src="{{ asset('assets/vendors/js/sortable.min.js') }}"></script>
+<script src="{{ asset('assets/vendors/js/cropper.min.js') }}"></script>
 <script>
 (function () {
     'use strict';
@@ -1009,7 +1103,7 @@ foreach ($visibleRunSections as $rs) {
         if (status === 'complete') {
             dot.innerHTML = '<i class="feather-check-circle text-success"></i>';
         } else if (status === 'na') {
-            dot.innerHTML = '<span class="text-muted" style="font-size:10px;font-weight:600">N/A</span>';
+            dot.innerHTML = '<i class="feather-skip-forward text-warning" title="Skipped"></i>';
         } else {
             dot.innerHTML = '<i class="feather-circle text-muted" style="opacity:.35"></i>';
         }
@@ -1063,8 +1157,8 @@ foreach ($visibleRunSections as $rs) {
     }
 
     function applyStatusEverywhere(rsId, status) {
-        const labels = { pending: 'Pending', complete: 'Complete', na: 'N/A' };
-        const colors = { pending: 'secondary', complete: 'success', na: 'secondary' };
+        const labels = { pending: 'Pending', complete: 'Complete', na: 'Skipped' };
+        const colors = { pending: 'secondary', complete: 'success', na: 'warning' };
         const cls    = colors[status] || 'secondary';
 
         const badge = document.getElementById('status-badge-' + rsId);
@@ -1154,6 +1248,17 @@ foreach ($visibleRunSections as $rs) {
         });
     });
 
+    document.querySelectorAll('.subsection-skip-btn').forEach(function (btn) {
+        btn.addEventListener('click', function () {
+            const rsId = this.dataset.sectionId;
+            const name = this.dataset.sectionName || 'this section';
+            if (!confirm(`Skip "${name}"? It will be marked as Skipped instead of completed. You can undo this later with "Mark as Complete".`)) {
+                return;
+            }
+            saveSection(rsId, 'na', this, 'Section skipped.');
+        });
+    });
+
     // ═══════════════════════════════════════════════════════════════
     // 1.  AJAX FILE UPLOAD SYSTEM
     // ═══════════════════════════════════════════════════════════════
@@ -1202,6 +1307,8 @@ foreach ($visibleRunSections as $rs) {
         });
 
         wireDeleteButtons(previews);
+        wireEditButtons(previews);
+        initSortable(previews, area.dataset.reorderUrl);
     }
 
     function wireDeleteButtons(container) {
@@ -1225,20 +1332,203 @@ foreach ($visibleRunSections as $rs) {
         });
     }
 
+    function wireEditButtons(container) {
+        container.querySelectorAll('.att-edit-btn').forEach(btn => {
+            if (btn.dataset.wired) return;
+            btn.dataset.wired = '1';
+            btn.addEventListener('click', function () {
+                const url = this.dataset.editUrl;
+                const img = this.dataset.imageUrl;
+                if (!url || !img) return;
+                openCropModal(img, url);
+            });
+        });
+    }
+
+    // ═══════════════════════════════════════════════════════════════
+    // 1a.  DRAG & DROP REORDERING (SortableJS) — persisted per section
+    // ═══════════════════════════════════════════════════════════════
+
+    function initSortable(container, reorderUrl) {
+        if (!container || !reorderUrl || container.dataset.sortableInit) return;
+        if (typeof Sortable === 'undefined') return;
+        container.dataset.sortableInit = '1';
+
+        Sortable.create(container, {
+            animation: 150,
+            // The theme's own image/link drag handling fights the native HTML5
+            // DnD API SortableJS uses by default (thumbs are <img> wrapped in an
+            // <a>), so force the JS-simulated fallback — reliable regardless of
+            // what's inside each thumb. No `handle`: drag from anywhere on the
+            // thumb; only the action buttons are excluded.
+            forceFallback: true,
+            fallbackOnBody: true,
+            fallbackTolerance: 3,
+            filter: '.att-delete-btn, .att-edit-btn',
+            preventOnFilter: false,
+            ghostClass: 'sortable-ghost',
+            chosenClass: 'sortable-chosen',
+            onEnd: function () {
+                const ids = Array.from(container.querySelectorAll('.att-thumb'))
+                    .map(el => parseInt(el.id.replace('att-', ''), 10))
+                    .filter(id => !isNaN(id));
+                if (!ids.length) return;
+
+                fetch(reorderUrl, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRF-TOKEN': CSRF,
+                        'Accept': 'application/json',
+                    },
+                    body: JSON.stringify({ order: ids }),
+                }).catch(() => alert('Could not save the new photo order. Please try again.'));
+            },
+        });
+    }
+
+    // ═══════════════════════════════════════════════════════════════
+    // 1b.  PHOTO EDITOR (Cropper.js) — crop / rotate / zoom, shared modal
+    // ═══════════════════════════════════════════════════════════════
+
+    let cropInstance = null;
+    let cropSaveUrl  = null;
+    const cropModalEl = document.getElementById('imageCropModal');
+    const cropImageEl = document.getElementById('cropTargetImage');
+    const cropSaveBtn = document.getElementById('cropSaveBtn');
+
+    // The theme blurs the whole page wrapper on `body.modal-open` (see
+    // body.modal-open .nxl-container{filter:blur(...)} in theme.min.css) so
+    // that page content behind a modal looks backgrounded. Our modal markup
+    // is rendered inside that same wrapper, so left in place it blurs itself
+    // along with everything else and becomes unusable. Move it to be a direct
+    // child of <body>, like Bootstrap modals are normally expected to be, so
+    // it sits outside the blurred subtree.
+    if (cropModalEl && cropModalEl.parentElement !== document.body) {
+        document.body.appendChild(cropModalEl);
+    }
+
+    window.openCropModal = function (imageUrl, editUrl) {
+        if (!cropModalEl || !cropImageEl || typeof Cropper === 'undefined') return;
+        cropSaveUrl = editUrl;
+        cropImageEl.src = imageUrl + (imageUrl.includes('?') ? '&' : '?') + '_=' + Date.now();
+
+        const modal = bootstrap.Modal.getOrCreateInstance(cropModalEl);
+
+        const onShown = function () {
+            cropModalEl.removeEventListener('shown.bs.modal', onShown);
+            if (cropInstance) cropInstance.destroy();
+            cropInstance = new Cropper(cropImageEl, {
+                viewMode: 1,
+                dragMode: 'move',
+                autoCropArea: 1,
+                background: false,
+                responsive: true,
+            });
+        };
+        cropModalEl.addEventListener('shown.bs.modal', onShown);
+
+        const onHidden = function () {
+            cropModalEl.removeEventListener('hidden.bs.modal', onHidden);
+            if (cropInstance) { cropInstance.destroy(); cropInstance = null; }
+        };
+        cropModalEl.addEventListener('hidden.bs.modal', onHidden);
+
+        modal.show();
+    };
+
+    document.getElementById('cropRotateLeft')?.addEventListener('click', () => cropInstance?.rotate(-90));
+    document.getElementById('cropRotateRight')?.addEventListener('click', () => cropInstance?.rotate(90));
+    document.getElementById('cropZoomIn')?.addEventListener('click', () => cropInstance?.zoom(0.1));
+    document.getElementById('cropZoomOut')?.addEventListener('click', () => cropInstance?.zoom(-0.1));
+    document.getElementById('cropReset')?.addEventListener('click', () => cropInstance?.reset());
+
+    cropSaveBtn?.addEventListener('click', function () {
+        if (!cropInstance || !cropSaveUrl) return;
+        const btn = this;
+        const originalHtml = btn.innerHTML;
+        btn.disabled = true;
+        btn.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span>Saving…';
+
+        cropInstance.getCroppedCanvas({ imageSmoothingQuality: 'high' }).toBlob(function (blob) {
+            if (!blob) {
+                btn.disabled = false;
+                btn.innerHTML = originalHtml;
+                alert('Could not read the edited image. Please try again.');
+                return;
+            }
+
+            const fd = new FormData();
+            fd.append('image', blob, 'edited.jpg');
+
+            fetch(cropSaveUrl, {
+                method: 'POST',
+                headers: { 'X-CSRF-TOKEN': CSRF, 'Accept': 'application/json' },
+                body: fd,
+            })
+            .then(r => r.json().then(data => ({ ok: r.ok, data })))
+            .then(({ ok, data }) => {
+                if (!ok || !data.success) throw new Error(data?.message || 'Save failed');
+
+                // Update every thumb/preview pointing at this attachment (there is
+                // normally just one, but be defensive) with the freshly-saved image.
+                const cacheBusted = data.attachment.url + '?_=' + Date.now();
+                document.querySelectorAll('#att-' + data.attachment.id + ' img').forEach(img => {
+                    img.src = cacheBusted;
+                });
+                document.querySelectorAll('#att-' + data.attachment.id + ' a').forEach(a => {
+                    a.href = data.attachment.url;
+                });
+                // Cover-photo widget uses its own element id instead of #att-{id}.
+                document.querySelectorAll('img[data-attachment-id="' + data.attachment.id + '"]').forEach(img => {
+                    img.src = cacheBusted;
+                });
+
+                bootstrap.Modal.getInstance(cropModalEl)?.hide();
+            })
+            .catch(() => alert('Could not save the edited photo. Please try again.'))
+            .finally(() => {
+                btn.disabled = false;
+                btn.innerHTML = originalHtml;
+            });
+        }, 'image/jpeg', 0.92);
+    });
+
     function addPreviewEl(container, att) {
         const id  = 'att-' + att.id;
         const div = document.createElement('div');
         div.className = 'att-thumb position-relative d-inline-block me-2 mb-2';
         div.id = id;
 
+        const handle = document.createElement('span');
+        handle.className = 'att-drag-handle';
+        handle.title = 'Drag to reorder';
+        handle.innerHTML = '<i class="feather-move"></i>';
+        div.appendChild(handle);
+
+        const inner = document.createElement('div');
         if (att.is_image) {
-            div.innerHTML = `<a href="${att.url}" target="_blank" rel="noopener noreferrer"><img src="${att.url}" class="rounded border" style="width:64px;height:64px;object-fit:cover" alt=""></a>`;
+            inner.innerHTML = `<a href="${att.url}" target="_blank" rel="noopener noreferrer"><img src="${att.url}" class="rounded border" style="width:64px;height:64px;object-fit:cover" alt=""></a>`;
         } else {
-            div.innerHTML = `
+            inner.innerHTML = `
                 <a href="${att.url}" target="_blank" rel="noopener noreferrer" class="d-flex flex-column align-items-center justify-content-center border rounded bg-light text-decoration-none" style="width:64px;height:64px">
                     <i class="feather-file text-muted" style="font-size:20px"></i>
                     <small class="text-muted mt-1" style="font-size:9px;max-width:60px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${att.name}</small>
                 </a>`;
+        }
+        div.appendChild(inner.firstElementChild);
+
+        if (att.is_image && att.edit_url) {
+            const editBtn = document.createElement('button');
+            editBtn.type = 'button';
+            editBtn.className = 'att-edit-btn btn btn-primary btn-sm';
+            editBtn.title = 'Edit photo';
+            editBtn.innerHTML = '<i class="feather-edit-2"></i>';
+            editBtn.dataset.editUrl = att.edit_url;
+            editBtn.dataset.imageUrl = att.url;
+            editBtn.dataset.wired = '1';
+            editBtn.addEventListener('click', () => openCropModal(att.url, att.edit_url));
+            div.appendChild(editBtn);
         }
 
         const delBtn = document.createElement('button');
@@ -1248,6 +1538,7 @@ foreach ($visibleRunSections as $rs) {
         delBtn.innerHTML = '×';
         delBtn.dataset.deleteUrl = att.delete_url;
         delBtn.dataset.thumbId   = id;
+        delBtn.dataset.wired     = '1';
         delBtn.addEventListener('click', function () {
             if (!confirm('Remove this file?')) return;
             fetch(att.delete_url, {

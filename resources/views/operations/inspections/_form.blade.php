@@ -64,7 +64,7 @@
             <div class="col-lg-3">
                 <label class="form-label">Overall Status</label>
                 <select name="overall_status" class="form-select @error('overall_status') is-invalid @enderror">
-                    @foreach(['Pending','Pass','Fail'] as $s)
+                    @foreach(['Pending','Pass','Fail','N/A'] as $s)
                         <option value="{{ $s }}" @selected(old('overall_status', $inspection->overall_status ?? 'Pending') === $s)>{{ $s }}</option>
                     @endforeach
                 </select>

@@ -350,6 +350,24 @@ class InspectionSectionSeeder extends Seeder
                 ],
             ],
             [
+                'name'         => 'Sticker & Label Verification',
+                'slug'         => 'sticker_label_verification',
+                'description'  => 'Checkpoint-style verification of stickers/labels on the box or packaging against the approved sample — not a physical measurement.',
+                'section_type' => 'checklist',
+                'icon'         => 'feather-tag',
+                'sort_order'   => 231,
+                'default_data' => [
+                    'items' => [
+                        ['label' => 'Sticker / label matches approved sample',        'result' => null, 'remarks' => ''],
+                        ['label' => 'Sticker / label text is correct',                'result' => null, 'remarks' => ''],
+                        ['label' => 'Sticker / label placement is correct',           'result' => null, 'remarks' => ''],
+                        ['label' => 'Sticker / label is properly attached',           'result' => null, 'remarks' => ''],
+                        ['label' => 'Barcode / QR code is correct and readable',      'result' => null, 'remarks' => ''],
+                        ['label' => 'Sticker / label free from damage or print defects', 'result' => null, 'remarks' => ''],
+                    ],
+                ],
+            ],
+            [
                 'name'         => 'Variations vs. Tech Pack',
                 'slug'         => 'variations_techpack',
                 'description'  => "Document differences found between production output and the buyer's technical specification pack.",
@@ -445,6 +463,7 @@ class InspectionSectionSeeder extends Seeder
                 'section_type' => 'finish',
                 'icon'         => 'feather-check-circle',
                 'sort_order'   => 9999,
+                'skip_policy'  => 'mandatory',
                 'default_data' => [
                     'comments' => '',
                     'finished' => false,
@@ -487,6 +506,7 @@ class InspectionSectionSeeder extends Seeder
                 'section_type' => 'cover_photo',
                 'icon'         => 'feather-camera',
                 'sort_order'   => 50,
+                'skip_policy'  => 'skippable',
                 'default_data' => [],
             ],
             [
@@ -496,6 +516,7 @@ class InspectionSectionSeeder extends Seeder
                 'section_type' => 'files_review',
                 'icon'         => 'feather-file-text',
                 'sort_order'   => 100,
+                'skip_policy'  => 'skippable',
                 'default_data' => [
                     'acknowledged' => false,
                     'notes'        => '',
@@ -531,6 +552,7 @@ class InspectionSectionSeeder extends Seeder
                 'section_type' => 'checkpoint',
                 'icon'         => 'feather-box',
                 'sort_order'   => 40,
+                'skip_policy'  => 'skippable',
                 'default_data' => [
                     'tasks' => [
                         [
@@ -557,6 +579,7 @@ class InspectionSectionSeeder extends Seeder
                 'section_type' => 'checkpoint',
                 'icon'         => 'feather-tag',
                 'sort_order'   => 60,
+                'skip_policy'  => 'skippable',
                 'default_data' => [
                     'tasks' => [
                         [
@@ -595,6 +618,7 @@ class InspectionSectionSeeder extends Seeder
                 'section_type' => 'checkpoint',
                 'icon'         => 'feather-settings',
                 'sort_order'   => 90,
+                'skip_policy'  => 'skippable',
                 'default_data' => [
                     'tasks' => [
                         [

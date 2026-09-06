@@ -68,7 +68,7 @@
                                     </span>
                                 @endif
                             </div>
-                            @php $ic = ['Pass'=>'success','Fail'=>'danger','Pending'=>'warning']; @endphp
+                            @php $ic = ['Pass'=>'success','Fail'=>'danger','Pending'=>'warning','N/A'=>'secondary']; @endphp
                             <span class="badge bg-soft-{{ $ic[$inspection->overall_status] ?? 'secondary' }} text-{{ $ic[$inspection->overall_status] ?? 'secondary' }} fs-14 px-3 py-2">
                                 {{ $inspection->overall_status }}
                             </span>
@@ -136,7 +136,8 @@
                     </div>
 
                     <div class="card-body">
-                        {{-- Sample info --}}
+                        {{-- Sample info — falls back to a plain "Sample: Not linked" line instead
+                             of disappearing entirely when the run has no resolvable sample. --}}
                         @if($run->sample)
                         <div class="d-flex align-items-center gap-3 mb-4 p-3 bg-light rounded">
                             @if($run->sample->main_image)
@@ -168,6 +169,11 @@
                                 </div>
                             </div>
                         </div>
+                        @else
+                        <div class="fs-13 mb-4">
+                            <span class="text-muted">Sample:</span>
+                            <span class="fw-semibold text-muted">Not linked</span>
+                        </div>
                         @endif
 
                         {{-- Section progress --}}
@@ -195,24 +201,37 @@
                         </div>
                         @endif
 
-                        {{-- Section list --}}
+                        {{-- Section list — collapsed behind a single toggle for the whole run,
+                             not one per section, so the page doesn't get unreasonably long. --}}
                         @if($run->runSections->count())
-                        <div class="row g-2">
-                            @foreach($run->runSections as $rs)
-                            @php
-                                $sc = ['pending'=>'secondary','complete'=>'success','na'=>'light'];
-                                $sl = ['pending'=>'Pending','complete'=>'Done','na'=>'N/A'];
-                            @endphp
-                            <div class="col-md-6">
-                                <div class="d-flex align-items-center gap-2 p-2 border rounded">
-                                    <i class="{{ $rs->section->icon ?? 'feather-layers' }} text-muted" style="font-size:14px;flex-shrink:0"></i>
-                                    <span class="fs-12 flex-grow-1">{{ $rs->section->name }}</span>
-                                    <span class="badge bg-soft-{{ $sc[$rs->status] ?? 'secondary' }} text-{{ $sc[$rs->status] ?? 'secondary' }} fs-10">
-                                        {{ $sl[$rs->status] ?? $rs->status }}
-                                    </span>
+                        @php $secListId = 'run-sections-' . $run->id; @endphp
+                        <button type="button"
+                                class="btn btn-sm btn-outline-secondary w-100 d-flex align-items-center justify-content-center gap-2 section-list-toggle"
+                                data-bs-toggle="collapse"
+                                data-bs-target="#{{ $secListId }}"
+                                aria-expanded="false"
+                                aria-controls="{{ $secListId }}">
+                            <span class="toggle-label">View Inspection Sections</span>
+                            <i class="feather-chevron-down toggle-icon"></i>
+                        </button>
+                        <div class="collapse mt-2" id="{{ $secListId }}">
+                            <div class="row g-2">
+                                @foreach($run->runSections as $rs)
+                                @php
+                                    $sc = ['pending'=>'secondary','complete'=>'success','na'=>'warning'];
+                                    $sl = ['pending'=>'Pending','complete'=>'Done','na'=>'Skipped'];
+                                @endphp
+                                <div class="col-md-6">
+                                    <div class="d-flex align-items-center gap-2 p-2 border rounded">
+                                        <i class="{{ $rs->section->icon ?? 'feather-layers' }} text-muted" style="font-size:14px;flex-shrink:0"></i>
+                                        <span class="fs-12 flex-grow-1">{{ $rs->section->name }}</span>
+                                        <span class="badge bg-soft-{{ $sc[$rs->status] ?? 'secondary' }} text-{{ $sc[$rs->status] ?? 'secondary' }} fs-10">
+                                            {{ $sl[$rs->status] ?? $rs->status }}
+                                        </span>
+                                    </div>
                                 </div>
+                                @endforeach
                             </div>
-                            @endforeach
                         </div>
                         @endif
                     </div>
@@ -291,4 +310,30 @@
         </div>
     </div>
 </div>
+
+@push('scripts')
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+    document.querySelectorAll('.section-list-toggle').forEach(function (btn) {
+        var targetId = btn.getAttribute('data-bs-target');
+        var target = document.querySelector(targetId);
+        if (!target) return;
+        var icon = btn.querySelector('.toggle-icon');
+        var label = btn.querySelector('.toggle-label');
+        target.addEventListener('shown.bs.collapse', function () {
+            btn.setAttribute('aria-expanded', 'true');
+            label.textContent = 'Hide Inspection Sections';
+            icon.classList.remove('feather-chevron-down');
+            icon.classList.add('feather-chevron-up');
+        });
+        target.addEventListener('hidden.bs.collapse', function () {
+            btn.setAttribute('aria-expanded', 'false');
+            label.textContent = 'View Inspection Sections';
+            icon.classList.remove('feather-chevron-up');
+            icon.classList.add('feather-chevron-down');
+        });
+    });
+});
+</script>
+@endpush
 @endsection

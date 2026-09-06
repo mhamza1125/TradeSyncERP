@@ -1,6 +1,11 @@
 {{-- Shared form for inspection section create / edit --}}
 @php
-    $sectionTypes = ['images','workmanship','aql','checklist','container','verification','review'];
+    $sectionTypes = [
+        'general_info', 'images', 'workmanship', 'defects', 'aql', 'checklist',
+        'container', 'verification', 'review', 'article_results', 'conclusion',
+        'finish', 'quantity_sampling', 'cartons', 'cover_photo', 'files_review',
+        'checkpoint', 'production_stages',
+    ];
     $icons = [
         'feather-camera','feather-check-square','feather-bar-chart-2','feather-list',
         'feather-box','feather-shield','feather-clipboard','feather-layers','feather-package',
@@ -44,7 +49,7 @@
                     <option value="">— Select Type —</option>
                     @foreach($sectionTypes as $t)
                         <option value="{{ $t }}" @selected(old('section_type', $sec?->section_type) === $t)>
-                            {{ ucfirst($t) }}
+                            {{ ucwords(str_replace('_', ' ', $t)) }}
                         </option>
                     @endforeach
                 </select>
@@ -59,20 +64,30 @@
                 @error('icon')<div class="invalid-feedback">{{ $message }}</div>@enderror
                 <small class="text-muted">Feather icon class (feather-*)</small>
             </div>
-            <div class="col-lg-2">
+            <div class="col-lg-4">
                 <label class="form-label">Sort Order</label>
                 <input type="number" name="sort_order" min="0"
                        class="form-control @error('sort_order') is-invalid @enderror"
                        value="{{ old('sort_order', $sec?->sort_order ?? 0) }}">
                 @error('sort_order')<div class="invalid-feedback">{{ $message }}</div>@enderror
             </div>
-            <div class="col-lg-2 d-flex align-items-end">
-                <div class="form-check form-switch pb-2">
+            <div class="col-lg-8">
+                <label class="form-label">Skip Policy</label>
+                <select name="skip_policy" class="form-select @error('skip_policy') is-invalid @enderror">
+                    @foreach(['mandatory' => 'Mandatory — must be completed, cannot be skipped', 'optional' => 'Optional — not required to complete, but no Skip action', 'skippable' => 'Skippable — shows a Skip Section action on the run'] as $val => $label)
+                        <option value="{{ $val }}" @selected(old('skip_policy', $sec?->skip_policy ?? 'mandatory') === $val)>{{ $label }}</option>
+                    @endforeach
+                </select>
+                @error('skip_policy')<div class="invalid-feedback">{{ $message }}</div>@enderror
+                <small class="text-muted">Controls whether inspectors can explicitly skip this section on an inspection run (e.g. Finish Inspection should stay Mandatory).</small>
+            </div>
+            <div class="col-lg-4">
+                <label class="form-label d-block" for="isActiveSwitch">Active</label>
+                <div class="form-check form-switch">
                     <input class="form-check-input" type="checkbox" role="switch"
                            name="is_active" id="isActiveSwitch"
                            value="1"
                            @checked(old('is_active', $sec ? $sec->is_active : true))>
-                    <label class="form-check-label" for="isActiveSwitch">Active</label>
                 </div>
             </div>
             <div class="col-12">

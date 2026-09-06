@@ -140,6 +140,53 @@ body {
 .badge-primary   { background: #cce5ff; color: #004085; }
 .badge-secondary { background: #e2e3e5; color: #383d41; }
 
+/* ── Headline stat tiles (KPI row under the doc banner) ─── */
+.stat-row { width: 100%; border-collapse: collapse; table-layout: fixed; margin-bottom: 16px; }
+.stat-row td { padding: 0 4px; vertical-align: top; }
+.stat-row td:first-child { padding-left: 0; }
+.stat-row td:last-child { padding-right: 0; }
+.stat-tile {
+    border: 1px solid #e0e0e0;
+    border-top: 3px solid #01AFEE;
+    border-radius: 3px;
+    padding: 8px 10px;
+    background: #f8faff;
+}
+.stat-label {
+    display: block;
+    font-size: 6.5pt;
+    font-weight: bold;
+    text-transform: uppercase;
+    letter-spacing: 0.4px;
+    color: #8a97a6;
+    margin-bottom: 3px;
+}
+.stat-value { display: block; font-size: 12pt; font-weight: bold; color: #1a3560; }
+.stat-value-sm { font-size: 9.5pt; }
+
+/* ── Info panel (bordered card with header bar) ────────────
+   Alternative to .info-section for grouping fields into a
+   visually separated block — use where a page needs several
+   distinct field groups to read as separate cards. ────────── */
+.info-panel {
+    border: 1px solid #e0e0e0;
+    border-top: 3px solid #01AFEE;
+    border-radius: 3px;
+    margin-bottom: 14px;
+}
+.info-panel-header {
+    background: #f5f7fa;
+    padding: 6px 12px;
+    border-bottom: 1px solid #e0e0e0;
+    font-size: 7.5pt;
+    font-weight: bold;
+    text-transform: uppercase;
+    letter-spacing: 0.4px;
+    color: #546e7a;
+}
+.info-panel-body { padding: 10px 12px; }
+.info-panel-body p { font-size: 8.5pt; color: #424242; }
+
 /* ── Summary / totals box ──────────────────────────────── */
 .summary-box {
     border: 1px solid #e0e0e0;

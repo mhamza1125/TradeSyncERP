@@ -31,7 +31,7 @@ class InspectionRunSection extends Model
 
     public function attachments()
     {
-        return $this->morphMany(Attachment::class, 'attachable');
+        return $this->morphMany(Attachment::class, 'attachable')->orderBy('sort_order')->orderBy('id');
     }
 
     public function defects()

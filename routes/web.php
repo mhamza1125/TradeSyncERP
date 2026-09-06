@@ -128,6 +128,8 @@ Route::middleware(['auth', 'verified'])->group(function () {
         // AJAX: section file upload / delete
         Route::post('{run}/sections/{runSection}/upload', [InspectionRunController::class, 'uploadAttachment'])->name('sections.upload');
         Route::delete('{run}/attachments/{attachment}', [InspectionRunController::class, 'deleteAttachment'])->name('attachments.delete');
+        Route::post('{run}/sections/{runSection}/attachments/reorder', [InspectionRunController::class, 'reorderAttachments'])->name('sections.attachments.reorder');
+        Route::post('{run}/attachments/{attachment}/edit', [InspectionRunController::class, 'updateAttachmentImage'])->name('attachments.edit');
         // AJAX: per-section (subsection) status + data persistence
         Route::post('{run}/sections/{runSection}/save', [InspectionRunController::class, 'saveSection'])->name('sections.save');
         // PDF export

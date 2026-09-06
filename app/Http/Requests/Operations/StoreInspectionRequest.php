@@ -19,7 +19,7 @@ class StoreInspectionRequest extends FormRequest
             'inspection_date'    => ['required', 'date'],
             'inspector_ids'      => ['nullable', 'array'],
             'inspector_ids.*'    => ['exists:employees,id'],
-            'overall_status'     => ['nullable', Rule::in(['Pass', 'Fail', 'Pending'])],
+            'overall_status'     => ['nullable', Rule::in(['Pass', 'Fail', 'Pending', 'N/A'])],
             'remarks'            => ['nullable', 'string'],
         ];
     }

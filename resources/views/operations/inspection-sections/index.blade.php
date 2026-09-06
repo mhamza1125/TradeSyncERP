@@ -83,6 +83,7 @@
                                 <th>Type</th>
                                 <th>Description</th>
                                 <th class="text-center">Order</th>
+                                <th class="text-center">Skip Policy</th>
                                 <th class="text-center">Status</th>
                                 <th class="text-end pe-4">Actions</th>
                             </tr>
@@ -122,6 +123,15 @@
                                 </td>
                                 <td class="text-center text-muted">{{ $section->sort_order }}</td>
                                 <td class="text-center">
+                                    @php
+                                        $skipColors = ['mandatory' => 'secondary', 'optional' => 'info', 'skippable' => 'warning'];
+                                        $skipColor = $skipColors[$section->skip_policy] ?? 'secondary';
+                                    @endphp
+                                    <span class="badge bg-soft-{{ $skipColor }} text-{{ $skipColor }} text-capitalize fs-10">
+                                        {{ $section->skip_policy ?? 'mandatory' }}
+                                    </span>
+                                </td>
+                                <td class="text-center">
                                     @if($section->is_active)
                                         <span class="badge bg-soft-success text-success">Active</span>
                                     @else
@@ -151,7 +161,7 @@
                             </tr>
                             @empty
                             <tr>
-                                <td colspan="7" class="text-center py-5 text-muted">
+                                <td colspan="8" class="text-center py-5 text-muted">
                                     <i class="feather-layers fs-1 d-block mb-2 opacity-50"></i>
                                     <p class="mb-1">No inspection sections found.</p>
                                     @can('inspection-sections.create')

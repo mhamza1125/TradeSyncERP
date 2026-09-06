@@ -3,6 +3,8 @@
 namespace App\Http\Controllers\Operations;
 
 use App\Http\Controllers\Controller;
+use App\Http\Requests\Operations\ReorderAttachmentsRequest;
+use App\Http\Requests\Operations\UpdateAttachmentImageRequest;
 use App\Models\Attachment;
 use App\Models\Defect;
 use App\Models\Inspection;
@@ -19,6 +21,7 @@ use App\Services\Inspection\AqlCalculationService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
+use Intervention\Image\ImageManager;
 
 class InspectionRunController extends Controller
 {
@@ -373,6 +376,7 @@ class InspectionRunController extends Controller
                 'name' => $att->file_name,
                 'is_image' => $att->isImage(),
                 'delete_url' => route('inspections.runs.attachments.delete', [$inspection, $run, $att]),
+                'edit_url' => $att->isImage() ? route('inspections.runs.attachments.edit', [$inspection, $run, $att]) : null,
             ];
         }
 
@@ -411,6 +415,77 @@ class InspectionRunController extends Controller
         $attachment->delete();
 
         return response()->json(['success' => true]);
+    }
+
+    // ── AJAX: persist drag-and-drop reorder of a run-section's attachments ───
+
+    public function reorderAttachments(ReorderAttachmentsRequest $request, Inspection $inspection, InspectionRun $run, InspectionRunSection $runSection)
+    {
+        abort_unless($runSection->inspection_run_id === $run->id, 403);
+
+        $posted = $request->validated('order');
+
+        // Only ever touch attachments that actually belong to this run section —
+        // silently drop anything else a tampered request tried to sneak in.
+        $ownedIds = $runSection->attachments()->pluck('id')->all();
+        $orderedIds = array_values(array_intersect($posted, $ownedIds));
+
+        DB::transaction(function () use ($orderedIds) {
+            foreach ($orderedIds as $index => $attachmentId) {
+                Attachment::whereKey($attachmentId)->update(['sort_order' => $index]);
+            }
+        });
+
+        return response()->json(['success' => true]);
+    }
+
+    // ── AJAX: replace an attachment's image with a cropped/rotated/zoomed edit ──
+
+    public function updateAttachmentImage(UpdateAttachmentImageRequest $request, Inspection $inspection, InspectionRun $run, Attachment $attachment)
+    {
+        $runSection = $attachment->attachable;
+        abort_unless(
+            $runSection instanceof InspectionRunSection && $runSection->inspection_run_id === $run->id,
+            403
+        );
+        abort_unless($attachment->isImage(), 422, 'Only images can be edited.');
+
+        $manager = ImageManager::gd();
+
+        try {
+            $image = $manager->read($request->file('image')->getRealPath());
+        } catch (\Throwable $e) {
+            return response()->json(['success' => false, 'message' => 'The edited image could not be processed.'], 422);
+        }
+
+        // Re-encoding through Intervention (rather than trusting the browser's
+        // blob as-is) guards against non-image payloads smuggled past the mime
+        // check, and caps runaway dimensions.
+        $image->scaleDown(4000, 4000);
+        $encoded = $image->toJpeg(quality: 90);
+
+        $newPath = "inspection-sections/{$runSection->id}/".uniqid('edit_').'.jpg';
+        Storage::disk('public')->put($newPath, (string) $encoded);
+
+        $oldPath = $attachment->file_path;
+
+        $attachment->update([
+            'file_path' => $newPath,
+            'file_name' => pathinfo($attachment->file_name, PATHINFO_FILENAME).'.jpg',
+            'mime_type' => 'image/jpeg',
+            'file_size' => Storage::disk('public')->size($newPath),
+        ]);
+
+        Storage::disk('public')->delete($oldPath);
+
+        return response()->json([
+            'success' => true,
+            'attachment' => [
+                'id' => $attachment->id,
+                'url' => Storage::disk('public')->url($attachment->file_path),
+                'name' => $attachment->file_name,
+            ],
+        ]);
     }
 
     // ── AJAX: save a single section's data + completion status ───────────────

@@ -9,6 +9,7 @@
     $cartons     = $data['cartons']     ?? [['carton_type' => '', 'length' => '', 'width' => '', 'height' => '', 'gross_weight' => '', 'net_weight' => '', 'remarks' => '']];
     $attsByTask  = $runSection->attachments->groupBy(fn($a) => $a->task_key ?? '__none__');
     $deleteUrlTpl = route('inspections.runs.attachments.delete', [$inspection, $run, '__ATT__']);
+    $reorderUrl  = route('inspections.runs.sections.attachments.reorder', [$inspection, $run, $runSection]);
 @endphp
 
 {{-- Global unit selectors --}}
@@ -108,15 +109,22 @@
                         </div>
                         <div style="min-width:280px">
                             <label class="form-label fw-semibold fs-11 text-muted mb-1">Attachments</label>
-                            <div class="attachment-area" data-upload-url="{{ $uploadUrl }}" data-task-key="{{ $taskKey }}">
+                            <div class="attachment-area" data-upload-url="{{ $uploadUrl }}" data-task-key="{{ $taskKey }}"
+                                 data-reorder-url="{{ $reorderUrl }}">
                                 <div class="att-previews d-flex flex-wrap gap-1 mb-1">
                                     @foreach($cartonAtts as $att)
                                     <div class="att-thumb position-relative d-inline-block" id="att-{{ $att->id }}">
+                                        <span class="att-drag-handle" title="Drag to reorder"><i class="feather-move"></i></span>
                                         @if($att->isImage())
                                             <a href="{{ $att->url }}" target="_blank" rel="noopener noreferrer">
                                                 <img src="{{ $att->url }}" class="rounded border"
                                                      style="width:36px;height:36px;object-fit:cover" alt="">
                                             </a>
+                                            <button type="button"
+                                                    class="att-edit-btn btn btn-primary btn-sm"
+                                                    title="Edit photo"
+                                                    data-edit-url="{{ route('inspections.runs.attachments.edit', [$inspection, $run, $att]) }}"
+                                                    data-image-url="{{ $att->url }}"><i class="feather-edit-2"></i></button>
                                         @else
                                             <a href="{{ $att->url }}" target="_blank" rel="noopener noreferrer"
                                                class="d-flex align-items-center justify-content-center border rounded bg-light text-decoration-none"
@@ -160,6 +168,7 @@
 (function () {
     const rsId        = {{ $rsId }};
     const uploadUrl   = @json($uploadUrl);
+    const reorderUrl  = @json($reorderUrl);
     const deleteUrlTpl = @json($deleteUrlTpl);
     const tbody       = document.getElementById('carton-dim-body-' + rsId);
 
@@ -226,7 +235,7 @@
                     </div>
                     <div style="min-width:280px">
                         <label class="form-label fw-semibold fs-11 text-muted mb-1">Attachments</label>
-                        <div class="attachment-area" data-upload-url="${uploadUrl}" data-task-key="${taskKey}">
+                        <div class="attachment-area" data-upload-url="${uploadUrl}" data-task-key="${taskKey}" data-reorder-url="${reorderUrl}">
                             <div class="att-previews d-flex flex-wrap gap-1 mb-1"></div>
                             <button type="button" class="add-files-btn btn btn-sm btn-light border" style="font-size:10px">
                                 <i class="feather-camera me-1" style="font-size:10px"></i>Add

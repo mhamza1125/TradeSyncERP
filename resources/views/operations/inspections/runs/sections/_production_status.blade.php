@@ -10,6 +10,8 @@
     $stageKey = fn(string $stage) => 'ps_' . preg_replace('/[^a-z0-9_]/', '', strtolower(str_replace(' ', '_', $stage)));
 
     $deleteUrlTpl    = route('inspections.runs.attachments.delete', [$inspection, $run, '__ATT__']);
+    $editUrlTpl      = route('inspections.runs.attachments.edit', [$inspection, $run, '__ATT__']);
+    $reorderUrl      = route('inspections.runs.sections.attachments.reorder', [$inspection, $run, $runSection]);
     $savedSelections = $selections->map(fn($s) => [
         'stage'       => $s['stage'],
         'percentage'  => $s['percentage'] ?? '',
@@ -98,7 +100,9 @@
 (function () {
     const rsId         = {{ $rsId }};
     const uploadUrl    = @json($uploadUrl);
+    const reorderUrl   = @json($reorderUrl);
     const deleteUrlTpl = @json($deleteUrlTpl);
+    const editUrlTpl   = @json($editUrlTpl);
     const SAVED        = @json($savedSelections);
 
     let rowNum      = 0;
@@ -135,8 +139,14 @@
         const inner = att.isImage
             ? `<a href="${att.url}" target="_blank" rel="noopener noreferrer"><img src="${att.url}" class="rounded border" style="width:36px;height:36px;object-fit:cover" alt=""></a>`
             : `<a href="${att.url}" target="_blank" rel="noopener noreferrer" class="d-flex align-items-center justify-content-center border rounded bg-light text-decoration-none" style="width:36px;height:36px"><i class="feather-file text-muted" style="font-size:12px"></i></a>`;
+        const editBtn = att.isImage
+            ? `<button type="button" class="att-edit-btn btn btn-primary btn-sm" title="Edit photo"
+                       data-edit-url="${editUrlTpl.replace('__ATT__', att.id)}" data-image-url="${att.url}"><i class="feather-edit-2"></i></button>`
+            : '';
         return `<div class="att-thumb position-relative d-inline-block" id="att-${att.id}">
+            <span class="att-drag-handle" title="Drag to reorder"><i class="feather-move"></i></span>
             ${inner}
+            ${editBtn}
             <button type="button" class="att-delete-btn btn btn-danger btn-sm p-0 position-absolute top-0 end-0 d-flex align-items-center justify-content-center"
                     style="width:14px;height:14px;font-size:8px;border-radius:50%;margin:-3px;z-index:1;"
                     data-delete-url="${deleteUrlTpl.replace('__ATT__', att.id)}"
@@ -183,7 +193,7 @@
                        value="${escHtml(saved.comment ?? '')}" placeholder="Status notes…">
             </td>
             <td>
-                <div class="attachment-area" data-upload-url="${uploadUrl}" data-task-key="${taskKey}">
+                <div class="attachment-area" data-upload-url="${uploadUrl}" data-task-key="${taskKey}" data-reorder-url="${reorderUrl}">
                     <div class="att-previews d-flex flex-wrap gap-1 mb-1">${previews}</div>
                     <button type="button" class="add-files-btn btn btn-sm btn-light border" style="font-size:10px">
                         <i class="feather-camera me-1" style="font-size:10px"></i>Add

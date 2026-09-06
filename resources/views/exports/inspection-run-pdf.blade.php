@@ -426,6 +426,12 @@ body {
 }
 .img-label { font-size: 7pt; color: #757575; word-break: break-word; margin-top: 2px; }
 .img-label strong { color: #212121; }
+.img-group-heading {
+    font-size: 7.5pt;
+    font-weight: bold;
+    color: #546E7A;
+    margin: 8px 0 4px;
+}
 .img-missing {
     height: 150px;
     border: 2px dashed #DEE2E6;
@@ -695,11 +701,20 @@ $isSectionEmpty = function($rs, $currentRun): bool {
     };
 };
 
+// Shared "hide empty column" helper for section data tables (Production Status, Carton
+// Dimensions & Weight, …): a column is only worth printing if at least one row has a value
+// for it — an all-blank column just widens the table without showing anything useful.
+$colHasData = fn($rows, $key) => collect($rows)->contains(
+    fn($row) => trim((string) ($row[$key] ?? '')) !== ''
+);
+
 // Build Section Summary Dashboard data
 $summaryRows = [];
 foreach ($runs as $sumRun) {
     foreach ($sumRun->runSections as $sumRs) {
-        if (!$sumRs->section || in_array($sumRs->section->slug, $hiddenSlugs)) continue;
+        // Sections the inspector explicitly skipped are excluded from the export entirely —
+        // they never contribute to the roll-up dashboard either.
+        if (!$sumRs->section || in_array($sumRs->section->slug, $hiddenSlugs) || $sumRs->status === 'na') continue;
         $sName = $sumRs->section->name;
         $sType = $sumRs->section->section_type;
         $sSlug = $sumRs->section->slug;
@@ -1007,7 +1022,9 @@ uasort($summaryRows, fn($a, $b) => $a['sortPriority'] <=> $b['sortPriority']);
         default       => 'vb-pending',
     };
     $visibleSections = $run->runSections->filter(
-        fn($rs) => $rs->section && !in_array($rs->section->slug, $hiddenSlugs)
+        // Sections the inspector explicitly skipped ('na' status) are left out of the export
+        // entirely — no header, table, checkpoints, images, or remarks for them.
+        fn($rs) => $rs->section && !in_array($rs->section->slug, $hiddenSlugs) && $rs->status !== 'na'
     )->sortBy(fn($rs) =>
         $rs->section->sort_order ?? ($sectionTypePriority[$rs->section->section_type] ?? 99)
     )->values();
@@ -1071,6 +1088,13 @@ uasort($summaryRows, fn($a, $b) => $a['sortPriority'] <=> $b['sortPriority']);
     // $label is only set for images tied to a specific row (defect name, checkpoint label,
     // carton type, production stage, …). General / reference gallery photos pass null and
     // are rendered with no caption at all — never fall back to the raw filename.
+    // Marks images as accounted for without displaying them — used for checkpoint/checklist rows
+    // whose result is N/A, so their photos don't fall through to the unlabeled leftover gallery.
+    $suppressGallery = function ($imgs) use (&$consumedImageIds) {
+        foreach ($imgs as $img) {
+            $consumedImageIds[] = $img->id;
+        }
+    };
     $addGallery = function ($imgs, $label = null) use (&$galleryItems, &$consumedImageIds) {
         foreach ($imgs as $img) {
             $galleryItems[]     = ['img' => $img, 'label' => $label ?: null];
@@ -1410,18 +1434,26 @@ uasort($summaryRows, fn($a, $b) => $a['sortPriority'] <=> $b['sortPriority']);
         @php
             $dimUnit    = $data['dim_unit'] ?? 'cm';
             $weightUnit = $data['weight_unit'] ?? 'kg';
+            // Columns that are frequently left blank (e.g. Net Weight) are hidden entirely
+            // when none of the rows carry a value, instead of printing an empty column.
+            $showLength = $colHasData($cartons, 'length');
+            $showWidth  = $colHasData($cartons, 'width');
+            $showHeight = $colHasData($cartons, 'height');
+            $showGross  = $colHasData($cartons, 'gross_weight');
+            $showNet    = $colHasData($cartons, 'net_weight');
+            $showRemarks = $colHasData($cartons, 'remarks');
         @endphp
         @if(!empty($cartons))
         <table class="data-table">
             <thead>
                 <tr>
                     <th>Carton Type / Variant</th>
-                    <th style="text-align:center">Length ({{ $dimUnit }})</th>
-                    <th style="text-align:center">Width ({{ $dimUnit }})</th>
-                    <th style="text-align:center">Height ({{ $dimUnit }})</th>
-                    <th style="text-align:center">Gross Wt. ({{ $weightUnit }})</th>
-                    <th style="text-align:center">Net Wt. ({{ $weightUnit }})</th>
-                    <th>Remarks</th>
+                    @if($showLength)<th style="text-align:center">Length ({{ $dimUnit }})</th>@endif
+                    @if($showWidth)<th style="text-align:center">Width ({{ $dimUnit }})</th>@endif
+                    @if($showHeight)<th style="text-align:center">Height ({{ $dimUnit }})</th>@endif
+                    @if($showGross)<th style="text-align:center">Gross Wt. ({{ $weightUnit }})</th>@endif
+                    @if($showNet)<th style="text-align:center">Net Wt. ({{ $weightUnit }})</th>@endif
+                    @if($showRemarks)<th>Remarks</th>@endif
                 </tr>
             </thead>
             <tbody>
@@ -1432,12 +1464,12 @@ uasort($summaryRows, fn($a, $b) => $a['sortPriority'] <=> $b['sortPriority']);
                 @endphp
                 <tr>
                     <td style="font-weight:bold">{{ $cLabel }}</td>
-                    <td style="text-align:center">{{ $carton['length'] ?? '—' }}</td>
-                    <td style="text-align:center">{{ $carton['width'] ?? '—' }}</td>
-                    <td style="text-align:center">{{ $carton['height'] ?? '—' }}</td>
-                    <td style="text-align:center">{{ $carton['gross_weight'] ?? '—' }}</td>
-                    <td style="text-align:center">{{ $carton['net_weight'] ?? '—' }}</td>
-                    <td style="color:#546E7A; font-size:8pt">{{ $carton['remarks'] ?? '' }}</td>
+                    @if($showLength)<td style="text-align:center">{{ $carton['length'] ?? '—' }}</td>@endif
+                    @if($showWidth)<td style="text-align:center">{{ $carton['width'] ?? '—' }}</td>@endif
+                    @if($showHeight)<td style="text-align:center">{{ $carton['height'] ?? '—' }}</td>@endif
+                    @if($showGross)<td style="text-align:center">{{ $carton['gross_weight'] ?? '—' }}</td>@endif
+                    @if($showNet)<td style="text-align:center">{{ $carton['net_weight'] ?? '—' }}</td>@endif
+                    @if($showRemarks)<td style="color:#546E7A; font-size:8pt">{{ $carton['remarks'] ?? '' }}</td>@endif
                 </tr>
                 @endforeach
             </tbody>
@@ -1445,13 +1477,14 @@ uasort($summaryRows, fn($a, $b) => $a['sortPriority'] <=> $b['sortPriority']);
         @endif
 
         @elseif(!empty($items))
+        @php $showItemRemarks = $colHasData($items, 'remarks'); @endphp
         <table class="data-table">
             <thead>
                 <tr>
                     <th style="width:4%; text-align:center">#</th>
-                    <th style="width:46%">Checkpoint</th>
+                    <th style="{{ $showItemRemarks ? 'width:46%' : '' }}">Checkpoint</th>
                     <th style="width:14%; text-align:center">Result</th>
-                    <th>Remarks</th>
+                    @if($showItemRemarks)<th>Remarks</th>@endif
                 </tr>
             </thead>
             <tbody>
@@ -1460,13 +1493,18 @@ uasort($summaryRows, fn($a, $b) => $a['sortPriority'] <=> $b['sortPriority']);
                     $rClass = match(strtolower($item['result'] ?? '')) {
                         'pass' => 'rb-pass', 'fail' => 'rb-fail', 'n/a','na' => 'rb-na', default => 'rb-def'
                     };
-                    $addGallery($imgsByTask('checkpoint_'.$idx), $item['label'] ?? null);
+                    // N/A checkpoints don't warrant photo evidence — hide their images in the export.
+                    if (in_array(strtolower($item['result'] ?? ''), ['n/a', 'na'], true)) {
+                        $suppressGallery($imgsByTask('checkpoint_'.$idx));
+                    } else {
+                        $addGallery($imgsByTask('checkpoint_'.$idx), $item['label'] ?? null);
+                    }
                 @endphp
                 <tr>
                     <td style="text-align:center; color:#9E9E9E; font-size:8pt">{{ $idx+1 }}</td>
                     <td>{{ $item['label'] ?? '' }}</td>
                     <td style="text-align:center"><span class="{{ $rClass }}">{{ !empty($item['result']) ? $item['result'] : '—' }}</span></td>
-                    <td style="color:#546E7A; font-size:8pt">{{ $item['remarks'] ?? '' }}</td>
+                    @if($showItemRemarks)<td style="color:#546E7A; font-size:8pt">{{ $item['remarks'] ?? '' }}</td>@endif
                 </tr>
                 @endforeach
             </tbody>
@@ -1496,7 +1534,12 @@ uasort($summaryRows, fn($a, $b) => $a['sortPriority'] <=> $b['sortPriority']);
                     $tCls = match(strtolower((string)$tRes)) {
                         'pass' => 'rb-pass', 'fail' => 'rb-fail', 'n/a','na' => 'rb-na', default => 'rb-def'
                     };
-                    $addGallery($imgsByTask($tKey), $taskDef['label'] ?? $tKey);
+                    // N/A checkpoints don't warrant photo evidence — hide their images in the export.
+                    if (in_array(strtolower((string)$tRes), ['n/a', 'na'], true)) {
+                        $suppressGallery($imgsByTask($tKey));
+                    } else {
+                        $addGallery($imgsByTask($tKey), $taskDef['label'] ?? $tKey);
+                    }
                 @endphp
                 <tr>
                     <td style="text-align:center; color:#9E9E9E; font-size:8pt">{{ $tIdx+1 }}</td>
@@ -1510,7 +1553,14 @@ uasort($summaryRows, fn($a, $b) => $a['sortPriority'] <=> $b['sortPriority']);
 
         {{-- ════════════ PRODUCTION STATUS ════════════ --}}
         @elseif($secType === 'production_stages')
-        @php $psSelections = collect($data['selections'] ?? [])->filter(fn($s) => !empty($s['stage']))->values(); @endphp
+        @php
+            $psSelections = collect($data['selections'] ?? [])->filter(fn($s) => !empty($s['stage']))->values();
+            // % Complete / Qty / Notes are optional per stage — hide a column entirely when
+            // every stage in this run left it blank, instead of printing an empty column.
+            $showPct     = $colHasData($psSelections, 'percentage');
+            $showQty     = $colHasData($psSelections, 'quantity');
+            $showComment = $colHasData($psSelections, 'comment');
+        @endphp
         @if($psSelections->isEmpty())
         <div class="empty-state">No production stages recorded.</div>
         @else
@@ -1518,10 +1568,10 @@ uasort($summaryRows, fn($a, $b) => $a['sortPriority'] <=> $b['sortPriority']);
             <thead>
                 <tr>
                     <th style="width:4%; text-align:center">#</th>
-                    <th style="width:32%">Production Stage</th>
-                    <th style="width:14%; text-align:center">% Complete</th>
-                    <th style="width:16%; text-align:center">Qty / Output</th>
-                    <th>Status Notes</th>
+                    <th>Production Stage</th>
+                    @if($showPct)<th style="width:14%; text-align:center">% Complete</th>@endif
+                    @if($showQty)<th style="width:16%; text-align:center">Qty / Output</th>@endif
+                    @if($showComment)<th>Status Notes</th>@endif
                 </tr>
             </thead>
             <tbody>
@@ -1533,9 +1583,9 @@ uasort($summaryRows, fn($a, $b) => $a['sortPriority'] <=> $b['sortPriority']);
                 <tr>
                     <td style="text-align:center; color:#9E9E9E; font-size:8pt">{{ $psIdx+1 }}</td>
                     <td>{{ $ps['stage'] }}</td>
-                    <td style="text-align:center">{{ $ps['percentage'] !== '' && $ps['percentage'] !== null ? $ps['percentage'].'%' : '—' }}</td>
-                    <td style="text-align:center">{{ $ps['quantity'] ?? '—' }}</td>
-                    <td style="color:#546E7A; font-size:8pt">{{ $ps['comment'] ?? '' }}</td>
+                    @if($showPct)<td style="text-align:center">{{ $ps['percentage'] !== '' && $ps['percentage'] !== null ? $ps['percentage'].'%' : '—' }}</td>@endif
+                    @if($showQty)<td style="text-align:center">{{ $ps['quantity'] ?? '—' }}</td>@endif
+                    @if($showComment)<td style="color:#546E7A; font-size:8pt">{{ $ps['comment'] ?? '' }}</td>@endif
                 </tr>
                 @endforeach
             </tbody>
@@ -1899,25 +1949,34 @@ uasort($summaryRows, fn($a, $b) => $a['sortPriority'] <=> $b['sortPriority']);
         @endphp
         @if(!empty($galleryItems))
         <div class="sub-heading">Photos</div>
-        @foreach(array_chunk($galleryItems, 3) as $galChunk)
-        <table class="img-gallery-table" style="margin-bottom:4px">
-            <tr>
-                @foreach($galChunk as $galItem)
-                @php $b64 = $imgBase64($galItem['img']->file_path); @endphp
-                <td>
-                    @if($b64)
-                        <img src="{{ $b64 }}" class="img-thumb">
-                    @else
-                        <div class="img-missing">Image unavailable</div>
-                    @endif
-                    @if(!empty($galItem['label']))
-                        <div class="img-label"><strong>{{ $galItem['label'] }}</strong></div>
-                    @endif
-                </td>
-                @endforeach
-                @for($p = count($galChunk); $p < 3; $p++)<td></td>@endfor
-            </tr>
-        </table>
+        @php
+            // Group images by their row label (production stage, checkpoint description, carton
+            // type, …) so the label is shown once as a group heading instead of being repeated
+            // under every single image. Images with no row label (general/reference photos) are
+            // grouped together with no heading at all.
+            $galleryGroups = collect($galleryItems)->groupBy(fn($gi) => $gi['label'] ?? '');
+        @endphp
+        @foreach($galleryGroups as $galLabel => $galGroup)
+            @if($galLabel !== '')
+            <div class="img-group-heading">{{ $galLabel }}</div>
+            @endif
+            @foreach($galGroup->chunk(3) as $galChunk)
+            <table class="img-gallery-table" style="margin-bottom:4px">
+                <tr>
+                    @foreach($galChunk as $galItem)
+                    @php $b64 = $imgBase64($galItem['img']->file_path); @endphp
+                    <td>
+                        @if($b64)
+                            <img src="{{ $b64 }}" class="img-thumb">
+                        @else
+                            <div class="img-missing">Image unavailable</div>
+                        @endif
+                    </td>
+                    @endforeach
+                    @for($p = count($galChunk); $p < 3; $p++)<td></td>@endfor
+                </tr>
+            </table>
+            @endforeach
         @endforeach
         @endif
 

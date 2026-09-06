@@ -91,7 +91,7 @@
                         </thead>
                         <tbody>
                             @forelse($inspections as $ins)
-                            @php $ic = ['Pass'=>'success','Fail'=>'danger','Pending'=>'warning']; @endphp
+                            @php $ic = ['Pass'=>'success','Fail'=>'danger','Pending'=>'warning','N/A'=>'secondary']; @endphp
                             <tr>
                                 <td>
                                     <a href="{{ route('inspections.show', $ins) }}" class="fw-bold text-primary">

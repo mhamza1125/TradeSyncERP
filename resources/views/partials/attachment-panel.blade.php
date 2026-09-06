@@ -5,13 +5,17 @@
     - $attachEntityType : route type string e.g. 'customers', 'vendors', 'employees'
     Optional:
     - $attachLabel      : panel heading (defaults to 'Attachments')
+    - $attachCardClass  : card wrapper classes (defaults to 'stretch stretch-full mt-4',
+                           which matches a sibling card's height — pass a plain class
+                           like 'mb-4' when this panel is stacked inside a column instead)
 --}}
 @php
     $panelLabel  = $attachLabel ?? 'Attachments';
     $existingAtt = $attachEntity?->attachments ?? collect();
+    $cardClass   = $attachCardClass ?? 'stretch stretch-full mt-4';
 @endphp
 
-<div class="card stretch stretch-full mt-4">
+<div class="card {{ $cardClass }}">
     <div class="card-header">
         <h5 class="card-title mb-0">{{ $panelLabel }}</h5>
     </div>

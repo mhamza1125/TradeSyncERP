@@ -141,6 +141,14 @@
                 </div>
                 @endif
 
+                {{-- Attachment Panel --}}
+                @include('partials.attachment-panel', [
+                    'attachEntity'     => $movement,
+                    'attachEntityType' => 'movements',
+                    'attachLabel'      => 'Movement Attachments',
+                    'attachCardClass'  => 'mb-4',
+                ])
+
             </div>
 
             {{-- ── Sidebar ─────────────────────────────────────────────────── --}}
@@ -253,13 +261,6 @@
 
             </div>
         </div>
-
-        {{-- Attachment Panel --}}
-        @include('partials.attachment-panel', [
-            'attachEntity'     => $movement,
-            'attachEntityType' => 'movements',
-            'attachLabel'      => 'Movement Attachments',
-        ])
     </div>
 </div>
 @endsection

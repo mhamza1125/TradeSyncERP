@@ -5,17 +5,24 @@
     $attsHere = $taskKey
         ? $runSection->attachments->where('task_key', $taskKey)
         : $runSection->attachments->whereNull('task_key');
+    $reorderUrl = route('inspections.runs.sections.attachments.reorder', [$inspection, $run, $runSection]);
 @endphp
 
-<div class="attachment-area" data-upload-url="{{ $uploadUrl }}" data-task-key="{{ $taskKey }}">
+<div class="attachment-area" data-upload-url="{{ $uploadUrl }}" data-task-key="{{ $taskKey }}" data-reorder-url="{{ $reorderUrl }}">
     <div class="att-previews d-flex flex-wrap gap-2 mb-2">
         @foreach($attsHere as $att)
         <div class="att-thumb position-relative d-inline-block" id="att-{{ $att->id }}">
+            <span class="att-drag-handle" title="Drag to reorder"><i class="feather-move"></i></span>
             @if($att->isImage())
                 <a href="{{ $att->url }}" target="_blank" rel="noopener noreferrer">
                     <img src="{{ $att->url }}" class="rounded border"
                          style="width:64px;height:64px;object-fit:cover" alt="">
                 </a>
+                <button type="button"
+                        class="att-edit-btn btn btn-primary btn-sm"
+                        title="Edit photo"
+                        data-edit-url="{{ route('inspections.runs.attachments.edit', [$inspection, $run, $att]) }}"
+                        data-image-url="{{ $att->url }}"><i class="feather-edit-2"></i></button>
             @else
                 <a href="{{ $att->url }}" target="_blank" rel="noopener noreferrer"
                    class="d-flex flex-column align-items-center justify-content-center border rounded bg-light text-decoration-none"

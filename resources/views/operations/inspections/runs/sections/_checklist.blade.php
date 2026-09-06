@@ -48,7 +48,10 @@
 
 {{-- Extra top-level fields (except carton fields and items) --}}
 @php
-    $topFields = collect($data)->except('items');
+    // Only plain scalar fields belong in this generic key/value grid — array-valued fields
+    // (e.g. a mis-seeded section still carrying a legacy 'tasks'/'selections' array) have no
+    // single text representation and would blow up htmlspecialchars() as a placeholder/value.
+    $topFields = collect($data)->except('items')->filter(fn($v) => !is_array($v));
     if ($isCartonVerification) {
         $topFields = $topFields->except($cartonKeys);
     }
@@ -112,15 +115,22 @@
             </td>
             @if($hasUpload)
             <td>
-                <div class="attachment-area" data-upload-url="{{ $uploadUrl }}" data-task-key="{{ $taskKey }}">
+                <div class="attachment-area" data-upload-url="{{ $uploadUrl }}" data-task-key="{{ $taskKey }}"
+                     data-reorder-url="{{ route('inspections.runs.sections.attachments.reorder', [$inspection, $run, $runSection]) }}">
                     <div class="att-previews d-flex flex-wrap gap-1 mb-1">
                         @foreach($itemAtts as $att)
                         <div class="att-thumb position-relative d-inline-block" id="att-{{ $att->id }}">
+                            <span class="att-drag-handle" title="Drag to reorder"><i class="feather-move"></i></span>
                             @if($att->isImage())
                                 <a href="{{ $att->url }}" target="_blank" rel="noopener noreferrer">
                                     <img src="{{ $att->url }}" class="rounded border"
                                          style="width:40px;height:40px;object-fit:cover" alt="">
                                 </a>
+                                <button type="button"
+                                        class="att-edit-btn btn btn-primary btn-sm"
+                                        title="Edit photo"
+                                        data-edit-url="{{ route('inspections.runs.attachments.edit', [$inspection, $run, $att]) }}"
+                                        data-image-url="{{ $att->url }}"><i class="feather-edit-2"></i></button>
                             @else
                                 <a href="{{ $att->url }}" target="_blank" rel="noopener noreferrer">
                                     <div class="d-flex align-items-center justify-content-center border rounded bg-light"
