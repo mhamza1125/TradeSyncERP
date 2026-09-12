@@ -840,10 +840,12 @@ foreach ($visibleRunSections as $rs) {
                                     </button>
                                     @if($sec->isSkippable())
                                     <button type="button"
-                                            class="btn btn-sm btn-outline-warning subsection-skip-btn"
+                                            class="btn btn-sm {{ $runSection->status === 'na' ? 'btn-warning' : 'btn-outline-warning' }} subsection-skip-btn"
                                             data-section-id="{{ $runSection->id }}"
-                                            data-section-name="{{ $sec->name }}">
-                                        <i class="feather-skip-forward me-1"></i>Skip Section
+                                            data-section-name="{{ $sec->name }}"
+                                            data-current-status="{{ $runSection->status }}">
+                                        <i class="feather-{{ $runSection->status === 'na' ? 'rotate-ccw' : 'skip-forward' }} me-1 subsection-skip-icon"></i>
+                                        <span class="subsection-skip-label">{{ $runSection->status === 'na' ? 'Unskip Section' : 'Skip Section' }}</span>
                                     </button>
                                     @endif
                                 </div>
@@ -1188,6 +1190,25 @@ foreach ($visibleRunSections as $rs) {
             }
         }
 
+        // Skip button doubles as an unskip toggle — flip its look/label to match.
+        const skipBtn = document.querySelector(`.subsection-skip-btn[data-section-id="${rsId}"]`);
+        if (skipBtn) {
+            skipBtn.dataset.currentStatus = status;
+            const icon  = skipBtn.querySelector('.subsection-skip-icon');
+            const label = skipBtn.querySelector('.subsection-skip-label');
+            if (status === 'na') {
+                skipBtn.classList.remove('btn-outline-warning');
+                skipBtn.classList.add('btn-warning');
+                if (icon)  { icon.classList.remove('feather-skip-forward'); icon.classList.add('feather-rotate-ccw'); }
+                if (label) label.textContent = 'Unskip Section';
+            } else {
+                skipBtn.classList.remove('btn-warning');
+                skipBtn.classList.add('btn-outline-warning');
+                if (icon)  { icon.classList.remove('feather-rotate-ccw'); icon.classList.add('feather-skip-forward'); }
+                if (label) label.textContent = 'Skip Section';
+            }
+        }
+
         updateNavDot(rsId, status);
     }
 
@@ -1217,17 +1238,20 @@ foreach ($visibleRunSections as $rs) {
             return res.json();
         })
         .then(function (resp) {
+            // Restore the button's real markup (icon + label spans) *before* handing off
+            // to applyStatusEverywhere — while the spinner placeholder is showing, those
+            // child elements don't exist, so any update to them there would be a no-op
+            // and get discarded, leaving the button's visible label stuck on stale text.
+            if (btn && originalHtml !== null) btn.innerHTML = originalHtml;
             applyStatusEverywhere(rsId, resp.status);
             setIndicator(rsId, successMsg, false);
         })
         .catch(function () {
+            if (btn && originalHtml !== null) btn.innerHTML = originalHtml;
             setIndicator(rsId, 'Could not save. Try again.', true);
         })
         .finally(function () {
-            if (btn) {
-                btn.disabled = false;
-                if (originalHtml !== null) btn.innerHTML = originalHtml;
-            }
+            if (btn) btn.disabled = false;
         });
     }
 
@@ -1252,7 +1276,17 @@ foreach ($visibleRunSections as $rs) {
         btn.addEventListener('click', function () {
             const rsId = this.dataset.sectionId;
             const name = this.dataset.sectionName || 'this section';
-            if (!confirm(`Skip "${name}"? It will be marked as Skipped instead of completed. You can undo this later with "Mark as Complete".`)) {
+            const isSkipped = this.dataset.currentStatus === 'na';
+
+            if (isSkipped) {
+                // Toggle back: restore the section to pending so it can be filled in /
+                // completed normally again. Previously entered data is untouched — this
+                // only changes the status field.
+                saveSection(rsId, 'pending', this, 'Section restored — no longer skipped.');
+                return;
+            }
+
+            if (!confirm(`Skip "${name}"? It will be marked as Skipped instead of completed. You can unskip it later.`)) {
                 return;
             }
             saveSection(rsId, 'na', this, 'Section skipped.');
@@ -1472,6 +1506,12 @@ foreach ($visibleRunSections as $rs) {
 
                 // Update every thumb/preview pointing at this attachment (there is
                 // normally just one, but be defensive) with the freshly-saved image.
+                // The edit endpoint writes each save to a brand-new file path (and
+                // deletes the old one) rather than overwriting in place, so every
+                // element that remembers this attachment's image URL — not just the
+                // <img>/<a> tags — must be refreshed too. Otherwise reopening the
+                // editor (or the view link) a second time without a page refresh
+                // points at a file that no longer exists.
                 const cacheBusted = data.attachment.url + '?_=' + Date.now();
                 document.querySelectorAll('#att-' + data.attachment.id + ' img').forEach(img => {
                     img.src = cacheBusted;
@@ -1479,9 +1519,14 @@ foreach ($visibleRunSections as $rs) {
                 document.querySelectorAll('#att-' + data.attachment.id + ' a').forEach(a => {
                     a.href = data.attachment.url;
                 });
-                // Cover-photo widget uses its own element id instead of #att-{id}.
-                document.querySelectorAll('img[data-attachment-id="' + data.attachment.id + '"]').forEach(img => {
-                    img.src = cacheBusted;
+                document.querySelectorAll('#att-' + data.attachment.id + ' .att-edit-btn').forEach(editBtn => {
+                    editBtn.dataset.imageUrl = data.attachment.url;
+                });
+                // Cover-photo widget uses its own element id / data-attachment-id
+                // markers instead of the #att-{id} wrapper the generic thumbs use.
+                document.querySelectorAll('[data-attachment-id="' + data.attachment.id + '"]').forEach(el => {
+                    if (el.tagName === 'IMG') el.src = cacheBusted;
+                    if (el.dataset && 'imageUrl' in el.dataset) el.dataset.imageUrl = data.attachment.url;
                 });
 
                 bootstrap.Modal.getInstance(cropModalEl)?.hide();
@@ -1527,7 +1572,12 @@ foreach ($visibleRunSections as $rs) {
             editBtn.dataset.editUrl = att.edit_url;
             editBtn.dataset.imageUrl = att.url;
             editBtn.dataset.wired = '1';
-            editBtn.addEventListener('click', () => openCropModal(att.url, att.edit_url));
+            // Read from the dataset at click time (not the `att` closure) so a
+            // later crop-save — which refreshes editBtn.dataset.imageUrl to the
+            // newly-saved file — is picked up on the next click without a reload.
+            editBtn.addEventListener('click', function () {
+                openCropModal(this.dataset.imageUrl, this.dataset.editUrl);
+            });
             div.appendChild(editBtn);
         }
 

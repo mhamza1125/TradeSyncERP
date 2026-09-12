@@ -1767,7 +1767,13 @@ uasort($summaryRows, fn($a, $b) => $a['sortPriority'] <=> $b['sortPriority']);
 
         {{-- ════════════ ARTICLE RESULTS TABLE ════════════ --}}
         @elseif($secType === 'article_results')
-        @php $articles = collect($data['articles'] ?? [])->filter(fn($a) => !empty($a['article_no']) || !empty($a['result']))->values(); @endphp
+        @php
+            $articles = collect($data['articles'] ?? [])->filter(fn($a) => !empty($a['article_no']) || !empty($a['result']))->values();
+            // Size is optional per article — hide the column entirely when every article in
+            // this run left it blank, instead of printing an empty column (same rule as
+            // Production Status's % Complete / Qty / Notes columns above).
+            $showSize = $colHasData($articles, 'size');
+        @endphp
         @if($articles->isEmpty())
         <div class="empty-state">No article results recorded.</div>
         @else
@@ -1777,7 +1783,7 @@ uasort($summaryRows, fn($a, $b) => $a['sortPriority'] <=> $b['sortPriority']);
                     <th style="width:4%; text-align:center">#</th>
                     <th>Article / Style No.</th>
                     <th>Color</th>
-                    <th>Size</th>
+                    @if($showSize)<th>Size</th>@endif
                     <th style="text-align:center">Qty Ordered</th>
                     <th style="text-align:center">Qty Inspected</th>
                     <th style="text-align:center">Result</th>
@@ -1793,7 +1799,7 @@ uasort($summaryRows, fn($a, $b) => $a['sortPriority'] <=> $b['sortPriority']);
                     <td style="text-align:center; color:#9E9E9E; font-size:8pt">{{ $aIdx+1 }}</td>
                     <td>{{ $ai['article_no'] ?? '' }}</td>
                     <td>{{ $ai['color'] ?? '' }}</td>
-                    <td>{{ $ai['size'] ?? '' }}</td>
+                    @if($showSize)<td>{{ $ai['size'] ?? '' }}</td>@endif
                     <td style="text-align:center">{{ $ai['qty_ordered'] ?? '—' }}</td>
                     <td style="text-align:center">{{ $ai['qty_inspected'] ?? '—' }}</td>
                     <td style="text-align:center"><span class="{{ $aiCls }}">{!! $aiRes !!}</span></td>

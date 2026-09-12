@@ -25,8 +25,10 @@
                 <i class="feather-trash-2 me-1"></i>Remove Photo
             </button>
             <button type="button"
-                    class="btn btn-primary btn-sm position-absolute bottom-0 end-0 m-2"
-                    onclick="window.openCropModal('{{ $existing->url }}', '{{ route('inspections.runs.attachments.edit', [$inspection, $run, $existing]) }}')">
+                    class="cover-edit-btn btn btn-primary btn-sm position-absolute bottom-0 end-0 m-2"
+                    data-attachment-id="{{ $existing->id }}"
+                    data-image-url="{{ $existing->url }}"
+                    data-edit-url="{{ route('inspections.runs.attachments.edit', [$inspection, $run, $existing]) }}">
                 <i class="feather-edit-2 me-1"></i>Edit
             </button>
         </div>
@@ -112,7 +114,7 @@
                                         onclick="deleteCoverPhoto${rsId}(this)">
                                     <i class="feather-trash-2 me-1"></i>Remove Photo
                                 </button>
-                                ${att.edit_url ? `<button type="button" class="btn btn-primary btn-sm position-absolute bottom-0 end-0 m-2" onclick="window.openCropModal('${att.url}', '${att.edit_url}')"><i class="feather-edit-2 me-1"></i>Edit</button>` : ''}
+                                ${att.edit_url ? `<button type="button" class="cover-edit-btn btn btn-primary btn-sm position-absolute bottom-0 end-0 m-2" data-attachment-id="${att.id}" data-image-url="${att.url}" data-edit-url="${att.edit_url}"><i class="feather-edit-2 me-1"></i>Edit</button>` : ''}
                             </div>
                         </div>
                         <div class="text-center">
@@ -146,6 +148,17 @@
         ?.addEventListener('click', () => document.getElementById('cover-input-' + rsId)?.click());
     document.getElementById('cover-change-' + rsId)
         ?.addEventListener('click', () => document.getElementById('cover-input-' + rsId)?.click());
+
+    // Delegated on the wrapper (which itself is never replaced, only its innerHTML)
+    // so this keeps working after upload/remove re-renders the markup, and always
+    // reads the button's *current* data-image-url — which the shared crop-save
+    // handler in the run edit page refreshes after every edit — instead of a
+    // stale URL baked in at render time.
+    getWrap()?.addEventListener('click', function (e) {
+        const btn = e.target.closest('.cover-edit-btn');
+        if (!btn) return;
+        window.openCropModal(btn.dataset.imageUrl, btn.dataset.editUrl);
+    });
 })();
 
 function deleteCoverPhoto{{ $rsId }}(btn) {
