@@ -1,4 +1,6 @@
 {{-- Reusable sample form partial --}}
+@include('partials.searchable-select')
+
 <div class="row">
     <div class="col-xl-8">
         <div class="card">
@@ -9,7 +11,7 @@
                 <div class="row">
                     <div class="col-lg-6 mb-4">
                         <label class="form-label">Customer <span class="text-danger">*</span></label>
-                        <select name="customer_id" id="customerSelect" class="form-select @error('customer_id') is-invalid @enderror">
+                        <select name="customer_id" id="customerSelect" class="form-select @error('customer_id') is-invalid @enderror" data-searchable>
                             <option value="">— Select Customer —</option>
                             @foreach($customers as $customer)
                                 <option value="{{ $customer->id }}" @selected(old('customer_id', $sample->customer_id ?? '') == $customer->id)>
@@ -21,7 +23,7 @@
                     </div>
                     <div class="col-lg-6 mb-4">
                         <label class="form-label">Supplier / Factory</label>
-                        <select name="supplier_id" class="form-select @error('supplier_id') is-invalid @enderror">
+                        <select name="supplier_id" class="form-select @error('supplier_id') is-invalid @enderror" data-searchable>
                             <option value="">— Select Supplier —</option>
                             @foreach($suppliers ?? [] as $supplier)
                                 <option value="{{ $supplier->id }}" @selected(old('supplier_id', $sample->supplier_id ?? '') == $supplier->id)>
@@ -33,7 +35,7 @@
                     </div>
                     <div class="col-lg-6 mb-4">
                         <label class="form-label">Product Category <span class="text-danger">*</span></label>
-                        <select name="category_id" class="form-select @error('category_id') is-invalid @enderror">
+                        <select name="category_id" class="form-select @error('category_id') is-invalid @enderror" data-searchable>
                             <option value="">— Select Category —</option>
                             @foreach($categories as $category)
                                 <option value="{{ $category->id }}" @selected(old('category_id', $sample->category_id ?? '') == $category->id)>
@@ -57,7 +59,7 @@
                     </div>
                     <div class="col-lg-6 mb-4">
                         <label class="form-label">Sample Reference</label>
-                        <select name="sample_reference" class="form-select @error('sample_reference') is-invalid @enderror">
+                        <select name="sample_reference" class="form-select @error('sample_reference') is-invalid @enderror" data-searchable>
                             <option value="">— Not Specified —</option>
                             @foreach(\App\Models\Sample::REFERENCE_CATEGORIES as $ref)
                             <option value="{{ $ref }}" @selected(old('sample_reference', $sample->sample_reference ?? '') == $ref)>{{ $ref }}</option>
@@ -132,7 +134,7 @@
                                 <tr class="variation-row">
                                     <td class="var-num">{{ $vi + 1 }}</td>
                                     <td>
-                                        <select name="variations[{{ $vi }}][color_id]" class="form-select form-select-sm">
+                                        <select name="variations[{{ $vi }}][color_id]" class="form-select form-select-sm" data-searchable>
                                             <option value="">— Any —</option>
                                             @foreach($colors as $color)
                                             <option value="{{ $color->id }}" @selected(old("variations.{$vi}.color_id", $v->color_id) == $color->id)>{{ $color->name }}</option>
@@ -140,7 +142,7 @@
                                         </select>
                                     </td>
                                     <td>
-                                        <select name="variations[{{ $vi }}][size_id]" class="form-select form-select-sm">
+                                        <select name="variations[{{ $vi }}][size_id]" class="form-select form-select-sm" data-searchable>
                                             <option value="">— Any —</option>
                                             @foreach($sizes as $size)
                                             <option value="{{ $size->id }}" @selected(old("variations.{$vi}.size_id", $v->size_id) == $size->id)>{{ $size->name }}</option>
@@ -155,7 +157,7 @@
                             <tr class="variation-row">
                                 <td class="var-num">1</td>
                                 <td>
-                                    <select name="variations[0][color_id]" class="form-select form-select-sm">
+                                    <select name="variations[0][color_id]" class="form-select form-select-sm" data-searchable>
                                         <option value="">— Any —</option>
                                         @foreach($colors as $color)
                                         <option value="{{ $color->id }}">{{ $color->name }}</option>
@@ -163,7 +165,7 @@
                                     </select>
                                 </td>
                                 <td>
-                                    <select name="variations[0][size_id]" class="form-select form-select-sm">
+                                    <select name="variations[0][size_id]" class="form-select form-select-sm" data-searchable>
                                         <option value="">— Any —</option>
                                         @foreach($sizes as $size)
                                         <option value="{{ $size->id }}">{{ $size->name }}</option>
@@ -309,13 +311,13 @@
     function buildColorSelect(name) {
         let opts = `<option value="">— Any —</option>`;
         colorsData.forEach(c => opts += `<option value="${c.id}">${c.name}</option>`);
-        return `<select name="${name}" class="form-select form-select-sm">${opts}</select>`;
+        return `<select name="${name}" class="form-select form-select-sm" data-searchable>${opts}</select>`;
     }
 
     function buildSizeSelect(name) {
         let opts = `<option value="">— Any —</option>`;
         sizesData.forEach(s => opts += `<option value="${s.id}">${s.name}</option>`);
-        return `<select name="${name}" class="form-select form-select-sm">${opts}</select>`;
+        return `<select name="${name}" class="form-select form-select-sm" data-searchable>${opts}</select>`;
     }
 
     function renumberVars() {
@@ -334,13 +336,19 @@
             <td><button type="button" class="btn btn-sm btn-light-brand remove-variation"><i class="feather-trash-2"></i></button></td>
         `;
         tbody.appendChild(tr);
+        SearchableSelect.init(tr);
         varIdx++;
     });
 
     document.getElementById('variationsBody').addEventListener('click', function (e) {
         if (e.target.closest('.remove-variation')) {
             const rows = document.querySelectorAll('.variation-row');
-            if (rows.length > 1) { e.target.closest('tr').remove(); renumberVars(); }
+            if (rows.length > 1) {
+                const row = e.target.closest('tr');
+                SearchableSelect.destroy(row);
+                row.remove();
+                renumberVars();
+            }
         }
     });
 
