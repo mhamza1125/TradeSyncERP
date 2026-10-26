@@ -20,28 +20,25 @@ use App\Models\Supplier;
 use App\Models\Transaction;
 use App\Models\User;
 use Illuminate\Database\Seeder;
-use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 
 class TestDataSeeder extends Seeder
 {
     public function run(): void
     {
-        // Clear existing test data in correct dependency order
-        DB::statement('SET FOREIGN_KEY_CHECKS=0');
-        CustomerInvoiceItem::truncate();
-        CustomerInvoice::withTrashed()->forceDelete();
-        CustomerOrderItem::truncate();
-        CustomerOrder::withTrashed()->forceDelete();
-        CustomerPayment::truncate();
-        Expense::truncate();
-        Transaction::truncate();
-        Sample::withTrashed()->forceDelete();
-        ProductCategory::truncate();
-        Employee::withTrashed()->forceDelete();
-        Customer::withTrashed()->forceDelete();
-        Supplier::withTrashed()->forceDelete();
-        DB::statement('SET FOREIGN_KEY_CHECKS=1');
+        // Test data must never be written into a real database. This seeder never
+        // deletes existing records — it only adds demo rows on a local/testing DB.
+        if (! app()->environment('local', 'testing')) {
+            $this->command?->error('TestDataSeeder skipped: only runs when APP_ENV is local or testing.');
+
+            return;
+        }
+
+        if (Sample::withTrashed()->where('sample_code', 'SMP-2024-001')->exists()) {
+            $this->command?->warn('TestDataSeeder skipped: test data is already present.');
+
+            return;
+        }
 
         // ─── Currencies ────────────────────────────────────────────────────
         $usd = Currency::firstOrCreate(['currency_code' => 'USD'], [

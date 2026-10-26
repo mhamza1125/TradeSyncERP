@@ -124,6 +124,11 @@ Two coexisting systems: `sample_movements` (legacy, direct FK) and `movements`/`
 - Alpine.js for reactive UI — no Vue/React
 - AJAX via Axios (globally configured) — not `fetch()`
 - JS longer than ~10 lines in Blade → `@push('scripts')` or dedicated JS file
+- Every `<select>` is made searchable automatically by Tom Select (`public/assets/js/searchable-select.js`, loaded in the layout) — don't include tom-select per page; opt out with `data-native`
+
+**Seeders / data safety**
+- Seeders never delete, truncate or overwrite existing data (use `firstOrCreate`, not `updateOrCreate`/`truncate`/`forceDelete`); remove data through a migration
+- Demo/test seeders must only run when `APP_ENV` is `local` or `testing`
 
 **Routes**
 - Protected routes in `routes/web.php` inside `auth` middleware group

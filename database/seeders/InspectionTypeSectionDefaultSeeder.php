@@ -184,33 +184,8 @@ class InspectionTypeSectionDefaultSeeder extends Seeder
             ],
         ];
 
-        // ── Cleanup: drop any pre-existing type-default assignments outside the map ─
-        foreach (array_keys($map) as $typeName) {
-            $type = InspectionType::where('name', $typeName)->first();
-            if (! $type) {
-                continue;
-            }
-
-            $keepIds = $sections->only(collect($map[$typeName])->pluck('slug')->all())->pluck('id');
-            InspectionTypeSectionDefault::where('inspection_type_id', $type->id)
-                ->whereNotIn('inspection_section_id', $keepIds)
-                ->delete();
-        }
-
-        // ── Remove all type assignments for deprecated / removed sections ──────────
-        $removedSlugIds = $sections->whereIn('slug', [
-            'corrective_action',          'textile_sample_conformity',
-            'denim_textile_defects',      'textile_leather_functional',
-            'sample_conformity',          'marking_check',
-            'measurement_check',          'packing_check',
-            'protector_evaluation',       'number_of_cartons_loaded',
-            'quantity_per_carton',
-        ])->pluck('id');
-
-        if ($removedSlugIds->isNotEmpty()) {
-            InspectionTypeSectionDefault::whereIn('inspection_section_id', $removedSlugIds)->delete();
-        }
-
+        // Additive only: seeders never delete assignments (they may have been
+        // customised in the app). Remove assignments through a migration instead.
         foreach ($map as $typeName => $sectionList) {
             $type = InspectionType::where('name', $typeName)->first();
             if (! $type) {

@@ -1,8 +1,4 @@
 {{-- Reusable customer-payment form partial --}}
-@push('styles')
-<link rel="stylesheet" href="{{ asset('assets/vendor/tom-select/tom-select.bootstrap5.min.css') }}">
-@endpush
-
 <div class="row justify-content-center">
     <div class="col-xl-12">
         <div class="card stretch stretch-full">
@@ -140,7 +136,6 @@
 </div>
 
 @push('scripts')
-<script src="{{ asset('assets/vendor/tom-select/tom-select.complete.min.js') }}"></script>
 <script>
 (function () {
     const INVOICE_URL       = @json(route('customer-invoices.by-customer'));

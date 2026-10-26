@@ -9,7 +9,6 @@
 
 @unless(isset($movement))
 @push('styles')
-<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/tom-select@2.3.1/dist/css/tom-select.bootstrap5.min.css">
 <style>
     .ts-wrapper.form-control { padding: 0; border: 0; }
     .ts-wrapper .ts-control { border-radius: 0.375rem; }
@@ -244,7 +243,6 @@
 {{-- TomSelect + dynamic toggle JS — only needed on the create (issue) form --}}
 @unless(isset($movement))
 @push('scripts')
-<script src="https://cdn.jsdelivr.net/npm/tom-select@2.3.1/dist/js/tom-select.complete.min.js"></script>
 <script>
 // ── TomSelect initialization ──────────────────────────────────────────────────
 const movedByTs = new TomSelect('#movedByIdEmployee', {

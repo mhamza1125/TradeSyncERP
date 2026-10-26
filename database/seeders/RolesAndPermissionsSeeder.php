@@ -59,13 +59,16 @@ class RolesAndPermissionsSeeder extends Seeder
             Permission::firstOrCreate(['name' => $perm]);
         }
 
+        // givePermissionTo (not syncPermissions) is additive, so permissions
+        // customised through the Roles screen are never stripped on re-seed.
+
         // Admin — full access to everything
         $admin = Role::firstOrCreate(['name' => 'Admin']);
-        $admin->syncPermissions(Permission::all());
+        $admin->givePermissionTo(Permission::all());
 
         // Lab Manager — full operations, read-only finance
         $labManager = Role::firstOrCreate(['name' => 'Lab Manager']);
-        $labManager->syncPermissions([
+        $labManager->givePermissionTo([
             'customers.index', 'customers.create', 'customers.edit', 'customers.view',
             'brands.index', 'brands.create', 'brands.edit', 'brands.view',
             'categories.index', 'categories.create', 'categories.edit', 'categories.view',
@@ -92,7 +95,7 @@ class RolesAndPermissionsSeeder extends Seeder
 
         // Accountant — full finance, read-only operations
         $accountant = Role::firstOrCreate(['name' => 'Accountant']);
-        $accountant->syncPermissions([
+        $accountant->givePermissionTo([
             'customers.index', 'customers.create', 'customers.edit', 'customers.view',
             'suppliers.index', 'suppliers.create', 'suppliers.edit', 'suppliers.view',
             'accounts.index', 'accounts.create', 'accounts.edit', 'accounts.view',
@@ -116,7 +119,7 @@ class RolesAndPermissionsSeeder extends Seeder
 
         // Employee — read-only on assigned samples and own movements
         $employee = Role::firstOrCreate(['name' => 'Employee']);
-        $employee->syncPermissions([
+        $employee->givePermissionTo([
             'samples.index', 'samples.view',
             'sample-movements.index', 'sample-movements.view',
             'inspections.index', 'inspections.view',

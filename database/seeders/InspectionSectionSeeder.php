@@ -3,7 +3,6 @@
 namespace Database\Seeders;
 
 use App\Models\InspectionSection;
-use App\Models\InspectionTypeSectionDefault;
 use Illuminate\Database\Seeder;
 
 class InspectionSectionSeeder extends Seeder
@@ -716,23 +715,6 @@ class InspectionSectionSeeder extends Seeder
             );
         }
 
-        // ── Cleanup: remove deprecated sections and their type assignments ─────────
-        $deprecated = [
-            'sample_conformity',          // merged → variations_sample
-            'marking_check',              // merged → marking_check_si (checkpoint)
-            'measurement_check',          // merged → measurements_check_si (checkpoint)
-            'packing_check',              // merged → packing_check_si (checkpoint)
-            'protector_evaluation',       // covered by functional_test (checkpoint)
-            'number_of_cartons_loaded',   // consolidated into carton_verification
-            'quantity_per_carton',        // consolidated into carton_verification
-            'textile_leather_functional', // renamed → functional_test
-        ];
-
-        $deprecatedIds = InspectionSection::whereIn('slug', $deprecated)->pluck('id');
-
-        if ($deprecatedIds->isNotEmpty()) {
-            InspectionTypeSectionDefault::whereIn('inspection_section_id', $deprecatedIds)->delete();
-            InspectionSection::whereIn('slug', $deprecated)->delete();
-        }
+        // Seeders never delete rows. Retire sections through a migration instead.
     }
 }

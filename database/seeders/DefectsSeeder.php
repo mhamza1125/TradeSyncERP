@@ -244,8 +244,9 @@ class DefectsSeeder extends Seeder
             ['defect_name' => 'Zip Puller Not Qualitative',           'severity' => 'minor',      'corrective_action' => 'Replace zip puller.'],
         ];
 
+        // firstOrCreate: never overwrite severity / corrective action / status edited in the app
         foreach ($defects as $defect) {
-            Defect::updateOrCreate(
+            Defect::firstOrCreate(
                 ['defect_name' => $defect['defect_name']],
                 array_merge($defect, ['status' => true])
             );

@@ -18,7 +18,6 @@ use App\Models\Sample;
 use App\Models\Supplier;
 use App\Models\User;
 use Illuminate\Database\Seeder;
-use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
 
 /**
@@ -47,9 +46,19 @@ class InspectionExportTestSeeder extends Seeder
             $this->command->warn('No banner images found — attachments will be skipped.');
         }
 
-        DB::statement('SET FOREIGN_KEY_CHECKS=0');
-        $this->clearPreviousSeederData();
-        DB::statement('SET FOREIGN_KEY_CHECKS=1');
+        // Fixture data only — never deletes anything, never runs outside local/testing.
+        if (! app()->environment('local', 'testing')) {
+            $this->command?->error('InspectionExportTestSeeder skipped: only runs when APP_ENV is local or testing.');
+
+            return;
+        }
+
+        if (Inspection::whereIn('report_number', ['INS-PDF-2026-001', 'INS-PDF-2026-002', 'INS-PDF-2026-003'])->exists()
+            || Sample::withTrashed()->whereIn('sample_code', ['SMP-PDF-001', 'SMP-PDF-002', 'SMP-PDF-003'])->exists()) {
+            $this->command?->warn('InspectionExportTestSeeder skipped: fixtures already exist. Remove them manually to re-seed.');
+
+            return;
+        }
 
         $customer = Customer::first() ?? $this->command->error('Run TestDataSeeder first (no customers found).');
         $supplier = Supplier::first() ?? null;
@@ -807,30 +816,5 @@ class InspectionExportTestSeeder extends Seeder
             'functional' => 'Functional issue noted. Does not affect appearance but impacts usability.',
             default => 'Minor defect. Supplier to correct in next production run.',
         };
-    }
-
-    // ── Clear previous seeder data ────────────────────────────────────────────
-
-    private function clearPreviousSeederData(): void
-    {
-        $existingNumbers = ['INS-PDF-2026-001', 'INS-PDF-2026-002', 'INS-PDF-2026-003'];
-        $inspections = Inspection::whereIn('report_number', $existingNumbers)->get();
-
-        foreach ($inspections as $inspection) {
-            foreach ($inspection->runs as $run) {
-                foreach ($run->runSections as $rs) {
-                    foreach ($rs->attachments as $att) {
-                        Storage::disk('public')->delete($att->file_path);
-                    }
-                    $rs->attachments()->delete();
-                }
-                $run->runSections()->delete();
-                $run->aql?->delete();
-                $run->delete();
-            }
-            $inspection->delete();
-        }
-
-        Sample::whereIn('sample_code', ['SMP-PDF-001', 'SMP-PDF-002', 'SMP-PDF-003'])->forceDelete();
     }
 }

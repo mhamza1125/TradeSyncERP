@@ -20,7 +20,11 @@ class DatabaseSeeder extends Seeder
             SampleColorsSeeder::class,
             SampleSizesSeeder::class,
             AdminUserSeeder::class,
-            TestDataSeeder::class,
         ]);
+
+        // Demo data only on local/testing databases (TestDataSeeder also guards itself)
+        if (app()->environment('local', 'testing')) {
+            $this->call(TestDataSeeder::class);
+        }
     }
 }

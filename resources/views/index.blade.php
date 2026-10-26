@@ -25,6 +25,19 @@
     <!--! BEGIN: Custom CSS-->
     <link rel="stylesheet" type="text/css" href="{{ asset('assets/css/theme.min.css') }}" />
     <!--! END: Custom CSS-->
+    <!--! BEGIN: Searchable selects (Tom Select) — see public/assets/js/searchable-select.js -->
+    <link rel="stylesheet" type="text/css" href="{{ asset('assets/vendor/tom-select/tom-select.bootstrap5.min.css') }}" />
+    <style>
+        /* Dropdowns render in <body>; keep them above the sticky header and modals */
+        body > .ts-dropdown { z-index: 1060; }
+        td .ts-wrapper { min-width: 10rem; }
+        /* Match the theme's form field padding so selects line up with inputs */
+        .ts-wrapper.form-select.single .ts-control { padding-top: 12px; padding-bottom: 12px; padding-left: 15px; flex-wrap: nowrap; }
+        .ts-wrapper.single .ts-control > .item { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+        /* While searching a single select, show its current value only as the placeholder */
+        .ts-wrapper.single.ts-clean-search .ts-control > .item { display: none; }
+    </style>
+    <!--! END: Searchable selects -->
     @stack('styles')
     <!--[if lt IE 9]>
         <script src="https://oss.maxcdn.com/html5shiv/3.7.2/html5shiv.min.js"></script>

@@ -7,6 +7,9 @@
     <!--! END: Vendors JS !-->
     <!--! BEGIN: Apps Init !-->
     <script src="{{ asset('assets/js/common-init.min.js') }}"></script>
+    <!-- Searchable selects: must load before page scripts so `new TomSelect()` gets the app defaults -->
+    <script src="{{ asset('assets/vendor/tom-select/tom-select.complete.min.js') }}"></script>
+    <script src="{{ asset('assets/js/searchable-select.js') }}"></script>
     @stack('scripts')
     <!--! END: Apps Init !-->
     <!--! BEGIN: Theme Customizer !-->
