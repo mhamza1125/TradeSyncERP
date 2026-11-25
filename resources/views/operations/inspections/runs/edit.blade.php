@@ -435,6 +435,9 @@ foreach ($visibleRunSections as $rs) {
                             @if($run->completed_at)
                                 &nbsp;|&nbsp;
                                 Finished: <strong>{{ $run->completed_at->format('d M Y H:i') }}</strong>
+                                &nbsp;|&nbsp;
+                                @php $runDecision = \App\Services\Inspection\InspectionVerdictService::display($run->verdict); @endphp
+                                Decision: <span class="badge bg-soft-{{ $runDecision['badge'] }} text-{{ $runDecision['badge'] }}" data-run-decision="{{ $run->verdict }}">{{ $runDecision['label'] }}</span>
                             @endif
                         </div>
                     </div>

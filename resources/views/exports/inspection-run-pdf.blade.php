@@ -567,6 +567,25 @@ $sectionTypePriority = [
     'finish'             => 18,
 ];
 
+// The inspector's assessment (Overall Article Result) next to the run's decision (Q15 = a,
+// docs/QC_RULES.md §3). The decision is the run verdict; the assessment never replaces it.
+$assessmentOf = function ($r) {
+    $ars = $r->runSections->first(fn ($x) => $x->section?->slug === 'overall_article_result');
+    $choice = $ars?->data['overall_result'] ?? null;
+    $asVerdict = \App\Services\Inspection\InspectionVerdictService::fromAssessment($choice);
+    if ($asVerdict === null) {
+        return null;
+    }
+    $decision = $r->completed_at ? $r->verdict : null;
+
+    return [
+        'choice'   => $choice,
+        'decision' => $decision,
+        'differs'  => \App\Services\Inspection\InspectionVerdictService::contradicts($asVerdict, $decision),
+        'reason'   => trim((string) ($ars->data['assessment_reason'] ?? '')),
+    ];
+};
+
 // Resolve a defect's display name + severity, since only defect_id is stored on the row
 $defectInfo = function ($defectId) use ($defects) {
     $def = $defects->get((int) $defectId);
@@ -762,6 +781,9 @@ foreach ($runs as $sumRun) {
             $summaryRows[$sName]['customDetail'] = $dTotal > 0
                 ? $dCritD.' Crit, '.$dMajD.' Major, '.$dMinD.' Minor'
                 : 'None recorded';
+        } elseif ($sSlug === 'overall_article_result') {
+            $summaryRows[$sName]['assessment'] = true;
+            $summaryRows[$sName]['customDetail'] = "Inspector's assessment: ".($sumRs->data['overall_result'] ?? '—');
         } elseif ($sType === 'article_results') {
             foreach ($sumRs->data['articles'] ?? [] as $ar) {
                 $sr = strtolower((string)($ar['result'] ?? ''));
@@ -904,6 +926,8 @@ uasort($summaryRows, fn($a, $b) => $a['sortPriority'] <=> $b['sortPriority']);
                 $sBadge = 'badge-na'; $sLabel = 'N/A';
             } elseif (!$allDone) {
                 $sBadge = 'badge-pending'; $sLabel = 'PENDING';
+            } elseif (!empty($sRow['assessment'])) {
+                $sBadge = 'badge-na'; $sLabel = 'RECORDED';
             } elseif ($sRow['failCount'] > 0) {
                 $sBadge = 'badge-fail'; $sLabel = 'FAIL';
             } else {
@@ -1728,19 +1752,18 @@ uasort($summaryRows, fn($a, $b) => $a['sortPriority'] <=> $b['sortPriority']);
         @endif
 
         @elseif($slug === 'overall_article_result')
-        @php
-            $vc = match($data['overall_result'] ?? null) {
-                'Pass'                   => 'vb-pass',
-                'Fail'                   => 'vb-fail',
-                'Re-Inspection Required' => 'vb-conditional',
-                default                  => 'vb-pending',
-            };
-        @endphp
+        @php $asm = $assessmentOf($run); @endphp
         <table class="meta-table">
             <tr>
-                <td class="mk">Overall Article Result</td>
-                <td class="mv"><span class="review-verdict-box {{ $vc }}">{{ $data['overall_result'] ?? 'Pending' }}</span></td>
+                <td class="mk">Inspector's assessment</td>
+                <td class="mv">{{ $data['overall_result'] ?? '—' }} <span style="color:#757575">(recorded by the inspector; the decision is calculated from the AQL result and the defects)</span></td>
             </tr>
+            @if($asm && $asm['differs'])
+            <tr>
+                <td class="mk">Reason the assessment differs</td>
+                <td class="mv">{{ $asm['reason'] !== '' ? $asm['reason'] : 'no reason recorded' }}</td>
+            </tr>
+            @endif
             @if(!empty($data['follow_up_date']))
             <tr><td class="mk">Follow-up Date</td><td class="mv">{{ $data['follow_up_date'] }}</td></tr>
             @endif
@@ -2039,6 +2062,26 @@ uasort($summaryRows, fn($a, $b) => $a['sortPriority'] <=> $b['sortPriority']);
         <div class="final-verdict-badge {{ $finalVerdictClass }}">
             {{ $finalVerdictIcon }}
         </div>
+
+        @foreach($runs as $asRun)
+            @php $asm = $assessmentOf($asRun); @endphp
+            @if($asm)
+            <div class="final-remarks-box">
+                <div class="final-remarks-label">Inspector's assessment &mdash; Run #{{ $asRun->run_number }}</div>
+                <div class="final-remarks-text">
+                    {{ $asm['choice'] }}
+                    @if($asm['decision'] === null)
+                        (run not finished; the decision is calculated when it is finished)
+                    @elseif($asm['differs'])
+                        &mdash; differs from the decision ({{ \App\Services\Inspection\InspectionVerdictService::display($asm['decision'])['label'] }}).
+                        Reason: {{ $asm['reason'] !== '' ? $asm['reason'] : 'no reason recorded' }}
+                    @else
+                        &mdash; agrees with the decision.
+                    @endif
+                </div>
+            </div>
+            @endif
+        @endforeach
 
         @if($inspection->remarks)
         <div class="final-remarks-box">

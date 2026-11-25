@@ -17,17 +17,33 @@ class InspectionVerdictService
     /** Roll-up precedence, strongest first. An unfinished run counts as Pending. */
     private const PRECEDENCE = ['Fail', 'Re-Inspection', 'Conditional', 'Pending', 'Pass'];
 
-    /** Final Review "overall_verdict" choice => run verdict. */
-    private const FINAL_REVIEW_MAP = [
+    /** Inspector's assessment choice (Overall Article Result) => run verdict. "Pending" = no assessment. */
+    private const ASSESSMENT_MAP = [
         'Pass' => 'Pass',
         'Fail' => 'Fail',
         'Conditional Pass' => 'Conditional',
         'Re-Inspection Required' => 'Re-Inspection',
     ];
 
-    public static function fromFinalReview(?string $choice): ?string
+    /** The inspector's assessment as a run verdict, or null when none was given. */
+    public static function fromAssessment(?string $choice): ?string
     {
-        return $choice === null ? null : (self::FINAL_REVIEW_MAP[$choice] ?? null);
+        return $choice === null ? null : (self::ASSESSMENT_MAP[$choice] ?? null);
+    }
+
+    /**
+     * The run's decision (Q15 = a): the computed verdict (AQL, then defect rows). Only when
+     * nothing computes (Pending) does the inspector's assessment become the verdict (A1).
+     */
+    public static function decide(string $computed, ?string $assessment): string
+    {
+        return $computed !== 'Pending' ? $computed : ($assessment ?? 'Pending');
+    }
+
+    /** An assessment contradicts the decision when both exist and differ (a reason is then required). */
+    public static function contradicts(?string $assessment, ?string $decision): bool
+    {
+        return $assessment !== null && $decision !== null && $decision !== 'Pending' && $assessment !== $decision;
     }
 
     /**

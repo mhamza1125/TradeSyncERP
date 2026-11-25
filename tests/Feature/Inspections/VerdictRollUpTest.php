@@ -22,10 +22,12 @@ class VerdictRollUpTest extends TestCase
         $this->inspection = $this->makeInspection();
     }
 
-    private function finishWithFinalReview(string $choice): InspectionRun
+    // Q15 = (a): with no AQL and no defect section nothing computes, so the inspector's
+    // assessment is the run verdict (A1). The old final_review field no longer decides.
+    private function finishWithAssessment(string $choice): InspectionRun
     {
-        $section = $this->makeSection('final_review', 'review', ['overall_verdict' => null]);
-        $run = $this->makeRun($this->inspection, [[$section, ['overall_verdict' => $choice], 'complete']]);
+        $section = $this->makeSection('overall_article_result', 'review', ['overall_result' => null]);
+        $run = $this->makeRun($this->inspection, [[$section, ['overall_result' => $choice], 'complete']]);
 
         $this->put(route('inspections.runs.update', [$this->inspection, $run]), ['finish_run' => 1])
             ->assertRedirect();
@@ -35,8 +37,8 @@ class VerdictRollUpTest extends TestCase
 
     public function test_re_inspection_run_and_inspection_are_not_pass(): void
     {
-        $passed = $this->finishWithFinalReview('Pass');
-        $reinspect = $this->finishWithFinalReview('Re-Inspection Required');
+        $passed = $this->finishWithAssessment('Pass');
+        $reinspect = $this->finishWithAssessment('Re-Inspection Required');
 
         $this->assertSame('Pass', $passed->verdict);
         $this->assertSame('Re-Inspection', $reinspect->verdict);
@@ -45,16 +47,16 @@ class VerdictRollUpTest extends TestCase
 
     public function test_conditional_pass_rolls_up_to_conditional(): void
     {
-        $this->finishWithFinalReview('Pass');
-        $this->finishWithFinalReview('Conditional Pass');
+        $this->finishWithAssessment('Pass');
+        $this->finishWithAssessment('Conditional Pass');
 
         $this->assertSame('Conditional', $this->inspection->fresh()->overall_status);
     }
 
     public function test_pdf_cover_and_color_line_agree(): void
     {
-        $passed = $this->finishWithFinalReview('Pass');
-        $reinspect = $this->finishWithFinalReview('Re-Inspection Required');
+        $passed = $this->finishWithAssessment('Pass');
+        $reinspect = $this->finishWithAssessment('Re-Inspection Required');
         // Same style (sample) so they form one "x of y colors" group.
         $reinspect->update(['sample_id' => $passed->sample_id]);
 

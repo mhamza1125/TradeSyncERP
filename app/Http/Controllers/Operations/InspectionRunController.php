@@ -176,11 +176,13 @@ class InspectionRunController extends Controller
         );
 
         $aqlJsData = $this->aql->tableForJs();
+        // The decision as it stands (QC_RULES §3), shown next to the inspector's assessment.
+        $computedVerdict = $run->completed_at ? $run->verdict : $this->verdictParts($run)['computed'];
         $colors = SampleColor::orderBy('name')->get();
         $sizes = SampleSize::orderBy('name')->get();
 
         return view('operations.inspections.runs.edit', compact(
-            'inspection', 'run', 'defects', 'sectionMap', 'aqlJsData', 'colors', 'sizes', 'sizeOptions'
+            'inspection', 'run', 'defects', 'sectionMap', 'aqlJsData', 'colors', 'sizes', 'sizeOptions', 'computedVerdict'
         ));
     }
 
@@ -219,6 +221,7 @@ class InspectionRunController extends Controller
             'sections.*.status' => ['nullable', 'in:pending,complete,na'],
             'sections.*.notes' => ['nullable', 'string', 'max:2000'],
             'sections.*.data' => ['nullable', 'array'],
+            'sections.*.data.assessment_reason' => ['nullable', 'string', 'max:2000'],
             'sections.*.defects' => ['nullable', 'array'],
             'sections.*.defects.*.id' => ['nullable', 'integer'],
             'sections.*.defects.*.defect_id' => ['nullable', 'exists:defects,id'],
@@ -437,7 +440,10 @@ class InspectionRunController extends Controller
             // and, when the run has an AQL section, a valid AQL plan (QC_RULES §6, D1/Q28).
             $aqlProblem = $finishRequested ? $this->aqlFinishProblem($run) : null;
 
-            if ($aqlProblem !== null && $finishing) {
+            // A contradicting inspector's assessment needs a written reason (Q15 = a, QC_RULES §3).
+            $assessmentProblem = ($aqlProblem === null && $finishing) ? $this->assessmentFinishProblem($run) : null;
+
+            if (($aqlProblem !== null || $assessmentProblem !== null) && $finishing) {
                 // The AQL verdict above was computed as if the run were finishing; it is not.
                 $this->recomputeAqlVerdict($run, $this->aqlSectionComplete($run, $request));
                 $finishing = false;
@@ -451,16 +457,34 @@ class InspectionRunController extends Controller
                 if ($aqlProblem !== null) {
                     $reasons[] = $aqlProblem;
                 }
+                if ($assessmentProblem !== null) {
+                    $reasons[] = $assessmentProblem;
+                }
 
                 return redirect()->route('inspections.runs.edit', [$inspection, $run])
                     ->with('error', 'Saved, but the run was not finished. '.implode(' ', [...$reasons, ...$notices]));
             }
 
             if ($finishing) {
+                $parts = $this->verdictParts($run);
+                $decision = InspectionVerdictService::decide($parts['computed'], $parts['assessment']);
+
                 $run->update([
                     'completed_at' => now(),
-                    'verdict' => $this->resolveRunVerdict($run),
+                    'verdict' => $decision,
                 ]);
+
+                activity()
+                    ->performedOn($run)
+                    ->causedBy($request->user())
+                    ->event('finished')
+                    ->withProperties([
+                        'decision' => $decision,
+                        'computed_verdict' => $parts['computed'],
+                        'inspector_assessment' => $parts['assessment'],
+                        'assessment_reason' => $parts['reason'],
+                    ])
+                    ->log('Run finished');
 
                 $this->syncInspectionStatus($inspection);
             }
@@ -663,6 +687,7 @@ class InspectionRunController extends Controller
             'status' => ['required', 'in:pending,complete,na'],
             'notes' => ['nullable', 'string', 'max:2000'],
             'data' => ['nullable', 'array'],
+            'data.assessment_reason' => ['nullable', 'string', 'max:2000'],
             'defects' => ['nullable', 'array'],
             'defects.*.id' => ['nullable', 'integer'],
             'defects.*.defect_id' => ['nullable', 'exists:defects,id'],
@@ -926,35 +951,65 @@ class InspectionRunController extends Controller
         return ($request->input("sections.{$aqlSection->id}.status") ?? $aqlSection->status) === 'complete';
     }
 
-    // ── Determine a run's final verdict from its Final Review section / AQL ───
+    // ── A run's verdict (Q15 = a, QC_RULES §3) ────────────────────────────────
+    // The decision is the computed verdict: the AQL verdict when it isn't Pending, else the
+    // recorded defect rows. The inspector's assessment (Overall Article Result) is recorded
+    // and printed, and becomes the verdict only when nothing computes (A1). The old Final
+    // Review `overall_verdict` field is no longer read (A2).
 
-    private function resolveRunVerdict(InspectionRun $run): string
+    /**
+     * @return array{computed: string, assessment: ?string, choice: ?string, reason: ?string, section: ?InspectionRunSection}
+     */
+    private function verdictParts(InspectionRun $run): array
     {
         $sections = $run->runSections()->with(['section', 'defects'])->get();
 
-        // 1. Explicit verdict chosen by the inspector in Final Review
-        $finalReview = $sections->first(fn ($rs) => $rs->section?->slug === 'final_review');
-        $selected = InspectionVerdictService::fromFinalReview($finalReview?->data['overall_verdict'] ?? null);
-
-        if ($selected) {
-            return $selected;
-        }
-
-        // 2. AQL sampling verdict, when the run includes an AQL plan
+        $computed = 'Pending';
         $aqlVerdict = $run->aql()->value('verdict');
         if ($aqlVerdict && $aqlVerdict !== 'Pending') {
-            return $aqlVerdict;
+            $computed = $aqlVerdict;
+        } else {
+            // Critical/Major => Fail, Minor/Functional only => Conditional, none => Pass.
+            $defectSection = $sections->first(fn ($rs) => in_array($rs->section?->slug, ['defect_recording', 'denim_textile_defects'], true));
+            if ($defectSection) {
+                $computed = InspectionRunDefect::verdictFromSeverities($defectSection->defects->pluck('severity'));
+            }
         }
 
-        // 3. Derive from recorded defects (Critical/Major => Fail, Minor only => Conditional, none => Pass)
-        // Only depends on each row's severity — size/carton/status/disposition
-        // added alongside the promotion to a real table don't affect this.
-        $defectSection = $sections->first(fn ($rs) => in_array($rs->section?->slug, ['defect_recording', 'denim_textile_defects'], true));
-        if ($defectSection) {
-            return InspectionRunDefect::verdictFromSeverities($defectSection->defects->pluck('severity'));
+        $assessmentSection = $sections->first(fn ($rs) => $rs->section?->slug === 'overall_article_result');
+        $choice = $assessmentSection?->data['overall_result'] ?? null;
+        $reason = trim((string) ($assessmentSection?->data['assessment_reason'] ?? ''));
+
+        return [
+            'computed' => $computed,
+            'assessment' => InspectionVerdictService::fromAssessment($choice),
+            'choice' => $choice,
+            'reason' => $reason === '' ? null : $reason,
+            'section' => $assessmentSection,
+        ];
+    }
+
+    private function resolveRunVerdict(InspectionRun $run): string
+    {
+        $parts = $this->verdictParts($run);
+
+        return InspectionVerdictService::decide($parts['computed'], $parts['assessment']);
+    }
+
+    // ── Why the inspector's assessment stops a finish (null = it doesn't) ──
+
+    private function assessmentFinishProblem(InspectionRun $run): ?string
+    {
+        $parts = $this->verdictParts($run);
+        $decision = InspectionVerdictService::decide($parts['computed'], $parts['assessment']);
+
+        if (! InspectionVerdictService::contradicts($parts['assessment'], $decision) || $parts['reason'] !== null) {
+            return null;
         }
 
-        return 'Pending';
+        $name = $parts['section']?->section?->name ?? 'Overall Article Result';
+
+        return "{$name}: the inspector's assessment ({$parts['choice']}) differs from the calculated decision ({$decision}). Enter the 'Reason the assessment differs', or change the assessment.";
     }
 
     // ── Recalculate the parent inspection's overall status from its runs ─────

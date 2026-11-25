@@ -49,24 +49,35 @@ In the PDF, a severity row with no Ac prints "—", never PASS.
 
 The AQL Calculator tool has no "complete" step, so its zero-defect result stays Pending (Q14).
 
-## 3. Run verdict (set when a run is finished)
+## 3. Run decision and the inspector's assessment (Q15 = a)
 
-Code: `InspectionRunController::resolveRunVerdict()`, with the mapping in `InspectionVerdictService::fromFinalReview()`.
+Code: `InspectionRunController::verdictParts()`, `resolveRunVerdict()` and `assessmentFinishProblem()`; `InspectionVerdictService::decide()`, `contradicts()` and `fromAssessment()`.
 
-Precedence:
+**The decision** (`inspection_runs.verdict`, set when a run is finished) is the **computed verdict**:
 
-1. **Inspector's explicit verdict**, today read from the Final Review section's `overall_verdict`:
-   - Pass → Pass
-   - Fail → Fail
-   - Conditional Pass → **Conditional**
-   - Re-Inspection Required → **Re-Inspection**
-2. Otherwise, the **AQL verdict** if it is not Pending.
-3. Otherwise, from the **defect rows**: Critical/Major → Fail; Minor/Functional only → Conditional; none → Pass.
-4. Otherwise, **Pending**.
+1. the **AQL verdict**, if it is not Pending;
+2. otherwise, from the **defect rows** of the defect section: Critical/Major → Fail; Minor/Functional only → Conditional; none → Pass;
+3. otherwise, Pending.
+
+**The inspector's assessment** is the **Overall Article Result** choice (`overall_result`, labelled "Inspector's assessment" on the edit page). Mapping: Pass → Pass, Fail → Fail, Conditional Pass → Conditional, Re-Inspection Required → Re-Inspection. "Pending" or no choice means no assessment.
+- It is recorded and printed. It **never changes** a computed decision.
+- **Only when nothing computes** (step 3: no AQL verdict and no defect section) does the assessment become the decision. No contradiction can arise then (assumption A1).
+- **A contradicting assessment needs a reason to finish.** It contradicts when it exists, the decision is not Pending, and they differ.
+  - Without a reason, the finish is refused (the data is saved), and the message names the "Reason the assessment differs" field.
+  - The reason (at most 2,000 characters) is stored in the same section's data, as `assessment_reason` (no new column).
+- **Every finish is logged** (event `finished`) with the decision, the computed verdict, the assessment and the reason.
+- The old **Final Review `overall_verdict`** field is no longer read. A read-only count on the `trade_prod` copy found it filled on 0 of 8 runs (A2).
+
+**Where it shows.**
+- **Run edit page.** The calculated decision so far, next to the assessment, with the hint that the report's decision is calculated from the AQL result and the defects. For a finished run, the header shows "Decision".
+- **Inspection page and list.** The decision and the roll-up (unchanged).
+- **PDF.**
+  - One "Final Inspection Decision". Under it, per run, "Inspector's assessment — Run #N", which either agrees, or "differs from the decision" with the reason.
+  - The section body prints "Inspector's assessment", plus the reason when they differ.
+  - The summary row shows the assessment as **RECORDED**, never PASS or FAIL.
+  - A finished run that contradicts and has no stored reason (stored before this rule) prints "no reason recorded". Stored data is not rewritten (A3).
 
 Run verdict values: Pending, Pass, Fail, Conditional, Re-Inspection.
-
-> **Known gap (Q15, blocks F-05).** The run edit page captures the inspector's verdict in **Overall Article Result** (`overall_result`), which step 1 does not read. An override reason is **not** required yet: that waits for Q15.
 
 ## 4. Inspection overall status (roll-up)
 

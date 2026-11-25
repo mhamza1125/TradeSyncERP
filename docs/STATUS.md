@@ -10,7 +10,8 @@ Stabilisation work after the audit (`docs/AUDIT_2026-11-25.md`). Nothing is comm
 | After stabilisation | MySQL `trade_test` | 309 tests, 2,713 assertions: all pass |
 | After stage 2 (recommendations) | MySQL `trade_test` | 342 tests, 2,853 assertions: all pass, 0 deprecations |
 | Inspection run review (start of stage 3) | MySQL `trade_test` | 344 tests, 2,861 assertions: all pass |
-| After stage 3 (inspection run fixes) | **MySQL `trade_test`** | **396 tests, 3,119 assertions: all pass** |
+| After stage 3 (inspection run fixes) | MySQL `trade_test` | 396 tests, 3,119 assertions: all pass |
+| After Q15 = (a) | **MySQL `trade_test`** | **412 tests, 3,177 assertions: all pass** |
 
 How to run: `composer run test`. `tests/TestCase.php` refuses to run against anything other than `mysql:trade_test`, so tests can never wipe `trade_prod`.
 
@@ -25,7 +26,7 @@ How to run: `composer run test`. `tests/TestCase.php` refuses to run against any
 | F-11 nested run URLs | Fixed. Scoped bindings. |
 | F-03 / F-14 AQL tables and verdict | Fixed and verified against two sources (`docs/AQL_SOURCES.md`). Read-only checker: `php artisan qc:aql-reevaluate`. |
 | F-04 roll-up | Fixed. Conditional / Re-Inspection statuses; one roll-up for the PDF cover and colour lines. |
-| F-05 override reason | **Not done. Waiting on Q15** (which field is the inspector's verdict). |
+| F-05 override reason | Done with Q15 = (a): a contradicting inspector's assessment needs a reason (QC_RULES §3). |
 | F-08 immutability | Fixed. Finished runs are read-only; reopen needs `inspections.reopen` plus a reason, and is logged. Run models are logged. Inspections with finished runs can't be deleted. Soft deletes: not done (proposal pending). |
 | F-12 / F-18 | Fixed: status is derived, and skip/completeness are enforced on the server. **N/A rule waiting on Q16.** |
 
@@ -43,7 +44,7 @@ All rules as implemented: `docs/QC_RULES.md` (QC) and `docs/FINANCE_RULES.md` (f
 | QC a1: per-severity plan stored; "Sampling basis" printed; "Not allowed" printed as words | Done |
 | QC b1: AQL found counts from recorded defect rows | Done (functional severity excluded, **Q27**) |
 | F-19 / d2: locked numbering; report numbers never reused | Done |
-| F-05 override reason | **Blocked on Q15** |
+| F-05 override reason | Done (Q15 = a) |
 | Sign-off / issued report revisions, KPIs | Not started (next) |
 
 ### Stage 3 (inspection run fixes, 2026-11-25, from `docs/INSPECTION_RUN_REVIEW.md`)
@@ -64,6 +65,13 @@ Rules as implemented: `docs/QC_RULES.md` §2 and §5–§8. No migration, no dat
 | RR-06 / D3 (Q30): defects and types used by finished runs can't be deleted | Done |
 | Found here: a new run's AQL placeholder (`sample_size` 0) made every full-form save fail until a lot size was entered | Done (the computed `sample_size` accepts 0) |
 | RR-02 / Q15, RR-07 / Q33, RR-08 / Q31, RR-12 / Q32, RR-17 / Q34 | Not in this stage |
+
+### Q15 = (a) (2026-11-25)
+
+| Item | Status |
+|---|---|
+| RR-02 / F-05: one decision (computed verdict). Overall Article Result is the inspector's assessment; a contradicting assessment needs a stored, logged and printed reason | Done (`docs/QC_RULES.md` §3). No migration; stored data not rewritten. Old contradicting runs print "no reason recorded". |
+| Found while testing: the hidden "Finish Inspection" section blocks finishing (Q38); checkpoint status reset on save (Q39); PDF summary "PASS" on a defect section (Q40) | Not changed: questions added |
 
 ### Owner actions (stage 3)
 
@@ -104,4 +112,4 @@ The seeders `InspectionSectionSeeder` and `InspectionTypeSectionDefaultSeeder` u
 
 ## Open questions
 
-Q11 (stored files), Q12/Q13/Q14 (AQL defaults implemented, confirm), Q15 (blocks F-05 and RR-02), Q16 (N/A), Q17, Q31–Q34 and Q35–Q37. See `docs/AUDIT_QUESTIONS.md`.
+Q11 (stored files), Q12/Q13/Q14 (AQL defaults implemented, confirm), Q16 (N/A), Q17, Q31–Q34, Q35–Q37 and Q38–Q40. Q15 is answered (a). See `docs/AUDIT_QUESTIONS.md`.
