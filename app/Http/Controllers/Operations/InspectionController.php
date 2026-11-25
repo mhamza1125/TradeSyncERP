@@ -9,6 +9,7 @@ use App\Models\CustomerOrder;
 use App\Models\Employee;
 use App\Models\Inspection;
 use App\Models\InspectionType;
+use App\Services\Inspection\InspectionRunLockService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 
@@ -93,14 +94,20 @@ class InspectionController extends Controller
         ]);
 
         [$employees, $customerOrders, $inspectionTypes] = $this->formData();
+        $headerLockedBy = InspectionRunLockService::headerLockedBy($inspection);
 
         return view('operations.inspections.edit', compact(
-            'inspection', 'employees', 'customerOrders', 'inspectionTypes'
+            'inspection', 'employees', 'customerOrders', 'inspectionTypes', 'headerLockedBy'
         ));
     }
 
     public function update(UpdateInspectionRequest $request, Inspection $inspection)
     {
+        // A finished run's report prints this header: it is locked until that run is reopened (D2/Q29).
+        if ($run = InspectionRunLockService::headerLockedBy($inspection)) {
+            return redirect()->route('inspections.edit', $inspection)
+                ->with('error', self::headerLockedMessage($run->run_number));
+        }
 
         return DB::transaction(function () use ($request, $inspection) {
             $inspection->update([
@@ -128,6 +135,11 @@ class InspectionController extends Controller
 
         return redirect()->route('inspections.index')
             ->with('success', 'Inspection deleted.');
+    }
+
+    public static function headerLockedMessage(int $runNumber): string
+    {
+        return "Inspection details are locked because run #{$runNumber} is finished. Reopen the run first (this needs permission to reopen runs and a reason) to change the type, date, remarks, inspectors or orders.";
     }
 
     private function formData(): array

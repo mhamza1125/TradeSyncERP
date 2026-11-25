@@ -3,6 +3,7 @@
 namespace App\Services\Inspection;
 
 use App\Exceptions\RunLockedException;
+use App\Models\Inspection;
 use App\Models\InspectionRun;
 use App\Models\User;
 
@@ -40,6 +41,19 @@ class InspectionRunLockService
         } finally {
             self::$bypassed = $previous;
         }
+    }
+
+    /**
+     * The finished run that locks an inspection's header (type, date, remarks, inspectors,
+     * orders), or null when none is finished (owner decision D2/Q29, docs/QC_RULES.md §5).
+     */
+    public static function headerLockedBy(Inspection $inspection): ?InspectionRun
+    {
+        if (self::$bypassed) {
+            return null;
+        }
+
+        return $inspection->runs()->whereNotNull('completed_at')->orderBy('run_number')->first();
     }
 
     public function reopen(InspectionRun $run, string $reason, User $by): void

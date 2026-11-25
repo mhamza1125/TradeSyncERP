@@ -115,6 +115,19 @@ class InspectionTypeController extends Controller
 
     public function destroy(InspectionType $inspectionType)
     {
+        // Finished runs' reports print this type; deleting it would blank it there (RR-06, D3/Q30).
+        $usedByFinishedRun = $inspectionType->inspections()
+            ->whereHas('runs', fn ($q) => $q->whereNotNull('completed_at'))
+            ->exists();
+
+        if ($usedByFinishedRun) {
+            $message = 'Cannot delete an inspection type used by inspections with finished runs. Deactivate it instead.';
+
+            return request()->wantsJson()
+                ? response()->json(['success' => false, 'message' => $message, 'errors' => []], 422)
+                : back()->with('error', $message);
+        }
+
         $inspectionType->delete();
 
         if (request()->wantsJson()) {

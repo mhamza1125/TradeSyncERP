@@ -19,9 +19,11 @@
                 <a href="{{ route('inspections.show', $inspection) }}" class="btn btn-light-brand">
                     <i class="feather-eye me-2"></i>View
                 </a>
+                @unless($headerLockedBy)
                 <button type="submit" form="editInspectionForm" class="btn btn-primary">
                     <i class="feather-save me-2"></i>Save Details
                 </button>
+                @endunless
             </div>
         </div>
     </div>
@@ -30,9 +32,18 @@
         @include('partials.flash-messages')
 
         {{-- Inspection details form ──────────────────────────────────────── --}}
+        @if($headerLockedBy)
+            <div class="alert alert-info d-flex align-items-start gap-2 mb-4" role="status">
+                <i class="feather-lock mt-1"></i>
+                <div>{{ \App\Http\Controllers\Operations\InspectionController::headerLockedMessage($headerLockedBy->run_number) }}</div>
+            </div>
+        @endif
         <form id="editInspectionForm" action="{{ route('inspections.update', $inspection) }}" method="POST">
             @csrf @method('PUT')
-            @include('operations.inspections._form')
+            {{-- Locked while a run is finished (D2/Q29); the server refuses the save as well. --}}
+            <fieldset @disabled($headerLockedBy)>
+                @include('operations.inspections._form')
+            </fieldset>
         </form>
 
         {{-- Runs table ───────────────────────────────────────────────────── --}}

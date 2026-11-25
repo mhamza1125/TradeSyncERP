@@ -21,6 +21,7 @@ use App\Services\Inspection\AqlCalculationService;
 use App\Services\Inspection\InspectionDefectCountService;
 use App\Services\Inspection\InspectionRunLockService;
 use App\Services\Inspection\InspectionSectionPolicyService;
+use Illuminate\Validation\Rule;
 use Illuminate\Validation\ValidationException;
 use App\Services\Inspection\InspectionVerdictService;
 use App\Http\Requests\Operations\ReopenInspectionRunRequest;
@@ -31,6 +32,17 @@ use Intervention\Image\ImageManager;
 
 class InspectionRunController extends Controller
 {
+    /** Column limits for the run save (QC_RULES §7): INT UNSIGNED and SMALLINT UNSIGNED. */
+    private const MAX_UINT = 4294967295;
+
+    private const MAX_USMALLINT = 65535;
+
+    /** Allowed values of aql_critical / aql_major / aql_minor in a save. */
+    private static function aqlValueOptions(): array
+    {
+        return [...AqlCalculationService::AQL_LEVELS, 'not_allowed'];
+    }
+
     public function __construct(private AqlCalculationService $aql)
     {
         $this->middleware('permission:inspections.edit');
@@ -181,26 +193,26 @@ class InspectionRunController extends Controller
         }
 
         $request->validate([
-            // AQL
-            'aql.lot_size' => ['nullable', 'integer', 'min:1'],
+            // AQL (upper bounds = column limits, QC_RULES §7)
+            'aql.lot_size' => ['nullable', 'integer', 'min:1', 'max:'.self::MAX_UINT],
             'aql.inspection_level' => ['nullable', 'in:I,II,III,S1,S2,S3,S4'],
-            'aql.sample_size' => ['nullable', 'integer', 'min:1'],
-            'aql.aql_critical' => ['nullable', 'string'],
-            'aql.aql_major' => ['nullable', 'string'],
-            'aql.aql_minor' => ['nullable', 'string'],
-            'aql.found_critical' => ['nullable', 'integer', 'min:0'],
-            'aql.found_major' => ['nullable', 'integer', 'min:0'],
-            'aql.found_minor' => ['nullable', 'integer', 'min:0'],
+            'aql.sample_size' => ['nullable', 'integer', 'min:0', 'max:'.self::MAX_USMALLINT], // ignored: computed; a new run's placeholder posts 0
+            'aql.aql_critical' => ['nullable', Rule::in(self::aqlValueOptions())],
+            'aql.aql_major' => ['nullable', Rule::in(self::aqlValueOptions())],
+            'aql.aql_minor' => ['nullable', Rule::in(self::aqlValueOptions())],
+            'aql.found_critical' => ['nullable', 'integer', 'min:0', 'max:'.self::MAX_USMALLINT],
+            'aql.found_major' => ['nullable', 'integer', 'min:0', 'max:'.self::MAX_USMALLINT],
+            'aql.found_minor' => ['nullable', 'integer', 'min:0', 'max:'.self::MAX_USMALLINT],
             'aql.variations' => ['nullable', 'array'],
             'aql.variations.*.color' => ['nullable', 'string', 'max:100'],
             'aql.variations.*.size' => ['nullable', 'string', 'max:100'],
-            'aql.variations.*.order_qty' => ['nullable', 'integer', 'min:0'],
-            'aql.variations.*.inspect_qty' => ['nullable', 'integer', 'min:0'],
+            'aql.variations.*.order_qty' => ['nullable', 'integer', 'min:0', 'max:'.self::MAX_UINT],
+            'aql.variations.*.inspect_qty' => ['nullable', 'integer', 'min:0', 'max:'.self::MAX_UINT], // ignored: computed
             'aql.size_breakdown' => ['nullable', 'array'],
             'aql.size_breakdown.*.size_label' => ['nullable', 'string', 'max:50'],
-            'aql.size_breakdown.*.order_qty' => ['nullable', 'integer', 'min:0'],
-            'aql.size_breakdown.*.checked_qty' => ['nullable', 'integer', 'min:0'],
-            'aql.size_breakdown.*.error_qty' => ['nullable', 'integer', 'min:0'],
+            'aql.size_breakdown.*.order_qty' => ['nullable', 'integer', 'min:0', 'max:'.self::MAX_UINT],
+            'aql.size_breakdown.*.checked_qty' => ['nullable', 'integer', 'min:0', 'max:'.self::MAX_UINT],
+            'aql.size_breakdown.*.error_qty' => ['nullable', 'integer', 'min:0', 'max:'.self::MAX_UINT],
 
             // Dynamic sections
             'sections' => ['nullable', 'array'],
@@ -212,7 +224,7 @@ class InspectionRunController extends Controller
             'sections.*.defects.*.defect_id' => ['nullable', 'exists:defects,id'],
             'sections.*.defects.*.severity' => ['nullable', 'in:critical,major,minor,functional'],
             'sections.*.defects.*.size' => ['nullable', 'string', 'max:50'],
-            'sections.*.defects.*.qty' => ['nullable', 'integer', 'min:1'],
+            'sections.*.defects.*.qty' => ['nullable', 'integer', 'min:1', 'max:'.self::MAX_USMALLINT],
             'sections.*.defects.*.carton_no' => ['nullable', 'string', 'max:50'],
             'sections.*.defects.*.status' => ['nullable', 'in:open,rectified,rejected'],
             'sections.*.defects.*.disposition_code' => ['nullable', 'in:MACDF,MACSO,MACDE'],
@@ -237,10 +249,19 @@ class InspectionRunController extends Controller
             throw ValidationException::withMessages($skipErrors);
         }
 
-        $blocking = $request->boolean('finish_run') ? InspectionSectionPolicyService::blockingFinish($effective) : [];
-        $finishing = $request->boolean('finish_run') && $blocking === [];
+        $finishRequested = $request->boolean('finish_run');
+        $blocking = $finishRequested ? InspectionSectionPolicyService::blockingFinish($effective) : [];
+        $finishing = $finishRequested && $blocking === [];
 
-        return DB::transaction(function () use ($request, $inspection, $run, $blocking, $finishing) {
+        return DB::transaction(function () use ($request, $inspection, $run, $blocking, $finishing, $finishRequested) {
+
+            // Two posts of the same run (double submit) run one after the other, and the
+            // second sees the first's rows and lock (RR-18).
+            if (InspectionRunLockService::isLocked(InspectionRun::whereKey($run->id)->lockForUpdate()->first())) {
+                return $this->lockedRedirect($inspection, $run);
+            }
+
+            $notices = [];
 
             // ── 2. AQL record ─────────────────────────────────────────────────
             if ($request->filled('aql.lot_size')) {
@@ -249,8 +270,15 @@ class InspectionRunController extends Controller
                 // Recalculate lot_size from variations if present
                 $variations = array_values(array_filter($aqlInput['variations'] ?? [], fn ($v) => ! empty($v['order_qty']) || ! empty($v['color']) || ! empty($v['size'])));
                 if (! empty($variations)) {
-                    $variationsTotal = array_sum(array_column($variations, 'order_qty'));
+                    $variationsTotal = array_sum(array_map(fn ($v) => (int) ($v['order_qty'] ?? 0), $variations));
+                    if ($variationsTotal > self::MAX_UINT) {
+                        throw ValidationException::withMessages(['aql.variations' => 'The total ordered quantity of the variations may not be greater than '.number_format(self::MAX_UINT).'.']);
+                    }
                     $lotSize = $variationsTotal > 0 ? $variationsTotal : (int) ($aqlInput['lot_size'] ?? 0);
+                    $typedLot = (int) ($aqlInput['lot_size'] ?? 0);
+                    if ($variationsTotal > 0 && $typedLot !== $variationsTotal) {
+                        $notices[] = "Lot size set to {$variationsTotal}, the total ordered quantity of the variations (you entered {$typedLot}).";
+                    }
                 } else {
                     $lotSize = (int) ($aqlInput['lot_size'] ?? 0);
                     $variations = null;
@@ -272,6 +300,18 @@ class InspectionRunController extends Controller
                 $aqlMinor = $notAllowedMinor ? null : (is_numeric($aqlMinorRaw) ? (float) $aqlMinorRaw : null);
 
                 $plan = $this->aql->calculate($lotSize, $level, $aqlCritical, $aqlMajor, $aqlMinor);
+
+                // Units to inspect per variation are computed here, never taken from the post (RR-10):
+                // the plan's sample size spread over the order quantities (same method as the page).
+                if ($variations !== null) {
+                    $split = $this->aql->distributeProportionally(
+                        (int) $plan['sample_size'],
+                        array_map(fn ($v) => (int) ($v['order_qty'] ?? 0), $variations)
+                    );
+                    foreach ($variations as $i => $v) {
+                        $variations[$i]['inspect_qty'] = $split[$i];
+                    }
+                }
 
                 // "Not Allowed" → Ac=0, Re=1 (any defect fails)
                 $acCritical = $notAllowedCritical ? 0 : ($plan['critical']['ac'] ?? null);
@@ -384,13 +424,36 @@ class InspectionRunController extends Controller
             }
 
             // ── 3b. AQL found counts come from recorded defect rows when there are any ──
-            $this->refreshAqlFromDefects($run, $finishing || $this->aqlSectionComplete($run, $request));
+            $defectSectionKey = collect($request->input('sections', []))
+                ->filter(fn ($s) => is_array($s) && array_key_exists('defects', $s))->keys()->first();
+            $this->refreshAqlFromDefects(
+                $run,
+                $finishing || $this->aqlSectionComplete($run, $request),
+                $defectSectionKey !== null ? "sections.{$defectSectionKey}.defects" : 'sections',
+            );
 
             // ── 4. Handle finish flag ─────────────────────────────────────────
-            // The data above is saved either way; finishing needs every required section done.
-            if ($blocking !== []) {
+            // The data above is saved either way; finishing needs every required section done
+            // and, when the run has an AQL section, a valid AQL plan (QC_RULES §6, D1/Q28).
+            $aqlProblem = $finishRequested ? $this->aqlFinishProblem($run) : null;
+
+            if ($aqlProblem !== null && $finishing) {
+                // The AQL verdict above was computed as if the run were finishing; it is not.
+                $this->recomputeAqlVerdict($run, $this->aqlSectionComplete($run, $request));
+                $finishing = false;
+            }
+
+            if ($finishRequested && ! $finishing) {
+                $reasons = [];
+                if ($blocking !== []) {
+                    $reasons[] = 'Complete these sections first: '.implode(', ', $blocking).'.';
+                }
+                if ($aqlProblem !== null) {
+                    $reasons[] = $aqlProblem;
+                }
+
                 return redirect()->route('inspections.runs.edit', [$inspection, $run])
-                    ->with('error', 'Saved, but the run was not finished. Complete these sections first: '.implode(', ', $blocking).'.');
+                    ->with('error', 'Saved, but the run was not finished. '.implode(' ', [...$reasons, ...$notices]));
             }
 
             if ($finishing) {
@@ -403,7 +466,7 @@ class InspectionRunController extends Controller
             }
 
             return redirect()->route('inspections.runs.edit', [$inspection, $run])
-                ->with('success', 'Run saved successfully.');
+                ->with('success', implode(' ', ['Run saved successfully.', ...$notices]));
         });
     }
 
@@ -605,7 +668,7 @@ class InspectionRunController extends Controller
             'defects.*.defect_id' => ['nullable', 'exists:defects,id'],
             'defects.*.severity' => ['nullable', 'in:critical,major,minor,functional'],
             'defects.*.size' => ['nullable', 'string', 'max:50'],
-            'defects.*.qty' => ['nullable', 'integer', 'min:1'],
+            'defects.*.qty' => ['nullable', 'integer', 'min:1', 'max:'.self::MAX_USMALLINT],
             'defects.*.carton_no' => ['nullable', 'string', 'max:50'],
             'defects.*.status' => ['nullable', 'in:open,rectified,rejected'],
             'defects.*.disposition_code' => ['nullable', 'in:MACDF,MACSO,MACDE'],
@@ -618,16 +681,22 @@ class InspectionRunController extends Controller
 
         $mergedData = array_merge($runSection->data ?? [], $validated['data'] ?? []);
 
-        $runSection->update([
-            'status' => $validated['status'],
-            'notes' => $validated['notes'] ?? $runSection->notes,
-            'data' => $mergedData,
-        ]);
+        $defectIds = DB::transaction(function () use ($request, $run, $runSection, $validated, $mergedData) {
+            $runSection->update([
+                'status' => $validated['status'],
+                'notes' => $validated['notes'] ?? $runSection->notes,
+                'data' => $mergedData,
+            ]);
 
-        if ($request->has('defects')) {
-            $this->syncSectionDefects($runSection, $validated['defects'] ?? []);
-            $this->refreshAqlFromDefects($run, $this->aqlSectionComplete($run, $request));
-        }
+            if (! $request->has('defects')) {
+                return null;
+            }
+
+            $ids = $this->syncSectionDefects($runSection, $validated['defects'] ?? []);
+            $this->refreshAqlFromDefects($run, $this->aqlSectionComplete($run, $request), 'defects');
+
+            return $ids;
+        });
 
         $run->loadMissing('runSections');
         $total = $run->runSections->count();
@@ -635,9 +704,12 @@ class InspectionRunController extends Controller
 
         return response()->json([
             'success' => true,
+            'message' => 'Saved.',
             'status' => $runSection->status,
             'sections_total' => $total,
             'sections_done' => $complete,
+            // Saved defect row ids by posted row index, so the page can post them next time (RR-18).
+            'defect_ids' => $defectIds === null ? null : (object) $defectIds,
         ]);
     }
 
@@ -666,10 +738,17 @@ class InspectionRunController extends Controller
 
     // ── Sync a defects_check section's rows into inspection_run_defects ──────
 
-    private function syncSectionDefects(InspectionRunSection $runSection, array $rows): void
+    /** @return array<int, int> posted row index => saved row id */
+    private function syncSectionDefects(InspectionRunSection $runSection, array $rows): array
     {
-        $existingIds = $runSection->defects()->pluck('id')->all();
+        $existing = $runSection->defects()->get()->keyBy('id');
+        $existingIds = $existing->keys()->all();
+        $claimedByPostedId = array_values(array_intersect(
+            array_map('intval', array_filter(array_column($rows, 'id'))),
+            $existingIds
+        ));
         $keptIds = [];
+        $idsByIndex = [];
 
         foreach (array_values($rows) as $i => $row) {
             if (empty($row['defect_id'])) {
@@ -696,12 +775,22 @@ class InspectionRunController extends Controller
                 ? (int) $row['id']
                 : null;
 
+            // A repeated or stale form posts its new rows again without ids (double submit,
+            // RR-18). Reuse an identical saved row that no posted id claims, instead of
+            // deleting it and creating a copy: its photos are keyed by its id.
+            if (! $rowId) {
+                $rowId = $existing->first(fn (InspectionRunDefect $saved) => ! in_array($saved->id, $claimedByPostedId, true)
+                    && ! in_array($saved->id, $keptIds, true)
+                    && $this->sameDefectRow($saved, $attrs))?->id;
+            }
+
             if ($rowId) {
                 InspectionRunDefect::whereKey($rowId)->update($attrs);
-                $keptIds[] = $rowId;
             } else {
-                $keptIds[] = InspectionRunDefect::create($attrs)->id;
+                $rowId = InspectionRunDefect::create($attrs)->id;
             }
+            $keptIds[] = $rowId;
+            $idsByIndex[$i] = $rowId;
         }
 
         // Remove rows no longer present, cleaning up their photos with them.
@@ -716,11 +805,26 @@ class InspectionRunController extends Controller
             });
             $defectRow->delete();
         }
+
+        return $idsByIndex;
+    }
+
+    private function sameDefectRow(InspectionRunDefect $saved, array $attrs): bool
+    {
+        $norm = fn ($v) => $v === null || $v === '' ? null : (string) $v;
+
+        foreach (['defect_id', 'severity', 'size', 'qty', 'carton_no', 'status', 'disposition_code', 'notes'] as $key) {
+            if ($norm($saved->{$key}) !== $norm($attrs[$key])) {
+                return false;
+            }
+        }
+
+        return true;
     }
 
     // ── AQL found counts = recorded defect rows (one source of truth, QC_RULES §2) ──
 
-    private function refreshAqlFromDefects(InspectionRun $run, bool $complete): void
+    private function refreshAqlFromDefects(InspectionRun $run, bool $complete, string $errorKey = 'sections'): void
     {
         $aql = $run->aql()->first();
         if (! $aql) {
@@ -728,6 +832,13 @@ class InspectionRunController extends Controller
         }
 
         $counts = InspectionDefectCountService::countsFor($run);
+
+        // found_* are SMALLINT UNSIGNED: refuse (and roll back) rather than fail with HTTP 500 (RR-16).
+        foreach ($counts ?? [] as $class => $total) {
+            if ($total > self::MAX_USMALLINT) {
+                throw ValidationException::withMessages([$errorKey => "The recorded {$class} defects add up to {$total}; the total per class may not be greater than ".number_format(self::MAX_USMALLINT).'.']);
+            }
+        }
 
         if ($counts === null) {
             // Rows were all removed: the counts they produced no longer exist.
@@ -752,6 +863,52 @@ class InspectionRunController extends Controller
                 complete: $complete,
             ),
         ]);
+    }
+
+    // ── Why a run with an AQL section cannot be finished yet (null = it can) ──
+    // A skipped AQL section needs no plan. Otherwise: lot size >= 2, a computed plan,
+    // and an AQL verdict that is not Pending (QC_RULES §6, owner decision D1/Q28).
+
+    private function aqlFinishProblem(InspectionRun $run): ?string
+    {
+        $aqlSection = $run->runSections()->with('section')
+            ->whereHas('section', fn ($q) => $q->where('section_type', 'aql'))
+            ->first();
+
+        if (! $aqlSection || $aqlSection->status === 'na') {
+            return null;
+        }
+
+        $name = $aqlSection->section->name;
+        $aql = $run->aql()->first();
+
+        if (! $aql || (int) $aql->lot_size < 2 || ! $aql->code_letter || (int) $aql->sample_size < 1) {
+            return "{$name} has no sampling plan: enter a lot size of at least 2 so the plan can be calculated.";
+        }
+
+        if ($aql->verdict === 'Pending') {
+            return "{$name} verdict is still Pending: defects were found in a class that has no AQL value. Choose an AQL value (or Not Allowed) for that class.";
+        }
+
+        return null;
+    }
+
+    // ── Re-evaluate the stored AQL verdict from the stored counts and plan ──
+
+    private function recomputeAqlVerdict(InspectionRun $run, bool $complete): void
+    {
+        $aql = $run->aql()->first();
+        if (! $aql) {
+            return;
+        }
+
+        $ac = fn ($v) => $v === null ? null : (int) $v;
+
+        $aql->update(['verdict' => $this->aql->verdict(
+            (int) $aql->found_critical, (int) $aql->found_major, (int) $aql->found_minor,
+            $ac($aql->ac_critical), $ac($aql->ac_major), $ac($aql->ac_minor),
+            complete: $complete,
+        )]);
     }
 
     // ── Is the run's AQL section marked complete (in this request, or already)? ──

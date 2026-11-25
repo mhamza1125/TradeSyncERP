@@ -79,7 +79,7 @@ InspectionType  →  defines template sections (via inspection_type_section_defa
                     └── Attachment        (photos per section)
 ```
 
-`section_type` has **12 fixed values**: `images`, `workmanship`, `aql`, `checklist`, `container`, `verification`, `review`, `article_results`, `conclusion_section`, `general_info`, `checkpoint`, `production_stages`. Every `switch`/`match` on `section_type` in Blade and controllers must handle all 12. Adding a new one requires updating all dispatch sites.
+`section_type` has **19 fixed values** (DB enum, `inspection_sections.section_type`): `images`, `workmanship`, `aql`, `checklist`, `container`, `verification`, `review`, `task_list`, `quantity_sampling`, `cartons`, `cover_photo`, `files_review`, `defects`, `finish`, `article_results`, `conclusion`, `general_info`, `checkpoint`, `production_stages`. Every `switch`/`match` on `section_type` in Blade and controllers must handle all of them. Adding a new one requires a migration and updating all dispatch sites.
 
 AQL calculations flow exclusively through `app/Services/Inspection/AqlCalculationService.php` (ISO 2859-1). Never replicate the lookup tables — browser previews read `tableForJs()` via `public/assets/js/aql-plan.js`. Table sources: `docs/AQL_SOURCES.md`. Verdict, roll-up, run lock/reopen and section skip rules: **`docs/QC_RULES.md`** (the one place they are written down).
 
@@ -113,7 +113,7 @@ Two coexisting systems: `sample_movements` (legacy, direct FK) and `movements`/`
 **Frontend**
 - The app UI is the **Bootstrap 5** theme (`btn-*`, `badge`, `d-none`; `Paginator::useBootstrapFive()`); Tailwind appears only in the Breeze auth views. Use the theme's classes — no new custom CSS files
 - Alpine.js for reactive UI — no Vue/React
-- AJAX via Axios (globally configured) — not `fetch()`
+- AJAX via Axios (globally configured) — not `fetch()`. Known drift: the run edit page and its section partials (`operations/inspections/runs/`) still use `fetch()`; the run form's Save run / Finish must use `fetch()` with `redirect: 'manual'` (Axios can't stop at the redirect)
 - JS longer than ~10 lines in Blade → `@push('scripts')` or dedicated JS file
 - Every `<select>` is made searchable automatically by Tom Select (`public/assets/js/searchable-select.js`, loaded in the layout) — don't include tom-select per page; opt out with `data-native`
 

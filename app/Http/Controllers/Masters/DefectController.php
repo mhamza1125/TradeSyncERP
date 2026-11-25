@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Masters;
 
 use App\Http\Controllers\Controller;
 use App\Models\Defect;
+use App\Models\InspectionRunDefect;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Http\Request;
 
@@ -76,6 +77,19 @@ class DefectController extends Controller
 
     public function destroy(Defect $defect)
     {
+        // A finished run's report names this defect; deleting it would blank that name (RR-06, D3/Q30).
+        $onFinishedRun = InspectionRunDefect::where('defect_id', $defect->id)
+            ->whereHas('runSection.run', fn ($q) => $q->whereNotNull('completed_at'))
+            ->exists();
+
+        if ($onFinishedRun) {
+            $message = 'Cannot delete a defect that is recorded on finished inspection runs. Deactivate it instead.';
+
+            return request()->wantsJson()
+                ? response()->json(['success' => false, 'message' => $message, 'errors' => []], 422)
+                : back()->with('error', $message);
+        }
+
         $defect->delete();
 
         if (request()->wantsJson()) {

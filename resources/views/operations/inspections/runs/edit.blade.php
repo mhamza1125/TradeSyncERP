@@ -414,6 +414,8 @@ foreach ($visibleRunSections as $rs) {
 
     <div class="main-content">
         @include('partials.flash-messages')
+        {{-- Errors from a save that never reached the page reload (e.g. session expired) --}}
+        <div id="run-form-alert" class="alert alert-danger d-none" role="alert"></div>
 
         <form id="runForm"
               action="{{ route('inspections.runs.update', [$inspection, $run]) }}"
@@ -891,10 +893,15 @@ foreach ($visibleRunSections as $rs) {
                                 Review all sections above, then click <strong>Finish Inspection</strong> to close this run.
                             </p>
                         </div>
-                        <button type="button" id="finish-inspection-btn" class="btn btn-success btn-lg px-5">
-                            <i class="feather-check-circle me-2"></i>Finish Inspection
-                        </button>
-                        <p class="text-muted fs-12 mb-0 mt-2">Finishing will lock this run and mark it as complete.</p>
+                        <div class="d-flex flex-wrap justify-content-center gap-2">
+                            <button type="button" id="save-run-btn" class="btn btn-primary btn-lg px-4 run-form-submit">
+                                <i class="feather-save me-2"></i>Save run
+                            </button>
+                            <button type="button" id="finish-inspection-btn" class="btn btn-success btn-lg px-5 run-form-submit">
+                                <i class="feather-check-circle me-2"></i>Finish Inspection
+                            </button>
+                        </div>
+                        <p class="text-muted fs-12 mb-0 mt-2"><strong>Save run</strong> saves every section, the AQL plan and the defect rows without finishing. Finishing will lock this run and mark it as complete.</p>
                     </div>
                     @endif
                 </div>
@@ -1136,17 +1143,45 @@ foreach ($visibleRunSections as $rs) {
     // ═══════════════════════════════════════════════════════════════
 
     const SECTION_SAVE_URLS = @json($sectionSaveUrls);
+    const RUN_EDIT_URL = @json(route('inspections.runs.edit', [$inspection, $run]));
+
+    // The server's reason for a failed save, never exception details (RR-19).
+    function saveErrorMessage(status, body) {
+        if (status === 419) {
+            return 'Your session has expired, so your changes are NOT saved. Open the login page in another tab, sign in, then come back and press Save again.';
+        }
+        if (status === 401) return 'You are signed out, so your changes are NOT saved. Sign in in another tab, then press Save again.';
+        if (status === 403) return 'You do not have permission to change this run.';
+        if (status === 422 && body) {
+            const errors = body.errors ? Object.values(body.errors).flat() : [];
+            return errors.length ? errors.join(' ') : (body.message || 'The data was not accepted.');
+        }
+        if (status === 0) return 'No connection to the server. Your changes are NOT saved; check the connection and try again.';
+        return 'The server could not save (error ' + status + '). Your changes are NOT saved; try again.';
+    }
 
     function collectSectionPayload(card, rsId) {
         const dataPrefix = `sections[${rsId}][data]`;
         const notesName  = `sections[${rsId}][notes]`;
+        const defectsKey = `sections[${rsId}][defects]`;
         const data = {};
         let notes = null;
+        let defects;   // stays undefined for sections without defect rows
 
         card.querySelectorAll(`[name^="sections[${rsId}]["]`).forEach(function (el) {
             if ((el.type === 'checkbox' || el.type === 'radio') && !el.checked) return;
             const name = el.name;
             if (name === notesName) { notes = el.value; return; }
+            // Defect rows (and the empty sentinel, so removing the last row deletes it).
+            if (name === defectsKey) { defects = defects || []; return; }
+            if (name.startsWith(defectsKey + '[')) {
+                const m = name.slice(defectsKey.length).match(/^\[(\d+)\]\[([^\]]+)\]$/);
+                if (m) {
+                    defects = defects || [];
+                    (defects[m[1]] = defects[m[1]] || {})[m[2]] = el.value;
+                }
+                return;
+            }
             if (!name.startsWith(dataPrefix + '[')) return;
 
             const rest = name.slice(dataPrefix.length);
@@ -1162,7 +1197,9 @@ foreach ($visibleRunSections as $rs) {
             });
         });
 
-        return { data, notes };
+        if (defects) defects = Array.from(defects, function (row) { return row || {}; });
+
+        return { data, notes, defects };
     }
 
     function setIndicator(rsId, msg, isError) {
@@ -1170,7 +1207,7 @@ foreach ($visibleRunSections as $rs) {
         if (!el) return;
         el.textContent = msg;
         el.className = 'fs-11 ' + (isError ? 'text-danger' : 'text-success');
-        if (msg) {
+        if (msg && !isError) {
             setTimeout(function () {
                 if (el.textContent === msg) { el.textContent = ''; el.className = 'text-muted fs-11'; }
             }, 3000);
@@ -1236,7 +1273,11 @@ foreach ($visibleRunSections as $rs) {
         const card = document.querySelector(`[data-section-anchor="${rsId}"]`);
         if (!url || !card) return;
 
-        const { data, notes } = collectSectionPayload(card, rsId);
+        const { data, notes, defects } = collectSectionPayload(card, rsId);
+        const payload = { status: status, notes: notes, data: data };
+        if (defects !== undefined) payload.defects = defects;
+        // This endpoint does not save the AQL plan (aql[...] fields): Save run does.
+        const hasAqlFields = !!card.querySelector('[name^="aql["]');
         const originalHtml = btn ? btn.innerHTML : null;
         if (btn) {
             btn.disabled = true;
@@ -1250,24 +1291,39 @@ foreach ($visibleRunSections as $rs) {
                 'X-CSRF-TOKEN': CSRF,
                 'Accept': 'application/json',
             },
-            body: JSON.stringify({ status: status, notes: notes, data: data }),
+            body: JSON.stringify(payload),
         })
         .then(function (res) {
-            if (!res.ok) throw new Error('Save failed');
-            return res.json();
+            return res.json().catch(function () { return null; }).then(function (body) {
+                if (!res.ok) {
+                    const err = new Error('save failed');
+                    err.status = res.status;
+                    err.body = body;
+                    throw err;
+                }
+                return body;
+            });
         })
         .then(function (resp) {
+            // Post the saved rows' ids next time, so they are updated instead of recreated.
+            if (resp.defect_ids) {
+                Object.entries(resp.defect_ids).forEach(function ([i, id]) {
+                    const idInput = card.querySelector(`[name="sections[${rsId}][defects][${i}][id]"]`);
+                    if (idInput) idInput.value = id;
+                });
+            }
+            markSectionClean(rsId);
             // Restore the button's real markup (icon + label spans) *before* handing off
             // to applyStatusEverywhere — while the spinner placeholder is showing, those
             // child elements don't exist, so any update to them there would be a no-op
             // and get discarded, leaving the button's visible label stuck on stale text.
             if (btn && originalHtml !== null) btn.innerHTML = originalHtml;
             applyStatusEverywhere(rsId, resp.status);
-            setIndicator(rsId, successMsg, false);
+            setIndicator(rsId, hasAqlFields ? successMsg + ' The AQL figures are saved with Save run.' : successMsg, false);
         })
-        .catch(function () {
+        .catch(function (err) {
             if (btn && originalHtml !== null) btn.innerHTML = originalHtml;
-            setIndicator(rsId, 'Could not save. Try again.', true);
+            setIndicator(rsId, saveErrorMessage(err.status || 0, err.body), true);
         })
         .finally(function () {
             if (btn) btn.disabled = false;
@@ -1739,8 +1795,117 @@ foreach ($visibleRunSections as $rs) {
             if (!confirm('Mark this inspection run as finished? It becomes read-only; only a user allowed to reopen runs can change it afterwards.')) return;
         }
 
-        document.getElementById('finish_run_flag').value = '1';
-        document.getElementById('runForm').submit();
+        submitRunForm(true);
+    });
+
+    document.getElementById('save-run-btn')?.addEventListener('click', function () {
+        submitRunForm(false);
+    });
+
+    // One submit at a time: the buttons are disabled so a double click can't post twice (RR-18).
+    // The form is posted with fetch and redirect 'manual': every outcome of the save (saved,
+    // not finished, validation errors) is a redirect to this page, which then shows its message.
+    // A 419 (session expired) or a server error leaves the form, and what was typed, on screen.
+    let runFormSubmitting = false;
+    function submitRunForm(finish) {
+        if (runFormSubmitting) return;
+        runFormSubmitting = true;
+        const form = document.getElementById('runForm');
+        const buttons = document.querySelectorAll('.run-form-submit');
+        buttons.forEach(function (b) { b.disabled = true; });
+        document.getElementById('finish_run_flag').value = finish ? '1' : '0';
+        showRunFormAlert('');
+
+        fetch(form.action, {
+            method: 'POST',
+            body: new FormData(form),
+            headers: { 'Accept': 'text/html' },
+            redirect: 'manual',
+        })
+        .then(function (res) {
+            if (res.type === 'opaqueredirect' || (res.status >= 300 && res.status < 400)) {
+                leavingOnPurpose = true;
+                window.location.href = RUN_EDIT_URL;
+                return;
+            }
+            throw Object.assign(new Error('save failed'), { status: res.status });
+        })
+        .catch(function (err) {
+            runFormSubmitting = false;
+            buttons.forEach(function (b) { b.disabled = false; });
+            document.getElementById('finish_run_flag').value = '0';
+            showRunFormAlert(saveErrorMessage(err.status || 0, null));
+        });
+    }
+
+    function showRunFormAlert(msg) {
+        const box = document.getElementById('run-form-alert');
+        if (!box) return;
+        box.textContent = msg;
+        box.classList.toggle('d-none', !msg);
+        if (msg) box.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    }
+
+    // ═══════════════════════════════════════════════════════════════
+    // 4b. Unsaved-changes guard (RR-03)
+    // ═══════════════════════════════════════════════════════════════
+    // The form's fields are snapshotted once the page has finished loading. Leaving the page
+    // warns only if a field differs from that snapshot. A successful section save marks that
+    // section saved; Save run / Finish reload the page.
+
+    let snapshot = null;
+    let leavingOnPurpose = false;
+
+    function formGroups() {
+        const groups = {};
+        const form = document.getElementById('runForm');
+        if (!form) return groups;
+        for (const [name, value] of new FormData(form).entries()) {
+            if (['_token', '_method', 'finish_run'].includes(name) || value instanceof File) continue;
+            const m = name.match(/^sections\[(\d+)\]/);
+            const group = m ? m[0] : name.split('[')[0];
+            groups[group] = (groups[group] || '') + name + '=' + value + '\n';
+        }
+        return groups;
+    }
+
+    function isRunFormDirty() {
+        if (!snapshot) return false;
+        const now = formGroups();
+        const keys = new Set([...Object.keys(now), ...Object.keys(snapshot)]);
+        for (const k of keys) {
+            if ((now[k] || '') !== (snapshot[k] || '')) return true;
+        }
+        return false;
+    }
+
+    function markSectionClean(rsId) {
+        if (!snapshot) return;
+        const key = `sections[${rsId}]`;
+        const now = formGroups();
+        if (now[key] === undefined) delete snapshot[key]; else snapshot[key] = now[key];
+    }
+
+    window.addEventListener('load', function () {
+        setTimeout(function () { snapshot = formGroups(); }, 0);
+    });
+
+    window.addEventListener('beforeunload', function (e) {
+        if (leavingOnPurpose || !isRunFormDirty()) return;
+        e.preventDefault();
+        e.returnValue = '';
+    });
+
+    // Links on this page (breadcrumb, Back, sidebar): ask in words before leaving.
+    document.addEventListener('click', function (e) {
+        const link = e.target.closest('a[href]');
+        if (!link || link.target === '_blank' || link.getAttribute('href').startsWith('#') || link.getAttribute('href').startsWith('javascript:') || link.hasAttribute('data-bs-toggle')) return;
+        if (!isRunFormDirty()) return;
+        if (confirm('You have unsaved changes on this run. Leave without saving?')) {
+            leavingOnPurpose = true;
+        } else {
+            e.preventDefault();
+        }
     });
 
     // ═══════════════════════════════════════════════════════════════

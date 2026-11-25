@@ -8,7 +8,9 @@ Stabilisation work after the audit (`docs/AUDIT_2026-11-25.md`). Nothing is comm
 |---|---|---|
 | Before (audit) | sqlite `:memory:` | 38 tests: 14 pass, 23 errors (MySQL-only migrations), 1 failure |
 | After stabilisation | MySQL `trade_test` | 309 tests, 2,713 assertions: all pass |
-| After stage 2 (recommendations) | **MySQL `trade_test`** | **342 tests, 2,853 assertions: all pass**, 0 deprecations |
+| After stage 2 (recommendations) | MySQL `trade_test` | 342 tests, 2,853 assertions: all pass, 0 deprecations |
+| Inspection run review (start of stage 3) | MySQL `trade_test` | 344 tests, 2,861 assertions: all pass |
+| After stage 3 (inspection run fixes) | **MySQL `trade_test`** | **396 tests, 3,119 assertions: all pass** |
 
 How to run: `composer run test`. `tests/TestCase.php` refuses to run against anything other than `mysql:trade_test`, so tests can never wipe `trade_prod`.
 
@@ -44,6 +46,34 @@ All rules as implemented: `docs/QC_RULES.md` (QC) and `docs/FINANCE_RULES.md` (f
 | F-05 override reason | **Blocked on Q15** |
 | Sign-off / issued report revisions, KPIs | Not started (next) |
 
+### Stage 3 (inspection run fixes, 2026-11-25, from `docs/INSPECTION_RUN_REVIEW.md`)
+
+Rules as implemented: `docs/QC_RULES.md` §2 and §5–§8. No migration, no data change, no new package.
+
+| Item | Status |
+|---|---|
+| RR-01 / D1 (Q28): finish needs a valid AQL plan | Done. Existing finished runs are not changed. |
+| RR-04: removing the last defect row | Done (empty `defects` sentinel posted before the rows). |
+| RR-18: double submit recreated a row | Done. Identical row re-posts reuse the saved row; saves of one run are serialised; submit buttons are disabled while posting. |
+| RR-09: AQL values validated | Done |
+| RR-10: `inspect_qty` computed on the server; lot-size replacement is reported | Done |
+| RR-16: upper bounds give 422, not 500 | Done (limits: QC_RULES §7) |
+| RR-03 (part): Save run button, unsaved-changes guard, defect rows by AJAX with ids returned | Done. The AJAX section save does not save the AQL plan; Save run does. |
+| RR-19: real error messages; session expiry keeps the page | Done. `APP_DEBUG` not changed (owner action below). |
+| RR-05 / D2 (Q29): header locked while a run is finished | Done |
+| RR-06 / D3 (Q30): defects and types used by finished runs can't be deleted | Done |
+| Found here: a new run's AQL placeholder (`sample_size` 0) made every full-form save fail until a lot size was entered | Done (the computed `sample_size` accepts 0) |
+| RR-02 / Q15, RR-07 / Q33, RR-08 / Q31, RR-12 / Q32, RR-17 / Q34 | Not in this stage |
+
+### Owner actions (stage 3)
+
+1. **RR-17 / Q34:** before deploying, run `php artisan migrate:status` and `git log -1` on production. Deploy the code only together with the rollout steps below.
+2. **`APP_DEBUG=false`** in the production `.env`. With `true`, a server error's JSON includes exception details. The page no longer shows them, but the response still carries them.
+3. **D2:** rotate the seeded `admin@erp.test` password or remove the account (accepted risk, below).
+4. **RR-08 / Q31:** run photos are still public `/storage/...` URLs and keep their EXIF data (next stage).
+5. **Q33:** decide what happens to legacy runs: finished runs with pending sections, and AQL records with lot size 0. Nothing is changed automatically. A legacy run that is reopened can only be finished again once it has an AQL plan.
+6. Answer Q35–Q37 (`docs/AUDIT_QUESTIONS.md`, batch 5).
+
 ## Rollout steps for production (owner)
 
 1. Back up the database and `storage/app/public` (D4: owner).
@@ -68,8 +98,10 @@ The seeders `InspectionSectionSeeder` and `InspectionTypeSectionDefaultSeeder` u
 
 - `InspectionExportTestSeeder` (demo, local/testing only) fails: it writes `inspection_run_aql.notes`, a column dropped by migration `2026_07_07_073658`.
 - The inspection PDF's own footer uses CSS `counter(pages)`, which dompdf 3.1.5 renders as "of 0" (verified with a probe).
+- The AQL verdict of an **unfinished** run with no plan (lot below 2), zero defects and its AQL section marked complete is stored as "Pass" (`AqlCalculationService::verdict()`). Finishing is refused in that state, so it never becomes a run verdict (Q36).
+- A deleted customer order or employee still removes its rows from the inspection's order and inspector lists (foreign key cascade). The header lock (D2) does not cover master deletes of orders or employees.
 - Stored statuses in the `trade_prod` copy that differ from the new roll-up: 1 inspection stored Pass with a finished Conditional run, and 1 stored Pass while its runs are not all finished. They are recalculated only when a run in that inspection is finished or reopened. No data was changed.
 
 ## Open questions
 
-Q11 (stored files), Q12/Q13/Q14 (AQL defaults implemented, confirm), Q15 (blocks F-05), Q16 (N/A). See `docs/AUDIT_QUESTIONS.md`.
+Q11 (stored files), Q12/Q13/Q14 (AQL defaults implemented, confirm), Q15 (blocks F-05 and RR-02), Q16 (N/A), Q17, Q31–Q34 and Q35–Q37. See `docs/AUDIT_QUESTIONS.md`.

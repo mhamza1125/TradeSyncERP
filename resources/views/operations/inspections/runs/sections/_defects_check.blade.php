@@ -45,6 +45,10 @@
     (e.g. found in different sizes or cartons) — set its size, quantity, carton, and status for each entry.
 </p>
 
+{{-- Always posted, and before the rows (PHP keeps the last value of a repeated key): with no
+     rows left it arrives empty and tells the server to delete all of them (RR-04). --}}
+<input type="hidden" name="sections[{{ $rsId }}][defects]" value="">
+
 <div class="d-flex gap-2 mb-3">
     <div class="flex-grow-1">
         <select id="defectAddDropdown-{{ $rsId }}" placeholder="Search defects…"></select>
