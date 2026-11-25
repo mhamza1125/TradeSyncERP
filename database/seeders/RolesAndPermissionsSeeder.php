@@ -37,6 +37,7 @@ class RolesAndPermissionsSeeder extends Seeder
             'samples.index', 'samples.create', 'samples.edit', 'samples.delete', 'samples.view',
             'sample-movements.index', 'sample-movements.create', 'sample-movements.edit', 'sample-movements.delete', 'sample-movements.view',
             'inspections.index', 'inspections.create', 'inspections.edit', 'inspections.delete', 'inspections.view',
+            'inspections.reopen', // reopen a finished (read-only) run — Admin only unless granted
             'inspection-sections.index', 'inspection-sections.create', 'inspection-sections.edit', 'inspection-sections.delete',
 
             // Operations – customer orders
@@ -53,6 +54,9 @@ class RolesAndPermissionsSeeder extends Seeder
 
             // Reports
             'reports.view',
+
+            // Audit log (Admin only: it shows old/new values of every audited record)
+            'activities.view',
         ];
 
         foreach ($permissions as $perm) {

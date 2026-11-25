@@ -870,6 +870,7 @@ foreach ($visibleRunSections as $rs) {
                         </div>
                         <div>
                             <h5 class="fw-bold text-success mb-1">Inspection Finished</h5>
+                            <p class="text-muted mb-1 fs-12"><i class="feather-lock me-1"></i>Read-only. Changes need the run to be reopened.</p>
                             <p class="text-muted mb-0 fs-13">
                                 Completed on {{ $run->completed_at->format('d M Y \a\t H:i') }}
                             </p>
@@ -900,6 +901,24 @@ foreach ($visibleRunSections as $rs) {
             </div>
 
         </form>
+
+        {{-- Reopen a finished run: own permission, mandatory reason, written to the activity log --}}
+        @if($run->completed_at)
+        @can('inspections.reopen')
+        <div class="card shadow-sm mt-3 border-warning">
+            <div class="card-body">
+                <h6 class="fw-semibold mb-1"><i class="feather-unlock me-1"></i>Reopen this run</h6>
+                <p class="text-muted fs-12 mb-3">This run is finished and read-only. Reopening sets it back to In Progress (verdict Pending) and records your reason in the activity log.</p>
+                <form method="POST" action="{{ route('inspections.runs.reopen', [$inspection, $run]) }}">
+                    @csrf
+                    <textarea name="reason" rows="2" class="form-control mb-2 @error('reason') is-invalid @enderror" required minlength="5" maxlength="2000" placeholder="Why does this finished run need to change?">{{ old('reason') }}</textarea>
+                    @error('reason')<div class="invalid-feedback d-block mb-2">{{ $message }}</div>@enderror
+                    <button type="submit" class="btn btn-warning btn-sm">Reopen run</button>
+                </form>
+            </div>
+        </div>
+        @endcan
+        @endif
     </div>
 </div>
 
@@ -1714,10 +1733,10 @@ foreach ($visibleRunSections as $rs) {
 
         if (pending.length > 0) {
             const list = pending.map(n => '  • ' + n).join('\n');
-            const msg  = `${pending.length} section(s) are not yet complete:\n\n${list}\n\nFinish anyway?`;
+            const msg  = `${pending.length} section(s) are not yet complete:\n\n${list}\n\nMandatory sections must be complete (skippable ones complete or skipped) or the run will be saved but not finished. Continue?`;
             if (!confirm(msg)) return;
         } else {
-            if (!confirm('Mark this inspection run as finished? This cannot be undone.')) return;
+            if (!confirm('Mark this inspection run as finished? It becomes read-only; only a user allowed to reopen runs can change it afterwards.')) return;
         }
 
         document.getElementById('finish_run_flag').value = '1';

@@ -62,12 +62,9 @@
             </div>
             <div class="col-lg-3">
                 <label class="form-label">Overall Status</label>
-                <select name="overall_status" class="form-select @error('overall_status') is-invalid @enderror">
-                    @foreach(['Pending','Pass','Fail','N/A'] as $s)
-                        <option value="{{ $s }}" @selected(old('overall_status', $inspection->overall_status ?? 'Pending') === $s)>{{ $s }}</option>
-                    @endforeach
-                </select>
-                @error('overall_status')<div class="invalid-feedback">{{ $message }}</div>@enderror
+                {{-- Derived from the runs (docs/QC_RULES.md); not editable. --}}
+                <div class="form-control-plaintext fw-semibold">{{ $inspection->overall_status ?? 'Pending' }}</div>
+                <div class="form-text">Calculated from the runs when they are finished.</div>
             </div>
             <div class="col-12">
                 <label class="form-label">Remarks</label>

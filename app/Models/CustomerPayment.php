@@ -12,6 +12,7 @@ class CustomerPayment extends Model
 
     protected $fillable = [
         'customer_id',
+        'customer_invoice_id',
         'transaction_id',
         'payment_date',
         'invoice_reference',
@@ -29,6 +30,9 @@ class CustomerPayment extends Model
         'fc_gain_loss',
         'account_id',
         'remarks',
+        'voided_at',
+        'voided_by',
+        'void_reason',
     ];
 
     protected $casts = [
@@ -44,6 +48,7 @@ class CustomerPayment extends Model
         'remittance_charges' => 'decimal:2',
         'pkr_gain_loss' => 'decimal:2',
         'fc_gain_loss' => 'decimal:2',
+        'voided_at' => 'datetime',
     ];
 
     public function getActivitylogOptions(): LogOptions
@@ -67,5 +72,26 @@ class CustomerPayment extends Model
     public function account()
     {
         return $this->belongsTo(Account::class);
+    }
+
+    /** Voided records are kept for the audit trail but excluded from balances and totals (docs/FINANCE_RULES.md). */
+    public function scopeNotVoided($query)
+    {
+        return $query->whereNull($this->qualifyColumn('voided_at'));
+    }
+
+    public function invoice()
+    {
+        return $this->belongsTo(CustomerInvoice::class, 'customer_invoice_id');
+    }
+
+    public function voidedBy()
+    {
+        return $this->belongsTo(User::class, 'voided_by');
+    }
+
+    public function isVoided(): bool
+    {
+        return $this->voided_at !== null;
     }
 }

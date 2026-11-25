@@ -107,20 +107,16 @@
             </tr>
         </thead>
         <tbody>
-            @php $runningBalance = $openingBalance; @endphp
+            {{-- Direction and running balance come from LedgerService (docs/FINANCE_RULES.md) --}}
             <tr>
                 <td colspan="5" class="text-muted">Opening Balance</td>
-                <td class="text-right running-balance">{{ number_format($runningBalance, 2) }}</td>
+                <td class="text-right running-balance">{{ number_format($openingBalance, 2) }}</td>
             </tr>
             @forelse($transactions as $txn)
             @php
-                $isCredit = $txn->transaction_type === 'CustomerReceipt' || ($txn->transaction_type === 'JournalEntry' && $txn->debit_account_id == $account->id);
-                $isDebit  = !$isCredit;
-                if ($txn->transaction_type === 'JournalEntry') {
-                    $runningBalance += $txn->debit_account_id == $account->id ? (float)$txn->amount : -(float)$txn->amount;
-                } else {
-                    $runningBalance += $txn->transaction_type === 'CustomerReceipt' ? (float)$txn->amount : -(float)$txn->amount;
-                }
+                // Same column convention as the ledger pages: Debit = money in, Credit = money out.
+                $isDebit  = $txn->direction === 'in';
+                $isCredit = $txn->direction === 'out';
             @endphp
             <tr>
                 <td>{{ \Carbon\Carbon::parse($txn->transaction_date)->format('d M Y') }}</td>
@@ -137,7 +133,7 @@
                 <td class="text-right {{ $isCredit ? 'credit' : '' }}">
                     {{ $isCredit ? number_format($txn->amount, 2) : '—' }}
                 </td>
-                <td class="text-right running-balance">{{ number_format($runningBalance, 2) }}</td>
+                <td class="text-right running-balance">{{ number_format($txn->running_balance, 2) }}</td>
             </tr>
             @empty
             <tr><td colspan="6" class="no-data">No transactions in this period.</td></tr>

@@ -6,6 +6,7 @@ use Database\Factories\UserFactory;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
+use Illuminate\Support\Facades\DB;
 use Spatie\Activitylog\LogOptions;
 use Spatie\Activitylog\Traits\LogsActivity;
 use Spatie\Permission\Traits\HasRoles;
@@ -34,6 +35,16 @@ class User extends Authenticatable
             'password'          => 'hashed',
             'status'            => 'boolean',
         ];
+    }
+
+    protected static function booted(): void
+    {
+        // Deactivating an account ends every session it has (audit F-07).
+        static::updated(function (User $user) {
+            if ($user->wasChanged('status') && ! $user->status) {
+                DB::table('sessions')->where('user_id', $user->id)->delete();
+            }
+        });
     }
 
     public function getActivitylogOptions(): LogOptions

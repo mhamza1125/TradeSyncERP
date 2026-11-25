@@ -82,12 +82,13 @@ Never create a controller directly under `App\Http\Controllers\` unless it is a 
 
 ## 3. Financial Record Rules
 
-### 3.1 Double-Entry Integrity
+### 3.1 Transaction Integrity (cash book — see `docs/FINANCE_RULES.md`)
 
 - Every financial event (expense, salary payment, customer receipt, bank transfer) **must** create a `Transaction` record.
 - The child record (Expense, SalaryRun, CustomerPayment) stores `transaction_id` as a FK.
 - Never create a child financial record without its transaction.
 - `transaction_type` must match what is being recorded: `Expense` for expenses, `Salary` for salary runs, `CustomerReceipt` for payments, `JournalEntry` for transfers.
+- Balances only through `LedgerService`; never hard-delete finance records — void them (`FinanceVoidService`).
 
 ### 3.2 Currency Handling
 
@@ -114,14 +115,14 @@ Never create a controller directly under `App\Http\Controllers\` unless it is a 
 
 ### 4.2 AQL
 
-- All AQL calculations must go through `AqlCalculationService`. Never replicate the lookup tables elsewhere.
+- All AQL calculations must go through `AqlCalculationService`. Never replicate the lookup tables elsewhere — JS previews use `tableForJs()` through `public/assets/js/aql-plan.js`. AQL levels are canonical **string** keys; never use float keys or float equality. Rules: `docs/QC_RULES.md`.
 - Accepted AQL levels are fixed by the ISO standard: `0.065, 0.10, 0.15, 0.25, 0.40, 0.65, 1.0, 1.5, 2.5, 4.0, 6.5`.
 - Inspection levels: `I`, `II`, `III`, `S1`, `S2`, `S3`, `S4`.
 
 ### 4.3 Run Sections
 
 - `InspectionRunSection` has a unique constraint on `(inspection_run_id, inspection_section_id)`. Do not attempt to insert duplicates.
-- `status` transitions per section: `pending` → `complete` or `na`. Sections cannot go back to `pending` once completed.
+- `status` per section: `pending`, `complete`, `na`. While the run is open a section may go back to `pending`; `na` (skip) is allowed only for `skip_policy = skippable`; finishing needs mandatory sections `complete`. A finished run is read-only until reopened. See `docs/QC_RULES.md` §5–6.
 
 ---
 
@@ -170,7 +171,7 @@ Never create a controller directly under `App\Http\Controllers\` unless it is a 
 
 ## 7. Frontend Rules
 
-- Use **TailwindCSS** utility classes only — no custom CSS files.
+- The UI is the **Bootstrap 5** theme (Tailwind only in the Breeze auth views). Use the theme's classes — no new custom CSS files.
 - Use **Alpine.js** (`x-data`, `x-show`, `x-on`, `x-model`) for reactive UI. Do not add Vue or React.
 - AJAX calls use **Axios** (already configured globally via `resources/js/bootstrap.js`). Do not use `fetch()` raw.
 - CSRF: Axios automatically includes `X-XSRF-TOKEN` from the cookie. Do not manually attach CSRF headers.

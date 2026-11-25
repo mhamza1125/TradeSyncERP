@@ -55,7 +55,7 @@
                     <div class="col-md-2">
                         <select name="status" class="form-select">
                             <option value="">All Statuses</option>
-                            @foreach(['Pending','Pass','Fail'] as $s)
+                            @foreach(\App\Services\Inspection\InspectionVerdictService::OVERALL_STATUSES as $s)
                             <option value="{{ $s }}" @selected(request('status') == $s)>{{ $s }}</option>
                             @endforeach
                         </select>
@@ -91,7 +91,7 @@
                         </thead>
                         <tbody>
                             @forelse($inspections as $ins)
-                            @php $ic = ['Pass'=>'success','Fail'=>'danger','Pending'=>'warning','N/A'=>'secondary']; @endphp
+                            @php $ic = ['Pass'=>'success','Fail'=>'danger','Pending'=>'warning','N/A'=>'secondary','Conditional'=>'warning','Re-Inspection'=>'danger']; @endphp
                             <tr>
                                 <td>
                                     <a href="{{ route('inspections.show', $ins) }}" class="fw-bold text-primary">

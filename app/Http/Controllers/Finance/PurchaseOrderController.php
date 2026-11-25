@@ -229,8 +229,9 @@ class PurchaseOrderController extends Controller
     private function generatePoNumber(): string
     {
         $year = now()->year;
-        $lastId = PurchaseOrder::withTrashed()->max('id') ?? 0;
-        $nextSeq = str_pad($lastId + 1, 5, '0', STR_PAD_LEFT);
+        $next = app(\App\Services\NumberSequenceService::class)
+            ->next('purchase_order', fn () => (PurchaseOrder::withTrashed()->max('id') ?? 0) + 1);
+        $nextSeq = str_pad($next, 5, '0', STR_PAD_LEFT);
 
         return "PO-{$year}-{$nextSeq}";
     }

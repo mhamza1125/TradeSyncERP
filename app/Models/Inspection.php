@@ -49,4 +49,17 @@ class Inspection extends Model
     {
         return $this->hasMany(InspectionRun::class);
     }
+
+    /** Recompute overall_status from the runs (rules: InspectionVerdictService::rollUp, docs/QC_RULES.md). */
+    public function syncOverallStatus(): void
+    {
+        $status = \App\Services\Inspection\InspectionVerdictService::rollUp(
+            $this->runs()->get(['id', 'verdict', 'completed_at'])
+                ->map(fn ($r) => ['verdict' => $r->verdict, 'finished' => $r->completed_at !== null])
+        );
+
+        if ($this->overall_status !== $status) {
+            $this->update(['overall_status' => $status]);
+        }
+    }
 }

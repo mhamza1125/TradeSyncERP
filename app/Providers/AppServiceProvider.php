@@ -2,6 +2,8 @@
 
 namespace App\Providers;
 
+use App\Services\Pdf\PdfPageNumberService;
+use Dompdf\Dompdf;
 use Illuminate\Pagination\Paginator;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\View;
@@ -10,7 +12,11 @@ use Spatie\Activitylog\Models\Activity;
 
 class AppServiceProvider extends ServiceProvider
 {
-    public function register(): void {}
+    public function register(): void
+    {
+        // Every Dompdf instance gets the page-number callback (opt-in per template).
+        $this->app->extend('dompdf', fn (Dompdf $dompdf) => PdfPageNumberService::attach($dompdf));
+    }
 
     public function boot(): void
     {
@@ -20,8 +26,10 @@ class AppServiceProvider extends ServiceProvider
         DB::prohibitDestructiveCommands($this->app->isProduction());
 
         View::composer('partials.header', function ($view) {
-            $activities = Activity::latest()->limit(8)->get();
-            $recentCount = Activity::where('created_at', '>=', now()->subHours(24))->count();
+            // The activity feed is part of the audit log: only for users who may read it.
+            $canSee = (bool) auth()->user()?->can('activities.view');
+            $activities = $canSee ? Activity::latest()->limit(8)->get() : collect();
+            $recentCount = $canSee ? Activity::where('created_at', '>=', now()->subHours(24))->count() : 0;
             $view->with('headerActivities', $activities)
                  ->with('headerActivityCount', $recentCount);
         });

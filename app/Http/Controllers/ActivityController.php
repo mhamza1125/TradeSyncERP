@@ -7,6 +7,12 @@ use Spatie\Activitylog\Models\Activity;
 
 class ActivityController extends Controller
 {
+    public function __construct()
+    {
+        // The log holds old/new values of every audited record, finance included.
+        $this->middleware('permission:activities.view');
+    }
+
     public function index(Request $request)
     {
         $activities = Activity::with(['causer', 'subject'])

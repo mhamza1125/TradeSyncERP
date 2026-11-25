@@ -3,10 +3,15 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
+use App\Models\Concerns\GuardsFinishedRun;
+use Spatie\Activitylog\LogOptions;
+use Spatie\Activitylog\Traits\LogsActivity;
 use Illuminate\Support\Collection;
 
 class InspectionRunDefect extends Model
 {
+    use GuardsFinishedRun, LogsActivity;
+
     public const STATUSES = ['open', 'rectified', 'rejected'];
 
     public const DISPOSITION_CODES = ['MACDF', 'MACSO', 'MACDE'];
@@ -67,5 +72,18 @@ class InspectionRunDefect extends Model
         return $severities->intersect(['critical', 'major'])->isNotEmpty()
             ? 'Fail'
             : 'Conditional';
+    }
+
+    public function owningRun(): ?InspectionRun
+    {
+        return InspectionRun::find(InspectionRunSection::whereKey($this->inspection_run_section_id)->value('inspection_run_id'));
+    }
+
+    public function getActivitylogOptions(): LogOptions
+    {
+        return LogOptions::defaults()
+            ->logOnly(['inspection_run_section_id', 'defect_id', 'severity', 'qty', 'size', 'carton_no', 'status', 'disposition_code'])
+            ->logOnlyDirty()
+            ->dontSubmitEmptyLogs();
     }
 }

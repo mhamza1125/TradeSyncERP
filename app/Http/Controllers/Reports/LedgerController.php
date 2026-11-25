@@ -5,98 +5,46 @@ namespace App\Http\Controllers\Reports;
 use App\Http\Controllers\Controller;
 use App\Models\Account;
 use App\Models\Customer;
-use App\Models\Transaction;
+use App\Services\Finance\LedgerService;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Http\Request;
 
 class LedgerController extends Controller
 {
-    public function __construct()
+    public function __construct(private readonly LedgerService $ledger)
     {
         $this->middleware('permission:reports.view');
     }
 
     public function cash(Request $request)
     {
-        $accounts = Account::where('account_type', 'Cash')->where('status', true)->get();
-        $account = $accounts->firstWhere('id', $request->account_id) ?? $accounts->first();
-        $transactions = [];
-        $openingBalance = 0;
-
-        if ($account) {
-            $transactions = Transaction::with(['debitAccount', 'creditAccount', 'creator'])
-                ->where(fn ($q) => $q->where('debit_account_id', $account->id)->orWhere('credit_account_id', $account->id))
-                ->when($request->from_date, fn ($q) => $q->where('transaction_date', '>=', $request->from_date))
-                ->when($request->to_date, fn ($q) => $q->where('transaction_date', '<=', $request->to_date))
-                ->orderBy('transaction_date')
-                ->paginate(50)
-                ->withQueryString();
-
-            $openingBalance = (float) $account->opening_balance;
-            if ($transactions->currentPage() > 1) {
-                $offset = ($transactions->currentPage() - 1) * $transactions->perPage();
-                $openingBalance += Transaction::select('debit_account_id', 'credit_account_id', 'transaction_type', 'amount')
-                    ->where(fn ($q) => $q->where('debit_account_id', $account->id)->orWhere('credit_account_id', $account->id))
-                    ->when($request->from_date, fn ($q) => $q->where('transaction_date', '>=', $request->from_date))
-                    ->when($request->to_date, fn ($q) => $q->where('transaction_date', '<=', $request->to_date))
-                    ->orderBy('transaction_date')
-                    ->take($offset)
-                    ->get()
-                    ->reduce(function ($carry, $txn) use ($account) {
-                        if ($txn->transaction_type === 'JournalEntry') {
-                            return $carry + ($txn->debit_account_id == $account->id ? (float) $txn->amount : -(float) $txn->amount);
-                        }
-
-                        return $carry + ($txn->transaction_type === 'CustomerReceipt' ? (float) $txn->amount : -(float) $txn->amount);
-                    }, 0.0);
-            }
-        }
-
-        return view('reports.ledger.cash', compact('accounts', 'account', 'transactions', 'openingBalance'));
+        return $this->accountLedger($request, 'Cash', 'reports.ledger.cash');
     }
 
     public function bank(Request $request)
     {
-        $accounts = Account::where('account_type', 'Bank')->where('status', true)->get();
+        return $this->accountLedger($request, 'Bank', 'reports.ledger.bank');
+    }
+
+    /** Cash and bank pages: one rule, one opening, via LedgerService (docs/FINANCE_RULES.md). */
+    private function accountLedger(Request $request, string $type, string $view)
+    {
+        $accounts = Account::where('account_type', $type)->where('status', true)->get();
         $account = $accounts->firstWhere('id', $request->account_id) ?? $accounts->first();
-        $transactions = [];
-        $openingBalance = 0;
+        $statement = $account
+            ? $this->ledger->statement($account, $request->from_date, $request->to_date, 50, max(1, (int) $request->input('page', 1)))
+            : null;
 
-        if ($account) {
-            $transactions = Transaction::with(['debitAccount', 'creditAccount', 'creator'])
-                ->where(fn ($q) => $q->where('debit_account_id', $account->id)->orWhere('credit_account_id', $account->id))
-                ->when($request->from_date, fn ($q) => $q->where('transaction_date', '>=', $request->from_date))
-                ->when($request->to_date, fn ($q) => $q->where('transaction_date', '<=', $request->to_date))
-                ->orderBy('transaction_date')
-                ->paginate(50)
-                ->withQueryString();
+        $transactions = $statement?->paginator?->withQueryString() ?? collect();
+        $openingBalance = $statement?->opening ?? '0.00';
 
-            $openingBalance = (float) $account->opening_balance;
-            if ($transactions->currentPage() > 1) {
-                $offset = ($transactions->currentPage() - 1) * $transactions->perPage();
-                $openingBalance += Transaction::select('debit_account_id', 'credit_account_id', 'transaction_type', 'amount')
-                    ->where(fn ($q) => $q->where('debit_account_id', $account->id)->orWhere('credit_account_id', $account->id))
-                    ->when($request->from_date, fn ($q) => $q->where('transaction_date', '>=', $request->from_date))
-                    ->when($request->to_date, fn ($q) => $q->where('transaction_date', '<=', $request->to_date))
-                    ->orderBy('transaction_date')
-                    ->take($offset)
-                    ->get()
-                    ->reduce(function ($carry, $txn) use ($account) {
-                        if ($txn->transaction_type === 'JournalEntry') {
-                            return $carry + ($txn->debit_account_id == $account->id ? (float) $txn->amount : -(float) $txn->amount);
-                        }
-
-                        return $carry + ($txn->transaction_type === 'CustomerReceipt' ? (float) $txn->amount : -(float) $txn->amount);
-                    }, 0.0);
-            }
-        }
-
-        return view('reports.ledger.bank', compact('accounts', 'account', 'transactions', 'openingBalance'));
+        return view($view, compact('accounts', 'account', 'statement', 'transactions', 'openingBalance'));
     }
 
     public function customer(Request $request, Customer $customer)
     {
         $payments = $customer->payments()
+            ->notVoided()
             ->with('account')
             ->when($request->from_date, fn ($q) => $q->where('payment_date', '>=', $request->from_date))
             ->when($request->to_date, fn ($q) => $q->where('payment_date', '<=', $request->to_date))
@@ -112,8 +60,10 @@ class LedgerController extends Controller
         $accounts = Account::where('account_type', 'Cash')->where('status', true)->get();
         $account = $accounts->firstWhere('id', $request->account_id) ?? $accounts->first();
 
-        [$transactions, $openingBalance] = $this->fetchLedgerTransactions($request, $account);
-        $closingBalance = $this->computeClosingBalance($transactions, $account, $openingBalance);
+        $statement = $account ? $this->ledger->statement($account, $request->from_date, $request->to_date) : null;
+        $transactions = $statement?->rows ?? collect();
+        $openingBalance = $statement?->opening ?? '0.00';
+        $closingBalance = $statement?->closing ?? '0.00';
 
         $pdf = Pdf::loadView('exports.ledger-pdf', [
             'title' => 'Cash Ledger',
@@ -137,8 +87,10 @@ class LedgerController extends Controller
         $accounts = Account::where('account_type', 'Bank')->where('status', true)->get();
         $account = $accounts->firstWhere('id', $request->account_id) ?? $accounts->first();
 
-        [$transactions, $openingBalance] = $this->fetchLedgerTransactions($request, $account);
-        $closingBalance = $this->computeClosingBalance($transactions, $account, $openingBalance);
+        $statement = $account ? $this->ledger->statement($account, $request->from_date, $request->to_date) : null;
+        $transactions = $statement?->rows ?? collect();
+        $openingBalance = $statement?->opening ?? '0.00';
+        $closingBalance = $statement?->closing ?? '0.00';
 
         $pdf = Pdf::loadView('exports.ledger-pdf', [
             'title' => 'Bank Ledger',
@@ -160,6 +112,7 @@ class LedgerController extends Controller
     public function exportCustomer(Request $request, Customer $customer)
     {
         $transactions = $customer->payments()
+            ->notVoided()
             ->with('account')
             ->when($request->from_date, fn ($q) => $q->where('payment_date', '>=', $request->from_date))
             ->when($request->to_date, fn ($q) => $q->where('payment_date', '<=', $request->to_date))
@@ -181,36 +134,5 @@ class LedgerController extends Controller
             ->setOption('defaultFont', 'DejaVu Sans');
 
         return $pdf->stream("CustomerLedger-{$customer->customer_name}-".now()->format('Y-m-d').'.pdf');
-    }
-
-    private function fetchLedgerTransactions(Request $request, ?Account $account): array
-    {
-        if (! $account) {
-            return [collect(), 0];
-        }
-
-        $transactions = Transaction::with(['debitAccount', 'creditAccount', 'creator'])
-            ->where(fn ($q) => $q->where('debit_account_id', $account->id)->orWhere('credit_account_id', $account->id))
-            ->when($request->from_date, fn ($q) => $q->where('transaction_date', '>=', $request->from_date))
-            ->when($request->to_date, fn ($q) => $q->where('transaction_date', '<=', $request->to_date))
-            ->orderBy('transaction_date')
-            ->get();
-
-        return [$transactions, (float) $account->opening_balance];
-    }
-
-    private function computeClosingBalance($transactions, ?Account $account, float $opening): float
-    {
-        if (! $account) {
-            return 0.0;
-        }
-
-        return $transactions->reduce(function (float $carry, $txn) use ($account) {
-            if ($txn->transaction_type === 'JournalEntry') {
-                return $carry + ($txn->debit_account_id == $account->id ? (float) $txn->amount : -(float) $txn->amount);
-            }
-
-            return $carry + ($txn->transaction_type === 'CustomerReceipt' ? (float) $txn->amount : -(float) $txn->amount);
-        }, $opening);
     }
 }

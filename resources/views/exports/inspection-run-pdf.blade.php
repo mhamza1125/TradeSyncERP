@@ -580,18 +580,13 @@ $defectInfo = function ($defectId) use ($defects) {
 // fall back to grouping the one run we have so the template logic stays uniform).
 $runGroups = $runGroups ?? $runs->groupBy('sample_id');
 
-$coverVerdictClass = match($inspection->overall_status) {
-    'Pass'             => 'vb-pass',
-    'Fail'             => 'vb-fail',
-    'Conditional Pass' => 'vb-conditional',
-    default            => 'vb-pending',
-};
-
-$headerBadgeClass = match($inspection->overall_status) {
-    'Pass'             => 'badge-pass',
-    'Fail'             => 'badge-fail',
-    'Conditional Pass' => 'badge-pending',
-    default            => 'badge-pending',
+// One display map for every status (docs/QC_RULES.md); Conditional / Re-Inspection never show as PASS.
+$overallDisplay    = \App\Services\Inspection\InspectionVerdictService::display($inspection->overall_status);
+$coverVerdictClass = $overallDisplay['pdf'];
+$headerBadgeClass  = match($inspection->overall_status) {
+    'Pass'  => 'badge-pass',
+    'Fail'  => 'badge-fail',
+    default => 'badge-pending',
 };
 
 // Aggregate defect counts across all runs (severity is a snapshot on each
@@ -793,7 +788,7 @@ uasort($summaryRows, fn($a, $b) => $a['sortPriority'] <=> $b['sortPriority']);
             <td class="ph-right">
                 {{ $inspection->inspection_date?->format('d M Y') ?? '' }}
                 &nbsp;&bull;&nbsp;
-                <span class="badge {{ $headerBadgeClass }}">{{ strtoupper($inspection->overall_status ?? 'PENDING') }}</span>
+                <span class="badge {{ $headerBadgeClass }}">{{ $overallDisplay['label'] }}</span>
             </td>
         </tr>
     </table>
@@ -867,7 +862,7 @@ uasort($summaryRows, fn($a, $b) => $a['sortPriority'] <=> $b['sortPriority']);
                 <div class="info-panel-header">Overall Verdict</div>
                 <div class="info-panel-body">
                     <div class="verdict-badge-lg {{ $coverVerdictClass }}">
-                        {{ strtoupper($inspection->overall_status ?? 'PENDING') }}
+                        {{ $overallDisplay['label'] }}
                     </div>
                     <div style="font-size:6.5pt; font-weight:bold; text-transform:uppercase; letter-spacing:1px; color:#9E9E9E; margin-bottom:6px">Defect Summary</div>
                     <table class="defect-pill-row">
@@ -924,7 +919,7 @@ uasort($summaryRows, fn($a, $b) => $a['sortPriority'] <=> $b['sortPriority']);
                 if ($sRow['naCount']   > 0) $sParts[] = $sRow['naCount'].' N/A';
                 $sDetailStr = implode(', ', $sParts);
                 if (!empty($sDetailStr) && in_array($sBadge, ['badge-pass','badge-fail'])) {
-                    $sDetailStr .= ' &rarr; '.$sLabel;
+                    $sDetailStr .= ' → '.$sLabel;
                 }
             } else {
                 $sDetailStr = '';
@@ -933,7 +928,7 @@ uasort($summaryRows, fn($a, $b) => $a['sortPriority'] <=> $b['sortPriority']);
         <tr>
             <td class="st-idx">{{ $loop->iteration }}</td>
             <td class="st-section">{{ $sRowName }}</td>
-            <td class="st-detail">{!! $sDetailStr !!}</td>
+            <td class="st-detail">{{ $sDetailStr }}</td>
             <td class="st-status"><span class="badge {{ $sBadge }}">{{ $sLabel }}</span></td>
         </tr>
         @endforeach
@@ -960,10 +955,10 @@ uasort($summaryRows, fn($a, $b) => $a['sortPriority'] <=> $b['sortPriority']);
             @foreach($runs as $r)
             @php
                 $rvc = match($r->verdict) {
-                    'Pass'        => 'rb-pass',
-                    'Fail'        => 'rb-fail',
-                    'Conditional' => 'rb-na',
-                    default       => 'rb-def',
+                    'Pass'                         => 'rb-pass',
+                    'Fail'                         => 'rb-fail',
+                    'Conditional', 'Re-Inspection' => 'rb-na',
+                    default                        => 'rb-def',
                 };
             @endphp
             <tr>
@@ -997,8 +992,10 @@ uasort($summaryRows, fn($a, $b) => $a['sortPriority'] <=> $b['sortPriority']);
 @if($isFirstRunOfGroup)
     @php
         $styleGroup   = $runGroups->get($run->sample_id, collect([$run]));
-        $groupPassed  = $styleGroup->filter(fn($r) => $r->verdict === 'Pass')->count();
+        $groupPassed  = $styleGroup->filter(fn($r) => $r->completed_at && $r->verdict === 'Pass')->count();
         $groupTotal   = $styleGroup->count();
+        // Same roll-up as the cover, so the two can never disagree.
+        $groupStatus  = \App\Services\Inspection\InspectionVerdictService::rollUp($styleGroup->map(fn($r) => ['verdict' => $r->verdict, 'finished' => $r->completed_at !== null]));
     @endphp
     <div class="page-break"></div>
     <div class="style-group-header">
@@ -1007,7 +1004,7 @@ uasort($summaryRows, fn($a, $b) => $a['sortPriority'] <=> $b['sortPriority']);
             @if($run->sample?->product_name) &mdash; {{ $run->sample->product_name }} @endif
         </div>
         @if($groupTotal > 1)
-        <div class="sgh-rollup">{{ $groupPassed }} of {{ $groupTotal }} colors passed</div>
+        <div class="sgh-rollup">{{ $groupPassed }} of {{ $groupTotal }} colors passed &bull; {{ \App\Services\Inspection\InspectionVerdictService::display($groupStatus)['label'] }}</div>
         @endif
     </div>
 @else
@@ -1015,12 +1012,7 @@ uasort($summaryRows, fn($a, $b) => $a['sortPriority'] <=> $b['sortPriority']);
 @endif
 
 @php
-    $runVerdictClass = match($run->verdict) {
-        'Pass'        => 'vb-pass',
-        'Fail'        => 'vb-fail',
-        'Conditional' => 'vb-conditional',
-        default       => 'vb-pending',
-    };
+    $runVerdictClass = \App\Services\Inspection\InspectionVerdictService::display($run->verdict)['pdf'];
     $visibleSections = $run->runSections->filter(
         // Sections the inspector explicitly skipped ('na' status) are left out of the export
         // entirely — no header, table, checkpoints, images, or remarks for them.
@@ -1205,7 +1197,7 @@ uasort($summaryRows, fn($a, $b) => $a['sortPriority'] <=> $b['sortPriority']);
                     <td>{{ $wi['name'] ?? '' }}
                         @if(!empty($wi['description']))<div style="color:#9E9E9E; font-size:7.5pt">{{ $wi['description'] }}</div>@endif
                     </td>
-                    <td style="text-align:center"><span class="{{ $wCls }}">{!! $wRes !!}</span></td>
+                    <td style="text-align:center"><span class="{{ $wCls }}">{{ $wRes }}</span></td>
                 </tr>
                 @endforeach
             </tbody>
@@ -1306,11 +1298,20 @@ uasort($summaryRows, fn($a, $b) => $a['sortPriority'] <=> $b['sortPriority']);
                 </td>
             </tr>
         </table>
+        {{-- Sampling basis: the plan actually applied per severity (QC_RULES §1) --}}
+        <div class="section-note" style="margin-bottom:6px">
+            <strong>Sampling basis:</strong> {{ $aql->standard_ref ?? \App\Services\Inspection\AqlCalculationService::STANDARD_REF }};
+            normal inspection, general/special level {{ $aql->inspection_level ?? '—' }}; switching rules not applied.
+            @if($aql->sample_size && $aql->lot_size && $aql->sample_size >= $aql->lot_size) 100% inspection (sample equals lot). @endif
+            Found counts {{ $aql->counts_source === 'defect_rows' ? 'counted from the recorded defects' : 'entered by the inspector' }}.
+        </div>
         <table class="aql-table">
             <thead>
                 <tr>
                     <th style="text-align:left; width:22%">Defect Category</th>
                     <th>AQL Level</th>
+                    <th>Code</th>
+                    <th>Sample (n)</th>
                     <th>Accept (Ac)</th>
                     <th>Reject (Re)</th>
                     <th>Found</th>
@@ -1324,16 +1325,19 @@ uasort($summaryRows, fn($a, $b) => $a['sortPriority'] <=> $b['sortPriority']);
                     $ac       = $aql->{"ac_{$key}"};
                     $re       = $aql->{"re_{$key}"};
                     $found    = $aql->{"found_{$key}"} ?? 0;
-                    $rowRes   = ($ac !== null && $found > $ac) ? 'FAIL' : (($found > 0 || $ac !== null) ? 'PASS' : '—');
+                    // No Ac (no plan for this severity) can never print PASS (docs/QC_RULES.md).
+                    $rowRes   = $ac === null ? '—' : ($found > $ac ? 'FAIL' : 'PASS');
                     $rowCls   = $rowRes === 'FAIL' ? 'rb-fail' : ($rowRes === 'PASS' ? 'rb-pass' : '');
                 @endphp
                 <tr>
                     <td class="aql-cat">{{ $label }}</td>
-                    <td>{{ $aqlLevel !== null ? $aqlLevel.'%' : '—' }}</td>
+                    <td>{{ $aqlLevel === null ? '—' : ((float) $aqlLevel === -1.0 ? 'Not allowed' : $aqlLevel.'%') }}</td>
+                    <td>{{ $aql->{"code_letter_{$key}"} ?? '—' }}</td>
+                    <td>{{ $aql->{"sample_size_{$key}"} ?? '—' }}</td>
                     <td>{{ $ac ?? '—' }}</td>
                     <td>{{ $re ?? '—' }}</td>
                     <td style="font-weight:bold">{{ $found }}</td>
-                    <td><span class="{{ $rowCls }}">{!! $rowRes !!}</span></td>
+                    <td><span class="{{ $rowCls }}">{{ $rowRes }}</span></td>
                 </tr>
                 @endforeach
             </tbody>
@@ -1544,7 +1548,7 @@ uasort($summaryRows, fn($a, $b) => $a['sortPriority'] <=> $b['sortPriority']);
                 <tr>
                     <td style="text-align:center; color:#9E9E9E; font-size:8pt">{{ $tIdx+1 }}</td>
                     <td>{{ $taskDef['label'] ?? $tKey }}</td>
-                    <td style="text-align:center"><span class="{{ $tCls }}">{!! $tRes ?: '—' !!}</span></td>
+                    <td style="text-align:center"><span class="{{ $tCls }}">{{ $tRes ?: '—' }}</span></td>
                 </tr>
                 @endforeach
             </tbody>
@@ -1668,7 +1672,7 @@ uasort($summaryRows, fn($a, $b) => $a['sortPriority'] <=> $b['sortPriority']);
                 <tr>
                     <td style="text-align:center; color:#9E9E9E; font-size:8pt">{{ $vIdx+1 }}</td>
                     <td>{{ $vi['label'] ?? '' }}</td>
-                    <td style="text-align:center"><span class="{{ $viCls }}">{!! $viRes !!}</span></td>
+                    <td style="text-align:center"><span class="{{ $viCls }}">{{ $viRes }}</span></td>
                     <td style="color:#546E7A; font-size:8pt">{{ $vi['remarks'] ?? '' }}</td>
                 </tr>
                 @endforeach
@@ -1802,7 +1806,7 @@ uasort($summaryRows, fn($a, $b) => $a['sortPriority'] <=> $b['sortPriority']);
                     @if($showSize)<td>{{ $ai['size'] ?? '' }}</td>@endif
                     <td style="text-align:center">{{ $ai['qty_ordered'] ?? '—' }}</td>
                     <td style="text-align:center">{{ $ai['qty_inspected'] ?? '—' }}</td>
-                    <td style="text-align:center"><span class="{{ $aiCls }}">{!! $aiRes !!}</span></td>
+                    <td style="text-align:center"><span class="{{ $aiCls }}">{{ $aiRes }}</span></td>
                 </tr>
                 @endforeach
             </tbody>
@@ -1934,7 +1938,7 @@ uasort($summaryRows, fn($a, $b) => $a['sortPriority'] <=> $b['sortPriority']);
                 <tr>
                     <td style="text-align:center; color:#9E9E9E; font-size:8pt">{{ $fIdx+1 }}</td>
                     <td>{{ $fi['label'] ?? '' }}</td>
-                    <td style="text-align:center"><span class="{{ $fiCls }}">{!! $fiRes !!}</span></td>
+                    <td style="text-align:center"><span class="{{ $fiCls }}">{{ $fiRes }}</span></td>
                     <td style="color:#546E7A; font-size:8pt">{{ $fi['remarks'] ?? '' }}</td>
                 </tr>
                 @endforeach
@@ -2016,17 +2020,12 @@ uasort($summaryRows, fn($a, $b) => $a['sortPriority'] <=> $b['sortPriority']);
 
 {{-- ══════════════════════════════════════════ FINAL DECISION CARD ════════ --}}
 @php
-    $finalVerdictClass = match($inspection->overall_status) {
-        'Pass'             => 'vb-pass',
-        'Fail'             => 'vb-fail',
-        'Conditional Pass' => 'vb-conditional',
-        default            => 'vb-pending',
-    };
+    $finalVerdictClass = $overallDisplay['pdf'];
     $finalVerdictIcon = match($inspection->overall_status) {
-        'Pass'             => '✓  PASS',
-        'Fail'             => '✗  FAIL',
-        'Conditional Pass' => '~  CONDITIONAL PASS',
-        default            => 'PENDING',
+        'Pass'  => '✓  PASS',
+        'Fail'  => '✗  FAIL',
+        'Conditional', 'Re-Inspection' => '~  '.$overallDisplay['label'],
+        default => $overallDisplay['label'],
     };
 @endphp
 

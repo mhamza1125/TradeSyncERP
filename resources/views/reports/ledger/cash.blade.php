@@ -120,26 +120,19 @@
                                     </tr>
                                 </thead>
                                 <tbody>
-                                    @php $totalDr = 0; $totalCr = 0; $balance = $openingBalance; @endphp
+                                    {{-- Direction, amounts and running balance come from LedgerService (docs/FINANCE_RULES.md) --}}
+                                    @if($statement)
+                                    <tr class="table-light">
+                                        <td colspan="6" class="fw-semibold">Opening balance{{ request('from_date') ? ' on '.\Carbon\Carbon::parse(request('from_date'))->format('d M Y') : '' }}{{ $transactions instanceof \Illuminate\Pagination\LengthAwarePaginator && $transactions->currentPage() > 1 ? ' (brought forward)' : '' }}</td>
+                                        <td class="text-end fw-semibold">{{ number_format($statement->opening, 2) }}</td>
+                                        <td></td>
+                                    </tr>
+                                    @endif
                                     @forelse($transactions as $txn)
                                     @php
-                                        // JournalEntry (transfers) uses actual debit/credit IDs recorded correctly.
-                                        // All other types were recorded with the same account on both sides (data bug),
-                                        // so derive the column from transaction_type instead.
-                                        if ($txn->transaction_type === 'JournalEntry') {
-                                            $isDr = $txn->debit_account_id == $account->id && $txn->credit_account_id != $account->id;
-                                            $isCr = $txn->credit_account_id == $account->id && $txn->debit_account_id != $account->id;
-                                            $other = $isDr ? $txn->creditAccount : $txn->debitAccount;
-                                        } elseif ($txn->transaction_type === 'CustomerReceipt') {
-                                            $isDr = true; $isCr = false;
-                                            $other = null;
-                                        } else {
-                                            // Expense, Salary, VendorPayment — money going OUT
-                                            $isDr = false; $isCr = true;
-                                            $other = null;
-                                        }
-                                        if ($isDr) { $totalDr += $txn->amount; $balance += $txn->amount; }
-                                        if ($isCr) { $totalCr += $txn->amount; $balance -= $txn->amount; }
+                                        $isDr = $txn->direction === 'in';
+                                        $isCr = $txn->direction === 'out';
+                                        $other = $txn->counter_account;
                                     @endphp
                                     <tr>
                                         <td class="text-nowrap">{{ $txn->transaction_date->format('d M Y') }}</td>
@@ -165,8 +158,8 @@
                                         <td class="text-end fw-semibold {{ $isCr ? 'text-danger' : 'text-muted' }}">
                                             {{ $isCr ? number_format($txn->amount, 2) : '—' }}
                                         </td>
-                                        <td class="text-end fw-semibold {{ $balance >= 0 ? 'text-dark' : 'text-danger' }}">
-                                            {{ number_format($balance, 2) }}
+                                        <td class="text-end fw-semibold {{ bccomp($txn->running_balance, '0', 2) >= 0 ? 'text-dark' : 'text-danger' }}">
+                                            {{ number_format($txn->running_balance, 2) }}
                                         </td>
                                         <td class="text-muted small">{{ $txn->creator->name ?? '—' }}</td>
                                     </tr>
@@ -183,9 +176,9 @@
                                 <tfoot class="table-light fw-bold">
                                     <tr>
                                         <td colspan="4" class="text-end">Page Totals:</td>
-                                        <td class="text-end text-success">{{ number_format($totalDr, 2) }}</td>
-                                        <td class="text-end text-danger">{{ number_format($totalCr, 2) }}</td>
-                                        <td class="text-end {{ $balance >= 0 ? 'text-dark' : 'text-danger' }}">{{ number_format($balance, 2) }}</td>
+                                        <td class="text-end text-success">{{ number_format($statement->totalIn, 2) }}</td>
+                                        <td class="text-end text-danger">{{ number_format($statement->totalOut, 2) }}</td>
+                                        <td class="text-end {{ bccomp($statement->closing, '0', 2) >= 0 ? 'text-dark' : 'text-danger' }}">{{ number_format($statement->closing, 2) }}</td>
                                         <td></td>
                                     </tr>
                                 </tfoot>

@@ -2,6 +2,7 @@
 
 namespace Database\Seeders;
 
+use App\Services\Inspection\InspectionRunLockService;
 use App\Models\Attachment;
 use App\Models\Customer;
 use App\Models\Defect;
@@ -39,6 +40,12 @@ class InspectionExportTestSeeder extends Seeder
     private int $bannerIdx = 0;
 
     public function run(): void
+    {
+        // Fixtures are written as already-finished runs, which are otherwise read-only.
+        InspectionRunLockService::bypass(fn () => $this->seedFixtures());
+    }
+
+    private function seedFixtures(): void
     {
         $this->bannerPaths = $this->resolveBannerPaths();
 

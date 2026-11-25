@@ -207,7 +207,8 @@ class InspectionTypeSectionDefaultSeeder extends Seeder
                     $categoryId = $cat->id;
                 }
 
-                InspectionTypeSectionDefault::updateOrCreate(
+                // firstOrCreate: never overwrite mappings an admin has changed (re-seeding is safe).
+                InspectionTypeSectionDefault::firstOrCreate(
                     [
                         'inspection_type_id' => $type->id,
                         'inspection_section_id' => $section->id,

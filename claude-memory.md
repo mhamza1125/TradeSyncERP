@@ -15,7 +15,7 @@ This file is the persistent "project brain." It documents what the system is, wh
 | Inspection Engine | `Operations/Inspections` | Run structured QC inspections with AQL sampling |
 | Sample Movement | `Operations/Movements` | Track issuance and return of samples between parties |
 | Customer Orders | `Operations/CustomerOrders` | Purchase orders linked to customers |
-| Financial Accounting | `Finance/` | Double-entry transactions, expenses, transfers |
+| Financial Accounting | `Finance/` | Cash-book transactions per Cash/Bank account, expenses, transfers (`docs/FINANCE_RULES.md`) |
 | Customer Invoicing | `Finance/CustomerInvoices` | Invoices with line items and multi-currency support |
 | Customer Payments | `Finance/CustomerPayments` | Receipt tracking with FX gain/loss calculation |
 | Salary Processing | `Finance/Salary` | Monthly salary runs with allowances, deductions, loans |
@@ -99,25 +99,12 @@ routes/
    - `workmanship` — defect-by-defect recording
    - `container`, `verification`, `review`, `article_results`, `conclusion_section`, `general_info`, `checkpoint`, `production_stages` — structured JSON data
 6. **AQL Section**: `AqlCalculationService` computes code letter, sample size, and AC/RE numbers from lot size and inspection level. Found defects (critical/major/minor) are compared to thresholds to produce a verdict
-7. Run verdict recorded (`Pass`/`Fail`/`Pending`)
+7. Run verdict recorded (`Pending`/`Pass`/`Fail`/`Conditional`/`Re-Inspection`); the run then becomes read-only until reopened — rules in `docs/QC_RULES.md`
 8. **PDF Export**: `InspectionExportController::exportRun()` generates a DomPDF report using `resources/views/exports/inspection-run-pdf.blade.php`
 
-### 3.3 Double-Entry Accounting Flow
+### 3.3 Accounting Flow (cash book)
 
-Every financial event follows this pattern:
-
-```
-Action              Debit Account         Credit Account
-─────────────────────────────────────────────────────────
-Record Expense      Expense Head Acct      Cash/Bank Acct
-Pay Salary          Salary Expense Acct    Cash/Bank Acct
-Receive Payment     Cash/Bank Acct         Customer Acct
-Bank Transfer       Destination Acct       Source Acct
-```
-
-Implementation:
-1. Create `Transaction` (debit_account_id, credit_account_id, amount, transaction_type)
-2. Create child record (Expense / SalaryRun / CustomerPayment) with `transaction_id` FK
+Every financial event creates a `Transaction` and then its child record (Expense / SalaryRun / CustomerPayment, with `transaction_id`). Non-transfer transactions name the **same Cash/Bank account** as debit and credit; the direction comes from `transaction_type`. Transfers (`JournalEntry`) use from → credit and to → debit. Balances, voids, overdue and numbering rules: `docs/FINANCE_RULES.md`.
 
 ### 3.4 Customer Payment Flow (Multi-Currency)
 
@@ -161,7 +148,7 @@ Two systems coexist:
 | `Currency` | `currencies` | `is_default` bool; `exchange_rate` decimal:6 |
 | `Bank` | `banks` | Linked to Account |
 | `Account` | `accounts` | `account_type` enum: Cash/Bank; polymorphic attachments |
-| `Transaction` | `transactions` | Double-entry: debit + credit account FKs |
+| `Transaction` | `transactions` | Cash-book entry: debit/credit account FKs (same account except transfers); `voided_at` |
 | `Expense` | `expenses` | FK to transaction, account, expense_head |
 | `ExpenseHead` | `expense_heads` | Self-referencing parent_id; `isCategory()` / `isSubcategory()` |
 | `CustomerPayment` | `customer_payments` | Multi-currency with gain/loss fields |
@@ -202,7 +189,7 @@ Two systems coexist:
 | `Inspection` | `inspections` | Header; BelongsToMany employees, customer orders |
 | `InspectionRun` | `inspection_runs` | One run per sample; `hasSectionEnabled()`, `getSectionData()` |
 | `InspectionRunSection` | `inspection_run_sections` | `data` JSON varies by `section_type`; unique on (run_id, section_id) |
-| `InspectionRunAql` | `inspection_run_aql` | AQL thresholds + found counts + verdict; `calculateVerdict()` |
+| `InspectionRunAql` | `inspection_run_aql` | AQL thresholds + found counts + verdict (verdict rules only in `AqlCalculationService::verdict()`) |
 | `Defect` | `defects` | severity enum: critical/major/minor/functional |
 
 ### Customer Commerce
@@ -239,7 +226,8 @@ Two systems coexist:
 | `customer_invoices.status` | `Draft`, `Sent`, `Partial`, `Paid`, `Overdue`, `Cancelled` |
 | `salary_runs.status` | `Draft`, `Paid` |
 | `movements.status` / `sample_movements.status` | `Issued`, `Returned`, `Overdue` |
-| `inspections.overall_status` | `Pass`, `Fail`, `Pending` |
+| `inspections.overall_status` | `Pass`, `Fail`, `Pending`, `N/A`, `Conditional`, `Re-Inspection` (derived from runs) |
+| `inspection_runs.verdict` | `Pending`, `Pass`, `Fail`, `Conditional`, `Re-Inspection` |
 | `inspection_run_sections.status` | `pending`, `complete`, `na` |
 | `inspection_sections.section_type` | `images`, `workmanship`, `aql`, `checklist`, `container`, `verification`, `review`, `article_results`, `conclusion_section`, `general_info`, `checkpoint`, `production_stages` |
 | `employees.gender` | `Male`, `Female`, `Other` |
@@ -282,9 +270,10 @@ Implements ISO 2859-1 (ANSI/ASQ Z1.4) standard:
 
 - **Input**: lot size, inspection level (I, II, III, S1–S4), AQL thresholds for critical/major/minor
 - **Processing**: lot size → code letter → sample size → AC/RE numbers per AQL level
-- **Output**: `sample_size`, `code_letter`, acceptance numbers, rejection numbers, `verdict` (Pass/Fail)
-- Supported AQL levels: `0.065, 0.10, 0.15, 0.25, 0.40, 0.65, 1.0, 1.5, 2.5, 4.0, 6.5`
-- `tableForJs()` exports the lookup tables as JSON for the frontend AQL calculator tool
+- **Output**: `code_letter`, `sample_size` (units to inspect), per-severity `ac`/`re`/`sample_size`/`code_letter`, `full_inspection`; `verdict()` gives Pass/Fail/Pending
+- Supported AQL levels: `0.065, 0.10, 0.15, 0.25, 0.40, 0.65, 1.0, 1.5, 2.5, 4.0, 6.5` (all verified cell by cell, see `docs/AQL_SOURCES.md`)
+- `tableForJs()` exports resolved plans for the run AQL section and the AQL calculator tool (read via `public/assets/js/aql-plan.js`)
+- Rules: `docs/QC_RULES.md` §1–2. Read-only re-check of stored verdicts: `php artisan qc:aql-reevaluate`
 
 ---
 
@@ -293,7 +282,9 @@ Implements ISO 2859-1 (ANSI/ASQ Z1.4) standard:
 - Managed by Spatie Laravel Permission v6
 - `User` model uses `HasRoles` trait
 - Roles and permissions seeded by `RolesAndPermissionsSeeder`
-- Route-level enforcement via Spatie middleware (applied in route groups in `web.php`)
+- Enforcement via Spatie middleware declared in each controller's constructor (not in `web.php` route groups)
+- Admin-only by default: `activities.view` (audit log), `inspections.reopen` (reopen a finished run)
+- No self-registration: users are created by an Admin. Inactive users (`status = false`) cannot log in and are signed out
 - Initial admin user created by `AdminUserSeeder`
 
 ---
@@ -302,8 +293,8 @@ Implements ISO 2859-1 (ANSI/ASQ Z1.4) standard:
 
 - All files stored on the `public` disk: `storage/app/public/`
 - `php artisan storage:link` required for public access via `storage/` URL
-- `Attachment` model is polymorphic — it can attach to: `Sample`, `Customer`, `Employee`, `Account`, `Transaction`, `CustomerInvoice`, `InspectionRunSection`
-- `AttachmentController::store($type, $id)` handles upload; resolves model class from `$type` slug
+- `Attachment` model is polymorphic. Generic uploads (`AttachmentController`) reach: customers, suppliers, employees, transactions, samples, customer-invoices, customer-orders, movements, purchase-orders — each needs that type's `.edit` permission (transactions: `accounts.edit`, movements: `sample-movements.edit`). Run-section photos (`InspectionRunSection`) go only through `InspectionRunController`
+- Allowed file types (both upload paths): jpg, jpeg, png, gif, webp, pdf, doc, docx, xls, xlsx — never HTML/SVG
 - `Attachment::getUrlAttribute()` returns the public URL via `Storage::url($file_path)`
 - DomPDF exports use embedded images — absolute storage paths required in PDF templates
 
@@ -354,7 +345,7 @@ Models with `LogsActivity` trait: `User`, `Customer`, `Supplier`, `Employee`, `S
 ## 12. Frontend Stack
 
 - **Blade** templating with component system (`resources/views/components/`)
-- **TailwindCSS** for all styling — no custom CSS framework
+- **Bootstrap 5** admin theme for the app UI (Tailwind only in the Breeze auth views)
 - **Alpine.js** for reactive UI (modals, dropdowns, dynamic form rows)
 - **Vite** as the build tool; assets compiled to `public/build/`
 - **Axios** for AJAX calls (section saves, AQL calculations, file uploads)

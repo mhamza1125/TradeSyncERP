@@ -8,6 +8,7 @@ use App\Models\CustomerPayment;
 use App\Models\CustomerOrder;
 use App\Models\Expense;
 use App\Models\Inspection;
+use App\Models\Movement;
 use App\Models\Sample;
 use App\Models\SampleMovement;
 use App\Models\User;
@@ -34,30 +35,41 @@ class DashboardController extends Controller
         $pendingInspections = Inspection::where('overall_status', 'Pending')->count();
 
         // ── Movements ─────────────────────────────────────────────────────────
-        $overdueMovements = SampleMovement::where('status', 'Issued')
+        // Both systems: legacy sample_movements and the grouped movements in use today (audit F-16).
+        $overdue = fn ($q) => $q->whereIn('status', ['Issued', 'Overdue'])
             ->whereNotNull('expected_return_date')
             ->whereNull('actual_return_date')
             ->where('expected_return_date', '<', now()->toDateString())
             ->count();
+        $overdueMovements = $overdue(SampleMovement::query()) + $overdue(Movement::query());
 
-        // ── Invoices ───────────────────────────────────────────────────────────
-        $totalInvoiced      = CustomerInvoice::whereNotIn('status', ['Cancelled'])->sum('total_amount');
-        $totalReceivable    = CustomerInvoice::whereNotIn('status', ['Paid', 'Cancelled'])->sum('amount_due');
-        $overdueInvoices    = CustomerInvoice::where('status', 'Overdue')->count();
-        $invoicesThisMonth  = CustomerInvoice::whereMonth('invoice_date', now()->month)
-            ->whereYear('invoice_date', now()->year)
-            ->whereNotIn('status', ['Cancelled'])
-            ->count();
+        // ── Finance (only computed for users allowed to see it) ───────────────
+        $user = auth()->user();
+        $totalInvoiced = $totalReceivable = $overdueInvoices = $invoicesThisMonth = null;
+        $paymentsThisMonth = $expensesThisMonth = null;
 
-        // ── Payments received this month ───────────────────────────────────────
-        $paymentsThisMonth  = CustomerPayment::whereMonth('payment_date', now()->month)
-            ->whereYear('payment_date', now()->year)
-            ->sum('actual_pkr_received');
+        if ($user->can('customer-invoices.index')) {
+            // Per currency: invoices are in the customer's currency, never summed across (F-16).
+            $totalInvoiced = CustomerInvoice::totalsByCurrency('total_amount', ['Cancelled']);
+            $totalReceivable = CustomerInvoice::totalsByCurrency('amount_due', ['Paid', 'Cancelled']);
+            $overdueInvoices = CustomerInvoice::overdue()->count();
+            $invoicesThisMonth = CustomerInvoice::whereMonth('invoice_date', now()->month)
+                ->whereYear('invoice_date', now()->year)
+                ->whereNotIn('status', ['Cancelled'])
+                ->count();
+        }
 
-        // ── Expenses this month ────────────────────────────────────────────────
-        $expensesThisMonth = Expense::whereMonth('expense_date', now()->month)
-            ->whereYear('expense_date', now()->year)
-            ->sum('amount');
+        if ($user->can('customer-payments.index')) {
+            $paymentsThisMonth = CustomerPayment::notVoided()->whereMonth('payment_date', now()->month)
+                ->whereYear('payment_date', now()->year)
+                ->sum('actual_pkr_received');
+        }
+
+        if ($user->can('expenses.index')) {
+            $expensesThisMonth = Expense::notVoided()->whereMonth('expense_date', now()->month)
+                ->whereYear('expense_date', now()->year)
+                ->sum('amount');
+        }
 
         // ── Samples by status (for mini chart) ────────────────────────────────
         $samplesByStatus = Sample::select('status', DB::raw('count(*) as total'))
@@ -71,10 +83,9 @@ class DashboardController extends Controller
             ->get();
 
         // ── Recent activity ────────────────────────────────────────────────────
-        $recentActivity = Activity::with('causer')
-            ->latest()
-            ->limit(5)
-            ->get();
+        $recentActivity = $user->can('activities.view')
+            ? Activity::with('causer')->latest()->limit(5)->get()
+            : null;
 
         // ── Currently active users (session active within last 30 minutes) ────
         $activeCutoff = now()->subMinutes(30)->timestamp;

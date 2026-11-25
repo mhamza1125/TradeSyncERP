@@ -3,24 +3,31 @@
 namespace App\Http\Requests\Operations;
 
 use Illuminate\Foundation\Http\FormRequest;
-use Illuminate\Validation\Rule;
 
 class UpdateInspectionRequest extends FormRequest
 {
     public function authorize(): bool
     {
-        return $this->user()->can('inspections.edit');
+        return true; // permission:inspections.edit is enforced by controller middleware
     }
 
     public function rules(): array
     {
         return [
-            'inspection_type_id' => ['nullable', 'exists:inspection_types,id'],
-            'inspection_date'    => ['required', 'date'],
-            'inspector_ids'      => ['nullable', 'array'],
-            'inspector_ids.*'    => ['exists:employees,id'],
-            'overall_status'     => ['nullable', Rule::in(['Pass', 'Fail', 'Pending', 'N/A'])],
-            'remarks'            => ['nullable', 'string'],
+            'inspection_type_id' => ['required', 'exists:inspection_types,id'],
+            'inspection_date' => ['required', 'date'],
+            'customer_order_ids' => ['nullable', 'array'],
+            'customer_order_ids.*' => ['exists:customer_orders,id'],
+            'inspector_ids' => ['nullable', 'array'],
+            'inspector_ids.*' => ['exists:employees,id'],
+            // Derived from the runs (docs/QC_RULES.md), never typed in.
+            'overall_status' => ['prohibited'],
+            'remarks' => ['nullable', 'string'],
         ];
+    }
+
+    public function messages(): array
+    {
+        return ['overall_status.prohibited' => 'The overall status is calculated from the runs and cannot be set by hand.'];
     }
 }

@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Requests\StoreAttachmentRequest;
 use App\Models\Attachment;
 use App\Models\Customer;
 use App\Models\CustomerInvoice;
@@ -17,32 +18,45 @@ use Illuminate\Support\Facades\Storage;
 
 class AttachmentController extends Controller
 {
-    /** Supported polymorphic types and their model classes */
-    private array $morphMap = [
-        'customers' => Customer::class,
-        'suppliers' => Supplier::class,
-        'employees' => Employee::class,
-        'transactions' => Transaction::class,
-        'samples' => Sample::class,
-        'customer-invoices' => CustomerInvoice::class,
-        'customer-orders' => CustomerOrder::class,
-        'movements' => Movement::class,
-        'purchase-orders' => PurchaseOrder::class,
+    /**
+     * Route type => [parent model, permission needed to add/remove its files].
+     * Only these parents can be reached through this generic controller; run-section
+     * evidence photos are managed by InspectionRunController with its own checks.
+     */
+    private const TYPES = [
+        'customers' => [Customer::class, 'customers.edit'],
+        'suppliers' => [Supplier::class, 'suppliers.edit'],
+        'employees' => [Employee::class, 'employees.edit'],
+        'transactions' => [Transaction::class, 'accounts.edit'],
+        'samples' => [Sample::class, 'samples.edit'],
+        'customer-invoices' => [CustomerInvoice::class, 'customer-invoices.edit'],
+        'customer-orders' => [CustomerOrder::class, 'customer-orders.edit'],
+        'movements' => [Movement::class, 'sample-movements.edit'],
+        'purchase-orders' => [PurchaseOrder::class, 'purchase-orders.edit'],
     ];
 
-    public function store(Request $request, string $type, int $id)
+    public function __construct()
     {
-        abort_unless(array_key_exists($type, $this->morphMap), 404);
+        // Runs before the FormRequest, so an unauthorised user gets 403, not validation errors.
+        $this->middleware(function (Request $request, $next) {
+            if ($attachment = $request->route('attachment')) {
+                // The attachment's own parent decides the permission; anything that is not a
+                // generic parent type (e.g. inspection evidence) cannot be deleted here.
+                $parent = collect(self::TYPES)->first(fn ($t) => $t[0] === $attachment->attachable_type);
+                abort_unless($parent && $request->user()->can($parent[1]), 403);
+            } else {
+                $type = $request->route('type');
+                abort_unless(array_key_exists($type, self::TYPES), 404);
+                abort_unless($request->user()->can(self::TYPES[$type][1]), 403);
+            }
 
-        $modelClass = $this->morphMap[$type];
-        $entity = $modelClass::findOrFail($id);
+            return $next($request);
+        });
+    }
 
-        $request->validate([
-            'attachments' => ['required', 'array', 'min:1'],
-            'attachments.*' => ['required', 'file', 'max:20480'],
-            'attachment_titles' => ['required', 'array'],
-            'attachment_titles.*' => ['required', 'string', 'max:255'],
-        ]);
+    public function store(StoreAttachmentRequest $request, string $type, int $id)
+    {
+        $entity = self::TYPES[$type][0]::findOrFail($id);
 
         foreach ($request->file('attachments') as $index => $file) {
             $path = $file->store("{$type}/{$id}/attachments", 'public');
@@ -62,7 +76,7 @@ class AttachmentController extends Controller
 
     public function destroy(Attachment $attachment)
     {
-        Storage::disk('public')->delete($attachment->file_path);
+        $attachment->deleteFiles();
         $attachment->delete();
 
         return back()->with('success', 'Attachment removed.');

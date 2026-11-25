@@ -76,7 +76,7 @@ class PurchaseOrder extends Model
      */
     public function recalculatePaymentStatus(): void
     {
-        $paid = $this->expenses()->sum('amount');
+        $paid = $this->expenses()->notVoided()->sum('amount');
         $due = max(0, round($this->total_amount - $paid, 2));
 
         $status = self::STATUS_UNPAID;

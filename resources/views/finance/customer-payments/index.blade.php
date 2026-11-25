@@ -96,8 +96,9 @@
                                 </thead>
                                 <tbody>
                                     @forelse($payments as $payment)
-                                    <tr class="single-item">
-                                        <td>{{ \Carbon\Carbon::parse($payment->payment_date)->format('d M Y') }}</td>
+                                    <tr class="single-item {{ $payment->voided_at ? 'text-muted' : '' }}">
+                                        <td>{{ \Carbon\Carbon::parse($payment->payment_date)->format('d M Y') }}
+                                            @if($payment->voided_at)<span class="badge bg-soft-danger text-danger ms-1" title="{{ $payment->void_reason }}">Voided</span>@endif</td>
                                         <td>
                                             @if($payment->invoice_reference)
                                                 <a href="{{ route('customer-payments.show', $payment) }}" class="fw-semibold text-primary">
@@ -145,10 +146,11 @@
                                                         <li class="dropdown-divider"></li>
                                                         <li>
                                                             <form action="{{ route('customer-payments.destroy', $payment) }}" method="POST"
-                                                                  onsubmit="return confirm('Delete this payment?')">
+                                                                  onsubmit="var r = prompt('Reason for voiding (kept in the record and activity log):'); if (!r || !r.trim()) return false; this.querySelector('[name=void_reason]').value = r; return true;">
                                                                 @csrf @method('DELETE')
+                                <input type="hidden" name="void_reason" value="">
                                                                 <button class="dropdown-item text-danger" type="submit">
-                                                                    <i class="feather feather-trash-2 me-3"></i><span>Delete</span>
+                                                                    <i class="feather feather-trash-2 me-3"></i><span>Void</span>
                                                                 </button>
                                                             </form>
                                                         </li>

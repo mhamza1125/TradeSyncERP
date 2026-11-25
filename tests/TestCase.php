@@ -7,10 +7,16 @@ use RuntimeException;
 
 abstract class TestCase extends BaseTestCase
 {
+    /** The only database tests may ever touch. */
+    public const TEST_CONNECTION = 'mysql';
+
+    public const TEST_DATABASE = 'trade_test';
+
     /**
-     * Tests use RefreshDatabase (migrate:fresh). If config is cached on a server,
-     * phpunit.xml's sqlite override is ignored and tests would wipe the real
-     * database — so refuse to run against anything but in-memory sqlite.
+     * Tests use RefreshDatabase (migrate:fresh). If config is cached, phpunit.xml's
+     * overrides are ignored and tests would wipe whatever .env points at (e.g. trade_prod).
+     * So refuse to boot unless the connection is exactly mysql:trade_test. This runs
+     * before any test touches the database.
      */
     public function createApplication()
     {
@@ -19,12 +25,17 @@ abstract class TestCase extends BaseTestCase
         $connection = $app['config']->get('database.default');
         $database = $app['config']->get("database.connections.{$connection}.database");
 
-        if ($connection !== 'sqlite' || $database !== ':memory:') {
-            throw new RuntimeException(
-                "Refusing to run tests against [{$connection}:{$database}]. Run `php artisan config:clear` first."
-            );
-        }
+        static::assertSafeTestDatabase($connection, $database);
 
         return $app;
+    }
+
+    public static function assertSafeTestDatabase(?string $connection, ?string $database): void
+    {
+        if ($connection !== self::TEST_CONNECTION || $database !== self::TEST_DATABASE) {
+            throw new RuntimeException(
+                "Refusing to run tests against [{$connection}:{$database}]; only [".self::TEST_CONNECTION.':'.self::TEST_DATABASE.'] is allowed. Run `php artisan config:clear` first.'
+            );
+        }
     }
 }

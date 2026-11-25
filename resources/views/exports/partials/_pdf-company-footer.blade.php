@@ -22,6 +22,7 @@
         @endif
         @if($contactLine)
         <tr>
+            {{-- Raw on purpose: each value is e()-escaped above; only the &nbsp;|&nbsp; separator is markup. --}}
             <td class="pf-center pf-contact">{!! $contactLine !!}</td>
         </tr>
         @endif

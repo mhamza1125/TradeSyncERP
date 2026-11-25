@@ -3,6 +3,8 @@
 namespace App\Http\Controllers\Operations;
 
 use App\Http\Controllers\Controller;
+use App\Http\Requests\Operations\StoreInspectionRequest;
+use App\Http\Requests\Operations\UpdateInspectionRequest;
 use App\Models\CustomerOrder;
 use App\Models\Employee;
 use App\Models\Inspection;
@@ -45,24 +47,15 @@ class InspectionController extends Controller
         return view('operations.inspections.create', compact('employees', 'customerOrders', 'inspectionTypes'));
     }
 
-    public function store(Request $request)
+    public function store(StoreInspectionRequest $request)
     {
-        $request->validate([
-            'inspection_type_id'   => ['required', 'exists:inspection_types,id'],
-            'inspection_date'      => ['required', 'date'],
-            'overall_status'       => ['required', 'in:Pass,Fail,Pending'],
-            'customer_order_ids'   => ['array'],
-            'customer_order_ids.*' => ['exists:customer_orders,id'],
-            'inspector_ids'        => ['array'],
-            'remarks'              => ['nullable', 'string'],
-        ]);
 
         return DB::transaction(function () use ($request) {
             $inspection = Inspection::create([
                 'report_number'      => $this->generateReportNumber(),
                 'inspection_type_id' => $request->inspection_type_id,
                 'inspection_date'    => $request->inspection_date,
-                'overall_status'     => $request->overall_status ?? 'Pending',
+                'overall_status'     => 'Pending', // derived from runs from here on
                 'remarks'            => $request->remarks,
             ]);
 
@@ -106,23 +99,13 @@ class InspectionController extends Controller
         ));
     }
 
-    public function update(Request $request, Inspection $inspection)
+    public function update(UpdateInspectionRequest $request, Inspection $inspection)
     {
-        $request->validate([
-            'inspection_type_id'   => ['required', 'exists:inspection_types,id'],
-            'inspection_date'      => ['required', 'date'],
-            'overall_status'       => ['required', 'in:Pass,Fail,Pending'],
-            'customer_order_ids'   => ['array'],
-            'customer_order_ids.*' => ['exists:customer_orders,id'],
-            'inspector_ids'        => ['array'],
-            'remarks'              => ['nullable', 'string'],
-        ]);
 
         return DB::transaction(function () use ($request, $inspection) {
             $inspection->update([
                 'inspection_type_id' => $request->inspection_type_id,
                 'inspection_date'    => $request->inspection_date,
-                'overall_status'     => $request->overall_status,
                 'remarks'            => $request->remarks,
             ]);
 
@@ -136,6 +119,11 @@ class InspectionController extends Controller
 
     public function destroy(Inspection $inspection)
     {
+        // A finished run is an issued result; it can't disappear with its inspection (audit F-08).
+        if ($inspection->runs()->whereNotNull('completed_at')->exists()) {
+            return back()->with('error', 'This inspection has finished runs and cannot be deleted. Reopen and delete those runs first, or keep the inspection.');
+        }
+
         $inspection->delete();
 
         return redirect()->route('inspections.index')
@@ -162,7 +150,10 @@ class InspectionController extends Controller
     private function generateReportNumber(): string
     {
         $year = now()->year;
-        $seq  = str_pad((Inspection::max('id') ?? 0) + 1, 5, '0', STR_PAD_LEFT);
+        // Locked sequence (never reused, even after a delete); seeded from the old max(id)+1.
+        $next = app(\App\Services\NumberSequenceService::class)
+            ->next('inspection_report', fn () => (Inspection::max('id') ?? 0) + 1);
+        $seq  = str_pad($next, 5, '0', STR_PAD_LEFT);
         return "RPT-{$year}-{$seq}";
     }
 }

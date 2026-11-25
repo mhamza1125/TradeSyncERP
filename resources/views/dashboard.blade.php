@@ -54,6 +54,7 @@
             </div>
 
             {{-- Receivables --}}
+            @can('customer-invoices.index')
             <div class="col-xxl-3 col-md-6">
                 <div class="card stretch stretch-full">
                     <div class="card-body">
@@ -74,12 +75,14 @@
                             @endif
                         </div>
                         <div class="pt-4">
-                            <h2 class="fs-4 fw-bold text-dark mb-1">PKR {{ number_format($totalReceivable, 0) }}</h2>
+                            {{-- One line per currency: amounts in different currencies are never added (F-16) --}}
+                            @forelse($totalReceivable as $code => $amount)<div class="fs-4 fw-bold text-dark mb-1">{{ $code }} {{ number_format($amount, 0) }}</div>@empty<div class="fs-4 fw-bold text-dark mb-1">—</div>@endforelse
                             <div class="fs-12 text-muted">{{ $invoicesThisMonth }} invoices this month</div>
                         </div>
                     </div>
                 </div>
             </div>
+            @endcan
 
             {{-- Active Samples --}}
             <div class="col-xxl-3 col-md-6">
@@ -112,6 +115,7 @@
             </div>
 
             {{-- Expenses this month --}}
+            @can('expenses.index')
             <div class="col-xxl-3 col-md-6">
                 <div class="card stretch stretch-full">
                     <div class="card-body">
@@ -135,12 +139,14 @@
                     </div>
                 </div>
             </div>
+            @endcan
         </div>
 
         {{-- ── Row 2: Finance + Operations summary ─────────────────────────── --}}
         <div class="row mt-2">
 
             {{-- Finance summary panel --}}
+            @canany(['customer-invoices.index', 'customer-payments.index', 'expenses.index'])
             <div class="col-xl-4">
                 <div class="card stretch stretch-full">
                     <div class="card-header">
@@ -148,6 +154,7 @@
                         <span class="text-muted fs-12">This month</span>
                     </div>
                     <div class="card-body">
+                        @can('customer-payments.index')
                         <div class="d-flex align-items-center justify-content-between mb-4">
                             <div class="d-flex align-items-center gap-3">
                                 <div class="avatar-text rounded bg-soft-success text-success">
@@ -160,6 +167,8 @@
                             </div>
                             <div class="fw-bold text-success">{{ number_format($paymentsThisMonth, 0) }}</div>
                         </div>
+                        @endcan
+                        @can('customer-invoices.index')
                         <div class="d-flex align-items-center justify-content-between mb-4">
                             <div class="d-flex align-items-center gap-3">
                                 <div class="avatar-text rounded bg-soft-primary text-primary">
@@ -167,11 +176,13 @@
                                 </div>
                                 <div>
                                     <div class="fw-semibold text-dark">Total Invoiced</div>
-                                    <div class="fs-12 text-muted">All time (PKR)</div>
+                                    <div class="fs-12 text-muted">All time, per currency</div>
                                 </div>
                             </div>
-                            <div class="fw-bold text-dark">{{ number_format($totalInvoiced, 0) }}</div>
+                            <div class="text-end">@forelse($totalInvoiced as $code => $amount)<div class="fw-bold text-dark">{{ $code }} {{ number_format($amount, 0) }}</div>@empty<div class="fw-bold text-dark">—</div>@endforelse</div>
                         </div>
+                        @endcan
+                        @can('customer-invoices.index')
                         <div class="d-flex align-items-center justify-content-between mb-4">
                             <div class="d-flex align-items-center gap-3">
                                 <div class="avatar-text rounded bg-soft-warning text-warning">
@@ -179,11 +190,13 @@
                                 </div>
                                 <div>
                                     <div class="fw-semibold text-dark">Outstanding</div>
-                                    <div class="fs-12 text-muted">Unpaid invoices (PKR)</div>
+                                    <div class="fs-12 text-muted">Unpaid invoices, per currency</div>
                                 </div>
                             </div>
-                            <div class="fw-bold text-warning">{{ number_format($totalReceivable, 0) }}</div>
+                            <div class="text-end">@forelse($totalReceivable as $code => $amount)<div class="fw-bold text-warning">{{ $code }} {{ number_format($amount, 0) }}</div>@empty<div class="fw-bold text-warning">—</div>@endforelse</div>
                         </div>
+                        @endcan
+                        @can('expenses.index')
                         <div class="d-flex align-items-center justify-content-between">
                             <div class="d-flex align-items-center gap-3">
                                 <div class="avatar-text rounded bg-soft-danger text-danger">
@@ -196,9 +209,11 @@
                             </div>
                             <div class="fw-bold text-danger">{{ number_format($expensesThisMonth, 0) }}</div>
                         </div>
+                        @endcan
                     </div>
                 </div>
             </div>
+            @endcanany
 
             {{-- Operations alerts panel --}}
             <div class="col-xl-4">
@@ -454,6 +469,7 @@
             @endcan
 
             {{-- Recent Activity --}}
+            @can('activities.view')
             <div class="{{ auth()->user()->can('customer-orders.index') ? 'col-xl-6' : 'col-xl-12' }}">
                 <div class="card stretch stretch-full">
                     <div class="card-header d-flex justify-content-between align-items-center">
@@ -496,6 +512,7 @@
                     </div>
                 </div>
             </div>
+            @endcan
         </div>
     </div>
 </div>

@@ -32,15 +32,18 @@
                         <i class="feather-edit me-2"></i>Edit
                     </a>
                     @endcan
+                    @if(!$customerPayment->voided_at)
                     @can('customer-payments.delete')
                     <form action="{{ route('customer-payments.destroy', $customerPayment) }}" method="POST"
-                          onsubmit="return confirm('Delete this payment record?')">
+                          onsubmit="var r = prompt('Reason for voiding (kept in the record and activity log):'); if (!r || !r.trim()) return false; this.querySelector('[name=void_reason]').value = r; return true;">
                         @csrf @method('DELETE')
+                                <input type="hidden" name="void_reason" value="">
                         <button class="btn btn-light-brand" type="submit">
-                            <i class="feather-trash-2 me-2"></i>Delete
+                            <i class="feather-trash-2 me-2"></i>Void
                         </button>
                     </form>
                     @endcan
+                    @endif
                 </div>
             </div>
         </div>
@@ -48,6 +51,12 @@
 
     <div class="main-content container-lg">
         @include('partials.flash-messages')
+        @if($customerPayment->voided_at)
+        <div class="alert alert-danger">
+            <strong>Voided</strong> on {{ $customerPayment->voided_at->format('d M Y H:i') }} by {{ $customerPayment->voidedBy?->name ?? 'unknown' }}: {{ $customerPayment->void_reason }}.
+            This payment and its transaction no longer count in balances or totals.
+        </div>
+        @endif
 
         <div class="row">
             <div class="col-lg-12">
@@ -76,7 +85,7 @@
                                 <div class="lh-lg pt-3 pt-sm-0">
                                     <div><span class="fw-bold text-dark">Payment Date:</span> <span class="text-muted">{{ \Carbon\Carbon::parse($customerPayment->payment_date)->format('d M Y') }}</span></div>
                                     @if($customerPayment->invoice_reference)
-                                    <div><span class="fw-bold text-dark">Invoice Ref:</span> <span class="text-primary">{{ $customerPayment->invoice_reference }}</span></div>
+                                    <div><span class="fw-bold text-dark">Invoice Ref:</span> <span class="text-primary">{{ $customerPayment->invoice_reference }}</span>@unless($customerPayment->customer_invoice_id) <span class="badge bg-soft-warning text-warning" title="Recorded before invoices were linked by id; matched by text only.">not linked</span>@endunless</div>
                                     @endif
                                     <div><span class="fw-bold text-dark">Account:</span> <span class="text-muted">{{ optional($customerPayment->account)->account_name }}</span></div>
                                 </div>

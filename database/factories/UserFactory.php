@@ -28,6 +28,7 @@ class UserFactory extends Factory
             'name' => fake()->name(),
             'email' => fake()->unique()->safeEmail(),
             'email_verified_at' => now(),
+            'status' => true, // same as the column default; makes the in-memory model match the row
             'password' => static::$password ??= Hash::make('password'),
             'remember_token' => Str::random(10),
         ];

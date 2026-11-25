@@ -21,11 +21,15 @@ class Transaction extends Model
         'remarks',
         'attachment',
         'created_by',
+        'voided_at',
+        'voided_by',
+        'void_reason',
     ];
 
     protected $casts = [
         'transaction_date' => 'date',
         'amount'           => 'decimal:2',
+        'voided_at' => 'datetime',
     ];
 
     public function getActivitylogOptions(): LogOptions
@@ -69,5 +73,21 @@ class Transaction extends Model
     public function attachments()
     {
         return $this->morphMany(Attachment::class, 'attachable');
+    }
+
+    /** Voided records are kept for the audit trail but excluded from balances and totals (docs/FINANCE_RULES.md). */
+    public function scopeNotVoided($query)
+    {
+        return $query->whereNull($this->qualifyColumn('voided_at'));
+    }
+
+    public function voidedBy()
+    {
+        return $this->belongsTo(User::class, 'voided_by');
+    }
+
+    public function isVoided(): bool
+    {
+        return $this->voided_at !== null;
     }
 }

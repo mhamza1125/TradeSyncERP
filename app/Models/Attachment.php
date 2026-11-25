@@ -13,6 +13,7 @@ class Attachment extends Model
         'title',
         'file_name',
         'file_path',
+        'original_file_path',
         'mime_type',
         'file_size',
         'attachment_type',
@@ -34,6 +35,12 @@ class Attachment extends Model
 
             $attachment->sort_order = is_null($next) ? 0 : $next + 1;
         });
+    }
+
+    /** Delete the stored file and, if the image was edited, the kept original. */
+    public function deleteFiles(): void
+    {
+        \Illuminate\Support\Facades\Storage::disk('public')->delete(array_filter([$this->file_path, $this->original_file_path]));
     }
 
     public function attachable()

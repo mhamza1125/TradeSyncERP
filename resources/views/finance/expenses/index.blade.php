@@ -101,8 +101,9 @@
                                 </thead>
                                 <tbody>
                                     @forelse($expenses as $expense)
-                                    <tr class="single-item">
-                                        <td>{{ \Carbon\Carbon::parse($expense->expense_date)->format('d M Y') }}</td>
+                                    <tr class="single-item {{ $expense->voided_at ? 'text-muted' : '' }}">
+                                        <td>{{ \Carbon\Carbon::parse($expense->expense_date)->format('d M Y') }}
+                                            @if($expense->voided_at)<span class="badge bg-soft-danger text-danger ms-1" title="{{ $expense->void_reason }}">Voided</span>@endif</td>
                                         <td>
                                             <span class="badge bg-soft-primary text-primary">
                                                 {{ $expense->expenseHead?->expense_name ?? '—' }}
@@ -126,10 +127,11 @@
                                                     <ul class="dropdown-menu">
                                                         <li>
                                                             <form action="{{ route('expenses.destroy', $expense) }}" method="POST"
-                                                                  onsubmit="return confirm('Delete this expense?')">
+                                                                  onsubmit="var r = prompt('Reason for voiding (kept in the record and activity log):'); if (!r || !r.trim()) return false; this.querySelector('[name=void_reason]').value = r; return true;">
                                                                 @csrf @method('DELETE')
+                                <input type="hidden" name="void_reason" value="">
                                                                 <button class="dropdown-item text-danger" type="submit">
-                                                                    <i class="feather feather-trash-2 me-3"></i><span>Delete</span>
+                                                                    <i class="feather feather-trash-2 me-3"></i><span>Void</span>
                                                                 </button>
                                                             </form>
                                                         </li>

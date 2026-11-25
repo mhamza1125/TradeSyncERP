@@ -3,9 +3,14 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
+use App\Models\Concerns\GuardsFinishedRun;
+use Spatie\Activitylog\LogOptions;
+use Spatie\Activitylog\Traits\LogsActivity;
 
 class InspectionRunAql extends Model
 {
+    use GuardsFinishedRun, LogsActivity;
+
     protected $table = 'inspection_run_aql';
 
     protected $fillable = [
@@ -17,11 +22,18 @@ class InspectionRunAql extends Model
         'ac_minor',    're_minor',
         'found_critical', 'found_major', 'found_minor',
         'verdict', 'variations',
+        'sample_size_critical', 'code_letter_critical',
+        'sample_size_major', 'code_letter_major',
+        'sample_size_minor', 'code_letter_minor',
+        'standard_ref', 'counts_source',
     ];
 
     protected $casts = [
         'lot_size' => 'integer',
         'sample_size' => 'integer',
+        'sample_size_critical' => 'integer',
+        'sample_size_major' => 'integer',
+        'sample_size_minor' => 'integer',
         'aql_critical' => 'float',
         'aql_major' => 'float',
         'aql_minor' => 'float',
@@ -42,17 +54,24 @@ class InspectionRunAql extends Model
             ->orderBy('sort_order');
     }
 
-    public function calculateVerdict(): string
+    // Verdict rules live only in AqlCalculationService::verdict() (docs/QC_RULES.md).
+
+    public function owningRun(): ?InspectionRun
     {
-        $fail =
-            ($this->ac_critical !== null && $this->found_critical > $this->ac_critical) ||
-            ($this->ac_major !== null && $this->found_major > $this->ac_major) ||
-            ($this->ac_minor !== null && $this->found_minor > $this->ac_minor);
+        return InspectionRun::find($this->inspection_run_id);
+    }
 
-        if ($this->found_critical === 0 && $this->found_major === 0 && $this->found_minor === 0) {
-            return 'Pending';
-        }
-
-        return $fail ? 'Fail' : 'Pass';
+    /** Plan, counts and verdict; not the variations JSON. */
+    public function getActivitylogOptions(): LogOptions
+    {
+        return LogOptions::defaults()
+            ->logOnly([
+                'inspection_run_id', 'lot_size', 'inspection_level', 'code_letter', 'sample_size',
+                'aql_critical', 'aql_major', 'aql_minor', 'ac_critical', 're_critical', 'ac_major', 're_major',
+                'ac_minor', 're_minor', 'found_critical', 'found_major', 'found_minor', 'verdict',
+                'sample_size_critical', 'sample_size_major', 'sample_size_minor', 'standard_ref', 'counts_source',
+            ])
+            ->logOnlyDirty()
+            ->dontSubmitEmptyLogs();
     }
 }

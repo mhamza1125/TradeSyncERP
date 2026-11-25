@@ -3,6 +3,8 @@
 namespace App\Http\Controllers\Finance;
 
 use App\Http\Controllers\Controller;
+use App\Http\Requests\Finance\VoidFinanceRecordRequest;
+use App\Services\Finance\FinanceVoidService;
 use App\Http\Requests\Finance\StoreCustomerPaymentRequest;
 use App\Http\Requests\Finance\UpdateCustomerPaymentRequest;
 use App\Models\Account;
@@ -68,6 +70,7 @@ class CustomerPaymentController extends Controller
             $data['fc_gain_loss'] = round($data['invoiced_amount_fc'] - $data['received_fc'], 2);
             $data['deduction_fc'] = round($data['invoiced_amount_fc'] - $data['received_fc'], 2);
             $data['account_id'] = $data['debit_account_id'];
+            $data['customer_invoice_id'] = $this->linkedInvoiceId($data);
 
             $transaction = Transaction::create([
                 'transaction_date' => $data['payment_date'],
@@ -107,6 +110,10 @@ class CustomerPaymentController extends Controller
 
     public function edit(CustomerPayment $customerPayment)
     {
+        if ($customerPayment->isVoided()) {
+            return redirect()->route('customer-payments.show', $customerPayment)->with('error', 'A voided payment cannot be edited.');
+        }
+
         $customerPayment->load(['customer', 'account', 'transaction']);
         $customers = Customer::with('currency')->where('status', true)->orderBy('customer_name')->get();
         $accounts = Account::where('status', true)->whereIn('account_type', ['Cash', 'Bank'])->get();
@@ -116,6 +123,10 @@ class CustomerPaymentController extends Controller
 
     public function update(UpdateCustomerPaymentRequest $request, CustomerPayment $customerPayment)
     {
+        if ($customerPayment->isVoided()) {
+            return redirect()->route('customer-payments.show', $customerPayment)->with('error', 'A voided payment cannot be edited.');
+        }
+
         return DB::transaction(function () use ($request, $customerPayment) {
             $data = $request->validated();
 
@@ -130,6 +141,7 @@ class CustomerPaymentController extends Controller
             $data['deduction_fc'] = round($data['invoiced_amount_fc'] - $data['received_fc'], 2);
             $data['account_id'] = $data['debit_account_id'];
             unset($data['debit_account_id']);
+            $data['customer_invoice_id'] = $this->linkedInvoiceId($data);
 
             $oldInvoiceRef = $customerPayment->invoice_reference;
             $customerPayment->update($data);
@@ -190,17 +202,33 @@ class CustomerPaymentController extends Controller
         return $pdf->stream("PaymentReceipt-{$customerPayment->id}.pdf");
     }
 
-    public function destroy(CustomerPayment $customerPayment)
+    /** Payments are voided, never deleted (audit F-10): the record and its transaction are kept. */
+    public function destroy(VoidFinanceRecordRequest $request, CustomerPayment $customerPayment, FinanceVoidService $voids)
     {
-        $invoiceRef = $customerPayment->invoice_reference;
-        $customerPayment->delete();
-
-        CustomerInvoiceController::syncInvoiceStatus($invoiceRef);
-
-        if (request()->wantsJson()) {
-            return response()->json(['success' => true]);
+        if ($customerPayment->isVoided()) {
+            return $request->wantsJson()
+                ? response()->json(['success' => false, 'message' => 'This payment is already voided.', 'errors' => []], 422)
+                : back()->with('error', 'This payment is already voided.');
         }
 
-        return redirect()->route('customer-payments.index')->with('success', 'Payment deleted.');
+        $voids->voidPayment($customerPayment, $request->validated('void_reason'), $request->user());
+
+        if ($request->wantsJson()) {
+            return response()->json(['success' => true, 'message' => 'Payment voided.', 'data' => []]);
+        }
+
+        return redirect()->route('customer-payments.index')->with('success', 'Payment voided. Its invoice has been recalculated.');
+    }
+
+    /** The invoice this payment settles, by number within the customer (null when none / legacy text). */
+    private function linkedInvoiceId(array $data): ?int
+    {
+        if (blank($data['invoice_reference'] ?? null)) {
+            return null;
+        }
+
+        return CustomerInvoice::where('invoice_number', $data['invoice_reference'])
+            ->where('customer_id', $data['customer_id'])
+            ->value('id');
     }
 }

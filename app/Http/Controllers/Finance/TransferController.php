@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\Finance\StoreTransferRequest;
 use App\Models\Account;
 use App\Models\Transaction;
+use App\Services\Finance\LedgerService;
 use Illuminate\Support\Facades\DB;
 
 class TransferController extends Controller
@@ -21,19 +22,18 @@ class TransferController extends Controller
         return view('finance.transfers.create', compact('accounts'));
     }
 
-    public function store(StoreTransferRequest $request)
+    public function store(StoreTransferRequest $request, LedgerService $ledger)
     {
-        return DB::transaction(function () use ($request) {
+        return DB::transaction(function () use ($request, $ledger) {
             $data = $request->validated();
 
             $fromAccount = Account::findOrFail($data['from_account_id']);
 
-            // Optional: check sufficient balance
-            $currentBalance = (float) $fromAccount->opening_balance
-                + Transaction::where('debit_account_id', $fromAccount->id)->sum('amount')
-                - Transaction::where('credit_account_id', $fromAccount->id)->sum('amount');
+            // Same balance rule as the ledger (LedgerService), not raw debit − credit sums:
+            // non-transfer rows name the account on both sides and would cancel out (audit FN-1).
+            $currentBalance = $ledger->balanceAt($fromAccount);
 
-            if ($currentBalance < (float) $data['amount']) {
+            if (bccomp($currentBalance, bcadd((string) $data['amount'], '0', 2), 2) < 0) {
                 return back()
                     ->withInput()
                     ->withErrors(['amount' => 'Insufficient balance in source account. Available: ' . number_format($currentBalance, 2)]);

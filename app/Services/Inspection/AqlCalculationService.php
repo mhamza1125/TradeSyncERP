@@ -3,34 +3,65 @@
 namespace App\Services\Inspection;
 
 /**
- * ISO 2859-1 AQL sampling plan calculator.
+ * AQL sampling plans: ISO 2859-1 / ANSI-ASQ Z1.4 / MIL-STD-105, single sampling, normal inspection.
  *
- * Supports Normal Inspection Levels I, II, III and Special Levels S1–S4.
- * AQL levels supported: 0.065, 0.10, 0.15, 0.25, 0.40, 0.65, 1.0, 1.5, 2.5, 4.0, 6.5
+ * THE single source of truth for AQL numbers in this app. The JS previews read
+ * tableForJs(); nothing else may hold a copy of these tables.
+ *
+ * Tables I and II-A are transcribed as printed in MIL-STD-105D and cross-checked cell by
+ * cell against an independent transcription (see docs/AQL_SOURCES.md).
+ * VERIFY AGAINST THE PURCHASED STANDARD before relying on them contractually.
+ *
+ * Rules (docs/QC_RULES.md):
+ *  - AQL levels are matched as canonical strings ('0.065', '2.5', ...) — never float keys or float equality.
+ *  - An arrow cell uses the first plan below/above the arrow, INCLUDING that plan's sample size.
+ *  - If the sample size equals or exceeds the lot size, inspect 100% (sample size = lot size).
  */
 class AqlCalculationService
 {
-    // Lot-size ranges → code letters per inspection level
-    // Format: [min, max, level_I, level_II, level_III, S1, S2, S3, S4]
-    private const LOT_SIZE_TABLE = [
-        [2,          8,          'A', 'A', 'B', 'A', 'A', 'A', 'A'],
-        [9,          15,         'A', 'B', 'C', 'A', 'A', 'A', 'A'],
-        [16,         25,         'B', 'C', 'D', 'A', 'A', 'B', 'B'],
-        [26,         50,         'C', 'D', 'E', 'A', 'B', 'B', 'C'],
-        [51,         90,         'C', 'E', 'F', 'B', 'B', 'C', 'C'],
-        [91,         150,        'D', 'F', 'G', 'B', 'B', 'C', 'D'],
-        [151,        280,        'E', 'G', 'H', 'B', 'C', 'D', 'E'],
-        [281,        500,        'F', 'H', 'J', 'B', 'C', 'D', 'E'],
-        [501,        1200,       'G', 'J', 'K', 'C', 'C', 'E', 'F'],
-        [1201,       3200,       'H', 'K', 'L', 'C', 'D', 'E', 'G'],
-        [3201,       10000,      'J', 'L', 'M', 'C', 'D', 'F', 'G'],
-        [10001,      35000,      'K', 'M', 'N', 'C', 'D', 'F', 'H'],
-        [35001,      150000,     'L', 'N', 'P', 'D', 'E', 'G', 'J'],
-        [150001,     500000,     'M', 'P', 'Q', 'D', 'E', 'G', 'J'],
-        [500001,     PHP_INT_MAX, 'N', 'Q', 'R', 'D', 'E', 'H', 'K'],
+    /**
+     * The basis printed on reports. The tables were verified against MIL-STD-105D and a Z1.4
+     * transcription (docs/AQL_SOURCES.md); they have NOT yet been compared with ISO 2859-1:2026,
+     * so the report must not claim the 2026 edition (docs/QC_STANDARDS_REFERENCE.md §1.1).
+     */
+    public const STANDARD_REF = 'ISO 2859-1:1999 / ANSI/ASQ Z1.4-2003 (R2018), single sampling';
+
+    /** Supported AQL levels, as canonical string keys. */
+    public const AQL_LEVELS = ['0.065', '0.10', '0.15', '0.25', '0.40', '0.65', '1.0', '1.5', '2.5', '4.0', '6.5'];
+
+    public const INSPECTION_LEVELS = ['I', 'II', 'III', 'S1', 'S2', 'S3', 'S4'];
+
+    /** AQL key => value in thousandths, so matching is integer comparison. */
+    private const AQL_THOUSANDTHS = [
+        '0.065' => 65, '0.10' => 100, '0.15' => 150, '0.25' => 250, '0.40' => 400, '0.65' => 650,
+        '1.0' => 1000, '1.5' => 1500, '2.5' => 2500, '4.0' => 4000, '6.5' => 6500,
     ];
 
-    // Code letter → sample size
+    /**
+     * Table I — sample size code letters.
+     * [min lot, max lot (null = and over), S1, S2, S3, S4, I, II, III]
+     */
+    private const TABLE_I = [
+        [2,      8,      'A', 'A', 'A', 'A', 'A', 'A', 'B'],
+        [9,      15,     'A', 'A', 'A', 'A', 'A', 'B', 'C'],
+        [16,     25,     'A', 'A', 'B', 'B', 'B', 'C', 'D'],
+        [26,     50,     'A', 'B', 'B', 'C', 'C', 'D', 'E'],
+        [51,     90,     'B', 'B', 'C', 'C', 'C', 'E', 'F'],
+        [91,     150,    'B', 'B', 'C', 'D', 'D', 'F', 'G'],
+        [151,    280,    'B', 'C', 'D', 'E', 'E', 'G', 'H'],
+        [281,    500,    'B', 'C', 'D', 'E', 'F', 'H', 'J'],
+        [501,    1200,   'C', 'C', 'E', 'F', 'G', 'J', 'K'],
+        [1201,   3200,   'C', 'D', 'E', 'G', 'H', 'K', 'L'],
+        [3201,   10000,  'C', 'D', 'F', 'G', 'J', 'L', 'M'],
+        [10001,  35000,  'C', 'D', 'F', 'H', 'K', 'M', 'N'],
+        [35001,  150000, 'D', 'E', 'G', 'J', 'L', 'N', 'P'],
+        [150001, 500000, 'D', 'E', 'G', 'J', 'M', 'P', 'Q'],
+        [500001, null,   'D', 'E', 'H', 'K', 'N', 'Q', 'R'],
+    ];
+
+    private const TABLE_I_COLUMN = ['S1' => 2, 'S2' => 3, 'S3' => 4, 'S4' => 5, 'I' => 6, 'II' => 7, 'III' => 8];
+
+    /** Code letter => sample size (Table II-A). Order matters: it is the row order of Table II-A. */
     private const SAMPLE_SIZES = [
         'A' => 2,   'B' => 3,   'C' => 5,   'D' => 8,
         'E' => 13,  'F' => 20,  'G' => 32,  'H' => 50,
@@ -38,172 +69,175 @@ class AqlCalculationService
         'N' => 500, 'P' => 800, 'Q' => 1250, 'R' => 2000,
     ];
 
-    /**
-     * AQL Ac/Re lookup: [aql_level => [sample_size => [Ac, Re]]]
-     * null means "use arrow" (insufficient sample — apply next larger size).
-     */
-    private const AQL_TABLE = [
-        0.065 => [
-            2 => null, 3 => null, 5 => null, 8 => null, 13 => null,
-            20 => null, 32 => null, 50 => null, 80 => [0, 1],
-            125 => [0, 1], 200 => [0, 1], 315 => [0, 1],
-            500 => [0, 1], 800 => [0, 1], 1250 => [1, 2], 2000 => [1, 2],
-        ],
-        0.10 => [
-            2 => null, 3 => null, 5 => null, 8 => null, 13 => null,
-            20 => null, 32 => null, 50 => [0, 1],
-            80 => [0, 1], 125 => [0, 1], 200 => [0, 1],
-            315 => [0, 1], 500 => [1, 2], 800 => [1, 2], 1250 => [2, 3], 2000 => [3, 4],
-        ],
-        0.15 => [
-            2 => null, 3 => null, 5 => null, 8 => null, 13 => null,
-            20 => null, 32 => [0, 1],
-            50 => [0, 1], 80 => [0, 1], 125 => [0, 1],
-            200 => [1, 2], 315 => [1, 2], 500 => [2, 3], 800 => [3, 4], 1250 => [5, 6], 2000 => [7, 8],
-        ],
-        0.25 => [
-            2 => null, 3 => null, 5 => null, 8 => null, 13 => null,
-            20 => [0, 1], 32 => [0, 1],
-            50 => [0, 1], 80 => [0, 1], 125 => [1, 2],
-            200 => [2, 3], 315 => [3, 4], 500 => [5, 6], 800 => [7, 8], 1250 => [10, 11], 2000 => [14, 15],
-        ],
-        0.40 => [
-            2 => null, 3 => null, 5 => null, 8 => null,
-            13 => [0, 1], 20 => [0, 1], 32 => [0, 1],
-            50 => [0, 1], 80 => [1, 2], 125 => [2, 3],
-            200 => [3, 4], 315 => [5, 6], 500 => [7, 8], 800 => [10, 11], 1250 => [14, 15], 2000 => [21, 22],
-        ],
-        0.65 => [
-            2 => null, 3 => null, 5 => null,
-            8 => [0, 1], 13 => [0, 1], 20 => [0, 1], 32 => [1, 2],
-            50 => [1, 2], 80 => [2, 3], 125 => [3, 4],
-            200 => [5, 6], 315 => [7, 8], 500 => [10, 11], 800 => [14, 15], 1250 => [21, 22], 2000 => [21, 22],
-        ],
-        1.0 => [
-            2 => null, 3 => null,
-            5 => [0, 1], 8 => [0, 1], 13 => [0, 1], 20 => [1, 2], 32 => [1, 2],
-            50 => [2, 3], 80 => [3, 4], 125 => [5, 6],
-            200 => [7, 8], 315 => [10, 11], 500 => [14, 15], 800 => [21, 22], 1250 => [21, 22], 2000 => [21, 22],
-        ],
-        1.5 => [
-            2 => null,
-            3 => [0, 1], 5 => [0, 1], 8 => [0, 1], 13 => [1, 2], 20 => [1, 2], 32 => [2, 3],
-            50 => [3, 4], 80 => [5, 6], 125 => [7, 8],
-            200 => [10, 11], 315 => [14, 15], 500 => [21, 22], 800 => [21, 22], 1250 => [21, 22], 2000 => [21, 22],
-        ],
-        2.5 => [
-            2 => [0, 1], 3 => [0, 1], 5 => [0, 1], 8 => [0, 1], 13 => [1, 2], 20 => [1, 2], 32 => [2, 3],
-            50 => [3, 4], 80 => [5, 6], 125 => [7, 8],
-            200 => [10, 11], 315 => [14, 15], 500 => [21, 22], 800 => [21, 22], 1250 => [21, 22], 2000 => [21, 22],
-        ],
-        4.0 => [
-            2 => [0, 1], 3 => [0, 1], 5 => [0, 1], 8 => [0, 1], 13 => [1, 2], 20 => [2, 3], 32 => [3, 4],
-            50 => [5, 6], 80 => [7, 8], 125 => [10, 11],
-            200 => [14, 15], 315 => [21, 22], 500 => [21, 22], 800 => [21, 22], 1250 => [21, 22], 2000 => [21, 22],
-        ],
-        6.5 => [
-            2 => [0, 1], 3 => [0, 1], 5 => [0, 1], 8 => [1, 2], 13 => [2, 3], 20 => [3, 4], 32 => [5, 6],
-            50 => [7, 8], 80 => [10, 11], 125 => [14, 15],
-            200 => [21, 22], 315 => [21, 22], 500 => [21, 22], 800 => [21, 22], 1250 => [21, 22], 2000 => [21, 22],
-        ],
-    ];
+    private const D = 'down'; // use first sampling plan below the arrow
 
-    private const LEVEL_INDEX = [
-        'I' => 2, 'II' => 3, 'III' => 4,
-        'S1' => 5, 'S2' => 6, 'S3' => 7, 'S4' => 8,
+    private const U = 'up';   // use first sampling plan above the arrow
+
+    /**
+     * Table II-A — single sampling plans for normal inspection, as printed.
+     * Columns: 0.065, 0.10, 0.15, 0.25, 0.40, 0.65, 1.0, 1.5, 2.5, 4.0, 6.5
+     * Cells: [Ac, Re] or an arrow.
+     */
+    private const TABLE_II_A = [
+        'A' => [self::D, self::D, self::D, self::D, self::D, self::D, self::D, self::D, self::D, self::D, [0, 1]],
+        'B' => [self::D, self::D, self::D, self::D, self::D, self::D, self::D, self::D, self::D, [0, 1], self::U],
+        'C' => [self::D, self::D, self::D, self::D, self::D, self::D, self::D, self::D, [0, 1], self::U, self::D],
+        'D' => [self::D, self::D, self::D, self::D, self::D, self::D, self::D, [0, 1], self::U, self::D, [1, 2]],
+        'E' => [self::D, self::D, self::D, self::D, self::D, self::D, [0, 1], self::U, self::D, [1, 2], [2, 3]],
+        'F' => [self::D, self::D, self::D, self::D, self::D, [0, 1], self::U, self::D, [1, 2], [2, 3], [3, 4]],
+        'G' => [self::D, self::D, self::D, self::D, [0, 1], self::U, self::D, [1, 2], [2, 3], [3, 4], [5, 6]],
+        'H' => [self::D, self::D, self::D, [0, 1], self::U, self::D, [1, 2], [2, 3], [3, 4], [5, 6], [7, 8]],
+        'J' => [self::D, self::D, [0, 1], self::U, self::D, [1, 2], [2, 3], [3, 4], [5, 6], [7, 8], [10, 11]],
+        'K' => [self::D, [0, 1], self::U, self::D, [1, 2], [2, 3], [3, 4], [5, 6], [7, 8], [10, 11], [14, 15]],
+        'L' => [[0, 1], self::U, self::D, [1, 2], [2, 3], [3, 4], [5, 6], [7, 8], [10, 11], [14, 15], [21, 22]],
+        'M' => [self::U, self::D, [1, 2], [2, 3], [3, 4], [5, 6], [7, 8], [10, 11], [14, 15], [21, 22], self::U],
+        'N' => [self::D, [1, 2], [2, 3], [3, 4], [5, 6], [7, 8], [10, 11], [14, 15], [21, 22], self::U, self::U],
+        'P' => [[1, 2], [2, 3], [3, 4], [5, 6], [7, 8], [10, 11], [14, 15], [21, 22], self::U, self::U, self::U],
+        'Q' => [[2, 3], [3, 4], [5, 6], [7, 8], [10, 11], [14, 15], [21, 22], self::U, self::U, self::U, self::U],
+        'R' => [[3, 4], [5, 6], [7, 8], [10, 11], [14, 15], [21, 22], self::U, self::U, self::U, self::U, self::U],
     ];
 
     /**
-     * Resolve the code letter for a given lot size and inspection level.
+     * Canonical AQL key for a user/DB value ('2.5', '2.500', 2.5, '0.1' ...), or null if unsupported.
+     * Compared in integer thousandths — no float keys, no float equality.
      */
+    public static function aqlKey(float|int|string|null $aql): ?string
+    {
+        if ($aql === null || ! is_numeric($aql)) {
+            return null;
+        }
+
+        $thousandths = (int) round(((float) $aql) * 1000);
+        $key = array_search($thousandths, self::AQL_THOUSANDTHS, true);
+
+        return $key === false ? null : $key;
+    }
+
+    /** Code letter for a lot size and inspection level (Table I), or null if the lot is below the table. */
     public function resolveCodeLetter(int $lotSize, string $level = 'II'): ?string
     {
-        $colIdx = self::LEVEL_INDEX[$level] ?? 3;
+        $col = self::TABLE_I_COLUMN[$level] ?? self::TABLE_I_COLUMN['II'];
 
-        foreach (self::LOT_SIZE_TABLE as $row) {
-            if ($lotSize >= $row[0] && $lotSize <= $row[1]) {
-                return $row[$colIdx];
+        foreach (self::TABLE_I as $row) {
+            if ($lotSize >= $row[0] && ($row[1] === null || $lotSize <= $row[1])) {
+                return $row[$col];
             }
         }
 
         return null;
     }
 
-    /**
-     * Resolve sample size from code letter.
-     */
     public function sampleSizeFromCode(string $codeLetter): int
     {
         return self::SAMPLE_SIZES[$codeLetter] ?? 0;
     }
 
     /**
-     * Get the Ac/Re numbers for a given AQL level and sample size.
-     * Returns null if the sample size is too small for that AQL level (arrow up).
+     * The plan for a code letter and AQL from Table II-A, following arrows. Not capped at
+     * any lot size (see calculate()).
      *
-     * @return array{ac: int|null, re: int|null}|null
+     * @return array{ac:int, re:int, sample_size:int, code_letter:string}|null
      */
-    public function acReNumbers(float $aqlLevel, int $sampleSize): ?array
+    public function planFor(string $codeLetter, float|int|string $aql): ?array
     {
-        // Normalize AQL level key
-        $key = $this->normalizeAqlKey($aqlLevel);
-        if ($key === null || ! isset(self::AQL_TABLE[$key])) {
+        $key = self::aqlKey($aql);
+        $letters = array_keys(self::SAMPLE_SIZES);
+        $row = array_search($codeLetter, $letters, true);
+
+        if ($key === null || $row === false) {
             return null;
         }
 
-        $table = self::AQL_TABLE[$key];
+        $col = array_search($key, self::AQL_LEVELS, true);
+        $cell = self::TABLE_II_A[$letters[$row]][$col];
 
-        if (isset($table[$sampleSize])) {
-            $entry = $table[$sampleSize];
-            if ($entry === null) {
-                // Arrow up: find the next larger sample size that has values
-                $sizes = array_keys($table);
-                sort($sizes);
-                foreach ($sizes as $sz) {
-                    if ($sz > $sampleSize && $table[$sz] !== null) {
-                        return ['ac' => $table[$sz][0], 're' => $table[$sz][1]];
-                    }
-                }
-
+        // Follow the arrow to the first cell with numbers, in the arrow's direction.
+        $step = $cell === self::D ? 1 : ($cell === self::U ? -1 : 0);
+        while ($step !== 0 && ! is_array($cell)) {
+            $row += $step;
+            if (! isset($letters[$row])) {
                 return null;
             }
-
-            return ['ac' => $entry[0], 're' => $entry[1]];
+            $cell = self::TABLE_II_A[$letters[$row]][$col];
         }
 
-        return null;
+        return [
+            'ac' => $cell[0],
+            're' => $cell[1],
+            'sample_size' => self::SAMPLE_SIZES[$letters[$row]],
+            'code_letter' => $letters[$row],
+        ];
     }
 
     /**
-     * Full plan calculation for a lot size and set of AQL levels.
+     * Full plan for a lot. Each severity gets its own plan (an arrow can move it to a larger
+     * sample); every sample size is capped at the lot size (100% inspection).
+     *
+     * 'sample_size' is the number of units to inspect so that every plan in use can be
+     * applied: the largest per-severity sample size (owner question Q12).
+     *
+     * @return array{lot_size:int, level:string, code_letter:?string, sample_size:int, full_inspection:bool,
+     *               critical:?array, major:?array, minor:?array}
      */
     public function calculate(
         int $lotSize,
         string $level = 'II',
-        ?float $aqlCritical = 0.065,
-        ?float $aqlMajor = 2.5,
-        ?float $aqlMinor = 4.0
+        float|string|null $aqlCritical = '0.065',
+        float|string|null $aqlMajor = '2.5',
+        float|string|null $aqlMinor = '4.0'
     ): array {
         $codeLetter = $this->resolveCodeLetter($lotSize, $level);
-        $sampleSize = $codeLetter ? $this->sampleSizeFromCode($codeLetter) : 0;
 
-        $critical = $aqlCritical !== null ? $this->acReNumbers($aqlCritical, $sampleSize) : null;
-        $major = $aqlMajor !== null ? $this->acReNumbers($aqlMajor, $sampleSize) : null;
-        $minor = $aqlMinor !== null ? $this->acReNumbers($aqlMinor, $sampleSize) : null;
+        $plans = [];
+        foreach (['critical' => $aqlCritical, 'major' => $aqlMajor, 'minor' => $aqlMinor] as $severity => $aql) {
+            $plans[$severity] = $this->severityPlan($codeLetter, $aql, $lotSize);
+        }
+
+        $base = $codeLetter ? min($this->sampleSizeFromCode($codeLetter), $lotSize) : 0;
+        $sampleSize = max([$base, ...array_map(fn ($p) => $p['sample_size'] ?? 0, $plans)]);
 
         return [
             'lot_size' => $lotSize,
             'level' => $level,
             'code_letter' => $codeLetter,
             'sample_size' => $sampleSize,
-            'critical' => $critical,
-            'major' => $major,
-            'minor' => $minor,
+            'full_inspection' => $codeLetter !== null && $sampleSize >= $lotSize,
+            ...$plans,
         ];
     }
 
     /**
-     * Calculate verdict from found counts vs. accept numbers.
+     * calculate() for string inputs from forms, honouring the "not_allowed" option
+     * (Ac 0 / Re 1 at the base sample size: any defect fails).
+     */
+    public function planForLot(int $lotSize, string $level, ?string $aqlCritical, ?string $aqlMajor, ?string $aqlMinor): array
+    {
+        return $this->calculate($lotSize, $level, $aqlCritical, $aqlMajor, $aqlMinor);
+    }
+
+    /** @return array{ac:int, re:int, sample_size:int, code_letter:string}|null */
+    private function severityPlan(?string $codeLetter, float|string|null $aql, int $lotSize): ?array
+    {
+        if ($codeLetter === null || $aql === null || $aql === '') {
+            return null;
+        }
+
+        $plan = $aql === 'not_allowed'
+            ? ['ac' => 0, 're' => 1, 'sample_size' => $this->sampleSizeFromCode($codeLetter), 'code_letter' => $codeLetter]
+            : $this->planFor($codeLetter, $aql);
+
+        if ($plan !== null) {
+            $plan['sample_size'] = min($plan['sample_size'], $lotSize);
+        }
+
+        return $plan;
+    }
+
+    /**
+     * AQL verdict from found counts and accept numbers.
+     *  - any severity with found > Ac  => Fail
+     *  - defects found for a severity that has no plan (Ac null) => cannot pass => Pending
+     *  - no defects: Pending while the AQL check is still open, Pass once it is marked complete
      */
     public function verdict(
         int $foundCritical,
@@ -211,66 +245,28 @@ class AqlCalculationService
         int $foundMinor,
         ?int $acCritical,
         ?int $acMajor,
-        ?int $acMinor
+        ?int $acMinor,
+        bool $complete = false,
     ): string {
-        $anyFound = ($foundCritical + $foundMajor + $foundMinor) > 0;
+        $checks = [[$foundCritical, $acCritical], [$foundMajor, $acMajor], [$foundMinor, $acMinor]];
 
-        if (! $anyFound) {
-            return 'Pending';
+        foreach ($checks as [$found, $ac]) {
+            if ($ac !== null && $found > $ac) {
+                return 'Fail';
+            }
         }
 
-        $fail =
-            ($acCritical !== null && $foundCritical > $acCritical) ||
-            ($acMajor !== null && $foundMajor > $acMajor) ||
-            ($acMinor !== null && $foundMinor > $acMinor);
-
-        return $fail ? 'Fail' : 'Pass';
-    }
-
-    /**
-     * Resolve the full sampling plan for a lot, honoring the "Not Allowed" AQL
-     * option (Ac 0 / Re 1, i.e. any defect found fails) alongside the normal
-     * ISO 2859-1 lookups. This is the authoritative, server-side counterpart
-     * to the AQL Calculator's client-side preview.
-     *
-     * @return array{code_letter: ?string, sample_size: int, critical: array{ac:int,re:int}|null, major: array{ac:int,re:int}|null, minor: array{ac:int,re:int}|null}
-     */
-    public function planForLot(
-        int $lotSize,
-        string $level,
-        ?string $aqlCritical,
-        ?string $aqlMajor,
-        ?string $aqlMinor
-    ): array {
-        $codeLetter = $this->resolveCodeLetter($lotSize, $level);
-        $sampleSize = $codeLetter ? $this->sampleSizeFromCode($codeLetter) : 0;
-
-        return [
-            'code_letter' => $codeLetter,
-            'sample_size' => $sampleSize,
-            'critical' => $this->acReForSeverity($aqlCritical, $sampleSize),
-            'major' => $this->acReForSeverity($aqlMajor, $sampleSize),
-            'minor' => $this->acReForSeverity($aqlMinor, $sampleSize),
-        ];
-    }
-
-    /**
-     * Ac/Re numbers for one severity, honoring the "not_allowed" sentinel
-     * (Ac 0 / Re 1 — any defect found is an automatic fail).
-     *
-     * @return array{ac:int,re:int}|null
-     */
-    private function acReForSeverity(?string $aqlValue, int $sampleSize): ?array
-    {
-        if ($aqlValue === null || $aqlValue === '') {
-            return null;
+        foreach ($checks as [$found, $ac]) {
+            if ($ac === null && $found > 0) {
+                return 'Pending';
+            }
         }
 
-        if ($aqlValue === 'not_allowed') {
-            return ['ac' => 0, 're' => 1];
+        if ($foundCritical + $foundMajor + $foundMinor === 0) {
+            return $complete ? 'Pass' : 'Pending';
         }
 
-        return $this->acReNumbers((float) $aqlValue, $sampleSize);
+        return 'Pass';
     }
 
     /**
@@ -308,13 +304,7 @@ class AqlCalculationService
 
     /**
      * Sum checked_qty/error_qty across a run's per-size AQL breakdown rows.
-     *
-     * Purely additive: this does not feed into calculate()/verdict()/
-     * planForLot() and does not alter lot_size, sample_size, or the
-     * found_critical/major/minor fields — those still come from whatever
-     * the inspector enters (manually, or via the color/size "variations"
-     * distribution that already existed). It only produces the aggregate
-     * checked/error totals for display and future reporting.
+     * Display/reporting only: does not feed calculate() or verdict().
      *
      * @param  array<int, array{checked_qty?: int|string, error_qty?: int|string}>  $rows
      * @return array{checked_qty: int, error_qty: int}
@@ -333,28 +323,29 @@ class AqlCalculationService
     }
 
     /**
-     * Return the AQL table as a JSON-safe structure for use in JavaScript.
+     * Everything the JS previews need, generated from the tables above (arrows already
+     * resolved), so the browser never holds its own copy of the standard.
      */
     public function tableForJs(): array
     {
-        return [
-            'lotSizeTable' => self::LOT_SIZE_TABLE,
-            'sampleSizes' => self::SAMPLE_SIZES,
-            'levelIndex' => self::LEVEL_INDEX,
-            'aqlTable' => self::AQL_TABLE,
-            'supportedAqls' => array_keys(self::AQL_TABLE),
-        ];
-    }
-
-    private function normalizeAqlKey(float $aql): ?float
-    {
-        $supported = array_keys(self::AQL_TABLE);
-        foreach ($supported as $key) {
-            if (abs($key - $aql) < 0.001) {
-                return $key;
+        $plans = [];
+        foreach (array_keys(self::SAMPLE_SIZES) as $letter) {
+            foreach (self::AQL_LEVELS as $aql) {
+                $p = $this->planFor($letter, $aql);
+                $plans[$letter][$aql] = ['ac' => $p['ac'], 're' => $p['re'], 'n' => $p['sample_size'], 'code' => $p['code_letter']];
             }
         }
 
-        return null;
+        return [
+            'levels' => self::INSPECTION_LEVELS,
+            'aqls' => self::AQL_LEVELS,
+            'sampleSizes' => self::SAMPLE_SIZES,
+            'lotSizeTable' => array_map(fn ($row) => [
+                'min' => $row[0],
+                'max' => $row[1],
+                'codes' => array_map(fn ($col) => $row[$col], self::TABLE_I_COLUMN),
+            ], self::TABLE_I),
+            'plans' => $plans,
+        ];
     }
 }

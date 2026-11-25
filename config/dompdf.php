@@ -233,7 +233,9 @@ return [
          *
          * @var bool
          */
-        'isPhpEnabled' => true,
+        // Must stay false: with it on, any template data containing <script type="text/php">
+        // is executed on the server (audit F-01). Page numbers: App\Services\Pdf\PdfPageNumberService.
+        'isPhpEnabled' => false,
 
         /**
          * Enable inline JavaScript

@@ -68,7 +68,7 @@
                                     </span>
                                 @endif
                             </div>
-                            @php $ic = ['Pass'=>'success','Fail'=>'danger','Pending'=>'warning','N/A'=>'secondary']; @endphp
+                            @php $ic = ['Pass'=>'success','Fail'=>'danger','Pending'=>'warning','N/A'=>'secondary','Conditional'=>'warning','Re-Inspection'=>'danger']; @endphp
                             <span class="badge bg-soft-{{ $ic[$inspection->overall_status] ?? 'secondary' }} text-{{ $ic[$inspection->overall_status] ?? 'secondary' }} fs-14 px-3 py-2">
                                 {{ $inspection->overall_status }}
                             </span>
@@ -103,7 +103,7 @@
                 {{-- ── Inspection Runs ─────────────────────────────────── --}}
                 @forelse($inspection->runs as $runIdx => $run)
                 @php
-                    $rc = ['Pass'=>'success','Fail'=>'danger','Conditional'=>'warning','Pending'=>'secondary'];
+                    $rc = ['Pass'=>'success','Fail'=>'danger','Conditional'=>'warning','Re-Inspection'=>'danger','Pending'=>'secondary'];
                     $sectionStats = [
                         'complete' => $run->runSections->where('status', 'complete')->count(),
                         'pending'  => $run->runSections->where('status', 'pending')->count(),
@@ -292,7 +292,7 @@
                                 <span class="text-muted">Total Runs</span>
                                 <strong>{{ $inspection->runs->count() }}</strong>
                             </li>
-                            @foreach(['Pass'=>'success','Fail'=>'danger','Conditional'=>'warning','Pending'=>'secondary'] as $v => $c)
+                            @foreach(['Pass'=>'success','Fail'=>'danger','Conditional'=>'warning','Re-Inspection'=>'danger','Pending'=>'secondary'] as $v => $c)
                             @php $cnt = $inspection->runs->where('verdict', $v)->count(); @endphp
                             @if($cnt)
                             <li class="list-group-item d-flex justify-content-between">

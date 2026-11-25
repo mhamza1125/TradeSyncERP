@@ -119,7 +119,8 @@ Route::middleware(['auth', 'verified'])->group(function () {
 
     // Inspections (top-level) + run sub-pages
     Route::resource('inspections', InspectionController::class);
-    Route::prefix('inspections/{inspection}/runs')->name('inspections.runs.')->group(function () {
+    // scopeBindings: {run} must belong to {inspection} and {runSection} to {run}, else 404 (audit F-11).
+    Route::prefix('inspections/{inspection}/runs')->name('inspections.runs.')->scopeBindings()->group(function () {
         Route::get('create', [InspectionRunController::class, 'create'])->name('create');
         Route::post('', [InspectionRunController::class, 'store'])->name('store');
         Route::get('{run}/edit', [InspectionRunController::class, 'edit'])->name('edit');
@@ -127,11 +128,14 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::delete('{run}', [InspectionRunController::class, 'destroy'])->name('destroy');
         // AJAX: section file upload / delete
         Route::post('{run}/sections/{runSection}/upload', [InspectionRunController::class, 'uploadAttachment'])->name('sections.upload');
-        Route::delete('{run}/attachments/{attachment}', [InspectionRunController::class, 'deleteAttachment'])->name('attachments.delete');
+        // Attachments hang off run sections, not runs, so these two check ownership in the controller.
+        Route::delete('{run}/attachments/{attachment}', [InspectionRunController::class, 'deleteAttachment'])->name('attachments.delete')->withoutScopedBindings();
         Route::post('{run}/sections/{runSection}/attachments/reorder', [InspectionRunController::class, 'reorderAttachments'])->name('sections.attachments.reorder');
-        Route::post('{run}/attachments/{attachment}/edit', [InspectionRunController::class, 'updateAttachmentImage'])->name('attachments.edit');
+        Route::post('{run}/attachments/{attachment}/edit', [InspectionRunController::class, 'updateAttachmentImage'])->name('attachments.edit')->withoutScopedBindings();
         // AJAX: per-section (subsection) status + data persistence
         Route::post('{run}/sections/{runSection}/save', [InspectionRunController::class, 'saveSection'])->name('sections.save');
+        // Reopen a finished run (own permission + reason, logged)
+        Route::post('{run}/reopen', [InspectionRunController::class, 'reopen'])->name('reopen');
         // PDF export
         Route::get('{run}/export-pdf', [InspectionExportController::class, 'exportRun'])->name('export-pdf');
     });

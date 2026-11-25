@@ -31,7 +31,7 @@
                                placeholder="Title / document name" required>
                     </div>
                     <div class="col-lg-6">
-                        <input type="file" name="attachments[0]" class="form-control" required>
+                        <input type="file" name="attachments[0]" class="form-control" accept=".jpg,.jpeg,.png,.gif,.webp,.pdf,.doc,.docx,.xls,.xlsx" required>
                     </div>
                     <div class="col-lg-1 d-flex align-items-center">
                         <button type="button" class="btn btn-sm btn-light remove-attach-row" style="visibility:hidden;">
@@ -94,7 +94,7 @@
                     <input type="text" name="attachment_titles[${idx}]" class="form-control" placeholder="Title / document name" required>
                 </div>
                 <div class="col-lg-6">
-                    <input type="file" name="attachments[${idx}]" class="form-control" required>
+                    <input type="file" name="attachments[${idx}]" class="form-control" accept=".jpg,.jpeg,.png,.gif,.webp,.pdf,.doc,.docx,.xls,.xlsx" required>
                 </div>
                 <div class="col-lg-1 d-flex align-items-center">
                     <button type="button" class="btn btn-sm btn-light remove-attach-row">

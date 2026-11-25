@@ -42,7 +42,8 @@ class LoginRequest extends FormRequest
     {
         $this->ensureIsNotRateLimited();
 
-        if (! Auth::attempt($this->only('email', 'password'), $this->boolean('remember'))) {
+        // Inactive (status = false) accounts get the same generic failure as a wrong password.
+        if (! Auth::attempt([...$this->only('email', 'password'), 'status' => true], $this->boolean('remember'))) {
             RateLimiter::hit($this->throttleKey());
 
             throw ValidationException::withMessages([

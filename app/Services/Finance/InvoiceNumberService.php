@@ -4,6 +4,7 @@ namespace App\Services\Finance;
 
 use App\Models\CompanySetting;
 use App\Models\CustomerInvoice;
+use App\Services\NumberSequenceService;
 
 /**
  * Formats customer invoice numbers from the pattern configured in Company
@@ -29,7 +30,9 @@ class InvoiceNumberService
      */
     public function generateNext(): string
     {
-        return $this->format($this->pattern(), $this->nextSequentialId());
+        $next = app(NumberSequenceService::class)->next('customer_invoice', fn () => $this->seed());
+
+        return $this->format($this->pattern(), $next);
     }
 
     /**
@@ -45,6 +48,12 @@ class InvoiceNumberService
      * The id the next created invoice is expected to receive.
      */
     public function nextSequentialId(): int
+    {
+        return app(NumberSequenceService::class)->peek('customer_invoice', fn () => $this->seed());
+    }
+
+    /** What the old max(id)+1 logic gave: the starting point of the locked sequence. */
+    private function seed(): int
     {
         return (int) (CustomerInvoice::withTrashed()->max('id') ?? 0) + 1;
     }

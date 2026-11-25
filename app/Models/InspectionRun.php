@@ -3,10 +3,14 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
+use Spatie\Activitylog\LogOptions;
+use Spatie\Activitylog\Traits\LogsActivity;
 use Illuminate\Support\Collection;
 
 class InspectionRun extends Model
 {
+    use LogsActivity;
+
     protected $fillable = [
         'inspection_id', 'sample_id', 'sample_color_id',
         'run_number', 'verdict', 'remarks',
@@ -86,5 +90,14 @@ class InspectionRun extends Model
     {
         return $this->runSections
             ->first(fn ($rs) => $rs->section?->slug === $slug);
+    }
+
+    /** Key fields only (docs/QC_RULES.md). */
+    public function getActivitylogOptions(): LogOptions
+    {
+        return LogOptions::defaults()
+            ->logOnly(['run_number', 'sample_id', 'sample_color_id', 'verdict', 'remarks', 'completed_at'])
+            ->logOnlyDirty()
+            ->dontSubmitEmptyLogs();
     }
 }

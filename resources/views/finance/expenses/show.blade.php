@@ -27,15 +27,18 @@
                     <a href="{{ route('expenses.export-single-pdf', $expense) }}" class="btn btn-light-brand" target="_blank">
                         <i class="feather-download me-2"></i>Export PDF
                     </a>
+                    @if(!$expense->voided_at)
                     @can('expenses.delete')
                     <form action="{{ route('expenses.destroy', $expense) }}" method="POST"
-                          onsubmit="return confirm('Delete this expense?')">
+                          onsubmit="var r = prompt('Reason for voiding (kept in the record and activity log):'); if (!r || !r.trim()) return false; this.querySelector('[name=void_reason]').value = r; return true;">
                         @csrf @method('DELETE')
+                                <input type="hidden" name="void_reason" value="">
                         <button class="btn btn-light-brand" type="submit">
-                            <i class="feather-trash-2 me-2"></i>Delete
+                            <i class="feather-trash-2 me-2"></i>Void
                         </button>
                     </form>
                     @endcan
+                    @endif
                 </div>
             </div>
         </div>
@@ -43,6 +46,12 @@
 
     <div class="main-content container-lg">
         @include('partials.flash-messages')
+        @if($expense->voided_at)
+        <div class="alert alert-danger">
+            <strong>Voided</strong> on {{ $expense->voided_at->format('d M Y H:i') }} by {{ $expense->voidedBy?->name ?? 'unknown' }}: {{ $expense->void_reason }}.
+            This expense and its transaction no longer count in balances or totals.
+        </div>
+        @endif
 
         <div class="row">
             <div class="col-lg-12">

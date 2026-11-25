@@ -126,7 +126,7 @@
                                 </td>
                                 <td>
                                     @php
-                                        $badge = match($invoice->status) {
+                                        $badge = match($invoice->display_status) {
                                             'Paid'      => 'success',
                                             'Partial'   => 'warning',
                                             'Overdue'   => 'danger',
@@ -135,7 +135,7 @@
                                             default     => 'light',
                                         };
                                     @endphp
-                                    <span class="badge bg-{{ $badge }}">{{ $invoice->status }}</span>
+                                    <span class="badge bg-{{ $badge }}">{{ $invoice->display_status }}</span>
                                 </td>
                                 <td>
                                     <div class="hstack gap-2 justify-content-end">

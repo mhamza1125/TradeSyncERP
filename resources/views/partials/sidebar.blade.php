@@ -25,12 +25,14 @@
                         <span class="nxl-mtext">Dashboard</span>
                     </a>
                 </li>
+                @can('activities.view')
                 <li class="nxl-item {{ $is('activities.index') ? 'active' : '' }}">
                     <a href="{{ route('activities.index') }}" class="nxl-link">
                         <span class="nxl-micon"><i class="feather-activity"></i></span>
                         <span class="nxl-mtext">Recent Activities</span>
                     </a>
                 </li>
+                @endcan
 
                 {{-- ─── Operations (Core Work) ─────────────────────────────────── --}}
                 @canany(['customer-orders.index','samples.index','sample-movements.index','inspections.index'])
@@ -171,12 +173,14 @@
                 </li>
                 @endcan
 
+                @can('allowance-types.index')
                 <li class="nxl-item {{ $is('allowance-types.*') ? 'active' : '' }}">
                     <a href="{{ route('allowance-types.index') }}" class="nxl-link">
                         <span class="nxl-micon"><i class="feather-gift"></i></span>
                         <span class="nxl-mtext">Allowance Types</span>
                     </a>
                 </li>
+                @endcan
                 @endcanany
 
                 {{-- ─── Master Data ─────────────────────────────────────────────── --}}

@@ -87,6 +87,7 @@
                                     'Pass'        => 'success',
                                     'Fail'        => 'danger',
                                     'Conditional' => 'warning',
+                                    'Re-Inspection' => 'danger',
                                     'Pending'     => 'secondary',
                                 ];
                                 $vColor = $verdictColors[$run->verdict] ?? 'secondary';

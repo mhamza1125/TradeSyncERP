@@ -8,6 +8,14 @@ use Illuminate\Http\Request;
 
 class AllowanceTypeController extends Controller
 {
+    public function __construct()
+    {
+        $this->middleware('permission:allowance-types.index')->only('index');
+        $this->middleware('permission:allowance-types.create')->only(['create', 'store']);
+        $this->middleware('permission:allowance-types.edit')->only(['edit', 'update']);
+        $this->middleware('permission:allowance-types.delete')->only('destroy');
+    }
+
     public function index()
     {
         $allowanceTypes = AllowanceType::withCount('lineAllowances')

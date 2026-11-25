@@ -306,6 +306,7 @@
 </div>
 
 @push('scripts')
+<script src="{{ asset('assets/js/aql-plan.js') }}"></script>
 <script>
 (function() {
     'use strict';
@@ -313,53 +314,8 @@
     const COLORS = @json($colors->pluck('name'));
     const SIZES  = @json($sizes->pluck('name'));
 
-    const LOT_RANGES = [
-        { Min:2,      Max:8,                  I:2,   II:2,   III:3,   S1:2,  S2:2,  S3:2,  S4:2   },
-        { Min:9,      Max:15,                 I:2,   II:3,   III:5,   S1:2,  S2:2,  S3:2,  S4:2   },
-        { Min:16,     Max:25,                 I:3,   II:5,   III:8,   S1:2,  S2:2,  S3:3,  S4:3   },
-        { Min:26,     Max:50,                 I:5,   II:8,   III:13,  S1:2,  S2:3,  S3:3,  S4:5   },
-        { Min:51,     Max:90,                 I:5,   II:13,  III:20,  S1:3,  S2:3,  S3:5,  S4:5   },
-        { Min:91,     Max:150,                I:8,   II:20,  III:32,  S1:3,  S2:3,  S3:5,  S4:8   },
-        { Min:151,    Max:280,                I:13,  II:32,  III:50,  S1:3,  S2:5,  S3:8,  S4:13  },
-        { Min:281,    Max:500,                I:20,  II:50,  III:80,  S1:3,  S2:5,  S3:8,  S4:13  },
-        { Min:501,    Max:1200,               I:32,  II:80,  III:125, S1:5,  S2:5,  S3:13, S4:20  },
-        { Min:1201,   Max:3200,               I:50,  II:125, III:200, S1:5,  S2:8,  S3:13, S4:32  },
-        { Min:3201,   Max:10000,              I:80,  II:200, III:315, S1:5,  S2:8,  S3:20, S4:32  },
-        { Min:10001,  Max:35000,              I:125, II:315, III:500, S1:5,  S2:8,  S3:20, S4:50  },
-        { Min:35001,  Max:150000,             I:200, II:500, III:800, S1:8,  S2:13, S3:32, S4:80  },
-        { Min:150001, Max:500000,             I:315, II:800, III:1250,S1:8,  S2:13, S3:32, S4:80  },
-        { Min:500001, Max:Number.MAX_SAFE_INTEGER, I:500, II:1250, III:2000, S1:8, S2:13, S3:50, S4:125 },
-    ];
-
-    const SS_TO_CODE = {2:'A',3:'B',5:'C',8:'D',13:'E',20:'F',32:'G',50:'H',80:'J',125:'K',200:'L',315:'M',500:'N',800:'P',1250:'Q',2000:'R'};
-
-    const AQL_NUMBERS = {
-        "not_allowed": { 2:{Ac:0,Re:1},3:{Ac:0,Re:1},5:{Ac:0,Re:1},8:{Ac:0,Re:1},13:{Ac:0,Re:1},20:{Ac:0,Re:1},32:{Ac:0,Re:1},50:{Ac:0,Re:1},80:{Ac:0,Re:1},125:{Ac:0,Re:1},200:{Ac:0,Re:1},315:{Ac:0,Re:1},500:{Ac:0,Re:1},800:{Ac:0,Re:1},1250:{Ac:0,Re:1},2000:{Ac:0,Re:1} },
-        "0.065": { 2:{Ac:0,Re:1,Ss:200},3:{Ac:0,Re:1,Ss:200},5:{Ac:0,Re:1,Ss:200},8:{Ac:0,Re:1,Ss:200},13:{Ac:0,Re:1,Ss:200},20:{Ac:0,Re:1,Ss:200},32:{Ac:0,Re:1,Ss:200},50:{Ac:0,Re:1,Ss:200},80:{Ac:0,Re:1},125:{Ac:0,Re:1},200:{Ac:0,Re:1},315:{Ac:0,Re:1,Ss:200},500:{Ac:1,Re:2,Ss:800},800:{Ac:1,Re:2},1250:{Ac:2,Re:3},2000:{Ac:3,Re:4} },
-        "0.10":  { 2:{Ac:0,Re:1,Ss:125},3:{Ac:0,Re:1,Ss:125},5:{Ac:0,Re:1,Ss:125},8:{Ac:0,Re:1,Ss:125},13:{Ac:0,Re:1,Ss:125},20:{Ac:0,Re:1,Ss:125},32:{Ac:0,Re:1,Ss:125},50:{Ac:0,Re:1,Ss:125},80:{Ac:0,Re:1,Ss:125},125:{Ac:0,Re:1},200:{Ac:0,Re:1,Ss:125},315:{Ac:1,Re:2,Ss:500},500:{Ac:1,Re:2},800:{Ac:2,Re:3},1250:{Ac:3,Re:4},2000:{Ac:5,Re:6} },
-        "0.15":  { 2:{Ac:0,Re:1,Ss:80},3:{Ac:0,Re:1,Ss:80},5:{Ac:0,Re:1,Ss:80},8:{Ac:0,Re:1,Ss:80},13:{Ac:0,Re:1,Ss:80},20:{Ac:0,Re:1,Ss:80},32:{Ac:0,Re:1,Ss:80},50:{Ac:0,Re:1,Ss:80},80:{Ac:0,Re:1},125:{Ac:0,Re:1,Ss:80},200:{Ac:1,Re:2,Ss:315},315:{Ac:1,Re:2},500:{Ac:2,Re:3},800:{Ac:3,Re:4},1250:{Ac:5,Re:6},2000:{Ac:7,Re:8} },
-        "0.25":  { 2:{Ac:0,Re:1,Ss:50},3:{Ac:0,Re:1,Ss:50},5:{Ac:0,Re:1,Ss:50},8:{Ac:0,Re:1,Ss:50},13:{Ac:0,Re:1,Ss:50},20:{Ac:0,Re:1,Ss:50},32:{Ac:0,Re:1,Ss:50},50:{Ac:0,Re:1},80:{Ac:0,Re:1,Ss:50},125:{Ac:1,Re:2,Ss:200},200:{Ac:1,Re:2},315:{Ac:2,Re:3},500:{Ac:3,Re:4},800:{Ac:5,Re:6},1250:{Ac:7,Re:8},2000:{Ac:10,Re:11} },
-        "0.40":  { 2:{Ac:0,Re:1,Ss:32},3:{Ac:0,Re:1,Ss:32},5:{Ac:0,Re:1,Ss:32},8:{Ac:0,Re:1,Ss:32},13:{Ac:0,Re:1,Ss:32},20:{Ac:0,Re:1,Ss:32},32:{Ac:0,Re:1},50:{Ac:0,Re:1,Ss:32},80:{Ac:1,Re:2,Ss:125},125:{Ac:1,Re:2},200:{Ac:2,Re:3},315:{Ac:3,Re:4},500:{Ac:5,Re:6},800:{Ac:7,Re:8},1250:{Ac:10,Re:11},2000:{Ac:14,Re:15} },
-        "0.65":  { 2:{Ac:0,Re:1,Ss:20},3:{Ac:0,Re:1,Ss:20},5:{Ac:0,Re:1,Ss:20},8:{Ac:0,Re:1,Ss:20},13:{Ac:0,Re:1,Ss:20},20:{Ac:0,Re:1},32:{Ac:0,Re:1,Ss:20},50:{Ac:1,Re:2,Ss:80},80:{Ac:1,Re:2},125:{Ac:2,Re:3},200:{Ac:3,Re:4},315:{Ac:5,Re:6},500:{Ac:7,Re:8},800:{Ac:10,Re:11},1250:{Ac:14,Re:15},2000:{Ac:21,Re:22} },
-        "1.0":   { 2:{Ac:0,Re:1,Ss:13},3:{Ac:0,Re:1,Ss:13},5:{Ac:0,Re:1,Ss:13},8:{Ac:0,Re:1,Ss:13},13:{Ac:0,Re:1},20:{Ac:0,Re:1,Ss:13},32:{Ac:1,Re:2,Ss:50},50:{Ac:1,Re:2},80:{Ac:2,Re:3},125:{Ac:3,Re:4},200:{Ac:5,Re:6},315:{Ac:7,Re:8},500:{Ac:10,Re:11},800:{Ac:14,Re:15},1250:{Ac:21,Re:22},2000:{Ac:21,Re:22,Ss:1250} },
-        "1.5":   { 2:{Ac:0,Re:1,Ss:8},3:{Ac:0,Re:1,Ss:8},5:{Ac:0,Re:1,Ss:8},8:{Ac:0,Re:1},13:{Ac:0,Re:1,Ss:8},20:{Ac:1,Re:2,Ss:32},32:{Ac:1,Re:2},50:{Ac:2,Re:3},80:{Ac:3,Re:4},125:{Ac:5,Re:6},200:{Ac:7,Re:8},315:{Ac:10,Re:11},500:{Ac:14,Re:15},800:{Ac:21,Re:22},1250:{Ac:21,Re:22,Ss:800},2000:{Ac:21,Re:22,Ss:800} },
-        "2.5":   { 2:{Ac:0,Re:1,Ss:5},3:{Ac:0,Re:1,Ss:5},5:{Ac:0,Re:1},8:{Ac:0,Re:1,Ss:5},13:{Ac:1,Re:2,Ss:20},20:{Ac:1,Re:2},32:{Ac:2,Re:3},50:{Ac:3,Re:4},80:{Ac:5,Re:6},125:{Ac:7,Re:8},200:{Ac:10,Re:11},315:{Ac:14,Re:15},500:{Ac:21,Re:22},800:{Ac:21,Re:22,Ss:500},1250:{Ac:21,Re:22,Ss:500},2000:{Ac:21,Re:22,Ss:500} },
-        "4.0":   { 2:{Ac:0,Re:1,Ss:3},3:{Ac:0,Re:1},5:{Ac:0,Re:1,Ss:3},8:{Ac:1,Re:2,Ss:13},13:{Ac:1,Re:2},20:{Ac:2,Re:3},32:{Ac:3,Re:4},50:{Ac:5,Re:6},80:{Ac:7,Re:8},125:{Ac:10,Re:11},200:{Ac:14,Re:15},315:{Ac:21,Re:22},500:{Ac:21,Re:22,Ss:315},800:{Ac:21,Re:22,Ss:315},1250:{Ac:21,Re:22,Ss:315},2000:{Ac:21,Re:22,Ss:315} },
-        "6.5":   { 2:{Ac:0,Re:1},3:{Ac:0,Re:1,Ss:2},5:{Ac:1,Re:2,Ss:8},8:{Ac:1,Re:2},13:{Ac:2,Re:3},20:{Ac:3,Re:4},32:{Ac:5,Re:6},50:{Ac:7,Re:8},80:{Ac:10,Re:11},125:{Ac:14,Re:15},200:{Ac:21,Re:22},315:{Ac:21,Re:22,Ss:200},500:{Ac:21,Re:22,Ss:200},800:{Ac:21,Re:22,Ss:200},1250:{Ac:21,Re:22,Ss:200},2000:{Ac:21,Re:22,Ss:200} }
-    };
-
-    function getBaseSample(qty, level) {
-        const row = LOT_RANGES.find(r => qty >= r.Min && qty <= r.Max);
-        return row ? Math.min(row[level], qty) : null;
-    }
-
-    function getAcRe(aqlKey, baseSample) {
-        const tbl = AQL_NUMBERS[String(aqlKey)];
-        if (!tbl) return null;
-        const entry = tbl[baseSample];
-        if (!entry) return null;
-        return { ac: entry.Ac, re: entry.Re, ss: entry.Ss ? Math.min(entry.Ss, baseSample) : baseSample };
-    }
+    // All sampling numbers come from AqlCalculationService::tableForJs() — no tables here.
+    const AQL = window.AqlPlan(@json($aqlJsData));
 
     function escHtml(s) {
         return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
@@ -394,21 +350,22 @@
         const lot = parseInt(document.getElementById('calc-lot-size')?.value) || 0;
         if (lot < 2) { calcShowEmpty(); return; }
 
-        const bs = getBaseSample(lot, calcLevel);
+        const crAql = document.getElementById('calc-aql-critical').value;
+        const maAql = document.getElementById('calc-aql-major').value;
+        const miAql = document.getElementById('calc-aql-minor').value;
+
+        // Units to inspect: enough for every severity's plan (same rule as the server).
+        const bs = AQL.sampleSize(lot, calcLevel, [crAql, maAql, miAql]);
         if (!bs) { calcShowEmpty(); return; }
 
         calcLotSize = lot;
         calcBaseSample = bs;
 
-        const crAql = document.getElementById('calc-aql-critical').value;
-        const maAql = document.getElementById('calc-aql-major').value;
-        const miAql = document.getElementById('calc-aql-minor').value;
+        const crRes = AQL.plan(crAql, lot, calcLevel);
+        const maRes = AQL.plan(maAql, lot, calcLevel);
+        const miRes = AQL.plan(miAql, lot, calcLevel);
 
-        const crRes = getAcRe(crAql, bs);
-        const maRes = getAcRe(maAql, bs);
-        const miRes = getAcRe(miAql, bs);
-
-        const codeLetter = SS_TO_CODE[bs] || '—';
+        const codeLetter = AQL.codeLetter(lot, calcLevel) || '—';
 
         document.getElementById('calc-badge-level').textContent = calcLevel;
         document.getElementById('calc-badge-code').textContent  = codeLetter;
@@ -490,18 +447,19 @@
     function calcBuildRefTable() {
         const tbody = document.getElementById('calc-ref-tbody');
         if (!tbody) return;
-        tbody.innerHTML = LOT_RANGES.map(r => {
-            const maxLabel = r.Max >= Number.MAX_SAFE_INTEGER ? '∞' : r.Max.toLocaleString();
-            const highlight = calcLotSize >= r.Min && calcLotSize <= r.Max ? 'table-warning' : '';
+        tbody.innerHTML = AQL.lotSizeTable.map(r => {
+            const maxLabel = r.max === null ? '∞' : r.max.toLocaleString();
+            const highlight = calcLotSize >= r.min && (r.max === null || calcLotSize <= r.max) ? 'table-warning' : '';
+            const n = lvl => AQL.sampleSizes[r.codes[lvl]];
             return `<tr class="${highlight}">
-                <td class="fw-semibold">${r.Min.toLocaleString()} – ${maxLabel}</td>
-                <td class="text-center">${r.I}</td>
-                <td class="text-center">${r.II}</td>
-                <td class="text-center">${r.III}</td>
-                <td class="text-center">${r.S1}</td>
-                <td class="text-center">${r.S2}</td>
-                <td class="text-center">${r.S3}</td>
-                <td class="text-center">${r.S4}</td>
+                <td class="fw-semibold">${r.min.toLocaleString()} – ${maxLabel}</td>
+                <td class="text-center">${n('I')}</td>
+                <td class="text-center">${n('II')}</td>
+                <td class="text-center">${n('III')}</td>
+                <td class="text-center">${n('S1')}</td>
+                <td class="text-center">${n('S2')}</td>
+                <td class="text-center">${n('S3')}</td>
+                <td class="text-center">${n('S4')}</td>
             </tr>`;
         }).join('');
     }
@@ -579,7 +537,7 @@
             summaryRow.style.display = '';
             document.getElementById('var-summary-total-qty').textContent = totalQty.toLocaleString();
             document.getElementById('var-summary-sample').textContent = sampleSize > 0 ? sampleSize : '—';
-            document.getElementById('var-summary-code').textContent = sampleSize > 0 ? (SS_TO_CODE[sampleSize] || '—') : '—';
+            document.getElementById('var-summary-code').textContent = sampleSize > 0 ? (AQL.codeLetter(calcLotSize, calcLevel) || '—') : '—';
         } else {
             summaryRow.style.display = 'none';
         }

@@ -16,7 +16,19 @@ class UpdateCustomerPaymentRequest extends FormRequest
         return [
             'customer_id' => ['required', 'exists:customers,id'],
             'payment_date' => ['required', 'date'],
-            'invoice_reference' => ['nullable', 'string', 'max:255'],
+            // Must be an existing invoice of the selected customer (finance review FN-3).
+            'invoice_reference' => ['nullable', 'string', 'max:255', function (string $attribute, mixed $value, \Closure $fail) {
+                // An existing (legacy) unmatched reference may be kept unchanged on edit.
+                if ($value === $this->route('customerPayment')?->invoice_reference) {
+                    return;
+                }
+                $exists = \App\Models\CustomerInvoice::where('invoice_number', $value)
+                    ->where('customer_id', $this->input('customer_id'))
+                    ->exists();
+                if (! $exists) {
+                    $fail('Choose an existing invoice of this customer.');
+                }
+            }],
             'foreign_currency' => ['required', 'string', 'max:10'],
             'invoiced_amount_fc' => ['required', 'numeric', 'min:0.01'],
             'received_fc' => ['required', 'numeric', 'min:0'],

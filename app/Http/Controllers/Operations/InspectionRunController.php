@@ -18,6 +18,12 @@ use App\Models\Sample;
 use App\Models\SampleColor;
 use App\Models\SampleSize;
 use App\Services\Inspection\AqlCalculationService;
+use App\Services\Inspection\InspectionDefectCountService;
+use App\Services\Inspection\InspectionRunLockService;
+use App\Services\Inspection\InspectionSectionPolicyService;
+use Illuminate\Validation\ValidationException;
+use App\Services\Inspection\InspectionVerdictService;
+use App\Http\Requests\Operations\ReopenInspectionRunRequest;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
@@ -28,6 +34,20 @@ class InspectionRunController extends Controller
     public function __construct(private AqlCalculationService $aql)
     {
         $this->middleware('permission:inspections.edit');
+        $this->middleware('permission:inspections.reopen')->only('reopen');
+    }
+
+    // ── Finished runs are read-only (docs/QC_RULES.md) ──────────────────────
+
+    private function lockedRedirect(Inspection $inspection, InspectionRun $run)
+    {
+        return redirect()->route('inspections.runs.edit', [$inspection, $run])
+            ->with('error', 'This run is finished and read-only. Reopen it to make changes.');
+    }
+
+    private function lockedJson()
+    {
+        return response()->json(['success' => false, 'message' => 'This run is finished and read-only. Reopen it to make changes.', 'errors' => []], 422);
     }
 
     // ── Create: sample + color-variant picker ────────────────────────────────
@@ -85,6 +105,8 @@ class InspectionRunController extends Controller
 
         return DB::transaction(function () use ($sampleId, $colorId, $request, $inspection) {
             $inspection->load('inspectionType');
+            // Lock the inspection row so two simultaneous "new run" requests can't share a number.
+            Inspection::whereKey($inspection->id)->lockForUpdate()->first();
             $runNumber = $inspection->runs()->max('run_number') + 1;
 
             $run = $inspection->runs()->create([
@@ -154,6 +176,10 @@ class InspectionRunController extends Controller
 
     public function update(Request $request, Inspection $inspection, InspectionRun $run)
     {
+        if (InspectionRunLockService::isLocked($run)) {
+            return $this->lockedRedirect($inspection, $run);
+        }
+
         $request->validate([
             // AQL
             'aql.lot_size' => ['nullable', 'integer', 'min:1'],
@@ -194,7 +220,27 @@ class InspectionRunController extends Controller
             'finish_run' => ['nullable', 'boolean'],
         ]);
 
-        return DB::transaction(function () use ($request, $inspection, $run) {
+        // Section statuses after this save (submitted value, else what is stored).
+        $runSections = $run->runSections()->with('section')->get();
+        $submitted = $request->input('sections', []);
+        $skipErrors = [];
+        $effective = $runSections->map(function ($rs) use ($submitted, &$skipErrors) {
+            $status = array_key_exists($rs->id, $submitted) ? ($submitted[$rs->id]['status'] ?? 'pending') : $rs->status;
+            if (! InspectionSectionPolicyService::allowsStatus($rs->section, $status)) {
+                $skipErrors["sections.{$rs->id}.status"] = "'{$rs->section->name}' cannot be skipped.";
+            }
+
+            return ['section' => $rs->section, 'status' => $status];
+        });
+
+        if ($skipErrors) {
+            throw ValidationException::withMessages($skipErrors);
+        }
+
+        $blocking = $request->boolean('finish_run') ? InspectionSectionPolicyService::blockingFinish($effective) : [];
+        $finishing = $request->boolean('finish_run') && $blocking === [];
+
+        return DB::transaction(function () use ($request, $inspection, $run, $blocking, $finishing) {
 
             // ── 2. AQL record ─────────────────────────────────────────────────
             if ($request->filled('aql.lot_size')) {
@@ -239,10 +285,24 @@ class InspectionRunController extends Controller
                 $foundMajor = (int) ($aqlInput['found_major'] ?? 0);
                 $foundMinor = (int) ($aqlInput['found_minor'] ?? 0);
 
+                // Zero defects only becomes Pass once the AQL check is complete
+                // (its section is marked complete, or the run is being finished).
                 $verdict = $this->aql->verdict(
                     $foundCritical, $foundMajor, $foundMinor,
                     $acCritical, $acMajor, $acMinor,
+                    complete: $finishing || $this->aqlSectionComplete($run, $request),
                 );
+
+                // Each severity's own plan (an arrow can move it to a larger sample; QC_RULES §1).
+                // "Not allowed" uses the base code letter's plan (Ac 0 / Re 1).
+                $basePlan = $plan['code_letter']
+                    ? ['sample_size' => min($this->aql->sampleSizeFromCode($plan['code_letter']), $lotSize), 'code_letter' => $plan['code_letter']]
+                    : null;
+                $perSeverity = [
+                    'critical' => $notAllowedCritical ? $basePlan : $plan['critical'],
+                    'major' => $notAllowedMajor ? $basePlan : $plan['major'],
+                    'minor' => $notAllowedMinor ? $basePlan : $plan['minor'],
+                ];
 
                 // Store "not_allowed" as a special sentinel float (-1) so it round-trips
                 $storeAqlCritical = $notAllowedCritical ? -1.0 : $aqlCritical;
@@ -270,6 +330,13 @@ class InspectionRunController extends Controller
                         'found_minor' => $foundMinor,
                         'verdict' => $verdict,
                         'variations' => $variations,
+                        'sample_size_critical' => $perSeverity['critical']['sample_size'] ?? null,
+                        'code_letter_critical' => $perSeverity['critical']['code_letter'] ?? null,
+                        'sample_size_major' => $perSeverity['major']['sample_size'] ?? null,
+                        'code_letter_major' => $perSeverity['major']['code_letter'] ?? null,
+                        'sample_size_minor' => $perSeverity['minor']['sample_size'] ?? null,
+                        'code_letter_minor' => $perSeverity['minor']['code_letter'] ?? null,
+                        'standard_ref' => AqlCalculationService::STANDARD_REF,
                     ]
                 );
 
@@ -316,8 +383,17 @@ class InspectionRunController extends Controller
                 }
             }
 
+            // ── 3b. AQL found counts come from recorded defect rows when there are any ──
+            $this->refreshAqlFromDefects($run, $finishing || $this->aqlSectionComplete($run, $request));
+
             // ── 4. Handle finish flag ─────────────────────────────────────────
-            if ($request->boolean('finish_run')) {
+            // The data above is saved either way; finishing needs every required section done.
+            if ($blocking !== []) {
+                return redirect()->route('inspections.runs.edit', [$inspection, $run])
+                    ->with('error', 'Saved, but the run was not finished. Complete these sections first: '.implode(', ', $blocking).'.');
+            }
+
+            if ($finishing) {
                 $run->update([
                     'completed_at' => now(),
                     'verdict' => $this->resolveRunVerdict($run),
@@ -335,10 +411,14 @@ class InspectionRunController extends Controller
 
     public function destroy(Inspection $inspection, InspectionRun $run)
     {
+        if (InspectionRunLockService::isLocked($run)) {
+            return $this->lockedRedirect($inspection, $run);
+        }
+
         DB::transaction(function () use ($run) {
             foreach ($run->runSections as $rs) {
                 foreach ($rs->attachments as $att) {
-                    Storage::disk('public')->delete($att->file_path);
+                    $att->deleteFiles();
                 }
                 $rs->attachments()->delete();
                 $rs->delete();
@@ -357,6 +437,9 @@ class InspectionRunController extends Controller
     public function uploadAttachment(Request $request, Inspection $inspection, InspectionRun $run, InspectionRunSection $runSection)
     {
         abort_unless($runSection->inspection_run_id === $run->id, 403);
+        if (InspectionRunLockService::isLocked($run)) {
+            return $this->lockedJson();
+        }
 
         $request->validate([
             'files' => ['required', 'array', 'max:20'],
@@ -405,13 +488,17 @@ class InspectionRunController extends Controller
 
     public function deleteAttachment(Request $request, Inspection $inspection, InspectionRun $run, Attachment $attachment)
     {
+        abort_unless($run->inspection_id === $inspection->id, 404); // route is not scope-bound
         $runSection = $attachment->attachable;
         abort_unless(
             $runSection instanceof InspectionRunSection && $runSection->inspection_run_id === $run->id,
             403
         );
+        if (InspectionRunLockService::isLocked($run)) {
+            return $this->lockedJson();
+        }
 
-        Storage::disk('public')->delete($attachment->file_path);
+        $attachment->deleteFiles();
         $attachment->delete();
 
         return response()->json(['success' => true]);
@@ -422,6 +509,9 @@ class InspectionRunController extends Controller
     public function reorderAttachments(ReorderAttachmentsRequest $request, Inspection $inspection, InspectionRun $run, InspectionRunSection $runSection)
     {
         abort_unless($runSection->inspection_run_id === $run->id, 403);
+        if (InspectionRunLockService::isLocked($run)) {
+            return $this->lockedJson();
+        }
 
         $posted = $request->validated('order');
 
@@ -443,11 +533,15 @@ class InspectionRunController extends Controller
 
     public function updateAttachmentImage(UpdateAttachmentImageRequest $request, Inspection $inspection, InspectionRun $run, Attachment $attachment)
     {
+        abort_unless($run->inspection_id === $inspection->id, 404); // route is not scope-bound
         $runSection = $attachment->attachable;
         abort_unless(
             $runSection instanceof InspectionRunSection && $runSection->inspection_run_id === $run->id,
             403
         );
+        if (InspectionRunLockService::isLocked($run)) {
+            return $this->lockedJson();
+        }
         abort_unless($attachment->isImage(), 422, 'Only images can be edited.');
 
         $manager = ImageManager::gd();
@@ -468,15 +562,20 @@ class InspectionRunController extends Controller
         Storage::disk('public')->put($newPath, (string) $encoded);
 
         $oldPath = $attachment->file_path;
+        // Keep the very first file as the original evidence; later edits replace only the edit.
+        $originalPath = $attachment->original_file_path ?? $oldPath;
 
         $attachment->update([
+            'original_file_path' => $originalPath,
             'file_path' => $newPath,
             'file_name' => pathinfo($attachment->file_name, PATHINFO_FILENAME).'.jpg',
             'mime_type' => 'image/jpeg',
             'file_size' => Storage::disk('public')->size($newPath),
         ]);
 
-        Storage::disk('public')->delete($oldPath);
+        if ($oldPath !== $originalPath) {
+            Storage::disk('public')->delete($oldPath);
+        }
 
         return response()->json([
             'success' => true,
@@ -493,7 +592,9 @@ class InspectionRunController extends Controller
     public function saveSection(Request $request, Inspection $inspection, InspectionRun $run, InspectionRunSection $runSection)
     {
         abort_unless($runSection->inspection_run_id === $run->id, 403);
-        abort_if($run->completed_at, 422, 'This run is already finished.');
+        if (InspectionRunLockService::isLocked($run)) {
+            return $this->lockedJson();
+        }
 
         $validated = $request->validate([
             'status' => ['required', 'in:pending,complete,na'],
@@ -511,6 +612,10 @@ class InspectionRunController extends Controller
             'defects.*.notes' => ['nullable', 'string', 'max:2000'],
         ]);
 
+        if (! InspectionSectionPolicyService::allowsStatus($runSection->section, $validated['status'])) {
+            throw ValidationException::withMessages(['status' => "'{$runSection->section->name}' cannot be skipped."]);
+        }
+
         $mergedData = array_merge($runSection->data ?? [], $validated['data'] ?? []);
 
         $runSection->update([
@@ -521,6 +626,7 @@ class InspectionRunController extends Controller
 
         if ($request->has('defects')) {
             $this->syncSectionDefects($runSection, $validated['defects'] ?? []);
+            $this->refreshAqlFromDefects($run, $this->aqlSectionComplete($run, $request));
         }
 
         $run->loadMissing('runSections');
@@ -605,11 +711,62 @@ class InspectionRunController extends Controller
 
         foreach ($removed as $defectRow) {
             $runSection->attachments()->where('task_key', $defectRow->taskKey())->get()->each(function ($att) {
-                Storage::disk('public')->delete($att->file_path);
+                $att->deleteFiles();
                 $att->delete();
             });
             $defectRow->delete();
         }
+    }
+
+    // ── AQL found counts = recorded defect rows (one source of truth, QC_RULES §2) ──
+
+    private function refreshAqlFromDefects(InspectionRun $run, bool $complete): void
+    {
+        $aql = $run->aql()->first();
+        if (! $aql) {
+            return;
+        }
+
+        $counts = InspectionDefectCountService::countsFor($run);
+
+        if ($counts === null) {
+            // Rows were all removed: the counts they produced no longer exist.
+            if ($aql->counts_source === 'defect_rows') {
+                $counts = ['critical' => 0, 'major' => 0, 'minor' => 0];
+                $source = 'manual';
+            } else {
+                return; // typed counts stay as entered
+            }
+        }
+
+        $ac = fn ($v) => $v === null ? null : (int) $v;
+
+        $aql->update([
+            'found_critical' => $counts['critical'],
+            'found_major' => $counts['major'],
+            'found_minor' => $counts['minor'],
+            'counts_source' => $source ?? 'defect_rows',
+            'verdict' => $this->aql->verdict(
+                $counts['critical'], $counts['major'], $counts['minor'],
+                $ac($aql->ac_critical), $ac($aql->ac_major), $ac($aql->ac_minor),
+                complete: $complete,
+            ),
+        ]);
+    }
+
+    // ── Is the run's AQL section marked complete (in this request, or already)? ──
+
+    private function aqlSectionComplete(InspectionRun $run, Request $request): bool
+    {
+        $aqlSection = $run->runSections()
+            ->whereHas('section', fn ($q) => $q->where('section_type', 'aql'))
+            ->first();
+
+        if (! $aqlSection) {
+            return false;
+        }
+
+        return ($request->input("sections.{$aqlSection->id}.status") ?? $aqlSection->status) === 'complete';
     }
 
     // ── Determine a run's final verdict from its Final Review section / AQL ───
@@ -620,17 +777,10 @@ class InspectionRunController extends Controller
 
         // 1. Explicit verdict chosen by the inspector in Final Review
         $finalReview = $sections->first(fn ($rs) => $rs->section?->slug === 'final_review');
-        $selected = $finalReview?->data['overall_verdict'] ?? null;
+        $selected = InspectionVerdictService::fromFinalReview($finalReview?->data['overall_verdict'] ?? null);
 
-        $map = [
-            'Pass' => 'Pass',
-            'Fail' => 'Fail',
-            'Conditional Pass' => 'Conditional',
-            'Re-Inspection Required' => 'Conditional',
-        ];
-
-        if ($selected && isset($map[$selected])) {
-            return $map[$selected];
+        if ($selected) {
+            return $selected;
         }
 
         // 2. AQL sampling verdict, when the run includes an AQL plan
@@ -654,19 +804,21 @@ class InspectionRunController extends Controller
 
     private function syncInspectionStatus(Inspection $inspection): void
     {
-        $runs = $inspection->runs()->get(['id', 'verdict', 'completed_at']);
+        $inspection->syncOverallStatus();
+    }
 
-        if ($runs->isEmpty() || $runs->contains(fn ($r) => is_null($r->completed_at))) {
-            $status = 'Pending';
-        } elseif ($runs->contains(fn ($r) => $r->verdict === 'Fail')) {
-            $status = 'Fail';
-        } else {
-            $status = 'Pass';
+    // ── Reopen a finished run: own permission, mandatory reason, logged ─────
+
+    public function reopen(ReopenInspectionRunRequest $request, Inspection $inspection, InspectionRun $run, InspectionRunLockService $locks)
+    {
+        if (! $run->completed_at) {
+            return redirect()->route('inspections.runs.edit', [$inspection, $run])->with('error', 'This run is not finished.');
         }
 
-        if ($inspection->overall_status !== $status) {
-            $inspection->update(['overall_status' => $status]);
-        }
+        DB::transaction(fn () => $locks->reopen($run, $request->validated('reason'), $request->user()));
+
+        return redirect()->route('inspections.runs.edit', [$inspection, $run])
+            ->with('success', "Run #{$run->run_number} reopened. Finish it again when the changes are done.");
     }
 
     // ── Auto-resolve sections ─────────────────────────────────────────────────

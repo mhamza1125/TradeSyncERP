@@ -23,7 +23,7 @@ npm run dev                 # Vite HMR only
 npm run build               # production build → public/build/
 
 # Testing
-composer run test           # config:clear then php artisan test
+composer run test           # config:clear then php artisan test (MySQL database `trade_test` only — tests/TestCase.php refuses any other DB)
 php artisan test --filter=ExampleTest   # single test
 php artisan test tests/Feature/Finance/ # single folder
 
@@ -57,26 +57,17 @@ php artisan storage:link
 
 ### Request Lifecycle
 
-1. Route hits `auth` + `verified` middleware → Spatie permission middleware on route groups
+1. Route hits `auth` + `verified` + `EnsureUserIsActive` middleware → Spatie permission middleware declared in each **controller constructor** (`$this->middleware('permission:…')`), not on route groups
 2. `store()`/`update()` actions always use a **`FormRequest`** in `app/Http/Requests/{Namespace}/`
 3. Business logic beyond simple CRUD lives in `app/Services/` (plain PHP classes)
 4. Blade views in `resources/views/{namespace}/{entity}/`; PDF exports in `resources/views/exports/`
 5. File uploads → `AttachmentController` → `public` disk → `attachments` table (polymorphic)
 
-### Double-Entry Accounting
+### Accounting model (cash book; see `docs/FINANCE_RULES.md`)
 
-Every financial event creates a `Transaction` first, then the child record:
+`accounts` are Cash/Bank accounts only. A non-transfer `Transaction` names **the same account as debit and credit**, and its direction comes from `transaction_type` (CustomerReceipt = in; Expense/Salary/VendorPayment = out; JournalEntry = transfer, in for the debit account and out for the credit account). This is **not** double-entry. Balances come only from `App\Services\Finance\LedgerService`.
 
-```
-Action              Debit Account         Credit Account        transaction_type
-────────────────────────────────────────────────────────────────────────────────
-Record Expense      Expense Head Acct     Cash/Bank Acct        Expense
-Pay Salary          Salary Expense Acct   Cash/Bank Acct        Salary
-Receive Payment     Cash/Bank Acct        Customer Acct         CustomerReceipt
-Bank Transfer       Destination Acct      Source Acct           JournalEntry
-```
-
-Child records (`Expense`, `SalaryRun`, `CustomerPayment`) store `transaction_id`. A child **cannot** exist without its transaction. Never create `Transaction` directly in a controller — the financial model owns that responsibility.
+Child records (`Expense`, `SalaryRun`, `CustomerPayment`) store `transaction_id`. Finance records are **voided, never deleted** (`FinanceVoidService`). Voided rows are excluded from every balance and total. Document numbers come from `NumberSequenceService`. Known drift: transactions are still created in controllers (FN-5).
 
 ### Inspection Hierarchy
 
@@ -90,7 +81,7 @@ InspectionType  →  defines template sections (via inspection_type_section_defa
 
 `section_type` has **12 fixed values**: `images`, `workmanship`, `aql`, `checklist`, `container`, `verification`, `review`, `article_results`, `conclusion_section`, `general_info`, `checkpoint`, `production_stages`. Every `switch`/`match` on `section_type` in Blade and controllers must handle all 12. Adding a new one requires updating all dispatch sites.
 
-AQL calculations flow exclusively through `app/Services/Inspection/AqlCalculationService.php` (ISO 2859-1). Never replicate the lookup tables.
+AQL calculations flow exclusively through `app/Services/Inspection/AqlCalculationService.php` (ISO 2859-1). Never replicate the lookup tables — browser previews read `tableForJs()` via `public/assets/js/aql-plan.js`. Table sources: `docs/AQL_SOURCES.md`. Verdict, roll-up, run lock/reopen and section skip rules: **`docs/QC_RULES.md`** (the one place they are written down).
 
 ### Salary Run
 
@@ -120,7 +111,7 @@ Two coexisting systems: `sample_movements` (legacy, direct FK) and `movements`/`
 - Pivot tables: no `id()`, no `timestamps()`, define composite PK explicitly
 
 **Frontend**
-- TailwindCSS utility classes only — no custom CSS files
+- The app UI is the **Bootstrap 5** theme (`btn-*`, `badge`, `d-none`; `Paginator::useBootstrapFive()`); Tailwind appears only in the Breeze auth views. Use the theme's classes — no new custom CSS files
 - Alpine.js for reactive UI — no Vue/React
 - AJAX via Axios (globally configured) — not `fetch()`
 - JS longer than ~10 lines in Blade → `@push('scripts')` or dedicated JS file

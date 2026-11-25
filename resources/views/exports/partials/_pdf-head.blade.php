@@ -240,14 +240,5 @@ body {
 .divider     { border: none; border-top: 1px solid #e0e0e0; margin: 12px 0; }
 </style>
 
-{{-- PHP canvas script: draws "Page X of Y" on every page via DomPDF's page_text API --}}
-<script type="text/php">
-if (isset($pdf)) {
-    $font  = $fontMetrics->get_font('DejaVu Sans', 'normal');
-    $size  = 7;
-    $color = [0.00, 0.69, 0.93];
-    $w     = $pdf->get_width();
-    $h     = $pdf->get_height();
-    $pdf->page_text($w - 90, $h - 28, "Page {PAGE_NUM} of {PAGE_COUNT}", $font, $size, $color);
-}
-</script>
+{{-- "Page X of Y" is drawn by App\Services\Pdf\PdfPageNumberService (dompdf isPhpEnabled is off). --}}
+<meta name="pdf-page-numbers" content="1">

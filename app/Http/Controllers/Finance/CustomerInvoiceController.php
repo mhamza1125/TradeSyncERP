@@ -185,7 +185,12 @@ class CustomerInvoiceController extends Controller
             return;
         }
 
-        $totalPaid = CustomerPayment::where('invoice_reference', $invoiceNumber)->sum('received_fc');
+        // Linked by id; legacy rows (no id yet) still match by their text reference (FN-3).
+        // Settlement counts received_fc only until the accountant's rule is decided (Q22).
+        $totalPaid = CustomerPayment::notVoided()
+            ->where(fn ($q) => $q->where('customer_invoice_id', $invoice->id)
+                ->orWhere(fn ($q) => $q->whereNull('customer_invoice_id')->where('invoice_reference', $invoiceNumber)))
+            ->sum('received_fc');
 
         $invoice->amount_paid = $totalPaid;
         $invoice->amount_due = max(0, $invoice->total_amount - $totalPaid);

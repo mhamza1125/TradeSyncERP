@@ -708,8 +708,10 @@ class InspectionSectionSeeder extends Seeder
             ],
         ];
 
+        // firstOrCreate, not updateOrCreate: re-seeding a live database must never overwrite
+        // sections an admin has edited. Change existing sections through a migration.
         foreach ($sections as $sec) {
-            InspectionSection::updateOrCreate(
+            InspectionSection::firstOrCreate(
                 ['slug' => $sec['slug']],
                 $sec
             );

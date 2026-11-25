@@ -314,7 +314,7 @@
                                     </thead>
                                     <tbody>
                                         @foreach($sample->inspections->take(5) as $ins)
-                                        @php $ic = ['Pass'=>'success','Fail'=>'danger','Pending'=>'warning','N/A'=>'secondary']; @endphp
+                                        @php $ic = ['Pass'=>'success','Fail'=>'danger','Pending'=>'warning','N/A'=>'secondary','Conditional'=>'warning','Re-Inspection'=>'danger']; @endphp
                                         <tr>
                                             <td class="fw-semibold">{{ $ins->report_number }}</td>
                                             <td>{{ $ins->inspection_date->format('d M Y') }}</td>

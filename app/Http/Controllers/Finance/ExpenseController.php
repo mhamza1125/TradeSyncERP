@@ -3,6 +3,8 @@
 namespace App\Http\Controllers\Finance;
 
 use App\Http\Controllers\Controller;
+use App\Http\Requests\Finance\VoidFinanceRecordRequest;
+use App\Services\Finance\FinanceVoidService;
 use App\Http\Requests\Finance\StoreExpenseRequest;
 use App\Models\Account;
 use App\Models\Expense;
@@ -94,15 +96,22 @@ class ExpenseController extends Controller
         return view('finance.expenses.show', compact('expense'));
     }
 
-    public function destroy(Expense $expense)
+    /** Expenses are voided, never deleted (audit F-10): the record and its transaction are kept. */
+    public function destroy(VoidFinanceRecordRequest $request, Expense $expense, FinanceVoidService $voids)
     {
-        $expense->delete();
-
-        if (request()->wantsJson()) {
-            return response()->json(['success' => true]);
+        if ($expense->isVoided()) {
+            return $request->wantsJson()
+                ? response()->json(['success' => false, 'message' => 'This expense is already voided.', 'errors' => []], 422)
+                : back()->with('error', 'This expense is already voided.');
         }
 
-        return redirect()->route('expenses.index')->with('success', 'Expense deleted.');
+        $voids->voidExpense($expense, $request->validated('void_reason'), $request->user());
+
+        if ($request->wantsJson()) {
+            return response()->json(['success' => true, 'message' => 'Expense voided.', 'data' => []]);
+        }
+
+        return redirect()->route('expenses.index')->with('success', 'Expense voided. It no longer counts in balances or totals.');
     }
 
     public function exportSinglePdf(Expense $expense)
