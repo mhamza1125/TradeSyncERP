@@ -38,14 +38,13 @@
         .ts-wrapper.single.ts-clean-search .ts-control > .item { display: none; }
     </style>
     <!--! END: Searchable selects -->
+    <!--! Brand layer: design tokens + components (docs/DESIGN.md). Must load last. -->
+    <link rel="stylesheet" type="text/css" href="{{ asset('assets/css/brand.css') }}" />
     @stack('styles')
-    <!--[if lt IE 9]>
-        <script src="https://oss.maxcdn.com/html5shiv/3.7.2/html5shiv.min.js"></script>
-        <script src="https://oss.maxcdn.com/respond/1.4.2/respond.min.js"></script>
-    <![endif]-->
 </head>
 
 <body>
+    <a href="#main-content" class="ts-skip-link">Skip to main content</a>
     <!--! ================================================================ !-->
     <!--! [Start] Navigation Menu !-->
     <!--! ================================================================ !-->
@@ -59,7 +58,7 @@
     <!--! ================================================================ !-->
     <!--! [Start] Main Content !-->
     <!--! ================================================================ !-->
-    <main class="nxl-container">
+    <main class="nxl-container" id="main-content" tabindex="-1">
         @yield('content')
     </main>
     <!--! ================================================================ !-->

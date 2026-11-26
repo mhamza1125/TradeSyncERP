@@ -1,0 +1,450 @@
+/* ==========================================================================
+   TradeSyncERP brand layer — the ONE place for design tokens (docs/DESIGN.md).
+   Loaded after bootstrap.min.css and theme.min.css. The two vendor files read
+   these tokens through var(--ts-*) (their old primary colour was replaced by
+   token references, see docs/DESIGN.md §6), so a token change here restyles
+   both. No !important except where noted in DESIGN.md.
+   Palette derived from public/assets/images/logo-pdf.png (computed, not guessed).
+   ========================================================================== */
+
+/* ── 1. Tokens ──────────────────────────────────────────────────────────── */
+:root {
+    /* Brand (from the logo) */
+    --ts-accent:          #01AEEF;   /* logo cyan — decorative only (rules, bars); 2.53:1 on white, never text */
+    --ts-primary:         #00699A;   /* 6.02:1 with white text / on white */
+    --ts-primary-rgb:     0, 105, 154;
+    --ts-primary-dark:    #004E73;   /* hover / active, 8.98:1 with white */
+    --ts-primary-darker:  #003A56;
+    --ts-primary-subtle:  #E1F4FC;
+    --ts-primary-border:  #B3E0F5;
+    --ts-on-primary-subtle: #00557D; /* 7.15:1 on primary-subtle */
+    --ts-primary-text:    #00699A;   /* primary used AS TEXT (links); differs from --ts-primary in dark mode */
+    --ts-link-hover:      #004E73;
+    --ts-nav-link:        #3A424B;   /* sidebar + topbar links: 10.19:1 on white */
+    --ts-ink:             #171717;   /* logo black: headings */
+
+    /* Neutrals */
+    --ts-body:            #2B3137;   /* 13.15:1 on white, 12.14:1 on page */
+    --ts-muted:           #5B6470;   /* 6.00:1 on white, 5.54:1 on page, 5.29:1 on surface-2 */
+    --ts-page:            #F4F6F8;
+    --ts-surface:         #FFFFFF;
+    --ts-surface-2:       #EEF1F4;
+    --ts-border:          #D5DAE0;
+    --ts-border-strong:   #8A939E;   /* 3.11:1 — form control borders (non-text) */
+
+    /* Status (text on tint ≥ 6.3:1; white on solid ≥ 5.3:1) */
+    --ts-success: #1D7A46; --ts-success-text: #17643A; --ts-success-bg: #E3F4EA;
+    --ts-danger:  #B42318; --ts-danger-text:  #A32019; --ts-danger-bg:  #FDE8E7;
+    --ts-warning: #9A5B00; --ts-warning-text: #7A4A00; --ts-warning-bg: #FFF1D6;
+    --ts-info:    #0B5B85; --ts-info-text:    #0B5B85; --ts-info-bg:    #E1F1FA;
+    --ts-reinspect: #6B3FA0; --ts-reinspect-text: #5B2E91; --ts-reinspect-bg: #EFE7FA;
+    --ts-neutral-text: #4A525C; --ts-neutral-bg: #ECEFF2;
+
+    /* Defect severity */
+    --ts-sev-critical-text: #A32019; --ts-sev-critical-bg: #FDE8E7;
+    --ts-sev-major-text:    #8F3B00; --ts-sev-major-bg:    #FFEBDC;
+    --ts-sev-minor-text:    #1849A9; --ts-sev-minor-bg:    #E5EEFC;
+
+    /* Focus */
+    --ts-focus: #00699A;
+
+    /* Typography (system stack: no remote fonts) */
+    --ts-font-sans: system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, "Noto Sans", "Liberation Sans", sans-serif;
+    --ts-font-mono: ui-monospace, SFMono-Regular, Menlo, Consolas, "Liberation Mono", monospace;
+    --ts-fs-xs: 0.75rem;   /* 12px — chips, captions */
+    --ts-fs-sm: 0.8125rem; /* 13px — table cells, help text */
+    --ts-fs-md: 0.875rem;  /* 14px — body */
+    --ts-fs-lg: 1rem;      /* 16px — card titles */
+    --ts-fs-xl: 1.25rem;   /* 20px — page title */
+    --ts-lh: 1.5;
+
+    /* Spacing scale (4px base) */
+    --ts-space-1: 0.25rem; --ts-space-2: 0.5rem; --ts-space-3: 0.75rem;
+    --ts-space-4: 1rem;    --ts-space-5: 1.5rem; --ts-space-6: 2rem;
+
+    /* Radii, shadows, sizes */
+    --ts-radius-sm: 4px; --ts-radius: 6px; --ts-radius-lg: 10px; --ts-radius-pill: 999px;
+    --ts-shadow-sm: 0 1px 2px rgba(23, 23, 23, .06);
+    --ts-shadow:    0 1px 3px rgba(23, 23, 23, .08), 0 1px 2px rgba(23, 23, 23, .04);
+    --ts-shadow-lg: 0 8px 24px rgba(23, 23, 23, .12);
+    --ts-touch: 44px;  /* minimum touch target */
+
+    /* z-index layers */
+    --ts-z-sticky: 1020; --ts-z-header: 1025; --ts-z-sidebar: 1030; --ts-z-overlay: 1035;
+    --ts-z-dropdown: 1060; --ts-z-modal: 1065; --ts-z-toast: 1090;
+
+    /* ── 2. Bootstrap 5.2 variables mapped to the tokens ── */
+    --bs-primary: var(--ts-primary);
+    --bs-primary-rgb: var(--ts-primary-rgb);
+    --bs-success: var(--ts-success);   --bs-success-rgb: 29, 122, 70;
+    --bs-danger: var(--ts-danger);     --bs-danger-rgb: 180, 35, 24;
+    --bs-warning: var(--ts-warning);   --bs-warning-rgb: 154, 91, 0;
+    --bs-info: var(--ts-info);         --bs-info-rgb: 11, 91, 133;
+    --bs-body-font-family: var(--ts-font-sans);
+    --bs-font-sans-serif: var(--ts-font-sans);
+    --bs-body-color: var(--ts-body);
+    --bs-body-bg: var(--ts-page);
+    --bs-border-color: var(--ts-border);
+    --bs-link-color: var(--ts-primary-text);
+    --bs-link-hover-color: var(--ts-link-hover);
+    --bs-border-radius: var(--ts-radius);
+}
+
+/* ── 2b. Dark skin (the theme's toggle adds html.app-skin-dark) ─────────────
+   Same tokens, dark values, matched to the theme's dark surfaces (#121a2d page,
+   #0f172a cards, #1c2438 table heads). Contrast: body 11.21:1, muted 7.57:1
+   (6.56:1 on table heads), links 9.38:1, chips ≥ 7.38:1. */
+html.app-skin-dark {
+    --ts-primary-text:    #5CC8F5;
+    --ts-link-hover:      #8FD8F8;
+    --ts-primary-subtle:  #0E3247;
+    --ts-primary-border:  #1F5A78;
+    --ts-on-primary-subtle: #8FD8F8;
+    --ts-ink:             #FFFFFF;
+    --ts-body:            #C9CDD6;
+    --ts-muted:           #A3A9B6;
+    --ts-page:            #121A2D;
+    --ts-surface:         #0F172A;
+    --ts-surface-2:       #1C2438;
+    --ts-border:          #25324A;
+    --ts-border-strong:   #5B6880;
+    --ts-nav-link:        #C9CDD6;
+    --ts-focus:           #5CC8F5;
+
+    --ts-success-text: #7BD8A2; --ts-success-bg: #123524;
+    --ts-danger-text:  #FF9D94; --ts-danger-bg:  #3D1614;
+    --ts-warning-text: #F5C26B; --ts-warning-bg: #3A2A0C;
+    --ts-info-text:    #7CCBF2; --ts-info-bg:    #0E3247;
+    --ts-reinspect-text: #C9A7F5; --ts-reinspect-bg: #2A1B45;
+    --ts-neutral-text: #C3C8D1; --ts-neutral-bg: #253047;
+    --ts-sev-critical-text: #FF9D94; --ts-sev-critical-bg: #3D1614;
+    --ts-sev-major-text:    #FFB07A; --ts-sev-major-bg:    #3A2312;
+    --ts-sev-minor-text:    #9DBBFF; --ts-sev-minor-bg:    #172A52;
+
+    --ts-shadow-sm: 0 1px 2px rgba(0, 0, 0, .4);
+    --ts-shadow-lg: 0 8px 24px rgba(0, 0, 0, .5);
+}
+/* Chip and alert borders are light tints in the light skin; on dark they use the border token. */
+html.app-skin-dark .ts-chip,
+html.app-skin-dark .alert { border-color: var(--ts-border); }
+/* The theme forces white header text in dark mode; this keeps the header on a dark surface. */
+html.app-skin-dark .table > thead > tr > th { background: var(--ts-surface-2); }
+html.app-skin-dark .table { --bs-table-hover-bg: rgba(255, 255, 255, .04); --bs-table-hover-color: var(--ts-body); }
+html.app-skin-dark .table-striped > tbody > tr:nth-of-type(odd) > * { --bs-table-accent-bg: rgba(255, 255, 255, .02); }
+html.app-skin-dark .btn-light-brand, html.app-skin-dark .btn-outline-secondary { color: var(--ts-body); background-color: transparent; border-color: var(--ts-border-strong); }
+html.app-skin-dark .btn-light-brand:hover, html.app-skin-dark .btn-outline-secondary:hover { color: var(--ts-ink); background-color: var(--ts-surface-2); }
+
+/* The theme's dark rules re-colour text utilities with their own (higher-specificity) selectors;
+   these keep the accessible dark tokens in charge. */
+html.app-skin-dark .text-primary   { color: var(--ts-primary-text) !important; }
+html.app-skin-dark .text-success   { color: var(--ts-success-text) !important; }
+html.app-skin-dark .text-danger    { color: var(--ts-danger-text) !important; }
+html.app-skin-dark .text-warning   { color: var(--ts-warning-text) !important; }
+html.app-skin-dark .text-info      { color: var(--ts-info-text) !important; }
+html.app-skin-dark .text-secondary { color: var(--ts-neutral-text) !important; }
+html.app-skin-dark .badge.text-primary, html.app-skin-dark .bg-soft-primary.text-primary { color: var(--ts-on-primary-subtle) !important; }
+html.app-skin-dark .bg-light, html.app-skin-dark .bg-white { background-color: var(--ts-surface-2) !important; }
+html.app-skin-dark .pagination {
+    --bs-pagination-bg: var(--ts-surface); --bs-pagination-border-color: var(--ts-border);
+    --bs-pagination-color: var(--ts-primary-text); --bs-pagination-hover-bg: var(--ts-surface-2);
+    --bs-pagination-hover-color: var(--ts-ink); --bs-pagination-hover-border-color: var(--ts-border);
+    --bs-pagination-disabled-bg: var(--ts-surface); --bs-pagination-disabled-color: var(--ts-muted);
+    --bs-pagination-disabled-border-color: var(--ts-border);
+}
+html.app-skin-dark .pagination .page-link { color: var(--bs-pagination-color) !important; } /* the theme forces white */
+html.app-skin-dark .pagination .page-item.active .page-link { color: #fff !important; }
+/* Form controls in dark mode: searchable selects (Tom Select) and read-only "plaintext" fields. */
+html.app-skin-dark .form-control-plaintext { color: var(--ts-body); }
+html.app-skin-dark .ts-wrapper .ts-control,
+html.app-skin-dark .ts-wrapper.single.input-active .ts-control,
+html.app-skin-dark .ts-dropdown {
+    background: var(--ts-surface); color: var(--ts-body); border-color: var(--ts-border-strong);
+}
+html.app-skin-dark .ts-wrapper .ts-control > .item,
+html.app-skin-dark .ts-wrapper .ts-control > input,
+html.app-skin-dark .ts-dropdown .option { color: var(--ts-body); }
+html.app-skin-dark .ts-wrapper .ts-control > input::placeholder { color: var(--ts-muted); }
+html.app-skin-dark .ts-wrapper.multi .ts-control > .item { background: var(--ts-surface-2); border-color: var(--ts-border); }
+html.app-skin-dark .ts-dropdown .active, html.app-skin-dark .ts-dropdown .option:hover { background: var(--ts-surface-2); color: var(--ts-ink); }
+html.app-skin-dark .table-light {
+    --bs-table-color: var(--ts-body); --bs-table-bg: var(--ts-surface-2); --bs-table-border-color: var(--ts-border);
+    --bs-table-striped-bg: var(--ts-surface-2); --bs-table-striped-color: var(--ts-body);
+    --bs-table-hover-bg: var(--ts-surface-2); --bs-table-hover-color: var(--ts-ink);
+}
+
+/* ── 3. Base ────────────────────────────────────────────────────────────── */
+body {
+    font-family: var(--ts-font-sans);
+    font-size: var(--ts-fs-md);
+    line-height: var(--ts-lh);
+    color: var(--ts-body);
+    background-color: var(--ts-page);
+}
+h1, h2, h3, h4, h5, h6, .h1, .h2, .h3, .h4, .h5, .h6 { font-family: var(--ts-font-sans); color: var(--ts-ink); }
+.text-muted { color: var(--ts-muted) !important; } /* Bootstrap utility is !important by design */
+a { color: var(--ts-primary-text); }
+a:hover { color: var(--ts-link-hover); }
+
+/* Visible focus everywhere (the theme removes outlines in several places). */
+a:focus-visible, button:focus-visible, .btn:focus-visible, [role="button"]:focus-visible,
+input:focus-visible, select:focus-visible, textarea:focus-visible, summary:focus-visible,
+.nxl-link:focus-visible, .nxl-head-link:focus-visible, .dropdown-item:focus-visible,
+.form-check-input:focus-visible, .page-link:focus-visible, [tabindex]:focus-visible {
+    outline: 3px solid var(--ts-focus);
+    outline-offset: 2px;
+    box-shadow: none;
+}
+.form-control:focus, .form-select:focus {
+    border-color: var(--ts-primary);
+    box-shadow: 0 0 0 .2rem rgba(var(--ts-primary-rgb), .25);
+}
+
+/* Skip link (keyboard users jump past the navigation) */
+.ts-skip-link {
+    position: absolute; left: var(--ts-space-3); top: -60px; z-index: var(--ts-z-toast);
+    background: var(--ts-surface); color: var(--ts-primary-text); padding: var(--ts-space-2) var(--ts-space-4);
+    border: 2px solid var(--ts-primary); border-radius: var(--ts-radius); font-weight: 600;
+}
+.ts-skip-link:focus { top: var(--ts-space-3); }
+
+/* Numbers in tables line up */
+.table td, .table th, .ts-num { font-variant-numeric: tabular-nums; }
+
+/* ── 4. Components ──────────────────────────────────────────────────────── */
+
+/* Buttons: one height, one radius; ≥ 44px tall on touch screens */
+.btn { border-radius: var(--ts-radius); font-weight: 600; }
+.btn-primary {
+    --bs-btn-bg: var(--ts-primary); --bs-btn-border-color: var(--ts-primary);
+    --bs-btn-hover-bg: var(--ts-primary-dark); --bs-btn-hover-border-color: var(--ts-primary-dark);
+    --bs-btn-active-bg: var(--ts-primary-dark); --bs-btn-active-border-color: var(--ts-primary-darker);
+    --bs-btn-disabled-bg: var(--ts-primary); --bs-btn-disabled-border-color: var(--ts-primary);
+    --bs-btn-focus-shadow-rgb: var(--ts-primary-rgb);
+}
+.btn-outline-primary {
+    --bs-btn-color: var(--ts-primary-text); --bs-btn-border-color: var(--ts-primary-text);
+    --bs-btn-hover-bg: var(--ts-primary); --bs-btn-hover-border-color: var(--ts-primary);
+    --bs-btn-active-bg: var(--ts-primary-dark); --bs-btn-active-border-color: var(--ts-primary-dark);
+}
+/* Outline status buttons (e.g. "Mark as Complete", "Skip Section"): Bootstrap's #17c666 / #ffa21d /
+   #ea4d4d text is 2.0–3.7:1; the status text tokens are ≥ 6.3:1 (and follow the dark skin). */
+.btn-outline-success { --bs-btn-color: var(--ts-success-text); --bs-btn-border-color: var(--ts-success); --bs-btn-hover-color: #fff; --bs-btn-hover-bg: var(--ts-success); --bs-btn-hover-border-color: var(--ts-success); --bs-btn-active-color: #fff; --bs-btn-active-bg: var(--ts-success); --bs-btn-active-border-color: var(--ts-success); }
+.btn-outline-warning { --bs-btn-color: var(--ts-warning-text); --bs-btn-border-color: var(--ts-warning); --bs-btn-hover-color: #fff; --bs-btn-hover-bg: var(--ts-warning); --bs-btn-hover-border-color: var(--ts-warning); --bs-btn-active-color: #fff; --bs-btn-active-bg: var(--ts-warning); --bs-btn-active-border-color: var(--ts-warning); }
+.btn-outline-danger  { --bs-btn-color: var(--ts-danger-text);  --bs-btn-border-color: var(--ts-danger);  --bs-btn-hover-color: #fff; --bs-btn-hover-bg: var(--ts-danger);  --bs-btn-hover-border-color: var(--ts-danger);  --bs-btn-active-color: #fff; --bs-btn-active-bg: var(--ts-danger);  --bs-btn-active-border-color: var(--ts-danger); }
+.btn-light-brand, .btn-outline-secondary {
+    color: var(--ts-body); background-color: var(--ts-surface); border-color: var(--ts-border-strong);
+}
+.btn-light-brand:hover, .btn-outline-secondary:hover { color: var(--ts-ink); background-color: var(--ts-surface-2); border-color: var(--ts-muted); }
+.btn-danger { --bs-btn-bg: var(--ts-danger); --bs-btn-border-color: var(--ts-danger); --bs-btn-hover-bg: #8F1C13; --bs-btn-hover-border-color: #8F1C13; }
+/* The theme's green/amber buttons carry white text at 2.26 / 2.01:1; these pairs are ≥ 5.3:1 (hover ≥ 7.4:1). */
+.btn-success { --bs-btn-color: #fff; --bs-btn-bg: var(--ts-success); --bs-btn-border-color: var(--ts-success); --bs-btn-hover-color: #fff; --bs-btn-hover-bg: #155F36; --bs-btn-hover-border-color: #155F36; --bs-btn-active-bg: #155F36; --bs-btn-disabled-bg: var(--ts-success); --bs-btn-disabled-border-color: var(--ts-success); }
+.btn-warning { --bs-btn-color: #fff; --bs-btn-bg: var(--ts-warning); --bs-btn-border-color: var(--ts-warning); --bs-btn-hover-color: #fff; --bs-btn-hover-bg: #7A4A00; --bs-btn-hover-border-color: #7A4A00; --bs-btn-active-bg: #7A4A00; }
+.btn-info    { --bs-btn-color: #fff; --bs-btn-bg: var(--ts-info);    --bs-btn-border-color: var(--ts-info);    --bs-btn-hover-color: #fff; --bs-btn-hover-bg: #08466A; --bs-btn-hover-border-color: #08466A; --bs-btn-active-bg: #08466A; }
+@media (pointer: coarse) {
+    .btn:not(.btn-sm):not(.btn-xs), .page-link, .dropdown-item { min-height: var(--ts-touch); }
+    .btn-icon, .avatar-text.avatar-md { min-width: var(--ts-touch); min-height: var(--ts-touch); }
+}
+
+/* Cards */
+.card { border: 1px solid var(--ts-border); border-radius: var(--ts-radius-lg); box-shadow: var(--ts-shadow-sm); }
+.card-header { background: var(--ts-surface); border-bottom: 1px solid var(--ts-border); }
+.card-title { color: var(--ts-ink); font-size: var(--ts-fs-lg); font-weight: 600; }
+/* Plain <button>s used as card headers (e.g. run sections) don't inherit text colour by default. */
+.card-header button:not(.btn), .accordion-button { color: inherit; }
+
+/* Tables */
+.table { --bs-table-color: var(--ts-body); --bs-table-hover-bg: rgba(var(--ts-primary-rgb), .04); color: var(--ts-body); }
+.table > thead > tr > th {
+    background: var(--ts-surface-2); color: var(--ts-muted);
+    font-size: var(--ts-fs-xs); font-weight: 700; text-transform: uppercase; letter-spacing: .04em;
+    border-bottom: 1px solid var(--ts-border); white-space: nowrap;
+}
+.table > tbody > tr > td { font-size: var(--ts-fs-sm); vertical-align: middle; border-color: var(--ts-border); }
+.table-striped > tbody > tr:nth-of-type(odd) > * { --bs-table-accent-bg: rgba(23, 23, 23, .02); }
+.ts-table-sticky thead th { position: sticky; top: 0; z-index: 1; }
+.table-responsive { -webkit-overflow-scrolling: touch; }
+
+/* Forms */
+.form-label { color: var(--ts-ink); font-weight: 600; }
+.form-control, .form-select { border-color: var(--ts-border-strong); color: var(--ts-body); }
+.form-text { color: var(--ts-muted); }
+.invalid-feedback { color: var(--ts-danger-text); font-weight: 600; }
+.form-control.is-invalid, .form-select.is-invalid { border-color: var(--ts-danger); }
+
+/* Status chips: always text + colour (never colour alone) */
+.ts-chip {
+    display: inline-flex; align-items: center; gap: .3em;
+    padding: .2em .65em; border-radius: var(--ts-radius-pill);
+    font-size: var(--ts-fs-xs); font-weight: 700; line-height: 1.4; letter-spacing: .02em;
+    border: 1px solid transparent; white-space: nowrap;
+}
+.ts-chip-pass,        .ts-chip-success { color: var(--ts-success-text);   background: var(--ts-success-bg);   border-color: #B7E1C7; }
+.ts-chip-fail,        .ts-chip-danger  { color: var(--ts-danger-text);    background: var(--ts-danger-bg);    border-color: #F5BDB8; }
+.ts-chip-conditional, .ts-chip-warning { color: var(--ts-warning-text);   background: var(--ts-warning-bg);   border-color: #F2D29A; }
+.ts-chip-reinspection                  { color: var(--ts-reinspect-text); background: var(--ts-reinspect-bg); border-color: #D6C4F0; }
+.ts-chip-pending,     .ts-chip-neutral { color: var(--ts-neutral-text);   background: var(--ts-neutral-bg);   border-color: #D5DAE0; }
+.ts-chip-info                          { color: var(--ts-info-text);      background: var(--ts-info-bg);      border-color: #B3DDF2; }
+.ts-chip-critical { color: var(--ts-sev-critical-text); background: var(--ts-sev-critical-bg); border-color: #F5BDB8; }
+.ts-chip-major    { color: var(--ts-sev-major-text);    background: var(--ts-sev-major-bg);    border-color: #F6C9A6; }
+.ts-chip-minor    { color: var(--ts-sev-minor-text);    background: var(--ts-sev-minor-bg);    border-color: #BDD0F4; }
+
+/* Solid fills (badges such as "9+", "Paid", and the coloured buttons). The theme declares these
+   with !important literals (#ea4d4d 3.71:1, #17c666 2.26:1, #ffa21d 2.01:1 with white text), so the
+   replacement needs !important too. White on each fill: 5.35–6.57:1. */
+.bg-success, html.app-skin-dark .bg-success { background-color: var(--ts-success) !important; }
+.bg-danger,  html.app-skin-dark .bg-danger  { background-color: var(--ts-danger) !important; }
+.bg-warning, html.app-skin-dark .bg-warning { background-color: var(--ts-warning) !important; }
+.bg-info,    html.app-skin-dark .bg-info    { background-color: var(--ts-info) !important; }
+.bg-primary, html.app-skin-dark .bg-primary { background-color: var(--ts-primary) !important; }
+.badge.bg-success, .badge.bg-danger, .badge.bg-warning, .badge.bg-info, .badge.bg-primary { color: #fff !important; }
+.btn-danger,  .btn-danger:hover,  html.app-skin-dark .btn-danger  { background-color: var(--ts-danger) !important;  border-color: var(--ts-danger) !important;  color: #fff !important; }
+.btn-danger:hover,  html.app-skin-dark .btn-danger:hover  { background-color: #8F1C13 !important; border-color: #8F1C13 !important; }
+.btn-success, .btn-success:hover, html.app-skin-dark .btn-success { background-color: var(--ts-success) !important; border-color: var(--ts-success) !important; color: #fff !important; }
+.btn-success:hover, html.app-skin-dark .btn-success:hover { background-color: #155F36 !important; border-color: #155F36 !important; }
+.btn-warning, .btn-warning:hover, html.app-skin-dark .btn-warning { background-color: var(--ts-warning) !important; border-color: var(--ts-warning) !important; color: #fff !important; }
+.btn-info,    .btn-info:hover,    html.app-skin-dark .btn-info    { background-color: var(--ts-info) !important;    border-color: var(--ts-info) !important;    color: #fff !important; }
+
+/* Theme "soft" badges re-mapped to readable pairs (dark text on tint) */
+.bg-soft-primary   { background-color: var(--ts-primary-subtle) !important; }
+.bg-soft-success   { background-color: var(--ts-success-bg) !important; }
+.bg-soft-danger    { background-color: var(--ts-danger-bg) !important; }
+.bg-soft-warning   { background-color: var(--ts-warning-bg) !important; }
+.bg-soft-info      { background-color: var(--ts-info-bg) !important; }
+.bg-soft-secondary { background-color: var(--ts-neutral-bg) !important; }
+/* Colour utilities: the theme's own values fail contrast on white (#17c666 2.26:1,
+   #ffa21d 2.01:1), so they are re-pointed at the accessible text tokens. The theme
+   declares these utilities !important; matching them needs !important too. */
+.text-primary   { color: var(--ts-primary-text) !important; }
+.text-success   { color: var(--ts-success-text) !important; }
+.text-danger    { color: var(--ts-danger-text) !important; }
+.text-warning   { color: var(--ts-warning-text) !important; }
+.text-info      { color: var(--ts-info-text) !important; }
+.text-secondary { color: var(--ts-neutral-text) !important; }
+.badge.text-primary, .bg-soft-primary.text-primary { color: var(--ts-on-primary-subtle) !important; }
+
+/* Alerts */
+.alert { border-radius: var(--ts-radius); border-width: 1px; font-size: var(--ts-fs-md); }
+.alert-success { color: var(--ts-success-text); background: var(--ts-success-bg); border-color: #B7E1C7; }
+.alert-danger  { color: var(--ts-danger-text);  background: var(--ts-danger-bg);  border-color: #F5BDB8; }
+.alert-warning { color: var(--ts-warning-text); background: var(--ts-warning-bg); border-color: #F2D29A; }
+.alert-info    { color: var(--ts-info-text);    background: var(--ts-info-bg);    border-color: #B3DDF2; }
+
+/* Modals */
+.modal-content { border-radius: var(--ts-radius-lg); border: 1px solid var(--ts-border); box-shadow: var(--ts-shadow-lg); }
+
+/* Pagination */
+.pagination { --bs-pagination-color: var(--ts-primary-text); --bs-pagination-active-bg: var(--ts-primary); --bs-pagination-active-border-color: var(--ts-primary); --bs-pagination-hover-color: var(--ts-link-hover); }
+
+/* Empty state */
+.ts-empty { text-align: center; padding: var(--ts-space-6) var(--ts-space-4); color: var(--ts-muted); }
+.ts-empty i, .ts-empty svg { font-size: 2rem; display: block; margin: 0 auto var(--ts-space-2); color: var(--ts-border-strong); }
+.ts-empty-title { color: var(--ts-ink); font-weight: 600; margin-bottom: var(--ts-space-1); }
+
+/* ── 5. App shell ───────────────────────────────────────────────────────── */
+
+/* Page header: title + breadcrumb + primary action; wraps on narrow screens */
+.page-header { background: var(--ts-surface); border-bottom: 1px solid var(--ts-border); }
+.page-header .page-header-title h5 { color: var(--ts-ink); font-size: var(--ts-fs-xl); font-weight: 700; }
+.page-header .breadcrumb .breadcrumb-item, .page-header .breadcrumb .breadcrumb-item a { color: var(--ts-muted); }
+.page-header .breadcrumb .breadcrumb-item a:hover { color: var(--ts-primary-text); }
+.page-header .breadcrumb .breadcrumb-item:last-child { color: var(--ts-body); font-weight: 600; }
+
+/* Sidebar */
+.nxl-navigation { border-right: 1px solid var(--ts-border); }
+.nxl-navigation .m-header { border-bottom: 1px solid var(--ts-border); }
+.nxl-navigation .navbar-content .nxl-link { color: var(--ts-nav-link); min-height: var(--ts-touch); display: flex; align-items: center; }
+.nxl-navigation .navbar-content .nxl-navbar > .nxl-item.active > .nxl-link,
+.nxl-navigation .navbar-content .nxl-item.active > .nxl-link {
+    color: var(--ts-on-primary-subtle); background-color: var(--ts-primary-subtle);
+    box-shadow: inset 3px 0 0 var(--ts-accent); font-weight: 600;
+}
+.nxl-navigation .navbar-content .nxl-item.active > .nxl-link .nxl-micon i { color: var(--ts-on-primary-subtle); }
+.nxl-navigation .navbar-content .nxl-item:not(.active):hover > .nxl-link { color: var(--ts-ink); background-color: var(--ts-surface-2); }
+.nxl-navigation .navbar-content .nxl-submenu .nxl-item.active > .nxl-link { box-shadow: none; }
+
+/* Group headers are buttons (collapsible, remembered in this browser only) */
+.nxl-navigation .nxl-caption.ts-nav-group { padding: 0; margin-top: var(--ts-space-2); }
+.ts-nav-group-toggle {
+    display: flex; align-items: center; justify-content: space-between; width: 100%;
+    min-height: 36px; padding: var(--ts-space-2) var(--ts-space-4) var(--ts-space-1) 1.75rem;
+    background: none; border: 0; text-align: left;
+    color: var(--ts-muted); font-size: 11px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase;
+}
+.ts-nav-group-toggle:hover { color: var(--ts-ink); }
+.nxl-navigation .navbar-content .nxl-caption .ts-nav-group-toggle span:not(.badge) {
+    display: inline; color: inherit; font: inherit; letter-spacing: inherit; text-transform: inherit;
+}
+html.app-skin-dark .nxl-navigation .navbar-content .nxl-caption { color: var(--ts-muted); }
+.ts-nav-group-toggle .ts-nav-chevron { transition: transform .15s ease; font-size: 12px; }
+.ts-nav-group-toggle[aria-expanded="false"] .ts-nav-chevron { transform: rotate(-90deg); }
+.nxl-navigation li.ts-nav-collapsed { display: none; }
+/* Icon-only (mini) mode has no group headers: never hide links there. */
+html.minimenu .nxl-navigation li.ts-nav-collapsed { display: list-item; }
+/* In mini mode the theme draws a "⋯" icon on each caption (and hides only <label>s), which sat on top
+   of the group button's text. Groups don't collapse there, so the header becomes a thin divider; the
+   full header returns when the mini sidebar expands on hover. */
+html.minimenu .nxl-navigation .navbar-content .nxl-caption.ts-nav-group::before { content: none; }
+html.minimenu .nxl-navigation:not(:hover) .navbar-content .nxl-caption.ts-nav-group {
+    height: 1px; margin: var(--ts-space-2) var(--ts-space-4); padding: 0; background: var(--ts-border); overflow: hidden;
+}
+html.minimenu .nxl-navigation:not(:hover) .navbar-content .nxl-caption.ts-nav-group:first-child { display: none; }
+html.minimenu .nxl-navigation:not(:hover) .ts-nav-group-toggle { display: none; }
+/* Hover-expanded mini sidebar: the theme makes captions inline-block; keep the header full width. */
+html.minimenu .nxl-navigation:hover .navbar-content .nxl-caption.ts-nav-group { display: block; }
+/* The hover-expanded mini sidebar is white in the theme; follow the light/dark tokens instead. */
+html.minimenu .nxl-navigation:hover .navbar-content { background-color: var(--ts-surface); border-right-color: var(--ts-border); }
+
+/* Topbar */
+.nxl-header { border-bottom: 1px solid var(--ts-border); }
+.nxl-header .header-wrapper .nxl-head-link {
+    min-width: var(--ts-touch); min-height: var(--ts-touch);
+    display: inline-flex; align-items: center; justify-content: center; color: var(--ts-nav-link);
+}
+.ts-header-brand { display: none; align-items: center; min-height: var(--ts-touch); }
+.ts-header-brand img { height: 26px; width: auto; }
+.ts-user-menu-toggle { min-height: var(--ts-touch); }
+
+/* Top loading bar (theme "pace") */
+.pace .pace-progress { background: var(--ts-accent); }
+
+/* ── 6. Responsive fixes (375 / 768 / 1024) ─────────────────────────────── */
+@media (max-width: 1024px) {
+    .ts-header-brand { display: inline-flex; }
+}
+@media (max-width: 767.98px) {
+    .nxl-header .header-wrapper { padding-left: var(--ts-space-3); padding-right: var(--ts-space-3); }
+    .nxl-header .header-wrapper .header-left { gap: var(--ts-space-2) !important; } /* overrides the gap-4 utility (!important by design) */
+    .nxl-header .header-right .nxl-h-item { margin-left: 0; }
+
+    .page-header { flex-wrap: wrap; row-gap: var(--ts-space-2); padding: var(--ts-space-3) var(--ts-space-4); }
+    .page-header .page-header-left { flex-wrap: wrap; min-width: 0; max-width: 100%; }
+    .page-header .page-header-title { border-right: 0; margin-right: 0; padding-right: 0; }
+    .page-header .breadcrumb { flex-wrap: nowrap; overflow-x: auto; white-space: nowrap; max-width: 100%; scrollbar-width: none; }
+    .page-header .breadcrumb .breadcrumb-item { white-space: nowrap; }
+    .page-header > .page-header-right { width: 100%; margin-left: 0 !important; } /* overrides ms-auto (!important by design) */
+    .page-header > .page-header-right > .d-flex { flex-wrap: wrap; }
+
+    .main-content { padding-left: var(--ts-space-3); padding-right: var(--ts-space-3); }
+    .card-header { flex-wrap: wrap; row-gap: var(--ts-space-2); }
+    .card-header .btn, .card-body .d-flex > .btn { white-space: normal; }
+
+    /* Run edit page: action bars wrap instead of running off screen */
+    .ts-run-page .d-flex.gap-2 { flex-wrap: wrap; }
+    .ts-run-page .card-header .text-end { text-align: left !important; }
+    /* .main-content is overflow-x:hidden in the theme, which makes it a scroll container and
+       stops position:sticky. clip hides overflow the same way without creating one. */
+    .nxl-container .nxl-content.ts-run-page .main-content { overflow-x: clip; overflow-y: visible; }
+    .ts-run-actions {
+        position: sticky; bottom: 0; z-index: var(--ts-z-sticky);
+        box-shadow: 0 -4px 16px rgba(23, 23, 23, .12) !important; /* replaces shadow-sm on the sticky bar */
+    }
+    .ts-run-actions .card-body { padding: var(--ts-space-3) !important; }
+    .ts-run-actions .ts-run-actions-intro { display: none !important; }
+    .ts-run-actions .btn-lg { padding: .55rem 1rem; font-size: var(--ts-fs-md); flex: 1 1 auto; }
+}
+
+/* ── 7. Print ───────────────────────────────────────────────────────────── */
+@media print {
+    .nxl-navigation, .nxl-header, .theme-customizer, .page-header-right { display: none !important; }
+    .nxl-container { margin: 0 !important; }
+}

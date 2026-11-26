@@ -5,7 +5,7 @@
         <div class="header-left d-flex align-items-center gap-4">
 
             {{-- Mobile collapse toggle --}}
-            <a href="javascript:void(0);" class="nxl-head-mobile-toggler" id="mobile-collapse">
+            <a href="javascript:void(0);" class="nxl-head-mobile-toggler" id="mobile-collapse" role="button" aria-label="Open navigation menu" aria-controls="app-sidebar" aria-expanded="false">
                 <div class="hamburger hamburger--arrowturn">
                     <div class="hamburger-box">
                         <div class="hamburger-inner"></div>
@@ -15,20 +15,19 @@
 
             {{-- Desktop sidebar mini/expand toggle --}}
             <div class="nxl-navigation-toggle">
-                <a href="javascript:void(0);" id="menu-mini-button">
-                    <i class="feather-align-left"></i>
+                <a href="javascript:void(0);" id="menu-mini-button" class="nxl-head-link" role="button" aria-label="Collapse sidebar to icons">
+                    <i class="feather-align-left" aria-hidden="true"></i>
                 </a>
-                <a href="javascript:void(0);" id="menu-expend-button" style="display:none">
-                    <i class="feather-arrow-right"></i>
+                <a href="javascript:void(0);" id="menu-expend-button" class="nxl-head-link" role="button" aria-label="Expand sidebar" style="display:none">
+                    <i class="feather-arrow-right" aria-hidden="true"></i>
                 </a>
             </div>
 
-            {{-- Mobile mega-menu toggle --}}
-            <div class="nxl-lavel-mega-menu-toggle d-flex d-lg-none">
-                <a href="javascript:void(0);" id="nxl-lavel-mega-menu-open">
-                    <i class="feather-align-left"></i>
-                </a>
-            </div>
+            {{-- Company logo in the topbar while the sidebar is off-canvas (narrow screens).
+                 (Replaces a "mega menu" toggle that had no menu to open.) --}}
+            <a href="{{ route('dashboard') }}" class="ts-header-brand" aria-label="Trade Solutions — Dashboard">
+                <img src="{{ asset('assets/images/logo-trade.png') }}" alt="">
+            </a>
 
         </div>
         {{-- ─── End Header Left ──────────────────────────────────────────── --}}
@@ -39,25 +38,26 @@
 
                 <div class="nxl-h-item d-none d-sm-flex">
                         <div class="full-screen-switcher">
-                            <a href="javascript:void(0);" class="nxl-head-link me-0" onclick="$('body').fullScreenHelper('toggle');">
+                            <a href="javascript:void(0);" class="nxl-head-link me-0" role="button" aria-label="Toggle full screen" onclick="$('body').fullScreenHelper('toggle');">
                                 <i class="feather-maximize maximize"></i>
                                 <i class="feather-minimize minimize"></i>
                             </a>
                         </div>
                     </div>
                     <div class="nxl-h-item dark-light-theme">
-                        <a href="javascript:void(0);" class="nxl-head-link me-0 dark-button">
+                        <a href="javascript:void(0);" class="nxl-head-link me-0 dark-button" role="button" aria-label="Switch to dark mode">
                             <i class="feather-moon"></i>
                         </a>
-                        <a href="javascript:void(0);" class="nxl-head-link me-0 light-button" style="display: none">
+                        <a href="javascript:void(0);" class="nxl-head-link me-0 light-button" role="button" aria-label="Switch to light mode" style="display: none">
                             <i class="feather-sun"></i>
                         </a>
                     </div>
                     
-                {{-- Notifications bell --}}
+                {{-- Notifications bell: only for users who may read the activity log (its feed is gated in AppServiceProvider) --}}
+                @can('activities.view')
                 <div class="dropdown nxl-h-item d-none d-sm-flex me-1">
-                    <a href="javascript:void(0);" class="nxl-head-link me-0" data-bs-toggle="dropdown">
-                        <i class="feather-bell"></i>
+                    <a href="javascript:void(0);" class="nxl-head-link me-0" data-bs-toggle="dropdown" role="button" aria-label="Recent activity" aria-haspopup="true" aria-expanded="false">
+                        <i class="feather-bell" aria-hidden="true"></i>
                         @if($headerActivityCount > 0)
                             <span class="badge bg-danger nxl-h-badge">{{ $headerActivityCount > 9 ? '9+' : $headerActivityCount }}</span>
                         @endif
@@ -96,9 +96,11 @@
                     </div>
                 </div>
 
+                @endcan
+
                 {{-- User profile dropdown --}}
                 <div class="dropdown nxl-h-item">
-                    <a href="javascript:void(0);" data-bs-toggle="dropdown" class="d-flex align-items-center gap-2 text-dark text-decoration-none">
+                    <a href="javascript:void(0);" data-bs-toggle="dropdown" class="d-flex align-items-center gap-2 text-dark text-decoration-none ts-user-menu-toggle" role="button" aria-label="User menu for {{ auth()->user()->name }}" aria-haspopup="true" aria-expanded="false">
                         <div class="avatar-text avatar-md bg-soft-primary text-primary rounded-circle fw-bold">
                             {{ strtoupper(substr(auth()->user()->name, 0, 1)) }}
                         </div>

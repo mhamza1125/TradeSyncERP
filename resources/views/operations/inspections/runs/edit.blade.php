@@ -62,8 +62,8 @@
     left: 0;
     width: 280px;
     height: 100vh;
-    background: #fff;
-    border-right: 1px solid #e2e8f0;
+    background: var(--ts-surface, #fff);            /* tokens follow the light/dark skin (docs/DESIGN.md §2) */
+    border-right: 1px solid var(--ts-border, #e2e8f0);
     z-index: 1035;
     display: flex;
     flex-direction: column;
@@ -100,7 +100,7 @@
 #insp-sidebar .insp-sidebar-top {
     flex-shrink: 0;
     padding: 14px 14px 10px;
-    border-bottom: 1px solid #f0f4f8;
+    border-bottom: 1px solid var(--ts-border, #f0f4f8);
 }
 #insp-sidebar .insp-sidebar-sections {
     flex-grow: 1;
@@ -110,7 +110,7 @@
 #insp-sidebar .insp-sidebar-footer {
     flex-shrink: 0;
     padding: 10px 12px;
-    border-top: 1px solid #f0f4f8;
+    border-top: 1px solid var(--ts-border, #f0f4f8);
 }
 
 /* Nav items */
@@ -121,7 +121,7 @@
     padding: 7px 10px;
     border-radius: 7px;
     text-decoration: none;
-    color: #495057;
+    color: var(--ts-nav-link, #495057);
     font-size: 12.5px;
     line-height: 1.3;
     margin-bottom: 2px;
@@ -133,12 +133,12 @@
     text-align: left;
 }
 .insp-nav-item:hover {
-    background: #f0f4ff;
-    color: #3d5cdd;
+    background: var(--ts-surface-2, #f0f4ff);
+    color: var(--ts-primary-text, #3d5cdd);
 }
 .insp-nav-item.is-active {
-    background: #eef2ff;
-    color: #3d5cdd;
+    background: var(--ts-primary-subtle, #eef2ff);
+    color: var(--ts-on-primary-subtle, #3d5cdd);
     font-weight: 600;
 }
 .insp-nav-item .nav-icon {
@@ -162,13 +162,13 @@
 .insp-progress-bar {
     height: 5px;
     border-radius: 3px;
-    background: #e9ecef;
+    background: var(--ts-surface-2, #e9ecef);
     overflow: hidden;
     margin-top: 6px;
 }
 .insp-progress-fill {
     height: 100%;
-    background: #28a745;
+    background: var(--ts-success, #28a745);
     transition: width .4s ease;
     border-radius: 3px;
 }
@@ -308,8 +308,8 @@ foreach ($visibleRunSections as $rs) {
         {{-- Progress --}}
         <div class="mt-3 insp-progress-block">
             <div class="d-flex justify-content-between align-items-center mb-1">
-                <span style="font-size:11px;color:#6c757d">Subsections Completed</span>
-                <span style="font-size:11px;font-weight:700;color:#28a745" id="sidebar-progress-text">{{ $completeSecs }}/{{ $totalSecs }} Completed</span>
+                <span style="font-size:11px;color:var(--ts-muted, #6c757d)">Subsections Completed</span>
+                <span style="font-size:11px;font-weight:700;color:var(--ts-success-text, #28a745)" id="sidebar-progress-text">{{ $completeSecs }}/{{ $totalSecs }} Completed</span>
             </div>
             <div class="insp-progress-bar">
                 <div class="insp-progress-fill" id="sidebar-progress-fill" style="width:{{ $progressPct }}%"></div>
@@ -319,7 +319,7 @@ foreach ($visibleRunSections as $rs) {
 
     {{-- Section navigation list --}}
     <div class="insp-sidebar-sections">
-        <div class="insp-sections-caption" style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.6px;color:#adb5bd;padding:4px 10px 6px">
+        <div class="insp-sections-caption" style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.6px;color:var(--ts-muted, #adb5bd);padding:4px 10px 6px">
             Sections
         </div>
 
@@ -365,7 +365,7 @@ foreach ($visibleRunSections as $rs) {
 </div>
 {{-- ══════════════════════════════════════════════════════════════════════ --}}
 
-<div class="nxl-content">
+<div class="nxl-content ts-run-page">
 
     <div class="page-header">
         <div class="page-header-left d-flex align-items-center">
@@ -864,8 +864,9 @@ foreach ($visibleRunSections as $rs) {
             </div>
             @endif
 
-            {{-- ── Finish Inspection footer (always visible, not a section) ─── --}}
-            <div class="card shadow-sm mt-4 border-0">
+            {{-- ── Finish Inspection footer (always visible, not a section). On phones it is a sticky
+                 action bar (CSS only: brand.css .ts-run-actions); the buttons and their handlers are unchanged. ─── --}}
+            <div class="card shadow-sm mt-4 border-0 {{ $run->completed_at ? '' : 'ts-run-actions' }}">
                 <div class="card-body text-center py-4">
                     @if($run->completed_at)
                     <div class="d-flex flex-column align-items-center gap-3">
@@ -886,11 +887,11 @@ foreach ($visibleRunSections as $rs) {
                     </div>
                     @else
                     <div class="d-flex flex-column align-items-center gap-2">
-                        <div class="d-flex align-items-center justify-content-center bg-soft-secondary text-muted rounded-circle"
+                        <div class="d-flex align-items-center justify-content-center bg-soft-secondary text-muted rounded-circle ts-run-actions-intro"
                              style="width:72px;height:72px">
-                            <i class="feather-flag" style="font-size:36px"></i>
+                            <i class="feather-flag" style="font-size:36px" aria-hidden="true"></i>
                         </div>
-                        <div>
+                        <div class="ts-run-actions-intro">
                             <h5 class="fw-semibold mb-1">Ready to Finish?</h5>
                             <p class="text-muted fs-13 mb-3">
                                 Review all sections above, then click <strong>Finish Inspection</strong> to close this run.
@@ -904,7 +905,7 @@ foreach ($visibleRunSections as $rs) {
                                 <i class="feather-check-circle me-2"></i>Finish Inspection
                             </button>
                         </div>
-                        <p class="text-muted fs-12 mb-0 mt-2"><strong>Save run</strong> saves every section, the AQL plan and the defect rows without finishing. Finishing will lock this run and mark it as complete.</p>
+                        <p class="text-muted fs-12 mb-0 mt-2 ts-run-actions-intro"><strong>Save run</strong> saves every section, the AQL plan and the defect rows without finishing. Finishing will lock this run and mark it as complete.</p>
                     </div>
                     @endif
                 </div>

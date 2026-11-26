@@ -171,7 +171,7 @@ Never create a controller directly under `App\Http\Controllers\` unless it is a 
 
 ## 7. Frontend Rules
 
-- The UI is the **Bootstrap 5** theme (Tailwind only in the Breeze auth views). Use the theme's classes — no new custom CSS files.
+- The UI is the **Bootstrap 5** theme (Tailwind only in the Breeze auth views). Use the theme's classes; the only custom stylesheet is the brand layer `public/assets/css/brand.css` (`docs/DESIGN.md`) — no other new CSS files.
 - Use **Alpine.js** (`x-data`, `x-show`, `x-on`, `x-model`) for reactive UI. Do not add Vue or React.
 - AJAX calls use **Axios** (already configured globally via `resources/js/bootstrap.js`). Do not use `fetch()` raw.
 - CSRF: Axios automatically includes `X-XSRF-TOKEN` from the cookie. Do not manually attach CSRF headers.

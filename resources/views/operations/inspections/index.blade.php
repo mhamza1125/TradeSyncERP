@@ -20,8 +20,8 @@
                     </a>
                 </div>
                 <div class="d-flex align-items-center gap-2 page-header-right-items-wrapper">
-                    <a href="javascript:void(0);" class="btn btn-icon btn-light-brand" data-bs-toggle="collapse" data-bs-target="#collapseFilters">
-                        <i class="feather-filter"></i>
+                    <a href="javascript:void(0);" class="btn btn-icon btn-light-brand" data-bs-toggle="collapse" data-bs-target="#collapseFilters" role="button" aria-label="Show filters" aria-controls="collapseFilters">
+                        <i class="feather-filter" aria-hidden="true"></i>
                     </a>
                     @can('inspections.create')
                     <a href="{{ route('inspections.create') }}" class="btn btn-primary">
@@ -43,17 +43,21 @@
             <form method="GET" action="{{ route('inspections.index') }}">
                 <div class="row g-3">
                     <div class="col-md-3">
-                        <input type="text" name="search" class="form-control"
+                        <label class="visually-hidden" for="filter-search">Report number</label>
+                        <input type="text" name="search" id="filter-search" class="form-control"
                                placeholder="Report number…" value="{{ request('search') }}">
                     </div>
                     <div class="col-md-2">
-                        <input type="date" name="from_date" class="form-control" value="{{ request('from_date') }}">
+                        <label class="visually-hidden" for="filter-from">From date</label>
+                        <input type="date" name="from_date" id="filter-from" class="form-control" value="{{ request('from_date') }}">
                     </div>
                     <div class="col-md-2">
-                        <input type="date" name="to_date" class="form-control" value="{{ request('to_date') }}">
+                        <label class="visually-hidden" for="filter-to">To date</label>
+                        <input type="date" name="to_date" id="filter-to" class="form-control" value="{{ request('to_date') }}">
                     </div>
                     <div class="col-md-2">
-                        <select name="status" class="form-select">
+                        <label class="visually-hidden" for="filter-status">Overall status</label>
+                        <select name="status" id="filter-status" class="form-select">
                             <option value="">All Statuses</option>
                             @foreach(\App\Services\Inspection\InspectionVerdictService::OVERALL_STATUSES as $s)
                             <option value="{{ $s }}" @selected(request('status') == $s)>{{ $s }}</option>
@@ -61,7 +65,7 @@
                         </select>
                     </div>
                     <div class="col-md-1">
-                        <button type="submit" class="btn btn-primary w-100"><i class="feather-search"></i></button>
+                        <button type="submit" class="btn btn-primary w-100" aria-label="Apply filters"><i class="feather-search" aria-hidden="true"></i></button>
                     </div>
                     <div class="col-md-1">
                         <a href="{{ route('inspections.index') }}" class="btn btn-light-brand w-100">Reset</a>
@@ -77,7 +81,8 @@
         <div class="card stretch stretch-full">
             <div class="card-body p-0">
                 <div class="table-responsive">
-                    <table class="table table-hover">
+                    <table class="table table-hover mb-0 ts-table-sticky">
+                        <caption class="visually-hidden">Inspections</caption>
                         <thead>
                             <tr>
                                 <th>Report #</th>
@@ -91,14 +96,13 @@
                         </thead>
                         <tbody>
                             @forelse($inspections as $ins)
-                            @php $ic = ['Pass'=>'success','Fail'=>'danger','Pending'=>'warning','N/A'=>'secondary','Conditional'=>'warning','Re-Inspection'=>'danger']; @endphp
                             <tr>
                                 <td>
                                     <a href="{{ route('inspections.show', $ins) }}" class="fw-bold text-primary">
                                         {{ $ins->report_number }}
                                     </a>
                                 </td>
-                                <td>{{ $ins->inspection_date->format('d M Y') }}</td>
+                                <td class="text-nowrap">{{ $ins->inspection_date->format('d M Y') }}</td>
                                 <td>
                                     @if($ins->inspectionType)
                                         <span class="badge bg-soft-primary text-primary">{{ $ins->inspectionType->name }}</span>
@@ -120,18 +124,16 @@
                                     @endif
                                 </td>
                                 <td>
-                                    <span class="badge bg-soft-{{ $ic[$ins->overall_status] ?? 'secondary' }} text-{{ $ic[$ins->overall_status] ?? 'secondary' }}">
-                                        {{ $ins->overall_status }}
-                                    </span>
+                                    <x-status-chip :status="$ins->overall_status" />
                                 </td>
                                 <td>
                                     <div class="hstack gap-2 justify-content-end">
-                                        <a href="{{ route('inspections.show', $ins) }}" class="avatar-text avatar-md" data-bs-toggle="tooltip" title="View">
-                                            <i class="feather feather-eye"></i>
+                                        <a href="{{ route('inspections.show', $ins) }}" class="avatar-text avatar-md" data-bs-toggle="tooltip" title="View" aria-label="View {{ $ins->report_number }}">
+                                            <i class="feather feather-eye" aria-hidden="true"></i>
                                         </a>
                                         <div class="dropdown">
-                                            <a href="javascript:void(0)" class="avatar-text avatar-md" data-bs-toggle="dropdown" data-bs-offset="0,21">
-                                                <i class="feather feather-more-horizontal"></i>
+                                            <a href="javascript:void(0)" class="avatar-text avatar-md" data-bs-toggle="dropdown" data-bs-offset="0,21" role="button" aria-label="More actions for {{ $ins->report_number }}" aria-haspopup="true" aria-expanded="false">
+                                                <i class="feather feather-more-horizontal" aria-hidden="true"></i>
                                             </a>
                                             <ul class="dropdown-menu">
                                                 @can('inspections.edit')
@@ -160,9 +162,9 @@
                             </tr>
                             @empty
                             <tr>
-                                <td colspan="7" class="text-center py-5 text-muted">
-                                    <i class="feather-clipboard fs-1 d-block mb-2"></i>
-                                    No inspections found.
+                                <td colspan="7" class="ts-empty">
+                                    <i class="feather-clipboard" aria-hidden="true"></i>
+                                    <div class="ts-empty-title">No inspections found.</div>
                                     @can('inspections.create')
                                     <div class="mt-2">
                                         <a href="{{ route('inspections.create') }}" class="btn btn-sm btn-primary">

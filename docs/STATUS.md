@@ -11,7 +11,8 @@ Stabilisation work after the audit (`docs/AUDIT_2026-11-25.md`). Nothing is comm
 | After stage 2 (recommendations) | MySQL `trade_test` | 342 tests, 2,853 assertions: all pass, 0 deprecations |
 | Inspection run review (start of stage 3) | MySQL `trade_test` | 344 tests, 2,861 assertions: all pass |
 | After stage 3 (inspection run fixes) | MySQL `trade_test` | 396 tests, 3,119 assertions: all pass |
-| After Q15 = (a) | **MySQL `trade_test`** | **412 tests, 3,177 assertions: all pass** |
+| After Q15 = (a) | MySQL `trade_test` | 412 tests, 3,177 assertions: all pass |
+| After theme Stage 1 | **MySQL `trade_test`** | **421 tests, 3,264 assertions: all pass** |
 
 How to run: `composer run test`. `tests/TestCase.php` refuses to run against anything other than `mysql:trade_test`, so tests can never wipe `trade_prod`.
 
@@ -82,6 +83,21 @@ Rules as implemented: `docs/QC_RULES.md` §2 and §5–§8. No migration, no dat
 5. **Q33:** decide what happens to legacy runs: finished runs with pending sections, and AQL records with lot size 0. Nothing is changed automatically. A legacy run that is reopened can only be finished again once it has an AQL plan.
 6. Answer Q35–Q37 (`docs/AUDIT_QUESTIONS.md`, batch 5).
 
+### Theme, Stage 1 (2026-11-26; `docs/DESIGN.md`)
+
+UI and template work only: no route, permission, column, migration or package changes. **Stage 1 stops here until you approve; Stage 2 restyles the other screens and PDFs.**
+
+| Item | Status |
+|---|---|
+| Design tokens + components in one file (`public/assets/css/brand.css`), Bootstrap/theme colours mapped to them; runtime Google Fonts import removed; system font stack | Done |
+| Sidebar rebuilt from one permission-checked list, grouped by module; collapsible groups (remembered in the browser); Escape/focus handling on the mobile menu. Fixed: Colors and Sizes links were shown without their permission; Allowance Types was hidden from users who only had that permission | Done |
+| Topbar: accessible names, logo on narrow screens, activity bell only with `activities.view`, dead mega-menu toggle removed | Done |
+| Dashboard and inspections list on the new components; one status chip for every verdict (Re-Inspection was red on the list, amber in the PDF) | Done |
+| Run edit page at 375 px: header wraps, sticky Save run / Finish bar (CSS only) | Done |
+| Run PDF redesigned with shared brand partials: running header/footer and "Page N of M" now print on every page (the old fixed header/footer never rendered), cover with one decision + assessment + summary strip, defect photos in their row | Done. **Render time: see Q41** (header logo) |
+| Page-number colour in `PdfPageNumberService` (all PDFs): cyan 2.49:1 → primary 6.02:1 | Done |
+| Other screens, other 32 PDFs, dark mode, theme customizer | Stage 2 (Q42–Q46) |
+
 ## Rollout steps for production (owner)
 
 1. Back up the database and `storage/app/public` (D4: owner).
@@ -107,6 +123,7 @@ The seeders `InspectionSectionSeeder` and `InspectionTypeSectionDefaultSeeder` u
 - `InspectionExportTestSeeder` (demo, local/testing only) fails: it writes `inspection_run_aql.notes`, a column dropped by migration `2026_07_07_073658`.
 - The inspection PDF's own footer uses CSS `counter(pages)`, which dompdf 3.1.5 renders as "of 0" (verified with a probe).
 - The AQL verdict of an **unfinished** run with no plan (lot below 2), zero defects and its AQL section marked complete is stored as "Pass" (`AqlCalculationService::verdict()`). Finishing is refused in that state, so it never becomes a run verdict (Q36).
+- `CompanySetting::current()` inserts a new row on every call when row 1 does not exist (`id` is not fillable). Production has row 1. Q44.
 - A deleted customer order or employee still removes its rows from the inspection's order and inspector lists (foreign key cascade). The header lock (D2) does not cover master deletes of orders or employees.
 - Stored statuses in the `trade_prod` copy that differ from the new roll-up: 1 inspection stored Pass with a finished Conditional run, and 1 stored Pass while its runs are not all finished. They are recalculated only when a run in that inspection is finished or reopened. No data was changed.
 

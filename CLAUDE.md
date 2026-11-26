@@ -111,7 +111,7 @@ Two coexisting systems: `sample_movements` (legacy, direct FK) and `movements`/`
 - Pivot tables: no `id()`, no `timestamps()`, define composite PK explicitly
 
 **Frontend**
-- The app UI is the **Bootstrap 5** theme (`btn-*`, `badge`, `d-none`; `Paginator::useBootstrapFive()`); Tailwind appears only in the Breeze auth views. Use the theme's classes — no new custom CSS files
+- The app UI is the **Bootstrap 5** theme (`btn-*`, `badge`, `d-none`; `Paginator::useBootstrapFive()`); Tailwind appears only in the Breeze auth views (confirm/forgot/reset password, verify email). Use the theme's classes; the only custom stylesheet is the brand layer `public/assets/css/brand.css` (tokens + components, see `docs/DESIGN.md`) — no other new CSS files
 - Alpine.js for reactive UI — no Vue/React
 - AJAX via Axios (globally configured) — not `fetch()`. Known drift: the run edit page and its section partials (`operations/inspections/runs/`) still use `fetch()`; the run form's Save run / Finish must use `fetch()` with `redirect: 'manual'` (Axios can't stop at the redirect)
 - JS longer than ~10 lines in Blade → `@push('scripts')` or dedicated JS file

@@ -4,532 +4,231 @@
 <meta charset="UTF-8">
 <meta http-equiv="Content-Type" content="text/html; charset=utf-8"/>
 <title>Inspection Report &mdash; {{ $inspection->report_number }}</title>
+{{-- "Page X of Y" is drawn by App\Services\Pdf\PdfPageNumberService (dompdf isPhpEnabled is off). --}}
+<meta name="pdf-page-numbers" content="1">
 <style>
+@include('exports.partials._brand-pdf-styles')
 
-* { box-sizing: border-box; margin: 0; padding: 0; }
+/* Reset inside the body only: a bare * would also reset the page box and drop the @page margins (the old header/footer never printed). */
+body, body * { box-sizing: border-box; margin: 0; padding: 0; }
 
-body {
-    font-family: DejaVu Sans, sans-serif;
-    font-size: 8.5pt;
-    color: #212121;
-    line-height: 1.55;
+/* ── Cover ─────────────────────────────────────────────────────────── */
+.cover-title-block { margin: 1mm 0 5mm; }
+.cover-kicker {
+    font-size: 7.5pt; font-weight: bold; letter-spacing: 0.6px; text-transform: uppercase; color: #00699A;
 }
+.cover-main-title { font-size: 19pt; font-weight: bold; color: #171717; margin-top: 1mm; }
+.cover-main-subtitle { font-size: 9.5pt; color: #5B6470; margin-top: 1mm; }
+.cover-accent { width: 22mm; border-bottom: 2pt solid #01AEEF; margin-top: 3mm; }
 
-@page {
-    size: A4 portrait;
-    margin: 22mm 15mm 22mm 15mm;
-}
+.cover-grid { width: 100%; border-collapse: collapse; }
+.cover-grid td.cg-left  { width: 58%; padding-right: 4mm; vertical-align: top; }
+.cover-grid td.cg-right { width: 42%; vertical-align: top; }
 
-.page-break { page-break-after: always; }
-.no-break   { page-break-inside: avoid; }
-
-/* ── Fixed footer ──────────────────────────────────────────────────── */
-.pdf-footer {
-    position: fixed;
-    bottom: -18mm;
-    left: -15mm; right: -15mm;
-    border-top: 2px solid #1A3560;
-    padding: 4px 15mm 0;
-    font-size: 6.5pt;
-    color: #9E9E9E;
-    background: #ffffff;
-}
-.pdf-footer table { width: 100%; }
-.pdf-footer .fn-left   { color: #9E9E9E; }
-.pdf-footer .fn-center { text-align: center; color: #1565C0; font-weight: bold; font-size: 7pt; }
-.pdf-footer .fn-right  { text-align: right; }
-.pdf-footer .fn-right:after { content: "Page " counter(page) " of " counter(pages); }
-
-/* ── Fixed running header (every page) ─────────────────────────────── */
-.pdf-header {
-    position: fixed;
-    top: -18mm;
-    left: -15mm; right: -15mm;
-    border-bottom: 1px solid #DEE2E6;
-    padding: 4px 15mm;
-    font-size: 6.5pt;
-    color: #546E7A;
-    background: #ffffff;
-}
-.pdf-header table { width: 100%; }
-.ph-left   { font-weight: bold; color: #1A3560; font-size: 7pt; white-space: nowrap; }
-.ph-center { text-align: center; color: #757575; }
-.ph-right  { text-align: right; white-space: nowrap; }
-
-/* ── Cover banner ──────────────────────────────────────────────────── */
-.cover-banner {
-    background: #0D2B4E;
-    color: #ffffff;
-    padding: 18px 18px;
-    border-radius: 4px 4px 0 0;
-    margin-bottom: 0;
-}
-.cover-banner table { width: 100%; }
-.cb-system-label {
-    font-size: 6.5pt;
-    letter-spacing: 0.5px;
-    text-transform: uppercase;
-    color: #7FB3D3;
-    margin-bottom: 3px;
-}
-.cb-company { font-size: 16pt; font-weight: bold; }
-.cb-tagline { font-size: 7.5pt; color: #B0C4D8; margin-top: 3px; }
-.cb-right   { text-align: right; vertical-align: bottom; }
-.cb-repnum  { font-size: 11pt; font-weight: bold; }
-.cb-date    { font-size: 7.5pt; color: #B0C4D8; margin-top: 3px; }
-.cb-type    { font-size: 6.5pt; color: #7FB3D3; text-transform: uppercase; margin-bottom: 3px; }
-
-/* ── Cover title strip ─────────────────────────────────────────────── */
-.cover-title-strip {
-    background: #F5F7FA;
-    border-left: 5px solid #C8951A;
-    border-bottom: 1px solid #DEE2E6;
-    padding: 11px 16px;
-    margin-bottom: 16px;
-}
-.cover-main-title {
-    font-size: 18pt;
-    font-weight: bold;
-    color: #0D2B4E;
-    text-transform: uppercase;
-    letter-spacing: 0.3px;
-}
-.cover-main-subtitle {
-    font-size: 9pt;
-    color: #546E7A;
-    margin-top: 3px;
-}
-
-/* ── Info panels ───────────────────────────────────────────────────── */
-.info-panel {
-    border: 1px solid #DEE2E6;
-    border-top: 3px solid #1565C0;
-    border-radius: 3px;
-    margin-bottom: 12px;
-}
+.info-panel { border: 0.75pt solid #D5DAE0; border-top: 2pt solid #00699A; margin-bottom: 4mm; }
 .info-panel-header {
-    background: #F5F7FA;
-    padding: 6px 12px;
-    border-bottom: 1px solid #DEE2E6;
-    font-size: 7pt;
-    font-weight: bold;
-    color: #546E7A;
+    background: #F4F6F8; padding: 5px 10px; border-bottom: 0.75pt solid #D5DAE0;
+    font-size: 7.5pt; font-weight: bold; color: #2B3137; text-transform: uppercase; letter-spacing: 0.4px;
 }
-.info-panel-body { padding: 10px 12px; }
+.info-panel-body { padding: 8px 10px; }
 
 .cover-kv { width: 100%; border-collapse: collapse; }
-.cover-kv td { padding: 4px 0; font-size: 8.5pt; border-bottom: 1px solid #F5F5F5; vertical-align: top; }
-.cover-kv .ck { color: #9E9E9E; width: 44%; font-size: 8pt; }
-.cover-kv .cv { color: #212121; font-weight: 500; }
+.cover-kv td { padding: 3.5px 0; font-size: 9pt; border-bottom: 0.5pt solid #EEF1F4; vertical-align: top; }
+.cover-kv .ck { color: #5B6470; width: 40%; font-size: 8.5pt; }
+.cover-kv .cv { color: #171717; font-weight: bold; }
 .cover-kv tr:last-child td { border-bottom: none; }
 
-/* ── Overall Verdict badge ─────────────────────────────────────────── */
+/* The one decision (text + colour; tint + border so it survives grayscale) */
+.decision-label { font-size: 7.5pt; font-weight: bold; color: #5B6470; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 4px; }
 .verdict-badge-lg {
-    display: block;
-    padding: 12px 0;
-    font-size: 18pt;
-    font-weight: bold;
-    border-radius: 4px;
-    text-align: center;
-    margin-bottom: 14px;
+    display: block; padding: 10px 0; font-size: 18pt; font-weight: bold; text-align: center; margin-bottom: 8px;
+    border-radius: 3px;
 }
-.vb-pass        { background: #E8F5E9; color: #2E7D32; border: 2px solid #2E7D32; }
-.vb-fail        { background: #FFEBEE; color: #C62828; border: 2px solid #C62828; }
-.vb-conditional { background: #FFF3E0; color: #E65100; border: 2px solid #E65100; }
-.vb-pending     { background: #F5F5F5; color: #757575; border: 2px solid #BDBDBD; }
+.vb-pass         { background: #E3F4EA; color: #17643A; border: 1.5pt solid #1D7A46; }
+.vb-fail         { background: #FDE8E7; color: #A32019; border: 1.5pt solid #B42318; }
+.vb-conditional  { background: #FFF1D6; color: #7A4A00; border: 1.5pt solid #9A5B00; }
+.vb-reinspection { background: #EFE7FA; color: #5B2E91; border: 1.5pt solid #6B3FA0; }
+.vb-pending      { background: #ECEFF2; color: #4A525C; border: 1.5pt solid #8A939E; }
+
+.assessment-line { font-size: 8.5pt; color: #2B3137; border-left: 2pt solid #8A939E; padding: 3px 0 3px 7px; margin-bottom: 4px; }
+.assessment-line strong { color: #171717; }
+
+/* Summary strip under the cover */
+.summary-strip { width: 100%; border-collapse: collapse; table-layout: fixed; margin-bottom: 5mm; }
+.summary-strip td { border: 0.75pt solid #D5DAE0; padding: 6px 8px; vertical-align: top; background: #FFFFFF; }
+.ss-label { display: block; font-size: 7pt; font-weight: bold; color: #5B6470; text-transform: uppercase; letter-spacing: 0.4px; }
+.ss-value { display: block; font-size: 12pt; font-weight: bold; color: #171717; margin-top: 1px; }
+.ss-sub   { display: block; font-size: 8pt; color: #2B3137; margin-top: 1px; }
 
 .defect-pill-row { width: 100%; border-collapse: collapse; }
-.defect-pill-row td { text-align: center; padding: 3px; }
-.dp-box { border-radius: 4px; padding: 7px 4px; display: block; }
-.dp-critical { background: #FFEBEE; }
-.dp-major    { background: #FFF8E1; }
-.dp-minor    { background: #E3F2FD; }
-.dp-num { font-size: 14pt; font-weight: bold; display: block; }
-.dp-crit-num { color: #C62828; }
-.dp-maj-num  { color: #E65100; }
-.dp-min-num  { color: #1565C0; }
-.dp-lbl { font-size: 6.5pt; text-transform: uppercase; color: #9E9E9E; display: block; margin-top: 2px; }
+.defect-pill-row td { text-align: center; padding: 2px; }
+.dp-box { padding: 5px 3px; display: block; border: 0.75pt solid #D5DAE0; }
+.dp-critical { background: #FDE8E7; border-color: #EE9C95; }
+.dp-major    { background: #FFEBDC; border-color: #F0B17F; }
+.dp-minor    { background: #E5EEFC; border-color: #9DB8EE; }
+.dp-num { font-size: 13pt; font-weight: bold; display: block; }
+.dp-crit-num { color: #A32019; }
+.dp-maj-num  { color: #8F3B00; }
+.dp-min-num  { color: #1849A9; }
+.dp-lbl { font-size: 7pt; text-transform: uppercase; color: #2B3137; display: block; margin-top: 1px; }
 
-/* ── Section Summary Dashboard ─────────────────────────────────────── */
-.summary-dashboard {
-    border: 1px solid #DEE2E6;
-    border-top: 3px solid #1565C0;
-    border-radius: 3px;
-    margin-bottom: 14px;
-}
-.summary-dashboard-hdr {
-    background: #1565C0;
-    padding: 7px 14px;
-}
-.summary-dashboard-hdr-text {
-    font-size: 7.5pt;
-    font-weight: bold;
-    color: #ffffff;
-}
+/* ── Section summary table ─────────────────────────────────────────── */
+.summary-dashboard { border: 0.75pt solid #D5DAE0; border-top: 2pt solid #00699A; margin-bottom: 5mm; }
+.summary-dashboard-hdr { background: #F4F6F8; padding: 5px 10px; border-bottom: 0.75pt solid #D5DAE0; }
+.summary-dashboard-hdr-text { font-size: 7.5pt; font-weight: bold; color: #2B3137; text-transform: uppercase; letter-spacing: 0.4px; }
 .summary-table { width: 100%; border-collapse: collapse; }
 .summary-table th {
-    background: #F5F7FA;
-    padding: 6px 12px;
-    font-size: 6.5pt;
-    font-weight: bold;
-    text-transform: uppercase;
-    letter-spacing: 0.2px;
-    color: #546E7A;
-    border-bottom: 1px solid #DEE2E6;
-    text-align: left;
+    background: #FFFFFF; padding: 5px 10px; font-size: 7pt; font-weight: bold; text-transform: uppercase;
+    color: #5B6470; border-bottom: 0.75pt solid #D5DAE0; text-align: left;
 }
-.summary-table td {
-    padding: 6px 12px;
-    font-size: 8pt;
-    border-bottom: 1px solid #F5F5F5;
-    vertical-align: middle;
-}
+.summary-table td { padding: 5px 10px; font-size: 9pt; border-bottom: 0.5pt solid #EEF1F4; vertical-align: middle; }
+.summary-table tr { page-break-inside: avoid; }
 .summary-table tbody tr:last-child td { border-bottom: none; }
-.summary-table .st-idx     { width: 28px; text-align: center; color: #9E9E9E; font-size: 7.5pt; }
-.summary-table .st-section { font-weight: 500; color: #212121; }
-.summary-table .st-detail  { color: #9E9E9E; font-size: 7.5pt; }
+.summary-table .st-idx     { width: 26px; text-align: center; color: #5B6470; font-size: 8pt; }
+.summary-table .st-section { font-weight: bold; color: #171717; }
+.summary-table .st-detail  { color: #5B6470; font-size: 8.5pt; }
 .summary-table .st-status  { text-align: right; width: 90px; }
 
-/* ── Status badges (pill) ──────────────────────────────────────────── */
-.badge {
-    display: inline-block;
-    padding: 2px 10px;
-    border-radius: 12px;
-    font-size: 7pt;
-    font-weight: bold;
-}
-.badge-pass    { background: #E8F5E9; color: #2E7D32; }
-.badge-fail    { background: #FFEBEE; color: #C62828; }
-.badge-na      { background: #F5F5F5; color: #757575; }
-.badge-pending { background: #FFF8E1; color: #E65100; }
+/* Status pills (summary, section headers) */
+.badge { display: inline-block; padding: 1.5pt 6pt; border-radius: 7pt; font-size: 7.5pt; font-weight: bold; border: 0.75pt solid #C3CAD2; }
+.badge-pass    { background: #E3F4EA; color: #17643A; border-color: #8CCBA4; }
+.badge-fail    { background: #FDE8E7; color: #A32019; border-color: #EE9C95; }
+.badge-na      { background: #ECEFF2; color: #4A525C; border-color: #C3CAD2; }
+.badge-pending { background: #FFF1D6; color: #7A4A00; border-color: #E2B866; }
 
-/* ── Runs overview box ─────────────────────────────────────────────── */
-.runs-box { border: 1px solid #DEE2E6; border-radius: 3px; margin-top: 14px; }
+/* ── Runs overview ─────────────────────────────────────────────────── */
+.runs-box { border: 0.75pt solid #D5DAE0; margin-top: 4mm; }
 .runs-box-hdr {
-    background: #F5F7FA;
-    padding: 6px 14px;
-    border-bottom: 1px solid #DEE2E6;
-    font-size: 7pt;
-    font-weight: bold;
-    color: #546E7A;
+    background: #F4F6F8; padding: 5px 10px; border-bottom: 0.75pt solid #D5DAE0;
+    font-size: 7.5pt; font-weight: bold; color: #2B3137; text-transform: uppercase; letter-spacing: 0.4px;
 }
 
-/* ── Disclaimer ────────────────────────────────────────────────────── */
 .disclaimer {
-    margin-top: 16px;
-    padding: 9px 14px;
-    background: #F5F7FA;
-    border: 1px solid #DEE2E6;
-    border-left: 3px solid #BDBDBD;
-    font-size: 7pt;
-    color: #9E9E9E;
-    border-radius: 0 3px 3px 0;
+    margin-top: 5mm; padding: 6px 10px; border: 0.75pt solid #D5DAE0; border-left: 2pt solid #8A939E;
+    font-size: 7.5pt; color: #5B6470;
 }
 
-/* ── Style group header (bulk export: one per parent sample/style) ──── */
-.style-group-header {
-    border-bottom: 2px solid #0D2B4E;
-    padding-bottom: 6px;
-    margin-bottom: 10px;
-}
-.sgh-title { font-size: 11pt; font-weight: bold; color: #0D2B4E; text-transform: uppercase; }
-.sgh-rollup { font-size: 8pt; color: #546E7A; margin-top: 2px; }
+/* ── Style group + run header ──────────────────────────────────────── */
+.style-group-header { border-bottom: 1.5pt solid #171717; padding-bottom: 4px; margin-bottom: 4mm; page-break-after: avoid; }
+.sgh-title  { font-size: 11pt; font-weight: bold; color: #171717; text-transform: uppercase; }
+.sgh-rollup { font-size: 8.5pt; color: #5B6470; margin-top: 2px; }
 
-/* ── Run page header ───────────────────────────────────────────────── */
 .run-page-header {
-    background: #0D2B4E;
-    color: #ffffff;
-    padding: 12px 16px;
-    border-radius: 4px;
-    margin-bottom: 14px;
+    background: #F4F6F8; border: 0.75pt solid #D5DAE0; border-left: 3pt solid #00699A;
+    padding: 8px 12px; margin-bottom: 4mm; page-break-after: avoid;
 }
-.run-page-header table { width: 100%; }
-.rph-label { font-size: 6.5pt; text-transform: uppercase; color: #7FB3D3; }
-.rph-title { font-size: 13pt; font-weight: bold; margin-top: 2px; }
-.rph-meta  { font-size: 7.5pt; color: #B0C4D8; margin-top: 4px; }
-.rph-verdict-cell { text-align: right; vertical-align: middle; width: 150px; }
-.rph-verdict-label { font-size: 6.5pt; text-transform: uppercase; color: #7FB3D3; margin-bottom: 5px; }
-.rph-verdict-badge {
-    display: inline-block;
-    padding: 7px 18px;
-    font-size: 10pt;
-    font-weight: bold;
-    border-radius: 4px;
-}
+.run-page-header table { width: 100%; border-collapse: collapse; }
+.rph-label { font-size: 7.5pt; text-transform: uppercase; color: #00699A; font-weight: bold; letter-spacing: 0.4px; }
+.rph-title { font-size: 13pt; font-weight: bold; color: #171717; margin-top: 1px; }
+.rph-meta  { font-size: 8.5pt; color: #2B3137; margin-top: 3px; }
+.rph-verdict-cell  { text-align: right; vertical-align: middle; width: 150px; }
+.rph-verdict-label { font-size: 7pt; text-transform: uppercase; color: #5B6470; font-weight: bold; margin-bottom: 4px; }
+.rph-verdict-badge { display: inline-block; padding: 5px 14px; font-size: 10.5pt; font-weight: bold; border-radius: 3px; }
 
 /* ── Section blocks ────────────────────────────────────────────────── */
-.section-block {
-    margin-bottom: 12px;
-    border: 1px solid #DEE2E6;
-    border-left: 4px solid #1565C0;
-    border-radius: 0 3px 3px 0;
-}
-.section-block-empty {
-    margin-bottom: 5px;
-    border: 1px solid #F0F0F0;
-    border-left: 4px solid #E0E0E0;
-    border-radius: 0 3px 3px 0;
-    background: #FAFAFA;
-    page-break-inside: avoid;
-}
-.section-hdr {
-    background: #F5F7FA;
-    padding: 6px 12px;
-    border-bottom: 1px solid #DEE2E6;
-    page-break-after: avoid;
-}
-.section-hdr table { width: 100%; }
+.section-block { margin-bottom: 4mm; border: 0.75pt solid #D5DAE0; border-left: 3pt solid #00699A; }
+.section-block-empty { margin-bottom: 2mm; border: 0.75pt solid #E3E7EB; border-left: 3pt solid #C3CAD2; page-break-inside: avoid; }
+.section-hdr { background: #F4F6F8; padding: 5px 10px; border-bottom: 0.75pt solid #D5DAE0; page-break-after: avoid; page-break-inside: avoid; }
+.section-hdr table { width: 100%; border-collapse: collapse; }
 .sec-num {
-    background: #1565C0;
-    color: #ffffff;
-    font-size: 6.5pt;
-    font-weight: bold;
-    padding: 2px 7px;
-    border-radius: 3px;
-    margin-right: 6px;
-    display: inline-block;
+    background: #00699A; color: #FFFFFF; font-size: 7.5pt; font-weight: bold;
+    padding: 1px 6px; border-radius: 2px; margin-right: 5px; display: inline-block;
 }
-.sec-name { font-size: 9.5pt; font-weight: bold; color: #0D2B4E; }
-
-.section-body { padding: 10px 14px; }
+.sec-name { font-size: 10pt; font-weight: bold; color: #171717; }
+.section-body { padding: 8px 10px; }
 
 .section-note {
-    margin-top: 8px;
-    padding: 7px 10px;
-    background: #FFFDE7;
-    border-left: 3px solid #F9A825;
-    font-size: 8pt;
-    color: #5D4037;
-    border-radius: 0 3px 3px 0;
+    margin-top: 6px; padding: 5px 8px; border: 0.75pt solid #E2B866; border-left: 2pt solid #9A5B00;
+    background: #FFFAEF; font-size: 9pt; color: #2B3137;
 }
-
 .sub-heading {
-    font-size: 7pt;
-    font-weight: bold;
-    text-transform: uppercase;
-    letter-spacing: 0.2px;
-    color: #546E7A;
-    margin: 10px 0 6px;
-    padding-bottom: 3px;
-    border-bottom: 1px solid #EEEEEE;
+    font-size: 7.5pt; font-weight: bold; text-transform: uppercase; letter-spacing: 0.4px; color: #2B3137;
+    margin: 8px 0 4px; padding-bottom: 2px; border-bottom: 0.75pt solid #D5DAE0; page-break-after: avoid;
 }
 
-/* ── Meta table ────────────────────────────────────────────────────── */
+/* ── Label / value rows ────────────────────────────────────────────── */
 .meta-table { width: 100%; border-collapse: collapse; }
-.meta-table td {
-    padding: 4px 8px;
-    font-size: 8.5pt;
-    border-bottom: 1px solid #F5F5F5;
-    vertical-align: top;
-}
-.meta-table .mk { width: 36%; font-weight: 600; color: #546E7A; white-space: nowrap; }
-.meta-table .mv { color: #212121; }
+.meta-table td { padding: 3.5px 6px; font-size: 9pt; border-bottom: 0.5pt solid #EEF1F4; vertical-align: top; }
+.meta-table tr { page-break-inside: avoid; }
+.meta-table .mk { width: 36%; font-weight: bold; color: #5B6470; }
+.meta-table .mv { color: #171717; }
 .meta-table tr:last-child td { border-bottom: none; }
 
-/* ── Data / checklist table ────────────────────────────────────────── */
-.data-table { width: 100%; border-collapse: collapse; }
-.data-table th {
-    background: #1A3560;
-    color: #ffffff;
-    padding: 6px 9px;
-    font-size: 7pt;
-    font-weight: bold;
-    text-align: left;
-    text-transform: uppercase;
-    letter-spacing: 0.2px;
+/* ── Data tables (header repeats on each page; rows never split) ──── */
+.data-table, .aql-table, .defect-table { width: 100%; border-collapse: collapse; }
+.data-table thead, .aql-table thead, .defect-table thead { display: table-header-group; }
+.data-table tr, .aql-table tr, .defect-table tr { page-break-inside: avoid; }
+.data-table th, .aql-table th, .defect-table th {
+    background: #EEF1F4; color: #2B3137; padding: 5px 7px; font-size: 7.5pt; font-weight: bold;
+    text-align: left; text-transform: uppercase; letter-spacing: 0.2px; border-bottom: 1.25pt solid #00699A;
 }
-.data-table td {
-    padding: 5px 9px;
-    font-size: 8.5pt;
-    border-bottom: 1px solid #F0F0F0;
-    vertical-align: top;
-}
-.data-table tbody tr:nth-child(even) td { background: #FAFAFA; }
-.data-table tbody tr:last-child td { border-bottom: none; }
+.data-table td, .defect-table td { padding: 4px 7px; font-size: 9pt; border-bottom: 0.5pt solid #E3E7EB; vertical-align: top; }
+.data-table tbody tr:nth-child(even) td, .defect-table tbody tr:nth-child(even) td { background: #FAFBFC; }
 
-/* ── Result badges (inline / table) ───────────────────────────────── */
-.rb-pass { color: #2E7D32; font-weight: bold; background: #E8F5E9; padding: 2px 8px; border-radius: 10px; font-size: 7pt; }
-.rb-fail { color: #C62828; font-weight: bold; background: #FFEBEE; padding: 2px 8px; border-radius: 10px; font-size: 7pt; }
-.rb-na   { color: #757575; background: #F5F5F5; padding: 2px 8px; border-radius: 10px; font-size: 7pt; }
-.rb-def  { color: #9E9E9E; font-size: 7.5pt; }
+.rb-pass { color: #17643A; font-weight: bold; background: #E3F4EA; border: 0.75pt solid #8CCBA4; padding: 1px 6px; border-radius: 7pt; font-size: 7.5pt; }
+.rb-fail { color: #A32019; font-weight: bold; background: #FDE8E7; border: 0.75pt solid #EE9C95; padding: 1px 6px; border-radius: 7pt; font-size: 7.5pt; }
+.rb-na   { color: #4A525C; background: #ECEFF2; border: 0.75pt solid #C3CAD2; padding: 1px 6px; border-radius: 7pt; font-size: 7.5pt; }
+.rb-def  { color: #5B6470; font-size: 8.5pt; }
 
-/* ── AQL table ─────────────────────────────────────────────────────── */
-.aql-table { width: 100%; border-collapse: collapse; margin-top: 4px; }
-.aql-table th {
-    background: #0D2B4E;
-    color: #ffffff;
-    padding: 6px 9px;
-    font-size: 7pt;
-    text-align: center;
-    text-transform: uppercase;
-    letter-spacing: 0.2px;
-}
-.aql-table td {
-    padding: 5px 9px;
-    font-size: 8.5pt;
-    border: 1px solid #DEE2E6;
-    text-align: center;
-}
-.aql-table tbody tr:nth-child(even) td { background: #FAFAFA; }
+/* ── AQL sampling basis ────────────────────────────────────────────── */
+.aql-table th { text-align: center; }
+.aql-table td { padding: 4px 7px; font-size: 9pt; border: 0.5pt solid #D5DAE0; text-align: center; }
 .aql-cat { font-weight: bold; text-align: left !important; }
+.aql-verdict-block { margin-top: 6px; padding: 6px 10px; font-size: 10.5pt; font-weight: bold; text-align: center; }
+.avb-pass    { background: #E3F4EA; color: #17643A; border: 1pt solid #1D7A46; }
+.avb-fail    { background: #FDE8E7; color: #A32019; border: 1pt solid #B42318; }
+.avb-pending { background: #ECEFF2; color: #4A525C; border: 1pt solid #8A939E; }
 
-.aql-verdict-block {
-    margin-top: 10px;
-    padding: 9px 14px;
-    border-radius: 4px;
-    font-size: 10.5pt;
-    font-weight: bold;
-    text-align: center;
+/* ── Defects ───────────────────────────────────────────────────────── */
+.defect-table { table-layout: fixed; }
+.defect-table td { word-wrap: break-word; }
+.sev-critical, .sev-major, .sev-minor, .sev-functional {
+    font-weight: bold; padding: 1px 6px; border-radius: 7pt; font-size: 7.5pt; border: 0.75pt solid #C3CAD2;
 }
-.avb-pass    { background: #E8F5E9; color: #2E7D32; border: 1px solid #A5D6A7; }
-.avb-fail    { background: #FFEBEE; color: #C62828; border: 1px solid #EF9A9A; }
-.avb-pending { background: #F5F5F5; color: #757575; border: 1px solid #E0E0E0; }
+.sev-critical   { background: #FDE8E7; color: #A32019; border-color: #EE9C95; }
+.sev-major      { background: #FFEBDC; color: #8F3B00; border-color: #F0B17F; }
+.sev-minor      { background: #E5EEFC; color: #1849A9; border-color: #9DB8EE; }
+.sev-functional { background: #ECEFF2; color: #4A525C; }
+.defect-thumb { height: 34px; width: auto; max-width: 48px; border: 0.75pt solid #D5DAE0; margin: 0 2px 2px 0; }
 
-/* ── Defect table ──────────────────────────────────────────────────── */
-.defect-table { width: 100%; border-collapse: collapse; }
-.defect-table th {
-    background: #7F1D1D;
-    color: #ffffff;
-    padding: 6px 9px;
-    font-size: 7pt;
-    text-align: left;
-    text-transform: uppercase;
-    letter-spacing: 0.2px;
-}
-.defect-table td {
-    padding: 5px 9px;
-    font-size: 8.5pt;
-    border-bottom: 1px solid #FFCDD2;
-    vertical-align: top;
-}
-.defect-table tbody tr:nth-child(even) td { background: #FFF9F9; }
-.defect-table tbody tr:last-child td { border-bottom: none; }
-
-.sev-critical  { background: #FFEBEE; color: #C62828; font-weight: bold; padding: 2px 7px; border-radius: 10px; font-size: 7pt; }
-.sev-major     { background: #FFF8E1; color: #E65100; font-weight: bold; padding: 2px 7px; border-radius: 10px; font-size: 7pt; }
-.sev-minor     { background: #E3F2FD; color: #1565C0; font-weight: bold; padding: 2px 7px; border-radius: 10px; font-size: 7pt; }
-.sev-functional{ background: #F5F5F5; color: #546E7A; font-weight: bold; padding: 2px 7px; border-radius: 10px; font-size: 7pt; }
-
-/* ── Image gallery — 3 columns ─────────────────────────────────────── */
-.img-gallery-table { width: 100%; border-collapse: collapse; }
-.img-gallery-table td { padding: 6px; vertical-align: top; text-align: center; width: 33.33%; }
+/* ── Photo grid: fixed 3 columns, image size constrained ───────────── */
+.img-gallery-table { width: 100%; border-collapse: collapse; table-layout: fixed; page-break-inside: avoid; }
+.img-gallery-table td { padding: 4px; vertical-align: top; text-align: center; width: 33.33%; }
 .img-thumb {
-    height: 150px;
-    width: auto;
-    max-width: 100%;
-    object-fit: contain;
-    border: 2px solid #DEE2E6;
-    border-radius: 3px;
-    display: block;
-    margin: 0 auto 5px;
-    background: #FAFAFA;
+    height: 150px; width: auto; max-width: 100%;
+    border: 0.75pt solid #D5DAE0; display: block; margin: 0 auto 3px; background: #FFFFFF;
 }
-.img-label { font-size: 7pt; color: #757575; word-break: break-word; margin-top: 2px; }
-.img-label strong { color: #212121; }
-.img-group-heading {
-    font-size: 7.5pt;
-    font-weight: bold;
-    color: #546E7A;
-    margin: 8px 0 4px;
-}
+.img-caption { font-size: 7.5pt; color: #2B3137; text-align: center; word-wrap: break-word; }
+.img-label { font-size: 7.5pt; color: #5B6470; word-break: break-word; margin-top: 2px; }
+.img-label strong { color: #171717; }
+.img-group-heading { font-size: 8pt; font-weight: bold; color: #2B3137; margin: 6px 0 3px; page-break-after: avoid; }
 .img-missing {
-    height: 150px;
-    border: 2px dashed #DEE2E6;
-    display: block;
-    margin: 0 auto;
-    background: #F9FAFB;
-    text-align: center;
-    font-size: 7pt;
-    color: #9E9E9E;
-    padding-top: 65px;
+    height: 150px; border: 0.75pt dashed #8A939E; display: block; margin: 0 auto; background: #F4F6F8;
+    text-align: center; font-size: 8pt; color: #5B6470; padding-top: 65px;
 }
 
-/* ── Header logo (cover banner) ──────────────────────────────────────── */
-.cb-logo { max-height: 46px; max-width: 240px; }
+.review-verdict-box { display: inline-block; padding: 2px 10px; border-radius: 7pt; font-size: 9.5pt; font-weight: bold; }
+.empty-state { text-align: center; padding: 12px; color: #5B6470; font-size: 9pt; font-style: italic; }
 
-/* ── Review verdict box ────────────────────────────────────────────── */
-.review-verdict-box {
-    display: inline-block;
-    padding: 3px 14px;
-    border-radius: 10px;
-    font-size: 9.5pt;
-    font-weight: bold;
-}
-
-/* ── Empty state ───────────────────────────────────────────────────── */
-.empty-state {
-    text-align: center;
-    padding: 20px;
-    color: #9E9E9E;
-    font-size: 8pt;
-    font-style: italic;
-}
-
-/* ── Final Decision Card ───────────────────────────────────────────── */
-.final-card {
-    border: 2px solid #1565C0;
-    border-radius: 4px;
-    margin-top: 20px;
-    page-break-inside: avoid;
-}
-.final-card-hdr {
-    background: #0D2B4E;
-    color: #ffffff;
-    padding: 12px 18px;
-    border-radius: 3px 3px 0 0;
-}
-.final-card-hdr-title {
-    font-size: 9.5pt;
-    font-weight: bold;
-    color: #ffffff;
-}
-.final-card-hdr-sub {
-    font-size: 7pt;
-    color: #7FB3D3;
-    margin-top: 2px;
-}
-.final-card-body { padding: 18px; }
-
-.final-verdict-badge {
-    display: block;
-    padding: 14px 0;
-    font-size: 22pt;
-    font-weight: bold;
-    border-radius: 4px;
-    text-align: center;
-    margin-bottom: 16px;
-}
-
-.final-remarks-box {
-    border: 1px solid #DEE2E6;
-    border-left: 4px solid #1565C0;
-    border-radius: 0 3px 3px 0;
-    padding: 10px 14px;
-    background: #F5F7FA;
-    margin-bottom: 14px;
-}
-.final-remarks-label {
-    font-size: 6.5pt;
-    font-weight: bold;
-    text-transform: uppercase;
-    color: #9E9E9E;
-    margin-bottom: 5px;
-}
-.final-remarks-text {
-    font-size: 9pt;
-    color: #212121;
-    line-height: 1.6;
-}
-.final-meta-table { width: 100%; border-collapse: collapse; margin-top: 12px; }
-.final-meta-table td { padding: 4px 0; font-size: 8.5pt; border-bottom: 1px solid #F5F5F5; }
-.final-meta-table .fmk { color: #9E9E9E; width: 30%; font-size: 8pt; }
-.final-meta-table .fmv { color: #212121; font-weight: 500; }
+/* ── Final decision card ───────────────────────────────────────────── */
+.final-card { border: 1pt solid #00699A; margin-top: 6mm; page-break-inside: avoid; }
+.final-card-hdr { background: #F4F6F8; padding: 8px 12px; border-bottom: 0.75pt solid #D5DAE0; }
+.final-card-hdr-title { font-size: 10.5pt; font-weight: bold; color: #171717; }
+.final-card-hdr-sub { font-size: 8pt; color: #5B6470; margin-top: 1px; }
+.final-card-body { padding: 10px 12px; }
+.final-verdict-badge { display: block; padding: 10px 0; font-size: 20pt; font-weight: bold; text-align: center; margin-bottom: 8px; border-radius: 3px; }
+.final-remarks-box { border: 0.75pt solid #D5DAE0; border-left: 2pt solid #00699A; padding: 6px 10px; margin-bottom: 6px; }
+.final-remarks-label { font-size: 7.5pt; font-weight: bold; text-transform: uppercase; color: #5B6470; margin-bottom: 3px; }
+.final-remarks-text { font-size: 9pt; color: #171717; line-height: 1.5; }
+.final-meta-table { width: 100%; border-collapse: collapse; margin-top: 6px; }
+.final-meta-table td { padding: 3.5px 0; font-size: 9pt; border-bottom: 0.5pt solid #EEF1F4; }
+.final-meta-table .fmk { color: #5B6470; width: 22%; font-size: 8.5pt; }
+.final-meta-table .fmv { color: #171717; font-weight: bold; }
 .final-meta-table tr:last-child td { border-bottom: none; }
 
-.sig-row { width: 100%; border-collapse: collapse; margin-top: 22px; }
-.sig-row td { text-align: center; padding: 0 10px; vertical-align: bottom; width: 33%; }
-.sig-line { border-top: 1px solid #BDBDBD; padding-top: 5px; margin-top: 30px; font-size: 7.5pt; color: #9E9E9E; }
-
+.sig-row { width: 100%; border-collapse: collapse; margin-top: 12mm; }
+.sig-row td { text-align: center; padding: 0 8px; vertical-align: bottom; width: 33%; }
+.sig-line { border-top: 0.75pt solid #8A939E; padding-top: 4px; font-size: 8pt; color: #5B6470; }
 </style>
 </head>
 <body>
@@ -594,6 +293,21 @@ $defectInfo = function ($defectId) use ($defects) {
         'severity' => $def->severity ?? 'minor',
     ];
 };
+
+// Verdict tone for the decision boxes (colour only; the label always comes from display()).
+$verdictTone = fn ($status) => match ($status) {
+    'Pass' => 'pass', 'Fail' => 'fail', 'Conditional' => 'conditional', 'Re-Inspection' => 'reinspection', default => 'pending',
+};
+
+// Cover details, taken from values this report already prints (runs overview, run headers,
+// General Information). Several runs with different values list each value once.
+$coverJoin = fn ($values) => collect($values)->filter(fn ($v) => $v !== null && $v !== '')->unique()->implode(', ') ?: '—';
+$coverCustomer = $coverJoin($runs->map(fn ($r) => $r->sample?->customer?->display_name));
+$coverFactory  = $coverJoin($runs->flatMap(fn ($r) => $r->runSections
+    ->filter(fn ($x) => $x->section?->section_type === 'general_info')
+    ->map(fn ($x) => $x->data['factory_name'] ?? null)));
+$coverSample   = $coverJoin($runs->map(fn ($r) => $r->sample ? trim($r->sample->sample_code.($r->sample->product_name ? ' — '.$r->sample->product_name : '')) : null));
+$coverColour   = $coverJoin($runs->map(fn ($r) => $r->sampleColor?->name));
 
 // Runs grouped by parent style/sample (single-run exports don't pass this in —
 // fall back to grouping the one run we have so the template logic stays uniform).
@@ -799,75 +513,51 @@ foreach ($runs as $sumRun) {
 
 // Sort by section type priority (then by first-seen order within same priority)
 uasort($summaryRows, fn($a, $b) => $a['sortPriority'] <=> $b['sortPriority']);
+
+// Summary strip: sections complete (same sections the report lists), AQL result per run.
+$stripSections = $runs->flatMap(fn ($r) => $r->runSections->filter(
+    fn ($x) => $x->section && !in_array($x->section->slug, $hiddenSlugs) && $x->status !== 'na'
+));
+$stripDone  = $stripSections->where('status', 'complete')->count();
+$stripTotal = $stripSections->count();
+$stripAql   = $runs->filter(fn ($r) => $r->aql)->map(fn ($r) => $r->aql->verdict ?? 'Pending')->countBy();
+$stripAqlText = $stripAql->isEmpty()
+    ? 'Not used'
+    : ($stripAql->count() === 1 && $runs->filter(fn ($r) => $r->aql)->count() === 1
+        ? strtoupper($stripAql->keys()->first())
+        : $stripAql->map(fn ($n, $v) => strtoupper($v).' '.$n)->implode(' · '));
 @endphp
 
-{{-- ══════════════════════════════════════════ RUNNING HEADER ══════════════ --}}
-<div class="pdf-header">
-    <table>
-        <tr>
-            <td class="ph-left">TradeSyncERP &bull; {{ $inspection->report_number }}</td>
-            <td class="ph-center">{{ $inspection->inspectionType?->name ?? 'Quality Inspection Report' }}</td>
-            <td class="ph-right">
-                {{ $inspection->inspection_date?->format('d M Y') ?? '' }}
-                &nbsp;&bull;&nbsp;
-                <span class="badge {{ $headerBadgeClass }}">{{ $overallDisplay['label'] }}</span>
-            </td>
-        </tr>
-    </table>
-</div>
-
-{{-- ══════════════════════════════════════════ FIXED FOOTER ════════════════ --}}
-<div class="pdf-footer">
-    <table>
-        <tr>
-            <td class="fn-left">Confidential &mdash; For Authorized Recipients Only &mdash; TradeSyncERP</td>
-            <td class="fn-center">{{ $inspection->report_number }}</td>
-            <td class="fn-right"></td>
-        </tr>
-    </table>
-</div>
+{{-- ══════════════════════════════════════════ RUNNING HEADER + FOOTER ═══ --}}
+@php $companySetting = \App\Models\CompanySetting::current(); /* read once, shared by both partials */ @endphp
+@include('exports.partials._brand-header', ['docTitle' => 'Quality Inspection Report', 'docNumber' => $inspection->report_number])
+@include('exports.partials._brand-footer', ['footerNote' => 'Confidential — for authorized recipients only'])
 
 {{-- ══════════════════════════════════════════ COVER PAGE ═════════════════ --}}
 
-{{-- Cover Banner --}}
-<div class="cover-banner">
-    <table>
-        <tr>
-            <td style="vertical-align: bottom">
-                @if($logoBase64)
-                    <img src="{{ $logoBase64 }}" class="cb-logo" alt="TradeSyncERP">
-                @else
-                    <div class="cb-system-label">Quality Assurance &amp; Inspection Management</div>
-                    <div class="cb-company">TradeSyncERP</div>
-                    <div class="cb-tagline">Inspection &amp; Quality Control System</div>
-                @endif
-            </td>
-            <td class="cb-right">
-                <div class="cb-type">{{ $inspection->inspectionType?->name ?? 'Inspection Report' }}</div>
-                <div class="cb-repnum">{{ $inspection->report_number }}</div>
-                <div class="cb-date">{{ $inspection->inspection_date?->format('d F Y') ?? now()->format('d F Y') }}</div>
-            </td>
-        </tr>
-    </table>
-</div>
-
-{{-- Title Strip --}}
-<div class="cover-title-strip">
+{{-- Title block --}}
+<div class="cover-title-block">
+    <div class="cover-kicker">{{ $inspection->inspectionType?->name ?? 'Quality Inspection' }}</div>
     <div class="cover-main-title">Quality Inspection Report</div>
-    <div class="cover-main-subtitle">{{ $inspection->inspectionType?->name ?? 'Quality Inspection' }} &mdash; Generated {{ now()->format('d F Y, H:i') }}</div>
+    <div class="cover-main-subtitle">{{ $inspection->report_number }} &mdash; Generated {{ now()->format('d F Y, H:i') }}</div>
+    <div class="cover-accent"></div>
 </div>
 
-{{-- Two-column: Report Info + Overall Verdict --}}
-<table style="width:100%; border-collapse:collapse">
+{{-- Details + the one decision --}}
+<table class="cover-grid">
     <tr>
-        <td style="width:58%; padding-right:10px; vertical-align:top">
+        <td class="cg-left">
             <div class="info-panel">
                 <div class="info-panel-header">Report Information</div>
                 <div class="info-panel-body">
                     <table class="cover-kv">
                         <tr><td class="ck">Report Number</td><td class="cv">{{ $inspection->report_number }}</td></tr>
-                        <tr><td class="ck">Inspection Type</td><td class="cv">{{ $inspection->inspectionType?->name ?? '—' }}</td></tr>
                         <tr><td class="ck">Inspection Date</td><td class="cv">{{ $inspection->inspection_date?->format('d F Y') ?? '—' }}</td></tr>
+                        <tr><td class="ck">Customer</td><td class="cv">{{ $coverCustomer }}</td></tr>
+                        <tr><td class="ck">Supplier / Factory</td><td class="cv">{{ $coverFactory }}</td></tr>
+                        <tr><td class="ck">Style / Sample</td><td class="cv">{{ $coverSample }}</td></tr>
+                        <tr><td class="ck">Colour</td><td class="cv">{{ $coverColour }}</td></tr>
+                        <tr><td class="ck">Inspection Type</td><td class="cv">{{ $inspection->inspectionType?->name ?? '—' }}</td></tr>
                         <tr><td class="ck">Inspector(s)</td><td class="cv">{{ $inspection->inspectors->pluck('employee_name')->implode(', ') ?: '—' }}</td></tr>
                         <tr><td class="ck">Customer Orders</td><td class="cv">{{ $inspection->customerOrders->count() > 0 ? $inspection->customerOrders->count().' order(s)' : '—' }}</td></tr>
                         <tr><td class="ck">Total Runs</td><td class="cv">{{ $runs->count() }}</td></tr>
@@ -879,23 +569,56 @@ uasort($summaryRows, fn($a, $b) => $a['sortPriority'] <=> $b['sortPriority']);
                 </div>
             </div>
         </td>
-        <td style="width:42%; vertical-align:top">
+        <td class="cg-right">
             <div class="info-panel">
-                <div class="info-panel-header">Overall Verdict</div>
+                <div class="info-panel-header">Decision</div>
                 <div class="info-panel-body">
-                    <div class="verdict-badge-lg {{ $coverVerdictClass }}">
+                    <div class="verdict-badge-lg vb-{{ $verdictTone($inspection->overall_status) }}">
                         {{ $overallDisplay['label'] }}
                     </div>
-                    <div style="font-size:6.5pt; font-weight:bold; text-transform:uppercase; letter-spacing:1px; color:#9E9E9E; margin-bottom:6px">Defect Summary</div>
-                    <table class="defect-pill-row">
-                        <tr>
-                            <td><div class="dp-box dp-critical"><span class="dp-num dp-crit-num">{{ $defCritical }}</span><span class="dp-lbl">Critical</span></div></td>
-                            <td><div class="dp-box dp-major"><span class="dp-num dp-maj-num">{{ $defMajor }}</span><span class="dp-lbl">Major</span></div></td>
-                            <td><div class="dp-box dp-minor"><span class="dp-num dp-min-num">{{ $defMinor }}</span><span class="dp-lbl">Minor</span></div></td>
-                        </tr>
-                    </table>
+                    @foreach($runs as $asRun)
+                        @php $asm = $assessmentOf($asRun); @endphp
+                        @if($asm)
+                        <div class="assessment-line">
+                            <strong>Inspector's assessment &mdash; Run #{{ $asRun->run_number }}:</strong>
+                            {{ $asm['choice'] }}
+                            @if($asm['decision'] === null)
+                                (run not finished; the decision is calculated when it is finished)
+                            @elseif($asm['differs'])
+                                &mdash; differs from the decision ({{ \App\Services\Inspection\InspectionVerdictService::display($asm['decision'])['label'] }}).
+                                Reason: {{ $asm['reason'] !== '' ? $asm['reason'] : 'no reason recorded' }}
+                            @else
+                                &mdash; agrees with the decision.
+                            @endif
+                        </div>
+                        @endif
+                    @endforeach
                 </div>
             </div>
+        </td>
+    </tr>
+</table>
+
+{{-- Summary strip --}}
+<table class="summary-strip">
+    <tr>
+        <td style="width:26%">
+            <span class="ss-label">Sections complete</span>
+            <span class="ss-value">{{ $stripDone }} of {{ $stripTotal }}</span>
+        </td>
+        <td style="width:48%">
+            <span class="ss-label">Defects by severity</span>
+            <table class="defect-pill-row">
+                <tr>
+                    <td><div class="dp-box dp-critical"><span class="dp-num dp-crit-num">{{ $defCritical }}</span><span class="dp-lbl">Critical</span></div></td>
+                    <td><div class="dp-box dp-major"><span class="dp-num dp-maj-num">{{ $defMajor }}</span><span class="dp-lbl">Major</span></div></td>
+                    <td><div class="dp-box dp-minor"><span class="dp-num dp-min-num">{{ $defMinor }}</span><span class="dp-lbl">Minor</span></div></td>
+                </tr>
+            </table>
+        </td>
+        <td style="width:26%">
+            <span class="ss-label">AQL result</span>
+            <span class="ss-value">{{ $stripAqlText }}</span>
         </td>
     </tr>
 </table>
@@ -986,12 +709,12 @@ uasort($summaryRows, fn($a, $b) => $a['sortPriority'] <=> $b['sortPriority']);
                 };
             @endphp
             <tr>
-                <td style="text-align:center; font-weight:bold; color:#1565C0">{{ $r->run_number }}</td>
+                <td style="text-align:center; font-weight:bold; color:#00699A">{{ $r->run_number }}</td>
                 <td style="font-weight:500">{{ $r->sample?->sample_code ?? '—' }}</td>
                 <td>{{ $r->sample?->product_name ?? '—' }}</td>
-                <td style="color:#546E7A">{{ $r->sample?->customer?->display_name ?? '—' }}</td>
+                <td style="color:#5B6470">{{ $r->sample?->customer?->display_name ?? '—' }}</td>
                 <td style="text-align:center"><span class="{{ $rvc }}">{{ $r->verdict ?? 'Pending' }}</span></td>
-                <td style="font-size:8pt; color:#9E9E9E">{{ $r->completed_at?->format('d M Y') ?? 'In Progress' }}</td>
+                <td style="font-size:8pt; color:#5B6470">{{ $r->completed_at?->format('d M Y') ?? 'In Progress' }}</td>
             </tr>
             @endforeach
         </tbody>
@@ -999,7 +722,7 @@ uasort($summaryRows, fn($a, $b) => $a['sortPriority'] <=> $b['sortPriority']);
 </div>
 
 <div class="disclaimer">
-    <strong style="color:#546E7A">Confidentiality Notice:</strong>
+    <strong style="color:#5B6470">Confidentiality Notice:</strong>
     This inspection report is intended solely for the use of the named recipient and contains confidential quality control information.
     Any unauthorized review, disclosure, copying, distribution, or use of this report is strictly prohibited.
     Generated by TradeSyncERP &mdash; {{ now()->format('d F Y \a\t H:i') }}.
@@ -1036,7 +759,7 @@ uasort($summaryRows, fn($a, $b) => $a['sortPriority'] <=> $b['sortPriority']);
 @endif
 
 @php
-    $runVerdictClass = \App\Services\Inspection\InspectionVerdictService::display($run->verdict)['pdf'];
+    $runVerdictClass = 'vb-'.$verdictTone($run->verdict);
     $visibleSections = $run->runSections->filter(
         // Sections the inspector explicitly skipped ('na' status) are left out of the export
         // entirely — no header, table, checkpoints, images, or remarks for them.
@@ -1126,11 +849,11 @@ uasort($summaryRows, fn($a, $b) => $a['sortPriority'] <=> $b['sortPriority']);
     <table style="width:100%; border-collapse:collapse">
         <tr>
             <td style="padding:7px 12px; vertical-align:middle">
-                <span class="sec-num" style="background:#BDBDBD">{{ $secIdx }}</span>
-                <span style="font-size:9pt; font-weight:bold; color:#BDBDBD">{{ $sec->name }}</span>
+                <span class="sec-num" style="background:#5B6470">{{ $secIdx }}</span>
+                <span style="font-size:9pt; font-weight:bold; color:#5B6470">{{ $sec->name }}</span>
             </td>
             <td style="padding:7px 12px; text-align:right; width:120px; vertical-align:middle">
-                <span class="badge badge-na" style="color:#BDBDBD">No data recorded</span>
+                <span class="badge badge-na" style="color:#5B6470">No data recorded</span>
             </td>
         </tr>
     </table>
@@ -1217,9 +940,9 @@ uasort($summaryRows, fn($a, $b) => $a['sortPriority'] <=> $b['sortPriority']);
                     $wCls = match(strtolower((string)$wRes)) { 'pass' => 'rb-pass', 'fail' => 'rb-fail', 'n/a','na' => 'rb-na', default => 'rb-def' };
                 @endphp
                 <tr>
-                    <td style="text-align:center; color:#9E9E9E; font-size:8pt">{{ $wIdx+1 }}</td>
+                    <td style="text-align:center; color:#5B6470; font-size:8pt">{{ $wIdx+1 }}</td>
                     <td>{{ $wi['name'] ?? '' }}
-                        @if(!empty($wi['description']))<div style="color:#9E9E9E; font-size:7.5pt">{{ $wi['description'] }}</div>@endif
+                        @if(!empty($wi['description']))<div style="color:#5B6470; font-size:7.5pt">{{ $wi['description'] }}</div>@endif
                     </td>
                     <td style="text-align:center"><span class="{{ $wCls }}">{{ $wRes }}</span></td>
                 </tr>
@@ -1246,21 +969,21 @@ uasort($summaryRows, fn($a, $b) => $a['sortPriority'] <=> $b['sortPriority']);
         <table style="width:100%; margin-bottom:10px; border-collapse:collapse">
             <tr>
                 <td style="width:33%; padding:0 4px 0 0">
-                    <div style="background:#FFEBEE; border-radius:4px; padding:7px 8px; text-align:center">
-                        <div style="font-size:16pt; font-weight:bold; color:#C62828">{{ $dCrit }}</div>
-                        <div style="font-size:6.5pt; color:#C62828; text-transform:uppercase; letter-spacing:1px">Critical</div>
+                    <div style="background:#FDE8E7; border-radius:4px; padding:7px 8px; text-align:center">
+                        <div style="font-size:16pt; font-weight:bold; color:#A32019">{{ $dCrit }}</div>
+                        <div style="font-size:6.5pt; color:#A32019; text-transform:uppercase; letter-spacing:1px">Critical</div>
                     </div>
                 </td>
                 <td style="width:33%; padding:0 4px">
-                    <div style="background:#FFF8E1; border-radius:4px; padding:7px 8px; text-align:center">
-                        <div style="font-size:16pt; font-weight:bold; color:#E65100">{{ $dMaj }}</div>
-                        <div style="font-size:6.5pt; color:#E65100; text-transform:uppercase; letter-spacing:1px">Major</div>
+                    <div style="background:#FFEBDC; border-radius:4px; padding:7px 8px; text-align:center">
+                        <div style="font-size:16pt; font-weight:bold; color:#8F3B00">{{ $dMaj }}</div>
+                        <div style="font-size:6.5pt; color:#8F3B00; text-transform:uppercase; letter-spacing:1px">Major</div>
                     </div>
                 </td>
                 <td style="width:33%; padding:0 0 0 4px">
-                    <div style="background:#E3F2FD; border-radius:4px; padding:7px 8px; text-align:center">
-                        <div style="font-size:16pt; font-weight:bold; color:#1565C0">{{ $dMin }}</div>
-                        <div style="font-size:6.5pt; color:#1565C0; text-transform:uppercase; letter-spacing:1px">Minor</div>
+                    <div style="background:#E5EEFC; border-radius:4px; padding:7px 8px; text-align:center">
+                        <div style="font-size:16pt; font-weight:bold; color:#00699A">{{ $dMin }}</div>
+                        <div style="font-size:6.5pt; color:#00699A; text-transform:uppercase; letter-spacing:1px">Minor</div>
                     </div>
                 </td>
             </tr>
@@ -1268,15 +991,16 @@ uasort($summaryRows, fn($a, $b) => $a['sortPriority'] <=> $b['sortPriority']);
         <table class="defect-table">
             <thead>
                 <tr>
-                    <th style="width:24px; text-align:center">#</th>
-                    <th style="width:26%">Defect Description</th>
-                    <th style="width:70px; text-align:center">Severity</th>
-                    <th style="width:40px; text-align:center">Size</th>
-                    <th style="width:36px; text-align:center">Qty</th>
-                    <th style="width:44px; text-align:center">Carton</th>
-                    <th style="width:60px; text-align:center">Status</th>
-                    <th style="width:56px; text-align:center">Disposition</th>
-                    <th>Notes</th>
+                    <th style="width:4%; text-align:center">#</th>
+                    <th style="width:19%">Defect Description</th>
+                    <th style="width:11%; text-align:center">Severity</th>
+                    <th style="width:6%; text-align:center">Size</th>
+                    <th style="width:6%; text-align:center">Qty</th>
+                    <th style="width:8%; text-align:center">Carton</th>
+                    <th style="width:9%; text-align:center">Status</th>
+                    <th style="width:9%; text-align:center">Disp.</th>
+                    <th style="width:13%">Notes</th>
+                    <th style="width:15%">Photos</th>
                 </tr>
             </thead>
             <tbody>
@@ -1284,10 +1008,12 @@ uasort($summaryRows, fn($a, $b) => $a['sortPriority'] <=> $b['sortPriority']);
                 @php
                     $defInfo = $defectInfo($row->defect_id);
                     $sev     = $row->severity ?? $defInfo['severity'];
-                    $addGallery($imgsByTask('defect_row_'.$row->id), $defInfo['name']);
+                    // This row's photos are shown as thumbnails in the row (not again in the gallery).
+                    $rowPhotos = $imgsByTask('defect_row_'.$row->id);
+                    $suppressGallery($rowPhotos);
                 @endphp
                 <tr>
-                    <td style="text-align:center; color:#9E9E9E; font-size:8pt">{{ $i+1 }}</td>
+                    <td style="text-align:center; color:#5B6470; font-size:8pt">{{ $i+1 }}</td>
                     <td><strong>{{ $defInfo['name'] }}</strong></td>
                     <td style="text-align:center"><span class="sev-{{ $sev }}">{{ ucfirst($sev) }}</span></td>
                     <td style="text-align:center">{{ $row->size ?? '—' }}</td>
@@ -1295,7 +1021,15 @@ uasort($summaryRows, fn($a, $b) => $a['sortPriority'] <=> $b['sortPriority']);
                     <td style="text-align:center">{{ $row->carton_no ?? '—' }}</td>
                     <td style="text-align:center">{{ ucfirst($row->status ?? 'open') }}</td>
                     <td style="text-align:center">{{ $row->disposition_code ?? '—' }}</td>
-                    <td style="color:#546E7A; font-size:8pt">{{ $row->notes ?? '' }}</td>
+                    <td style="color:#2B3137">{{ $row->notes ?? '' }}</td>
+                    <td>
+                        @forelse($rowPhotos as $rowPhoto)
+                            @php $rowB64 = $imgBase64($rowPhoto->file_path); @endphp
+                            @if($rowB64)<img src="{{ $rowB64 }}" class="defect-thumb" alt="">@else<span class="rb-def">Image unavailable</span>@endif
+                        @empty
+                            <span class="rb-def">&mdash;</span>
+                        @endforelse
+                    </td>
                 </tr>
                 @endforeach
             </tbody>
@@ -1497,7 +1231,7 @@ uasort($summaryRows, fn($a, $b) => $a['sortPriority'] <=> $b['sortPriority']);
                     @if($showHeight)<td style="text-align:center">{{ $carton['height'] ?? '—' }}</td>@endif
                     @if($showGross)<td style="text-align:center">{{ $carton['gross_weight'] ?? '—' }}</td>@endif
                     @if($showNet)<td style="text-align:center">{{ $carton['net_weight'] ?? '—' }}</td>@endif
-                    @if($showRemarks)<td style="color:#546E7A; font-size:8pt">{{ $carton['remarks'] ?? '' }}</td>@endif
+                    @if($showRemarks)<td style="color:#5B6470; font-size:8pt">{{ $carton['remarks'] ?? '' }}</td>@endif
                 </tr>
                 @endforeach
             </tbody>
@@ -1529,10 +1263,10 @@ uasort($summaryRows, fn($a, $b) => $a['sortPriority'] <=> $b['sortPriority']);
                     }
                 @endphp
                 <tr>
-                    <td style="text-align:center; color:#9E9E9E; font-size:8pt">{{ $idx+1 }}</td>
+                    <td style="text-align:center; color:#5B6470; font-size:8pt">{{ $idx+1 }}</td>
                     <td>{{ $item['label'] ?? '' }}</td>
                     <td style="text-align:center"><span class="{{ $rClass }}">{{ !empty($item['result']) ? $item['result'] : '—' }}</span></td>
-                    @if($showItemRemarks)<td style="color:#546E7A; font-size:8pt">{{ $item['remarks'] ?? '' }}</td>@endif
+                    @if($showItemRemarks)<td style="color:#5B6470; font-size:8pt">{{ $item['remarks'] ?? '' }}</td>@endif
                 </tr>
                 @endforeach
             </tbody>
@@ -1570,7 +1304,7 @@ uasort($summaryRows, fn($a, $b) => $a['sortPriority'] <=> $b['sortPriority']);
                     }
                 @endphp
                 <tr>
-                    <td style="text-align:center; color:#9E9E9E; font-size:8pt">{{ $tIdx+1 }}</td>
+                    <td style="text-align:center; color:#5B6470; font-size:8pt">{{ $tIdx+1 }}</td>
                     <td>{{ $taskDef['label'] ?? $tKey }}</td>
                     <td style="text-align:center"><span class="{{ $tCls }}">{{ $tRes ?: '—' }}</span></td>
                 </tr>
@@ -1609,11 +1343,11 @@ uasort($summaryRows, fn($a, $b) => $a['sortPriority'] <=> $b['sortPriority']);
                     $addGallery($imgsByTask($stageKey), $ps['stage']);
                 @endphp
                 <tr>
-                    <td style="text-align:center; color:#9E9E9E; font-size:8pt">{{ $psIdx+1 }}</td>
+                    <td style="text-align:center; color:#5B6470; font-size:8pt">{{ $psIdx+1 }}</td>
                     <td>{{ $ps['stage'] }}</td>
                     @if($showPct)<td style="text-align:center">{{ $ps['percentage'] !== '' && $ps['percentage'] !== null ? $ps['percentage'].'%' : '—' }}</td>@endif
                     @if($showQty)<td style="text-align:center">{{ $ps['quantity'] ?? '—' }}</td>@endif
-                    @if($showComment)<td style="color:#546E7A; font-size:8pt">{{ $ps['comment'] ?? '' }}</td>@endif
+                    @if($showComment)<td style="color:#5B6470; font-size:8pt">{{ $ps['comment'] ?? '' }}</td>@endif
                 </tr>
                 @endforeach
             </tbody>
@@ -1694,10 +1428,10 @@ uasort($summaryRows, fn($a, $b) => $a['sortPriority'] <=> $b['sortPriority']);
                     $viCls = match(strtolower((string)$viRes)) { 'pass' => 'rb-pass', 'fail' => 'rb-fail', 'n/a','na' => 'rb-na', default => 'rb-def' };
                 @endphp
                 <tr>
-                    <td style="text-align:center; color:#9E9E9E; font-size:8pt">{{ $vIdx+1 }}</td>
+                    <td style="text-align:center; color:#5B6470; font-size:8pt">{{ $vIdx+1 }}</td>
                     <td>{{ $vi['label'] ?? '' }}</td>
                     <td style="text-align:center"><span class="{{ $viCls }}">{{ $viRes }}</span></td>
-                    <td style="color:#546E7A; font-size:8pt">{{ $vi['remarks'] ?? '' }}</td>
+                    <td style="color:#5B6470; font-size:8pt">{{ $vi['remarks'] ?? '' }}</td>
                 </tr>
                 @endforeach
             </tbody>
@@ -1738,10 +1472,10 @@ uasort($summaryRows, fn($a, $b) => $a['sortPriority'] <=> $b['sortPriority']);
                     };
                 @endphp
                 <tr>
-                    <td style="text-align:center; color:#9E9E9E; font-size:8pt">{{ $capIdx+1 }}</td>
+                    <td style="text-align:center; color:#5B6470; font-size:8pt">{{ $capIdx+1 }}</td>
                     <td>{{ $cap['defect_description'] ?? '' }}</td>
-                    <td style="color:#546E7A; font-size:8pt">{{ $cap['root_cause'] ?? '' }}</td>
-                    <td style="color:#546E7A; font-size:8pt">{{ $cap['corrective_action'] ?? '' }}</td>
+                    <td style="color:#5B6470; font-size:8pt">{{ $cap['root_cause'] ?? '' }}</td>
+                    <td style="color:#5B6470; font-size:8pt">{{ $cap['corrective_action'] ?? '' }}</td>
                     <td>{{ $cap['responsible_party'] ?? '' }}</td>
                     <td style="text-align:center; font-size:8pt">{{ $cap['target_date'] ?? '—' }}</td>
                     <td style="text-align:center"><span class="{{ $capCls }}">{{ $cap['status'] ?? 'Open' }}</span></td>
@@ -1756,7 +1490,7 @@ uasort($summaryRows, fn($a, $b) => $a['sortPriority'] <=> $b['sortPriority']);
         <table class="meta-table">
             <tr>
                 <td class="mk">Inspector's assessment</td>
-                <td class="mv">{{ $data['overall_result'] ?? '—' }} <span style="color:#757575">(recorded by the inspector; the decision is calculated from the AQL result and the defects)</span></td>
+                <td class="mv">{{ $data['overall_result'] ?? '—' }} <span style="color:#5B6470">(recorded by the inspector; the decision is calculated from the AQL result and the defects)</span></td>
             </tr>
             @if($asm && $asm['differs'])
             <tr>
@@ -1823,7 +1557,7 @@ uasort($summaryRows, fn($a, $b) => $a['sortPriority'] <=> $b['sortPriority']);
                     $aiCls = match(strtolower((string)$aiRes)) { 'pass' => 'rb-pass', 'fail' => 'rb-fail', 'n/a','na' => 'rb-na', default => 'rb-def' };
                 @endphp
                 <tr>
-                    <td style="text-align:center; color:#9E9E9E; font-size:8pt">{{ $aIdx+1 }}</td>
+                    <td style="text-align:center; color:#5B6470; font-size:8pt">{{ $aIdx+1 }}</td>
                     <td>{{ $ai['article_no'] ?? '' }}</td>
                     <td>{{ $ai['color'] ?? '' }}</td>
                     @if($showSize)<td>{{ $ai['size'] ?? '' }}</td>@endif
@@ -1901,7 +1635,7 @@ uasort($summaryRows, fn($a, $b) => $a['sortPriority'] <=> $b['sortPriority']);
             <tbody>
                 @foreach($selCartons as $cIdx => $carton)
                 <tr>
-                    <td style="text-align:center; color:#9E9E9E; font-size:8pt">{{ $cIdx+1 }}</td>
+                    <td style="text-align:center; color:#5B6470; font-size:8pt">{{ $cIdx+1 }}</td>
                     <td>{{ $carton['box_number'] ?? '' }}</td>
                     <td>{{ $carton['size'] ?? '' }}</td>
                     <td>{{ $carton['color'] ?? '' }}</td>
@@ -1959,10 +1693,10 @@ uasort($summaryRows, fn($a, $b) => $a['sortPriority'] <=> $b['sortPriority']);
                     $fiCls = match(strtolower((string)$fiRes)) { 'pass' => 'rb-pass', 'fail' => 'rb-fail', 'n/a','na' => 'rb-na', default => 'rb-def' };
                 @endphp
                 <tr>
-                    <td style="text-align:center; color:#9E9E9E; font-size:8pt">{{ $fIdx+1 }}</td>
+                    <td style="text-align:center; color:#5B6470; font-size:8pt">{{ $fIdx+1 }}</td>
                     <td>{{ $fi['label'] ?? '' }}</td>
                     <td style="text-align:center"><span class="{{ $fiCls }}">{{ $fiRes }}</span></td>
-                    <td style="color:#546E7A; font-size:8pt">{{ $fi['remarks'] ?? '' }}</td>
+                    <td style="color:#5B6470; font-size:8pt">{{ $fi['remarks'] ?? '' }}</td>
                 </tr>
                 @endforeach
             </tbody>
@@ -1989,6 +1723,7 @@ uasort($summaryRows, fn($a, $b) => $a['sortPriority'] <=> $b['sortPriority']);
             // grouped together with no heading at all.
             $galleryGroups = collect($galleryItems)->groupBy(fn($gi) => $gi['label'] ?? '');
         @endphp
+        @php $photoNo = 0; @endphp
         @foreach($galleryGroups as $galLabel => $galGroup)
             @if($galLabel !== '')
             <div class="img-group-heading">{{ $galLabel }}</div>
@@ -1997,13 +1732,14 @@ uasort($summaryRows, fn($a, $b) => $a['sortPriority'] <=> $b['sortPriority']);
             <table class="img-gallery-table" style="margin-bottom:4px">
                 <tr>
                     @foreach($galChunk as $galItem)
-                    @php $b64 = $imgBase64($galItem['img']->file_path); @endphp
+                    @php $b64 = $imgBase64($galItem['img']->file_path); $photoNo++; @endphp
                     <td>
                         @if($b64)
-                            <img src="{{ $b64 }}" class="img-thumb">
+                            <img src="{{ $b64 }}" class="img-thumb" alt="">
                         @else
                             <div class="img-missing">Image unavailable</div>
                         @endif
+                        <div class="img-caption">{{ $galLabel !== '' ? $galLabel.' — ' : '' }}Photo {{ $photoNo }}</div>
                     </td>
                     @endforeach
                     @for($p = count($galChunk); $p < 3; $p++)<td></td>@endfor
@@ -2020,7 +1756,7 @@ uasort($summaryRows, fn($a, $b) => $a['sortPriority'] <=> $b['sortPriority']);
             @foreach($docs as $doc)
             <tr>
                 <td class="mk">{{ $doc->title ?: $doc->file_name }}</td>
-                <td class="mv" style="color:#9E9E9E; font-size:8pt">{{ $doc->file_name }} ({{ $doc->humanFileSize() }})</td>
+                <td class="mv" style="color:#5B6470; font-size:8pt">{{ $doc->file_name }} ({{ $doc->humanFileSize() }})</td>
             </tr>
             @endforeach
         </table>
@@ -2043,7 +1779,7 @@ uasort($summaryRows, fn($a, $b) => $a['sortPriority'] <=> $b['sortPriority']);
 
 {{-- ══════════════════════════════════════════ FINAL DECISION CARD ════════ --}}
 @php
-    $finalVerdictClass = $overallDisplay['pdf'];
+    $finalVerdictClass = 'vb-'.$verdictTone($inspection->overall_status);
     $finalVerdictIcon = match($inspection->overall_status) {
         'Pass'  => '✓  PASS',
         'Fail'  => '✗  FAIL',
@@ -2107,13 +1843,13 @@ uasort($summaryRows, fn($a, $b) => $a['sortPriority'] <=> $b['sortPriority']);
                 <td class="fmk">Defects Found</td>
                 <td class="fmv">
                     @if($defCritical + $defMajor + $defMinor > 0)
-                        <span style="color:#C62828">{{ $defCritical }} Critical</span>
+                        <span style="color:#A32019">{{ $defCritical }} Critical</span>
                         &nbsp;&bull;&nbsp;
-                        <span style="color:#E65100">{{ $defMajor }} Major</span>
+                        <span style="color:#8F3B00">{{ $defMajor }} Major</span>
                         &nbsp;&bull;&nbsp;
-                        <span style="color:#1565C0">{{ $defMinor }} Minor</span>
+                        <span style="color:#00699A">{{ $defMinor }} Minor</span>
                     @else
-                        <span style="color:#2E7D32">None recorded</span>
+                        <span style="color:#17643A">None recorded</span>
                     @endif
                 </td>
                 <td class="fmk">Report Generated</td>

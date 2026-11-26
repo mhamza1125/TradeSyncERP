@@ -1,412 +1,153 @@
 @php
     $r = request()->route()?->getName() ?? '';
     $is = fn(string|array $p) => collect((array) $p)->contains(fn($pat) => \Str::is($pat, $r));
+    $user = auth()->user();
+
+    // The navigation, grouped by module (docs/DESIGN.md §4). Each link names the SAME permission
+    // its route's controller middleware requires (route:list), so a link is shown only to users
+    // who can open it. Hiding is cosmetic: the server-side checks stay as they are.
+    //   perm: permission name | role: role name | null = every signed-in user
+    $groups = [
+        ['key' => 'overview', 'label' => 'Overview', 'links' => [
+            ['label' => 'Dashboard', 'icon' => 'feather-airplay', 'route' => 'dashboard', 'active' => 'dashboard', 'perm' => null],
+            ['label' => 'Recent Activities', 'icon' => 'feather-activity', 'route' => 'activities.index', 'active' => 'activities.*', 'perm' => 'activities.view'],
+        ]],
+        ['key' => 'operations', 'label' => 'Operations', 'links' => [
+            ['label' => 'Customer Orders', 'icon' => 'feather-clipboard', 'active' => 'customer-orders.*', 'perm' => 'customer-orders.index', 'children' => [
+                ['label' => 'All Orders', 'route' => 'customer-orders.index', 'active' => 'customer-orders.index', 'perm' => 'customer-orders.index'],
+                ['label' => 'New Order', 'route' => 'customer-orders.create', 'active' => 'customer-orders.create', 'perm' => 'customer-orders.create'],
+            ]],
+            ['label' => 'Samples', 'icon' => 'feather-package', 'active' => 'samples.*', 'perm' => 'samples.index', 'children' => [
+                ['label' => 'All Samples', 'route' => 'samples.index', 'active' => 'samples.index', 'perm' => 'samples.index'],
+                ['label' => 'New Sample', 'route' => 'samples.create', 'active' => 'samples.create', 'perm' => 'samples.create'],
+            ]],
+            ['label' => 'Sample Movements', 'icon' => 'feather-send', 'active' => ['movements.*', 'samples.movements.*'], 'perm' => 'sample-movements.index', 'children' => [
+                ['label' => 'All Movements', 'route' => 'movements.index', 'active' => 'movements.index', 'perm' => 'sample-movements.index'],
+                ['label' => 'Record Movement', 'route' => 'movements.create', 'active' => 'movements.create', 'perm' => 'sample-movements.create'],
+            ]],
+        ]],
+        ['key' => 'quality', 'label' => 'Quality control', 'links' => [
+            ['label' => 'Inspections', 'icon' => 'feather-search', 'active' => 'inspections.*', 'perm' => 'inspections.index', 'children' => [
+                ['label' => 'All Inspections', 'route' => 'inspections.index', 'active' => 'inspections.index', 'perm' => 'inspections.index'],
+                ['label' => 'New Inspection', 'route' => 'inspections.create', 'active' => 'inspections.create', 'perm' => 'inspections.create'],
+            ]],
+            ['label' => 'Inspection Types', 'icon' => 'feather-check-square', 'route' => 'masters.inspection-types.index', 'active' => 'masters.inspection-types.*', 'perm' => 'inspection-types.index'],
+            ['label' => 'Inspection Sections', 'icon' => 'feather-layers', 'route' => 'inspection-sections.index', 'active' => 'inspection-sections.*', 'perm' => 'inspection-sections.index'],
+            ['label' => 'Defects', 'icon' => 'feather-alert-triangle', 'route' => 'masters.defects.index', 'active' => 'masters.defects.*', 'perm' => 'defects.index'],
+            ['label' => 'AQL Calculator', 'icon' => 'feather-cpu', 'route' => 'tools.aql-calculator.index', 'active' => 'tools.aql-calculator.*', 'perm' => 'aql-calculator.index'],
+            ['label' => 'QC Image Test', 'icon' => 'feather-image', 'route' => 'tools.qc-test.index', 'active' => 'tools.qc-test.*', 'perm' => 'qc-test.index'],
+        ]],
+        ['key' => 'finance', 'label' => 'Finance', 'links' => [
+            ['label' => 'Customer Invoices', 'icon' => 'feather-file-text', 'route' => 'customer-invoices.index', 'active' => 'customer-invoices.*', 'perm' => 'customer-invoices.index'],
+            ['label' => 'Customer Payments', 'icon' => 'feather-credit-card', 'route' => 'customer-payments.index', 'active' => 'customer-payments.*', 'perm' => 'customer-payments.index'],
+            ['label' => 'Expenses', 'icon' => 'feather-trending-down', 'route' => 'expenses.index', 'active' => 'expenses.*', 'perm' => 'expenses.index'],
+            ['label' => 'Purchase Orders', 'icon' => 'feather-shopping-cart', 'route' => 'purchase-orders.index', 'active' => 'purchase-orders.*', 'perm' => 'purchase-orders.index'],
+            ['label' => 'Ledgers', 'icon' => 'feather-bar-chart-2', 'active' => 'ledger.*', 'perm' => 'reports.view', 'children' => [
+                ['label' => 'Cash Ledger', 'route' => 'ledger.cash', 'active' => 'ledger.cash', 'perm' => 'reports.view'],
+                ['label' => 'Bank Ledger', 'route' => 'ledger.bank', 'active' => 'ledger.bank', 'perm' => 'reports.view'],
+            ]],
+            ['label' => 'Accounts', 'icon' => 'feather-book', 'route' => 'masters.accounts.index', 'active' => 'masters.accounts.*', 'perm' => 'accounts.index'],
+            ['label' => 'Banks', 'icon' => 'feather-home', 'route' => 'masters.banks.index', 'active' => 'masters.banks.*', 'perm' => 'banks.index'],
+            ['label' => 'Expense Heads', 'icon' => 'feather-list', 'route' => 'masters.expense-heads.index', 'active' => 'masters.expense-heads.*', 'perm' => 'expense-heads.index'],
+            ['label' => 'Currencies', 'icon' => 'feather-dollar-sign', 'route' => 'masters.currencies.index', 'active' => 'masters.currencies.*', 'perm' => 'currencies.index'],
+        ]],
+        ['key' => 'hr', 'label' => 'HR & payroll', 'links' => [
+            ['label' => 'Employees', 'icon' => 'feather-briefcase', 'route' => 'masters.employees.index', 'active' => 'masters.employees.*', 'perm' => 'employees.index'],
+            ['label' => 'Salary Runs', 'icon' => 'feather-users', 'route' => 'salary.index', 'active' => 'salary.*', 'perm' => 'salary.index'],
+            ['label' => 'Allowance Types', 'icon' => 'feather-gift', 'route' => 'allowance-types.index', 'active' => 'allowance-types.*', 'perm' => 'allowance-types.index'],
+        ]],
+        ['key' => 'masters', 'label' => 'Master data', 'links' => [
+            ['label' => 'Customers', 'icon' => 'feather-user-check', 'route' => 'masters.customers.index', 'active' => 'masters.customers.*', 'perm' => 'customers.index'],
+            ['label' => 'Suppliers', 'icon' => 'feather-truck', 'route' => 'masters.suppliers.index', 'active' => 'masters.suppliers.*', 'perm' => 'suppliers.index'],
+            ['label' => 'Categories', 'icon' => 'feather-tag', 'route' => 'masters.categories.index', 'active' => 'masters.categories.*', 'perm' => 'categories.index'],
+            ['label' => 'Colors', 'icon' => 'feather-droplet', 'route' => 'masters.colors.index', 'active' => 'masters.colors.*', 'perm' => 'colors.index'],
+            ['label' => 'Sizes', 'icon' => 'feather-maximize-2', 'route' => 'masters.sizes.index', 'active' => 'masters.sizes.*', 'perm' => 'sizes.index'],
+        ]],
+        ['key' => 'admin', 'label' => 'Administration', 'links' => [
+            ['label' => 'User Management', 'icon' => 'feather-settings', 'active' => ['admin.users.*', 'admin.roles.*'], 'role' => 'Admin', 'children' => [
+                ['label' => 'Users', 'route' => 'admin.users.index', 'active' => 'admin.users.*', 'role' => 'Admin'],
+                ['label' => 'Roles & Permissions', 'route' => 'admin.roles.index', 'active' => 'admin.roles.*', 'role' => 'Admin'],
+            ]],
+            ['label' => 'Company Settings', 'icon' => 'feather-briefcase', 'route' => 'admin.company-settings.edit', 'active' => 'admin.company-settings.*', 'role' => 'Admin'],
+        ]],
+    ];
+
+    $allowed = function (array $item) use ($user): bool {
+        if (! $user) {
+            return false;
+        }
+        if (isset($item['role'])) {
+            return $user->hasRole($item['role']);
+        }
+
+        return empty($item['perm']) || $user->can($item['perm']);
+    };
+
+    // Keep only what this user may open; drop empty groups.
+    $visibleGroups = collect($groups)->map(function ($g) use ($allowed) {
+        $g['links'] = collect($g['links'])->filter($allowed)->map(function ($link) use ($allowed) {
+            if (isset($link['children'])) {
+                $link['children'] = collect($link['children'])->filter($allowed)->values()->all();
+            }
+
+            return $link;
+        })->filter(fn ($link) => ! isset($link['children']) || $link['children'] !== [])->values()->all();
+
+        return $g;
+    })->filter(fn ($g) => $g['links'] !== [])->values();
 @endphp
 
-<nav class="nxl-navigation">
+<nav class="nxl-navigation" aria-label="Main navigation" id="app-sidebar">
     <div class="navbar-wrapper">
         <div class="m-header">
-            <a href="{{ route('dashboard') }}" class="b-brand">
-                <img src="{{ asset('assets/images/logo-trade.png') }}" alt="TradeSyncERP" class="logo logo-lg" style="height: 40px;" />
-                <img src="{{ asset('assets/images/logo-abbr.png') }}" alt="TradeSyncERP" class="logo logo-sm" />
+            <a href="{{ route('dashboard') }}" class="b-brand" aria-label="TradeSyncERP — Dashboard">
+                <img src="{{ asset('assets/images/logo-trade.png') }}" alt="Trade Solutions" class="logo logo-lg" style="height: 40px;" />
+                <img src="{{ asset('assets/images/logo-abbr.png') }}" alt="" class="logo logo-sm" />
             </a>
         </div>
 
         <div class="navbar-content">
             <ul class="nxl-navbar pb-5">
+                @foreach($visibleGroups as $group)
+                    @php
+                        $groupActive = collect($group['links'])->contains(fn ($l) => $is($l['active']));
+                        $itemIds = collect($group['links'])->keys()->map(fn ($i) => "nav-{$group['key']}-{$i}")->implode(' ');
+                    @endphp
+                    <li class="nxl-item nxl-caption ts-nav-group" data-nav-group-header="{{ $group['key'] }}" @if($groupActive) data-nav-group-active @endif>
+                        <button type="button" class="ts-nav-group-toggle" aria-expanded="true" aria-controls="{{ $itemIds }}">
+                            <span>{{ $group['label'] }}</span>
+                            <i class="feather-chevron-down ts-nav-chevron" aria-hidden="true"></i>
+                        </button>
+                    </li>
 
-                {{-- ─── Dashboard ──────────────────────────────────────────────── --}}
-                <li class="nxl-item nxl-caption">
-                    <label>Dashboard</label>
-                </li>
-                <li class="nxl-item {{ $is('dashboard') ? 'active' : '' }}">
-                    <a href="{{ route('dashboard') }}" class="nxl-link">
-                        <span class="nxl-micon"><i class="feather-airplay"></i></span>
-                        <span class="nxl-mtext">Dashboard</span>
-                    </a>
-                </li>
-                @can('activities.view')
-                <li class="nxl-item {{ $is('activities.index') ? 'active' : '' }}">
-                    <a href="{{ route('activities.index') }}" class="nxl-link">
-                        <span class="nxl-micon"><i class="feather-activity"></i></span>
-                        <span class="nxl-mtext">Recent Activities</span>
-                    </a>
-                </li>
-                @endcan
-
-                {{-- ─── Operations (Core Work) ─────────────────────────────────── --}}
-                @canany(['customer-orders.index','samples.index','sample-movements.index','inspections.index'])
-                <li class="nxl-item nxl-caption">
-                    <label>Operations (Core Work)</label>
-                </li>
-
-                @can('customer-orders.index')
-                <li class="nxl-item nxl-hasmenu {{ $is('customer-orders.*') ? 'active' : '' }}">
-                    <a href="javascript:void(0);" class="nxl-link">
-                        <span class="nxl-micon"><i class="feather-clipboard"></i></span>
-                        <span class="nxl-mtext">Customer Orders</span>
-                        <span class="nxl-arrow"><i class="feather-chevron-right"></i></span>
-                    </a>
-                    <ul class="nxl-submenu">
-                        <li class="nxl-item {{ $is('customer-orders.index') ? 'active' : '' }}">
-                            <a class="nxl-link" href="{{ route('customer-orders.index') }}">All Orders</a>
+                    @foreach($group['links'] as $i => $link)
+                        @php $active = $is($link['active']); @endphp
+                        @if(isset($link['children']))
+                        <li class="nxl-item nxl-hasmenu {{ $active ? 'active' : '' }}" data-nav-group="{{ $group['key'] }}" id="nav-{{ $group['key'] }}-{{ $i }}">
+                            <a href="javascript:void(0);" class="nxl-link" role="button" aria-haspopup="true">
+                                <span class="nxl-micon"><i class="{{ $link['icon'] }}" aria-hidden="true"></i></span>
+                                <span class="nxl-mtext">{{ $link['label'] }}</span>
+                                <span class="nxl-arrow"><i class="feather-chevron-right" aria-hidden="true"></i></span>
+                            </a>
+                            <ul class="nxl-submenu">
+                                @foreach($link['children'] as $child)
+                                <li class="nxl-item {{ $is($child['active']) ? 'active' : '' }}">
+                                    <a class="nxl-link" href="{{ route($child['route']) }}" @if($is($child['active'])) aria-current="page" @endif>{{ $child['label'] }}</a>
+                                </li>
+                                @endforeach
+                            </ul>
                         </li>
-                        @can('customer-orders.create')
-                        <li class="nxl-item {{ $is('customer-orders.create') ? 'active' : '' }}">
-                            <a class="nxl-link" href="{{ route('customer-orders.create') }}">New Order</a>
+                        @else
+                        <li class="nxl-item {{ $active ? 'active' : '' }}" data-nav-group="{{ $group['key'] }}" id="nav-{{ $group['key'] }}-{{ $i }}">
+                            <a href="{{ route($link['route']) }}" class="nxl-link" @if($active) aria-current="page" @endif>
+                                <span class="nxl-micon"><i class="{{ $link['icon'] }}" aria-hidden="true"></i></span>
+                                <span class="nxl-mtext">{{ $link['label'] }}</span>
+                            </a>
                         </li>
-                        @endcan
-                    </ul>
-                </li>
-                @endcan
-
-                @can('samples.index')
-                <li class="nxl-item nxl-hasmenu {{ $is('samples.*') ? 'active' : '' }}">
-                    <a href="javascript:void(0);" class="nxl-link">
-                        <span class="nxl-micon"><i class="feather-package"></i></span>
-                        <span class="nxl-mtext">Samples</span>
-                        <span class="nxl-arrow"><i class="feather-chevron-right"></i></span>
-                    </a>
-                    <ul class="nxl-submenu">
-                        <li class="nxl-item {{ $is('samples.index') ? 'active' : '' }}">
-                            <a class="nxl-link" href="{{ route('samples.index') }}">All Samples</a>
-                        </li>
-                        @can('samples.create')
-                        <li class="nxl-item {{ $is('samples.create') ? 'active' : '' }}">
-                            <a class="nxl-link" href="{{ route('samples.create') }}">New Sample</a>
-                        </li>
-                        @endcan
-                    </ul>
-                </li>
-                @endcan
-
-                @can('sample-movements.index')
-                <li class="nxl-item nxl-hasmenu {{ $is(['movements.*','samples.movements.*']) ? 'active' : '' }}">
-                    <a href="javascript:void(0);" class="nxl-link">
-                        <span class="nxl-micon"><i class="feather-send"></i></span>
-                        <span class="nxl-mtext">Sample Movements</span>
-                        <span class="nxl-arrow"><i class="feather-chevron-right"></i></span>
-                    </a>
-                    <ul class="nxl-submenu">
-                        <li class="nxl-item {{ $is('movements.index') ? 'active' : '' }}">
-                            <a class="nxl-link" href="{{ route('movements.index') }}">All Movements</a>
-                        </li>
-                        @can('sample-movements.create')
-                        <li class="nxl-item {{ $is('movements.create') ? 'active' : '' }}">
-                            <a class="nxl-link" href="{{ route('movements.create') }}">Record Movement</a>
-                        </li>
-                        @endcan
-                    </ul>
-                </li>
-                @endcan
-
-                @can('inspections.index')
-                <li class="nxl-item nxl-hasmenu {{ $is('inspections.*') ? 'active' : '' }}">
-                    <a href="javascript:void(0);" class="nxl-link">
-                        <span class="nxl-micon"><i class="feather-search"></i></span>
-                        <span class="nxl-mtext">Inspections</span>
-                        <span class="nxl-arrow"><i class="feather-chevron-right"></i></span>
-                    </a>
-                    <ul class="nxl-submenu">
-                        <li class="nxl-item {{ $is('inspections.index') ? 'active' : '' }}">
-                            <a class="nxl-link" href="{{ route('inspections.index') }}">All Inspections</a>
-                        </li>
-                        @can('inspections.create')
-                        <li class="nxl-item {{ $is('inspections.create') ? 'active' : '' }}">
-                            <a class="nxl-link" href="{{ route('inspections.create') }}">New Inspection</a>
-                        </li>
-                        @endcan
-                    </ul>
-                </li>
-                @endcan
-
-                @endcanany
-
-                {{-- ─── Finance ─────────────────────────────────────────────────── --}}
-                @canany(['customer-invoices.index','customer-payments.index','expenses.index','purchase-orders.index','salary.index'])
-                <li class="nxl-item nxl-caption">
-                    <label>Finance</label>
-                </li>
-
-                @can('customer-invoices.index')
-                <li class="nxl-item {{ $is('customer-invoices.*') ? 'active' : '' }}">
-                    <a href="{{ route('customer-invoices.index') }}" class="nxl-link">
-                        <span class="nxl-micon"><i class="feather-file-text"></i></span>
-                        <span class="nxl-mtext">Customer Invoices</span>
-                    </a>
-                </li>
-                @endcan
-
-                @can('customer-payments.index')
-                <li class="nxl-item {{ $is('customer-payments.*') ? 'active' : '' }}">
-                    <a href="{{ route('customer-payments.index') }}" class="nxl-link">
-                        <span class="nxl-micon"><i class="feather-credit-card"></i></span>
-                        <span class="nxl-mtext">Customer Payments</span>
-                    </a>
-                </li>
-                @endcan
-
-                @can('expenses.index')
-                <li class="nxl-item {{ $is('expenses.*') ? 'active' : '' }}">
-                    <a href="{{ route('expenses.index') }}" class="nxl-link">
-                        <span class="nxl-micon"><i class="feather-trending-down"></i></span>
-                        <span class="nxl-mtext">Expenses</span>
-                    </a>
-                </li>
-                @endcan
-
-                @can('purchase-orders.index')
-                <li class="nxl-item {{ $is('purchase-orders.*') ? 'active' : '' }}">
-                    <a href="{{ route('purchase-orders.index') }}" class="nxl-link">
-                        <span class="nxl-micon"><i class="feather-shopping-cart"></i></span>
-                        <span class="nxl-mtext">Purchase Orders</span>
-                    </a>
-                </li>
-                @endcan
-
-                @can('salary.index')
-                <li class="nxl-item {{ $is('salary.*') ? 'active' : '' }}">
-                    <a href="{{ route('salary.index') }}" class="nxl-link">
-                        <span class="nxl-micon"><i class="feather-users"></i></span>
-                        <span class="nxl-mtext">Salary Runs</span>
-                    </a>
-                </li>
-                @endcan
-
-                @can('allowance-types.index')
-                <li class="nxl-item {{ $is('allowance-types.*') ? 'active' : '' }}">
-                    <a href="{{ route('allowance-types.index') }}" class="nxl-link">
-                        <span class="nxl-micon"><i class="feather-gift"></i></span>
-                        <span class="nxl-mtext">Allowance Types</span>
-                    </a>
-                </li>
-                @endcan
-                @endcanany
-
-                {{-- ─── Master Data ─────────────────────────────────────────────── --}}
-                @canany(['customers.index','suppliers.index','employees.index','inspection-types.index','inspection-sections.index','defects.index'])
-                <li class="nxl-item nxl-caption">
-                    <label>Master Data</label>
-                </li>
-
-                @can('customers.index')
-                <li class="nxl-item {{ $is('masters.customers.*') ? 'active' : '' }}">
-                    <a href="{{ route('masters.customers.index') }}" class="nxl-link">
-                        <span class="nxl-micon"><i class="feather-user-check"></i></span>
-                        <span class="nxl-mtext">Customers</span>
-                    </a>
-                </li>
-                @endcan
-
-                @can('suppliers.index')
-                <li class="nxl-item {{ $is('masters.suppliers.*') ? 'active' : '' }}">
-                    <a href="{{ route('masters.suppliers.index') }}" class="nxl-link">
-                        <span class="nxl-micon"><i class="feather-truck"></i></span>
-                        <span class="nxl-mtext">Suppliers</span>
-                    </a>
-                </li>
-                @endcan
-
-                @can('employees.index')
-                <li class="nxl-item {{ $is('masters.employees.*') ? 'active' : '' }}">
-                    <a href="{{ route('masters.employees.index') }}" class="nxl-link">
-                        <span class="nxl-micon"><i class="feather-briefcase"></i></span>
-                        <span class="nxl-mtext">Employee Record</span>
-                    </a>
-                </li>
-                @endcan
-
-                @can('inspection-types.index')
-                <li class="nxl-item {{ $is('masters.inspection-types.*') ? 'active' : '' }}">
-                    <a href="{{ route('masters.inspection-types.index') }}" class="nxl-link">
-                        <span class="nxl-micon"><i class="feather-check-square"></i></span>
-                        <span class="nxl-mtext">Inspection Types</span>
-                    </a>
-                </li>
-                @endcan
-
-                @can('inspection-sections.index')
-                <li class="nxl-item {{ $is('inspection-sections.*') ? 'active' : '' }}">
-                    <a href="{{ route('inspection-sections.index') }}" class="nxl-link">
-                        <span class="nxl-micon"><i class="feather-layers"></i></span>
-                        <span class="nxl-mtext">Inspection Sections</span>
-                    </a>
-                </li>
-                @endcan
-
-                @can('defects.index')
-                <li class="nxl-item {{ $is('masters.defects.*') ? 'active' : '' }}">
-                    <a href="{{ route('masters.defects.index') }}" class="nxl-link">
-                        <span class="nxl-micon"><i class="feather-alert-triangle"></i></span>
-                        <span class="nxl-mtext">Defects</span>
-                    </a>
-                </li>
-                @endcan
-                @endcanany
-
-                {{-- ─── Tools ──────────────────────────────────────────────────── --}}
-                @canany(['aql-calculator.index', 'qc-test.index'])
-                <li class="nxl-item nxl-caption">
-                    <label>Tools</label>
-                </li>
-                @can('aql-calculator.index')
-                <li class="nxl-item {{ $is('tools.aql-calculator.*') ? 'active' : '' }}">
-                    <a href="{{ route('tools.aql-calculator.index') }}" class="nxl-link">
-                        <span class="nxl-micon"><i class="feather-cpu"></i></span>
-                        <span class="nxl-mtext">AQL Calculator</span>
-                    </a>
-                </li>
-                @endcan
-                @can('qc-test.index')
-                <li class="nxl-item {{ $is('tools.qc-test.*') ? 'active' : '' }}">
-                    <a href="{{ route('tools.qc-test.index') }}" class="nxl-link">
-                        <span class="nxl-micon"><i class="feather-image"></i></span>
-                        <span class="nxl-mtext">QC Image Test</span>
-                    </a>
-                </li>
-                @endcan
-                @endcanany
-
-                {{-- ─── Reports ─────────────────────────────────────────────────── --}}
-                @can('reports.view')
-                <li class="nxl-item nxl-caption">
-                    <label>Reports</label>
-                </li>
-                <li class="nxl-item nxl-hasmenu {{ $is('ledger.*') ? 'active' : '' }}">
-                    <a href="javascript:void(0);" class="nxl-link">
-                        <span class="nxl-micon"><i class="feather-bar-chart-2"></i></span>
-                        <span class="nxl-mtext">Ledgers</span>
-                        <span class="nxl-arrow"><i class="feather-chevron-right"></i></span>
-                    </a>
-                    <ul class="nxl-submenu">
-                        <li class="nxl-item {{ $is('ledger.cash') ? 'active' : '' }}">
-                            <a class="nxl-link" href="{{ route('ledger.cash') }}">Cash Ledger</a>
-                        </li>
-                        <li class="nxl-item {{ $is('ledger.bank') ? 'active' : '' }}">
-                            <a class="nxl-link" href="{{ route('ledger.bank') }}">Bank Ledger</a>
-                        </li>
-                    </ul>
-                </li>
-                @endcan
-
-                {{-- ─── Configuration (Settings) ───────────────────────────────── --}}
-                @canany(['categories.index','currencies.index','expense-heads.index','accounts.index','banks.index'])
-                <li class="nxl-item nxl-caption">
-                    <label>Configuration (Settings)</label>
-                </li>
-
-                @can('categories.index')
-                <li class="nxl-item {{ $is('masters.categories.*') ? 'active' : '' }}">
-                    <a href="{{ route('masters.categories.index') }}" class="nxl-link">
-                        <span class="nxl-micon"><i class="feather-tag"></i></span>
-                        <span class="nxl-mtext">Categories</span>
-                    </a>
-                </li>
-                @endcan
-
-
-                @can('currencies.index')
-                <li class="nxl-item {{ $is('masters.currencies.*') ? 'active' : '' }}">
-                    <a href="{{ route('masters.currencies.index') }}" class="nxl-link">
-                        <span class="nxl-micon"><i class="feather-dollar-sign"></i></span>
-                        <span class="nxl-mtext">Currencies</span>
-                    </a>
-                </li>
-                @endcan
-
-                @can('expense-heads.index')
-                <li class="nxl-item {{ $is('masters.expense-heads.*') ? 'active' : '' }}">
-                    <a href="{{ route('masters.expense-heads.index') }}" class="nxl-link">
-                        <span class="nxl-micon"><i class="feather-list"></i></span>
-                        <span class="nxl-mtext">Expense Heads</span>
-                    </a>
-                </li>
-                @endcan
-
-                @can('accounts.index')
-                <li class="nxl-item {{ $is('masters.accounts.*') ? 'active' : '' }}">
-                    <a href="{{ route('masters.accounts.index') }}" class="nxl-link">
-                        <span class="nxl-micon"><i class="feather-book"></i></span>
-                        <span class="nxl-mtext">Accounts</span>
-                    </a>
-                </li>
-                @endcan
-
-                @can('banks.index')
-                <li class="nxl-item {{ $is('masters.banks.*') ? 'active' : '' }}">
-                    <a href="{{ route('masters.banks.index') }}" class="nxl-link">
-                        <span class="nxl-micon"><i class="feather-credit-card"></i></span>
-                        <span class="nxl-mtext">Banks</span>
-                    </a>
-                </li>
-                @endcan
-
-                <li class="nxl-item {{ $is('masters.colors.*') ? 'active' : '' }}">
-                    <a href="{{ route('masters.colors.index') }}" class="nxl-link">
-                        <span class="nxl-micon"><i class="feather-droplet"></i></span>
-                        <span class="nxl-mtext">Colors</span>
-                    </a>
-                </li>
-
-                <li class="nxl-item {{ $is('masters.sizes.*') ? 'active' : '' }}">
-                    <a href="{{ route('masters.sizes.index') }}" class="nxl-link">
-                        <span class="nxl-micon"><i class="feather-maximize-2"></i></span>
-                        <span class="nxl-mtext">Sizes</span>
-                    </a>
-                </li>
-                @endcanany
-
-                {{-- ─── Administration (Admin Only) ────────────────────────────── --}}
-                @role('Admin')
-                <li class="nxl-item nxl-caption">
-                    <label>Administration (Admin Only)</label>
-                </li>
-                <li class="nxl-item nxl-hasmenu {{ $is(['admin.users.*','admin.roles.*']) ? 'active' : '' }}">
-                    <a href="javascript:void(0);" class="nxl-link">
-                        <span class="nxl-micon"><i class="feather-settings"></i></span>
-                        <span class="nxl-mtext">User Management</span>
-                        <span class="nxl-arrow"><i class="feather-chevron-right"></i></span>
-                    </a>
-                    <ul class="nxl-submenu">
-                        <li class="nxl-item {{ $is('admin.users.*') ? 'active' : '' }}">
-                            <a class="nxl-link" href="{{ route('admin.users.index') }}">Users</a>
-                        </li>
-                        <li class="nxl-item {{ $is('admin.roles.*') ? 'active' : '' }}">
-                            <a class="nxl-link" href="{{ route('admin.roles.index') }}">Roles & Permissions</a>
-                        </li>
-                    </ul>
-                </li>
-
-                <li class="nxl-item {{ $is('admin.company-settings.*') ? 'active' : '' }}">
-                    <a href="{{ route('admin.company-settings.edit') }}" class="nxl-link">
-                        <span class="nxl-micon"><i class="feather-briefcase"></i></span>
-                        <span class="nxl-mtext">Company Settings</span>
-                    </a>
-                </li>
-                @endrole
-
+                        @endif
+                    @endforeach
+                @endforeach
             </ul>
         </div>
     </div>
 </nav>
-
-<script>
-(function () {
-    var KEY  = 'sidebar_scroll';
-    var wrap = document.querySelector('.nxl-navigation .navbar-content');
-    if (!wrap) return;
-
-    // Restore on load
-    var saved = localStorage.getItem(KEY);
-    if (saved) { wrap.scrollTop = parseInt(saved, 10); }
-
-    // Save on scroll (debounced to avoid excessive writes)
-    var tid;
-    wrap.addEventListener('scroll', function () {
-        clearTimeout(tid);
-        tid = setTimeout(function () {
-            localStorage.setItem(KEY, wrap.scrollTop);
-        }, 100);
-    }, { passive: true });
-})();
-</script>

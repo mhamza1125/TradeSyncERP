@@ -36,7 +36,8 @@ class PdfPageNumberService
                     "Page {$pageNumber} of {$pageCount}",
                     $fontMetrics->getFont('DejaVu Sans', 'normal'),
                     7,
-                    [0.00, 0.69, 0.93],
+                    // Brand primary #00699A (6.0:1 on white; the old logo cyan was 2.5:1), docs/DESIGN.md §5.
+                    [0.00, 0.41, 0.60],
                 );
             },
         ]]);
