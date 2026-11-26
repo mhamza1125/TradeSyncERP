@@ -271,6 +271,31 @@ input:focus-visible, select:focus-visible, textarea:focus-visible, summary:focus
 .invalid-feedback { color: var(--ts-danger-text); font-weight: 600; }
 .form-control.is-invalid, .form-select.is-invalid { border-color: var(--ts-danger); }
 
+/* Dense forms (opt in with .ts-dense on a wrapper). The theme pads every control 12px 15px,
+   which overrides Bootstrap's -sm sizes; inside .ts-dense the -sm sizes take effect. */
+.ts-dense .form-label { font-size: var(--ts-fs-xs); margin-bottom: var(--ts-space-1); }
+.ts-dense .form-control-sm, .ts-dense .form-select-sm,
+.ts-dense .ts-wrapper.form-select-sm .ts-control {
+    padding: .32rem .55rem; font-size: var(--ts-fs-sm); min-height: 0; line-height: 1.4;
+}
+.ts-dense .form-select-sm { padding-right: 1.75rem; }
+.ts-dense .form-text { font-size: var(--ts-fs-xs); margin-top: 2px; }
+
+/* Spreadsheet-style entry table (e.g. salary lines): tight cells, inputs without spinners,
+   the first column pinned while scrolling sideways. */
+.ts-sheet { margin-bottom: 0; }
+.ts-sheet > :not(caption) > * > * { padding: .3rem .35rem; }
+.ts-sheet > thead > tr > th { font-size: 10.5px; letter-spacing: .03em; }
+.ts-sheet .form-control, .ts-sheet .form-select { padding: .28rem .4rem; font-size: var(--ts-fs-sm); min-height: 0; line-height: 1.35; }
+.ts-sheet .form-select { padding-right: 1.5rem; background-position: right .35rem center; }
+.ts-sheet input[type="number"] { -moz-appearance: textfield; appearance: textfield; }
+.ts-sheet input[type="number"]::-webkit-inner-spin-button,
+.ts-sheet input[type="number"]::-webkit-outer-spin-button { -webkit-appearance: none; margin: 0; }
+.ts-sheet .ts-sheet-pin { position: sticky; left: 0; z-index: 2; background: var(--ts-surface); box-shadow: inset -1px 0 0 var(--ts-border); }
+.ts-sheet > thead .ts-sheet-pin { background: var(--ts-surface-2); z-index: 3; }
+.ts-sheet .ts-sheet-total > td { background: var(--ts-surface-2); }
+.ts-sheet .ts-sheet-total .ts-sheet-pin { background: var(--ts-surface-2); }
+
 /* Status chips: always text + colour (never colour alone) */
 .ts-chip {
     display: inline-flex; align-items: center; gap: .3em;

@@ -68,7 +68,8 @@ class SalaryRunController extends Controller
                 ]);
             }
 
-            $run->update(['total_net_payable' => $run->lines()->sum(DB::raw('basic_salary + bonus + allowances - deduction - advance - leave_deduction_amount - loan_deduction'))]);
+            // The run total is the sum of the lines' stored net pay (one formula, in the DB).
+            $run->update(['total_net_payable' => $run->lines()->sum('net_payable')]);
 
             return redirect()->route('salary.show', $run)
                 ->with('success', "Salary run for {$run->month} generated successfully.");
@@ -125,7 +126,8 @@ class SalaryRunController extends Controller
                 $salaryRun->update($headerUpdate);
             }
 
-            $total = 0;
+            // Same formula as the page and its help text: Basic ÷ working days ÷ 8 per hour late.
+            $workingDays = (int) ($salaryRun->working_days ?: 26);
 
             foreach ($request->lines as $lineData) {
                 $line = $salaryRun->lines()->findOrFail($lineData['id']);
@@ -148,15 +150,16 @@ class SalaryRunController extends Controller
                     $allowances = $allowancesTotal;
                 }
 
-                $lateDeduct = $lineData['late_deduction'] ?? 0;
-
-                // Per-day wage always based on 31 days for late deduction calculation
-                $dailySalary = $lineData['basic_salary'] / 31;
+                // Per-day wage from the run's working days (26 when not set)
+                $dailySalary = $lineData['basic_salary'] / $workingDays;
                 $hourlyRate = $dailySalary / 8;
                 $lateHours = (int) ($lineData['late_hours'] ?? 0);
                 $lateMinutes = (int) ($lineData['late_minutes'] ?? 0);
                 $totalLateHours = $lateHours + ($lateMinutes / 60);
                 $lateCalculated = round($totalLateHours * $hourlyRate, 2);
+                // An entered amount wins, including 0 (a waived deduction); the calculation
+                // is used only when no amount was posted.
+                $lateDeduct = isset($lineData['late_deduction']) ? (float) $lineData['late_deduction'] : $lateCalculated;
 
                 $line->update([
                     'basic_salary' => $lineData['basic_salary'],
@@ -173,15 +176,13 @@ class SalaryRunController extends Controller
                     'late_hours' => $lateHours,
                     'late_minutes' => $lineData['late_minutes'] ?? 0,
                     'late_deduction_calculated' => $lateCalculated,
-                    'late_deduction' => $lateDeduct ?: $lateCalculated,
+                    'late_deduction' => $lateDeduct,
                     'remarks' => $lineData['remarks'] ?? null,
                 ]);
-                $finalLateDeduct = $lateDeduct ?: $lateCalculated;
-                $total += $lineData['basic_salary'] + ($lineData['bonus'] ?? 0) + $allowances
-                    - ($lineData['deduction'] ?? 0) - ($lineData['advance'] ?? 0)
-                    - $leaveDeduct - $loanDeduct - $finalLateDeduct;
             }
 
+            // The run total is the sum of the lines' stored net pay (one formula, in the DB).
+            $total = (float) $salaryRun->lines()->sum('net_payable');
             $salaryRun->update(['total_net_payable' => $total]);
 
             if ($request->wantsJson()) {

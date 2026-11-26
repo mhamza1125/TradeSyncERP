@@ -3,6 +3,12 @@
 @section('title', 'Salary Run - TradeSyncERP')
 
 @section('content')
+@php
+    $paid = $salaryRun->isPaid();
+    $statusColors = ['Draft' => 'warning', 'Paid' => 'success'];
+    $canEdit = auth()->user()->can('salary.edit') && ! $paid;
+    $allowanceTypesJson = json_encode($allowanceTypes->map(fn ($t) => ['id' => $t->id, 'name' => $t->name]));
+@endphp
 <div class="nxl-content">
     <div class="page-header">
         <div class="page-header-left d-flex align-items-center">
@@ -21,21 +27,14 @@
                     </a>
                 </div>
                 <div class="d-flex align-items-center gap-2 page-header-right-items-wrapper">
-                    <a href="{{ route('salary.index') }}" class="btn btn-icon btn-light-brand">
+                    <a href="{{ route('salary.index') }}" class="btn btn-icon btn-light-brand" aria-label="Back to salary runs">
                         <i class="feather-arrow-left"></i>
                     </a>
                     <a href="{{ route('salary.export-pdf', $salaryRun) }}" class="btn btn-light-brand" target="_blank">
                         <i class="feather-download me-2"></i>Export PDF
                     </a>
-                    @can('salary.pay')
-                    @if(!$salaryRun->isPaid())
-                    <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#payModal">
-                        <i class="feather-dollar-sign me-2"></i>Mark as Paid
-                    </button>
-                    @endif
-                    @endcan
                     @can('salary.delete')
-                    @if(!$salaryRun->isPaid())
+                    @if(!$paid)
                     <form action="{{ route('salary.destroy', $salaryRun) }}" method="POST" class="d-inline-flex"
                           onsubmit="return confirm('Delete the draft salary run for {{ $salaryRun->month }}? Its lines are deleted too.')">
                         @csrf @method('DELETE')
@@ -45,446 +44,234 @@
                     </form>
                     @endif
                     @endcan
+                    @can('salary.pay')
+                    @if(!$paid)
+                    <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#payModal">
+                        <i class="feather-dollar-sign me-2"></i>Mark as Paid
+                    </button>
+                    @endif
+                    @endcan
                 </div>
             </div>
         </div>
     </div>
 
-    <div class="main-content">
+    <div class="main-content ts-dense">
         @include('partials.flash-messages')
 
-        <div class="row">
-            <div class="col-lg-12">
-                <div class="card invoice-container">
-                    <div class="card-header">
-                        <div>
-                            <h2 class="fs-16 fw-700 mb-0">Salary Run — {{ $salaryRun->month }}</h2>
-                            <span class="fs-12 text-muted">Processed by {{ optional($salaryRun->processedBy)->name }}</span>
-                        </div>
-                        @php $statusColors = ['Draft'=>'warning','Paid'=>'success']; @endphp
-                        <span class="badge bg-soft-{{ $statusColors[$salaryRun->status] ?? 'secondary' }} text-{{ $statusColors[$salaryRun->status] ?? 'secondary' }} fs-12">
-                            {{ $salaryRun->status }}
+        <div class="card">
+            {{-- One form holds the run details and every line, so one Save submits everything --}}
+            <form id="linesForm" action="{{ route('salary.lines.update', $salaryRun) }}" method="POST">
+                @csrf @method('PUT')
+
+                {{-- ── Header: title, status, run details, live total ── --}}
+                <div class="card-header py-3">
+                    <div>
+                        <h2 class="fs-16 fw-bold mb-0 d-flex align-items-center gap-2">
+                            Salary Run — {{ $salaryRun->month }}
+                            <span class="badge bg-soft-{{ $statusColors[$salaryRun->status] ?? 'secondary' }} text-{{ $statusColors[$salaryRun->status] ?? 'secondary' }} fs-11">{{ $salaryRun->status }}</span>
+                        </h2>
+                        <span class="fs-12 text-muted">
+                            {{ $salaryRun->lines->count() }} employees · generated {{ $salaryRun->created_at->format('d M Y') }}
+                            @if($salaryRun->processedBy) by {{ $salaryRun->processedBy->name }} @endif
+                            @if($paid && $salaryRun->payment_date) · paid {{ $salaryRun->payment_date->format('d M Y') }} @endif
                         </span>
                     </div>
+                    @if($canEdit)
+                    <button type="submit" class="btn btn-sm btn-primary">
+                        <i class="feather-save me-1"></i>Save Changes
+                    </button>
+                    @endif
+                </div>
 
-                    <div class="card-body p-0">
-
-                        {{-- Single form wraps header fields + lines so one Save submits everything --}}
-                        <form id="linesForm" action="{{ route('salary.lines.update', $salaryRun) }}" method="POST">
-                            @csrf @method('PUT')
-
-                            {{-- ── Header meta section ── --}}
-                            <div class="px-4 pt-4 pb-3">
-                                <div class="d-sm-flex align-items-start justify-content-between gap-4">
-
-                                    {{-- Left: run details (editable when Draft) --}}
-                                    <div class="flex-grow-1">
-                                        @if(!$salaryRun->isPaid())
-                                        <div class="row g-3 mb-1">
-                                            <div class="col-sm-6 col-lg-4">
-                                                <label class="form-label fw-bold text-dark mb-1">Pay Account</label>
-                                                <select name="account_id" class="form-select">
-                                                    <option value="">— Select Account —</option>
-                                                    @foreach($accounts as $acc)
-                                                    <option value="{{ $acc->id }}" @selected($salaryRun->account_id == $acc->id)>
-                                                        {{ $acc->account_name }} ({{ $acc->account_type }})
-                                                    </option>
-                                                    @endforeach
-                                                </select>
-                                            </div>
-                                            <div class="col-sm-3 col-lg-2">
-                                                <label class="form-label fw-bold text-dark mb-1">Working Days</label>
-                                                <input type="number" name="working_days" min="0" max="31"
-                                                       class="form-control"
-                                                       value="{{ $salaryRun->working_days }}" placeholder="—">
-                                            </div>
-                                            <div class="col-sm-3 col-lg-2">
-                                                <label class="form-label fw-bold text-dark mb-1">Off Days</label>
-                                                <input type="number" name="off_days" min="0" max="31"
-                                                       class="form-control"
-                                                       value="{{ $salaryRun->off_days }}" placeholder="—">
-                                            </div>
-                                            <div class="col-sm-12 col-lg-4">
-                                                <label class="form-label fw-bold text-dark mb-1">Remarks</label>
-                                                <input type="text" name="remarks"
-                                                       class="form-control"
-                                                       value="{{ $salaryRun->remarks }}" placeholder="Batch notes…">
-                                            </div>
-                                        </div>
-                                        <div class="fs-12 text-muted mt-1">
-                                            Generated: {{ $salaryRun->created_at->format('d M Y') }}
-                                        </div>
-                                        @else
-                                        {{-- Paid: read-only display --}}
-                                        <div class="lh-lg">
-                                            <div><span class="fw-bold text-dark">Pay Account:</span> <span class="text-muted">{{ optional($salaryRun->account)->account_name }}</span></div>
-                                            <div><span class="fw-bold text-dark">Generated:</span> <span class="text-muted">{{ $salaryRun->created_at->format('d M Y') }}</span></div>
-                                            @if($salaryRun->working_days || $salaryRun->off_days)
-                                            <div>
-                                                <span class="fw-bold text-dark">Days:</span>
-                                                <span class="text-muted">
-                                                    {{ $salaryRun->working_days ?? '—' }} working
-                                                    {{ $salaryRun->off_days ? '+ '.$salaryRun->off_days.' off' : '' }}
-                                                </span>
-                                            </div>
-                                            @endif
-                                            @if($salaryRun->payment_date)
-                                            <div><span class="fw-bold text-dark">Paid On:</span> <span class="text-muted">{{ $salaryRun->payment_date->format('d M Y') }}</span></div>
-                                            @endif
-                                            @if($salaryRun->remarks)
-                                            <div><span class="fw-bold text-dark">Remarks:</span> <span class="text-muted">{{ $salaryRun->remarks }}</span></div>
-                                            @endif
-                                        </div>
-                                        @endif
-                                    </div>
-
-                                    {{-- Right: live total --}}
-                                    <div class="text-sm-end pt-3 pt-sm-0 flex-shrink-0">
-                                        <div class="fs-12 text-muted">Total Net Payable</div>
-                                        <div id="headerTotal" class="fs-28 fw-bolder text-dark">{{ number_format($salaryRun->total_net_payable, 2) }}</div>
-                                        <div class="fs-12 text-muted">PKR</div>
-                                    </div>
-                                </div>
-                            </div>
-
-                            <hr class="border-dashed">
-
-                            {{-- ── Salary Lines Table ── --}}
-                            <div class="table-responsive">
-                                <table class="table salary-sheet-table">
-                                    <thead>
-                                        <tr class="table-light">
-                                            <th rowspan="2" class="align-middle" style="min-width:30px">#</th>
-                                            <th rowspan="2" class="align-middle" style="min-width:160px">Employee</th>
-                                            <th rowspan="2" class="align-middle text-end" style="min-width:140px">Basic Salary</th>
-                                            <th rowspan="2" class="align-middle text-end" style="min-width:120px">Bonus</th>
-                                            <th rowspan="2" class="align-middle text-end" style="min-width:220px">Allowances</th>
-                                            <th rowspan="2" class="align-middle text-end" style="min-width:120px">Deduction</th>
-                                            <th rowspan="2" class="align-middle text-end" style="min-width:140px">Salary Advance</th>
-                                            <th colspan="3" class="text-center border-start border-end" style="min-width:350px">Leave</th>
-                                            <th colspan="2" class="text-center border-start border-end" style="min-width:260px">Loan</th>
-                                            <th colspan="3" class="text-center border-start border-end" style="min-width:330px">
-                                                Late Arrival
-                                                <i class="feather-help-circle ms-1 text-muted fs-12"
-                                                   data-bs-toggle="popover"
-                                                   data-bs-trigger="hover focus"
-                                                   data-bs-placement="top"
-                                                   data-bs-html="true"
-                                                   title="Late Arrival Deduction Formula"
-                                                   data-bs-content="<strong>Formula:</strong><br>Daily Rate = Basic ÷ Working Days<br>Hourly Rate = Daily Rate ÷ 8<br>Deduction = (Hours + Mins÷60) × Hourly Rate<br><br><em>Example:</em> Basic 30,000 ÷ 26 days ÷ 8 hrs = 144.23/hr<br>3h 30m late → 3.5 × 144.23 = <strong>504.81</strong><br><br><small class='text-muted'>Auto-calculated but can be overridden.</small>"
-                                                   style="cursor:pointer;"></i>
-                                            </th>
-                                            <th rowspan="2" class="align-middle text-end fw-bold" style="min-width:130px">Net Pay</th>
-                                            <th rowspan="2" class="align-middle" style="min-width:150px">Remarks</th>
-                                        </tr>
-                                        <tr class="table-light fs-12">
-                                            <th class="text-center border-start" style="min-width:100px">Days</th>
-                                            <th class="text-center" style="min-width:100px">Deductible</th>
-                                            <th class="text-end border-end" style="min-width:130px">Deduction Amt</th>
-                                            <th class="text-end border-start" style="min-width:130px">Balance</th>
-                                            <th class="text-end border-end" style="min-width:120px">This Month</th>
-                                            <th class="text-center border-start" style="min-width:100px">Hours</th>
-                                            <th class="text-center" style="min-width:100px">Mins</th>
-                                            <th class="text-end border-end" style="min-width:130px">Deduction</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody>
-                                        @foreach($salaryRun->lines as $i => $line)
-                                        <input type="hidden" name="lines[{{ $i }}][id]" value="{{ $line->id }}">
-                                        <tr>
-                                            <td class="align-middle">{{ $i + 1 }}</td>
-                                            <td class="fw-semibold text-dark align-middle">
-                                                {{ optional($line->employee)->employee_name ?? '—' }}
-                                                @if(!$line->employee)
-                                                <span class="badge bg-soft-danger text-danger fs-10 ms-1" title="Employee record deleted">Deleted</span>
-                                                @endif
-                                            </td>
-
-                                            {{-- Basic Salary --}}
-                                            <td class="align-middle text-end">
-                                                @if($salaryRun->isPaid())
-                                                    {{ number_format($line->basic_salary, 2) }}
-                                                    <input type="hidden" name="lines[{{ $i }}][basic_salary]" value="{{ $line->basic_salary }}">
-                                                @else
-                                                    <input type="number" step="0.01" name="lines[{{ $i }}][basic_salary]"
-                                                           class="form-control line-field text-end"
-                                                           value="{{ $line->basic_salary }}" data-field="basic_salary">
-                                                @endif
-                                            </td>
-
-                                            {{-- Bonus --}}
-                                            <td class="align-middle text-end">
-                                                @if($salaryRun->isPaid())
-                                                    {{ number_format($line->bonus, 2) }}
-                                                    <input type="hidden" name="lines[{{ $i }}][bonus]" value="{{ $line->bonus }}">
-                                                @else
-                                                    <input type="number" step="0.01" name="lines[{{ $i }}][bonus]"
-                                                           class="form-control line-field text-end"
-                                                           value="{{ $line->bonus }}" data-field="bonus">
-                                                @endif
-                                            </td>
-
-                                            {{-- Allowances (breakdown) --}}
-                                            <td class="align-middle" style="min-width:180px;">
-                                                @if($salaryRun->isPaid())
-                                                    {{-- Paid: show breakdown read-only --}}
-                                                    @if($line->lineAllowances->count())
-                                                        @foreach($line->lineAllowances as $la)
-                                                        <div class="fs-12 text-muted d-flex justify-content-between">
-                                                            <span>{{ $la->allowanceType?->name ?? 'Other' }}</span>
-                                                            <span class="fw-semibold text-dark ms-2">{{ number_format($la->amount, 2) }}</span>
-                                                        </div>
-                                                        @endforeach
-                                                        <div class="border-top mt-1 pt-1 fs-12 fw-bold text-end text-dark">
-                                                            {{ number_format($line->allowances, 2) }}
-                                                        </div>
-                                                    @else
-                                                        {{ number_format($line->allowances, 2) }}
-                                                    @endif
-                                                    <input type="hidden" name="lines[{{ $i }}][allowances]" value="{{ $line->allowances }}">
-                                                @else
-                                                    {{-- Draft: editable allowance rows --}}
-                                                    <div class="allowance-rows" id="allowance-rows-{{ $i }}">
-                                                        @forelse($line->lineAllowances as $ai => $la)
-                                                        <div class="d-flex gap-1 mb-1 allowance-row">
-                                                            <select name="lines[{{ $i }}][line_allowances][{{ $ai }}][allowance_type_id]"
-                                                                    class="form-select" style="min-width:150px;">
-                                                                <option value="">— Type —</option>
-                                                                @foreach($allowanceTypes as $at)
-                                                                <option value="{{ $at->id }}" @selected($la->allowance_type_id == $at->id)>{{ $at->name }}</option>
-                                                                @endforeach
-                                                            </select>
-                                                            <input type="number" step="0.01" min="0"
-                                                                   name="lines[{{ $i }}][line_allowances][{{ $ai }}][amount]"
-                                                                   class="form-control allowance-amount text-end"
-                                                                   value="{{ $la->amount }}"
-                                                                   style="min-width:120px;"
-                                                                   data-line="{{ $i }}">
-                                                            <button type="button" class="btn btn-xs btn-light remove-allowance-row" title="Remove">×</button>
-                                                        </div>
-                                                        @empty
-                                                        <div class="d-flex gap-1 mb-1 allowance-row">
-                                                            <select name="lines[{{ $i }}][line_allowances][0][allowance_type_id]"
-                                                                    class="form-select" style="min-width:150px;">
-                                                                <option value="">— Type —</option>
-                                                                @foreach($allowanceTypes as $at)
-                                                                <option value="{{ $at->id }}">{{ $at->name }}</option>
-                                                                @endforeach
-                                                            </select>
-                                                            <input type="number" step="0.01" min="0"
-                                                                   name="lines[{{ $i }}][line_allowances][0][amount]"
-                                                                   class="form-control allowance-amount text-end"
-                                                                   value="0"
-                                                                   style="min-width:120px;"
-                                                                   data-line="{{ $i }}">
-                                                            <button type="button" class="btn btn-xs btn-light remove-allowance-row" title="Remove">×</button>
-                                                        </div>
-                                                        @endforelse
-                                                    </div>
-                                                    <div class="d-flex align-items-center justify-content-between mt-1">
-                                                        <button type="button"
-                                                                class="btn btn-xs btn-light-brand add-allowance-row"
-                                                                data-line="{{ $i }}"
-                                                                data-types="{{ json_encode($allowanceTypes->map(fn($t) => ['id'=>$t->id,'name'=>$t->name])) }}">
-                                                            <i class="feather-plus" style="font-size:10px;"></i>
-                                                        </button>
-                                                        <span class="fs-12 fw-semibold text-dark line-allowances-total" data-line="{{ $i }}">
-                                                            {{ number_format($line->allowances, 2) }}
-                                                        </span>
-                                                        <input type="hidden" name="lines[{{ $i }}][allowances]"
-                                                               class="allowances-hidden-total"
-                                                               data-line="{{ $i }}"
-                                                               value="{{ $line->allowances }}"
-                                                               data-field="allowances">
-                                                    </div>
-                                                @endif
-                                            </td>
-
-                                            {{-- Deduction --}}
-                                            <td class="align-middle text-end">
-                                                @if($salaryRun->isPaid())
-                                                    {{ number_format($line->deduction, 2) }}
-                                                    <input type="hidden" name="lines[{{ $i }}][deduction]" value="{{ $line->deduction }}">
-                                                @else
-                                                    <input type="number" step="0.01" name="lines[{{ $i }}][deduction]"
-                                                           class="form-control line-field text-end"
-                                                           value="{{ $line->deduction }}" data-field="deduction">
-                                                @endif
-                                            </td>
-
-                                            {{-- Salary Advance --}}
-                                            <td class="align-middle text-end">
-                                                @if($salaryRun->isPaid())
-                                                    {{ number_format($line->advance, 2) }}
-                                                    <input type="hidden" name="lines[{{ $i }}][advance]" value="{{ $line->advance }}">
-                                                @else
-                                                    <input type="number" step="0.01" name="lines[{{ $i }}][advance]"
-                                                           class="form-control line-field text-end"
-                                                           value="{{ $line->advance }}" data-field="advance">
-                                                @endif
-                                            </td>
-
-                                            {{-- Leave: Days --}}
-                                            <td class="align-middle text-center border-start">
-                                                @if($salaryRun->isPaid())
-                                                    {{ $line->leave_days }}
-                                                    <input type="hidden" name="lines[{{ $i }}][leave_days]" value="{{ $line->leave_days }}">
-                                                @else
-                                                    <input type="number" min="0" name="lines[{{ $i }}][leave_days]"
-                                                           class="form-control line-field text-center"
-                                                           value="{{ $line->leave_days }}" data-field="leave_days">
-                                                @endif
-                                            </td>
-
-                                            {{-- Leave: Deductible --}}
-                                            <td class="align-middle text-center">
-                                                @if($salaryRun->isPaid())
-                                                    {{ $line->deductible_leaves }}
-                                                    <input type="hidden" name="lines[{{ $i }}][deductible_leaves]" value="{{ $line->deductible_leaves }}">
-                                                @else
-                                                    <input type="number" min="0" name="lines[{{ $i }}][deductible_leaves]"
-                                                           class="form-control line-field text-center"
-                                                           value="{{ $line->deductible_leaves }}" data-field="deductible_leaves">
-                                                @endif
-                                            </td>
-
-                                            {{-- Leave: Deduction Amount --}}
-                                            <td class="align-middle text-end border-end">
-                                                @if($salaryRun->isPaid())
-                                                    {{ number_format($line->leave_deduction_amount, 2) }}
-                                                    <input type="hidden" name="lines[{{ $i }}][leave_deduction_amount]" value="{{ $line->leave_deduction_amount }}">
-                                                @else
-                                                    <input type="number" step="0.01" name="lines[{{ $i }}][leave_deduction_amount]"
-                                                           class="form-control line-field text-end"
-                                                           value="{{ $line->leave_deduction_amount }}" data-field="leave_deduction_amount">
-                                                @endif
-                                            </td>
-
-                                            {{-- Loan: Balance --}}
-                                            <td class="align-middle text-end border-start">
-                                                @if($salaryRun->isPaid())
-                                                    {{ number_format($line->loan_balance, 2) }}
-                                                    <input type="hidden" name="lines[{{ $i }}][loan_balance]" value="{{ $line->loan_balance }}">
-                                                @else
-                                                    <input type="number" step="0.01" name="lines[{{ $i }}][loan_balance]"
-                                                           class="form-control line-field text-end"
-                                                           value="{{ $line->loan_balance }}" data-field="loan_balance"
-                                                           placeholder="Pending balance">
-                                                @endif
-                                            </td>
-
-                                            {{-- Loan: This Month --}}
-                                            <td class="align-middle text-end border-end">
-                                                @if($salaryRun->isPaid())
-                                                    {{ number_format($line->loan_deduction, 2) }}
-                                                    <input type="hidden" name="lines[{{ $i }}][loan_deduction]" value="{{ $line->loan_deduction }}">
-                                                @else
-                                                    <input type="number" step="0.01" name="lines[{{ $i }}][loan_deduction]"
-                                                           class="form-control line-field text-end"
-                                                           value="{{ $line->loan_deduction }}" data-field="loan_deduction">
-                                                @endif
-                                            </td>
-
-                                            {{-- Late: Hours --}}
-                                            <td class="align-middle text-center border-start">
-                                                @if($salaryRun->isPaid())
-                                                    {{ $line->late_hours ?? 0 }}
-                                                    <input type="hidden" name="lines[{{ $i }}][late_hours]" value="{{ $line->late_hours ?? 0 }}">
-                                                @else
-                                                    <input type="number" min="0" name="lines[{{ $i }}][late_hours]"
-                                                           class="form-control line-field text-center"
-                                                           value="{{ $line->late_hours ?? 0 }}" data-field="late_hours"
-                                                           data-basic="{{ $line->basic_salary }}"
-                                                           data-working-days="{{ $salaryRun->working_days ?: 26 }}"
-                                                           placeholder="0">
-                                                @endif
-                                            </td>
-
-                                            {{-- Late: Minutes --}}
-                                            <td class="align-middle text-center">
-                                                @if($salaryRun->isPaid())
-                                                    {{ $line->late_minutes ?? 0 }}
-                                                    <input type="hidden" name="lines[{{ $i }}][late_minutes]" value="{{ $line->late_minutes ?? 0 }}">
-                                                @else
-                                                    <input type="number" min="0" max="59" name="lines[{{ $i }}][late_minutes]"
-                                                           class="form-control line-field text-center"
-                                                           value="{{ $line->late_minutes ?? 0 }}" data-field="late_minutes"
-                                                           placeholder="0">
-                                                @endif
-                                            </td>
-
-                                            {{-- Late: Deduction (auto-calculated, editable) --}}
-                                            <td class="align-middle text-end border-end">
-                                                @if($salaryRun->isPaid())
-                                                    {{ number_format($line->late_deduction ?? 0, 2) }}
-                                                    <input type="hidden" name="lines[{{ $i }}][late_deduction]" value="{{ $line->late_deduction ?? 0 }}">
-                                                @else
-                                                    <input type="number" step="0.01" name="lines[{{ $i }}][late_deduction]"
-                                                           class="form-control line-field text-end late-deduction-field"
-                                                           value="{{ $line->late_deduction ?? 0 }}" data-field="late_deduction"
-                                                           title="Auto-calculated; override here if needed">
-                                                @endif
-                                            </td>
-
-                                            {{-- Net Pay --}}
-                                            <td class="align-middle text-end fw-bold text-dark net-pay">
-                                                {{ number_format($line->net_payable, 2) }}
-                                            </td>
-
-                                            {{-- Remarks --}}
-                                            <td class="align-middle">
-                                                @if($salaryRun->isPaid())
-                                                    {{ $line->remarks ?? '—' }}
-                                                    <input type="hidden" name="lines[{{ $i }}][remarks]" value="{{ $line->remarks }}">
-                                                @else
-                                                    <input type="text" name="lines[{{ $i }}][remarks]"
-                                                           class="form-control"
-                                                           value="{{ $line->remarks }}" placeholder="Optional">
-                                                @endif
-                                            </td>
-                                        </tr>
-                                        @endforeach
-
-                                        <tr class="bg-gray-100 fw-semibold">
-                                            <td colspan="15" class="text-end text-dark">Grand Total</td>
-                                            <td class="text-end fw-bolder text-dark fs-16" id="grandTotal">
-                                                {{ number_format($salaryRun->total_net_payable, 2) }}
-                                            </td>
-                                            <td></td>
-                                        </tr>
-                                    </tbody>
-                                </table>
-                            </div>
-
-                            @can('salary.edit')
-                            @if(!$salaryRun->isPaid())
-                            <div class="px-4 pb-4">
-                                <button type="submit" class="btn btn-primary">
-                                    <i class="feather-save me-2"></i>Save Changes
-                                </button>
-                            </div>
-                            @endif
-                            @endcan
-
-                        </form>
-
-                        @if($salaryRun->transaction)
-                        <hr class="border-dashed">
-                        <div class="px-4 pb-4">
-                            <h6 class="fw-bold mb-3">Payment Transaction:</h6>
-                            <div class="row g-0 mb-2">
-                                <div class="col-sm-4 text-muted">Paid On:</div>
-                                <div class="col-sm-8 fw-semibold">{{ \Carbon\Carbon::parse($salaryRun->transaction->transaction_date)->format('d M Y') }}</div>
-                            </div>
-                            <div class="row g-0">
-                                <div class="col-sm-4 text-muted">Amount:</div>
-                                <div class="col-sm-8 fw-semibold text-success">{{ number_format($salaryRun->transaction->amount, 2) }}</div>
+                <div class="card-body py-3">
+                    <div class="row g-2 align-items-end">
+                        @if(!$paid)
+                        <div class="col-sm-6 col-lg-3">
+                            <label class="form-label" for="runAccount">Pay account</label>
+                            <select id="runAccount" name="account_id" class="form-select form-select-sm">
+                                <option value="">— Select account —</option>
+                                @foreach($accounts as $acc)
+                                <option value="{{ $acc->id }}" @selected($salaryRun->account_id == $acc->id)>{{ $acc->account_name }} ({{ $acc->account_type }})</option>
+                                @endforeach
+                            </select>
+                        </div>
+                        <div class="col-6 col-sm-3 col-lg-1">
+                            <label class="form-label" for="runWorking">Working days</label>
+                            <input id="runWorking" type="number" name="working_days" min="0" max="31" class="form-control form-control-sm" value="{{ $salaryRun->working_days }}" placeholder="—">
+                        </div>
+                        <div class="col-6 col-sm-3 col-lg-1">
+                            <label class="form-label" for="runOff">Off days</label>
+                            <input id="runOff" type="number" name="off_days" min="0" max="31" class="form-control form-control-sm" value="{{ $salaryRun->off_days }}" placeholder="—">
+                        </div>
+                        <div class="col-sm-12 col-lg-4">
+                            <label class="form-label" for="runRemarks">Remarks</label>
+                            <input id="runRemarks" type="text" name="remarks" class="form-control form-control-sm" value="{{ $salaryRun->remarks }}" placeholder="Batch notes…">
+                        </div>
+                        @else
+                        <div class="col-lg-9">
+                            <div class="d-flex flex-wrap gap-4 fs-13">
+                                <div><div class="fs-11 text-muted text-uppercase fw-bold">Pay account</div>{{ optional($salaryRun->account)->account_name ?? '—' }}</div>
+                                <div><div class="fs-11 text-muted text-uppercase fw-bold">Days</div>{{ $salaryRun->working_days ?? '—' }} working{{ $salaryRun->off_days ? ' + '.$salaryRun->off_days.' off' : '' }}</div>
+                                @if($salaryRun->transaction)
+                                <div><div class="fs-11 text-muted text-uppercase fw-bold">Payment</div>{{ \Carbon\Carbon::parse($salaryRun->transaction->transaction_date)->format('d M Y') }} · <span class="text-success fw-semibold">{{ number_format($salaryRun->transaction->amount, 2) }}</span></div>
+                                @endif
+                                @if($salaryRun->remarks)
+                                <div><div class="fs-11 text-muted text-uppercase fw-bold">Remarks</div>{{ $salaryRun->remarks }}</div>
+                                @endif
                             </div>
                         </div>
                         @endif
+                        <div class="col-lg-3 {{ $paid ? '' : 'ms-lg-auto' }}">
+                            <div class="rounded border px-3 py-2 text-lg-end" style="background: var(--ts-primary-subtle); border-color: var(--ts-primary-border) !important;">
+                                <div class="fs-11 text-uppercase fw-bold" style="color: var(--ts-on-primary-subtle)">Total net payable</div>
+                                <div class="fs-20 fw-bolder text-dark lh-sm"><span id="headerTotal">{{ number_format($salaryRun->total_net_payable, 2) }}</span> <span class="fs-12 fw-semibold text-muted">PKR</span></div>
+                            </div>
+                        </div>
                     </div>
                 </div>
-            </div>
+
+                {{-- ── Salary lines ── --}}
+                <div class="table-responsive border-top">
+                    <table class="table table-hover ts-sheet align-middle">
+                        <thead>
+                            <tr>
+                                <th rowspan="2" class="ts-sheet-pin" style="min-width:160px">Employee</th>
+                                <th rowspan="2" class="text-end" style="min-width:100px">Basic</th>
+                                <th rowspan="2" class="text-end" style="min-width:85px">Bonus</th>
+                                <th rowspan="2" style="min-width:{{ $paid ? 150 : 250 }}px">Allowances</th>
+                                <th rowspan="2" class="text-end" style="min-width:85px">Deduction</th>
+                                <th rowspan="2" class="text-end" style="min-width:85px">Advance</th>
+                                <th colspan="3" class="text-center border-start border-end">Leave</th>
+                                <th colspan="2" class="text-center border-start border-end">Loan</th>
+                                <th colspan="3" class="text-center border-start border-end">
+                                    Late arrival
+                                    <i class="feather-help-circle ms-1"
+                                       data-bs-toggle="popover" data-bs-trigger="hover focus" data-bs-placement="top" data-bs-html="true" tabindex="0"
+                                       title="Late arrival deduction"
+                                       data-bs-content="<strong>Formula:</strong><br>Daily rate = Basic ÷ Working days<br>Hourly rate = Daily rate ÷ 8<br>Deduction = (Hours + Mins÷60) × Hourly rate<br><br><em>Example:</em> 30,000 ÷ 26 ÷ 8 = 144.23/hr<br>3h 30m late → 3.5 × 144.23 = <strong>504.81</strong><br><br><small>Auto-calculated; can be overridden.</small>"
+                                       style="cursor:pointer;"></i>
+                                </th>
+                                <th rowspan="2" class="text-end" style="min-width:105px">Net pay</th>
+                                <th rowspan="2" style="min-width:140px">Remarks</th>
+                            </tr>
+                            <tr>
+                                <th class="text-center border-start" style="min-width:58px">Days</th>
+                                <th class="text-center" style="min-width:58px">Deduct.</th>
+                                <th class="text-end border-end" style="min-width:90px">Amount</th>
+                                <th class="text-end border-start" style="min-width:95px">Balance</th>
+                                <th class="text-end border-end" style="min-width:90px">This month</th>
+                                <th class="text-center border-start" style="min-width:52px">Hrs</th>
+                                <th class="text-center" style="min-width:52px">Mins</th>
+                                <th class="text-end border-end" style="min-width:90px">Amount</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach($salaryRun->lines as $i => $line)
+                            @php $who = optional($line->employee)->employee_name ?? 'employee '.($i + 1); @endphp
+                            <tr>
+                                <td class="ts-sheet-pin fw-semibold text-dark">
+                                    <input type="hidden" name="lines[{{ $i }}][id]" value="{{ $line->id }}">
+                                    <span class="text-muted fw-normal me-1">{{ $i + 1 }}.</span>{{ optional($line->employee)->employee_name ?? '—' }}
+                                    @if(!$line->employee)
+                                    <span class="badge bg-soft-danger text-danger fs-10 ms-1" title="Employee record deleted">Deleted</span>
+                                    @endif
+                                </td>
+
+                                <td class="text-end">@include('finance.salary._line-cell', ['field' => 'basic_salary', 'value' => $line->basic_salary, 'label' => "Basic salary for $who"])</td>
+                                <td class="text-end">@include('finance.salary._line-cell', ['field' => 'bonus', 'value' => $line->bonus, 'label' => "Bonus for $who"])</td>
+
+                                {{-- Allowances (breakdown) --}}
+                                <td>
+                                    @if($paid)
+                                        @foreach($line->lineAllowances as $la)
+                                        <div class="fs-12 text-muted d-flex justify-content-between">
+                                            <span>{{ $la->allowanceType?->name ?? 'Other' }}</span>
+                                            <span class="text-dark ms-2">{{ number_format($la->amount, 2) }}</span>
+                                        </div>
+                                        @endforeach
+                                        <div class="fw-semibold text-end text-dark {{ $line->lineAllowances->count() ? 'border-top mt-1 pt-1' : '' }}">{{ number_format($line->allowances, 2) }}</div>
+                                        <input type="hidden" name="lines[{{ $i }}][allowances]" value="{{ $line->allowances }}">
+                                    @else
+                                        <div class="allowance-rows" id="allowance-rows-{{ $i }}">
+                                            @php $rows = $line->lineAllowances->count() ? $line->lineAllowances : collect([null]); @endphp
+                                            @foreach($rows as $ai => $la)
+                                            <div class="d-flex gap-1 mb-1 allowance-row">
+                                                <select name="lines[{{ $i }}][line_allowances][{{ $ai }}][allowance_type_id]" class="form-select" data-native
+                                                        aria-label="Allowance type for {{ $who }}" style="min-width:120px">
+                                                    <option value="">— Type —</option>
+                                                    @foreach($allowanceTypes as $at)
+                                                    <option value="{{ $at->id }}" @selected($la && $la->allowance_type_id == $at->id)>{{ $at->name }}</option>
+                                                    @endforeach
+                                                </select>
+                                                <input type="number" step="0.01" min="0"
+                                                       name="lines[{{ $i }}][line_allowances][{{ $ai }}][amount]"
+                                                       class="form-control allowance-amount text-end" style="width:84px"
+                                                       value="{{ $la->amount ?? 0 }}" data-line="{{ $i }}" aria-label="Allowance amount for {{ $who }}">
+                                                <button type="button" class="btn btn-xs btn-light remove-allowance-row px-2" title="Remove" aria-label="Remove allowance">×</button>
+                                            </div>
+                                            @endforeach
+                                        </div>
+                                        <div class="d-flex align-items-center justify-content-between">
+                                            <button type="button" class="btn btn-xs btn-light-brand add-allowance-row px-2 py-0"
+                                                    data-line="{{ $i }}" data-types="{{ $allowanceTypesJson }}">
+                                                <i class="feather-plus fs-10 me-1"></i><span class="fs-11">Add</span>
+                                            </button>
+                                            <span class="fs-12 fw-semibold text-dark line-allowances-total" data-line="{{ $i }}">{{ number_format($line->allowances, 2) }}</span>
+                                            <input type="hidden" name="lines[{{ $i }}][allowances]" class="allowances-hidden-total"
+                                                   data-line="{{ $i }}" value="{{ $line->allowances }}" data-field="allowances">
+                                        </div>
+                                    @endif
+                                </td>
+
+                                <td class="text-end">@include('finance.salary._line-cell', ['field' => 'deduction', 'value' => $line->deduction, 'label' => "Deduction for $who"])</td>
+                                <td class="text-end">@include('finance.salary._line-cell', ['field' => 'advance', 'value' => $line->advance, 'label' => "Salary advance for $who"])</td>
+
+                                <td class="text-center border-start">@include('finance.salary._line-cell', ['field' => 'leave_days', 'value' => $line->leave_days, 'int' => true, 'align' => 'center', 'label' => "Leave days for $who"])</td>
+                                <td class="text-center">@include('finance.salary._line-cell', ['field' => 'deductible_leaves', 'value' => $line->deductible_leaves, 'int' => true, 'align' => 'center', 'label' => "Deductible leaves for $who"])</td>
+                                <td class="text-end border-end">@include('finance.salary._line-cell', ['field' => 'leave_deduction_amount', 'value' => $line->leave_deduction_amount, 'label' => "Leave deduction for $who"])</td>
+
+                                <td class="text-end border-start">@include('finance.salary._line-cell', ['field' => 'loan_balance', 'value' => $line->loan_balance, 'label' => "Loan balance for $who", 'attrs' => ['placeholder' => 'Balance']])</td>
+                                <td class="text-end border-end">@include('finance.salary._line-cell', ['field' => 'loan_deduction', 'value' => $line->loan_deduction, 'label' => "Loan deduction this month for $who"])</td>
+
+                                <td class="text-center border-start">@include('finance.salary._line-cell', ['field' => 'late_hours', 'value' => $line->late_hours ?? 0, 'int' => true, 'align' => 'center', 'label' => "Late hours for $who",
+                                    'attrs' => ['data-basic' => $line->basic_salary, 'data-working-days' => $salaryRun->working_days ?: 26]])</td>
+                                <td class="text-center">@include('finance.salary._line-cell', ['field' => 'late_minutes', 'value' => $line->late_minutes ?? 0, 'int' => true, 'align' => 'center', 'label' => "Late minutes for $who", 'attrs' => ['max' => 59]])</td>
+                                <td class="text-end border-end">@include('finance.salary._line-cell', ['field' => 'late_deduction', 'value' => $line->late_deduction ?? 0, 'label' => "Late deduction for $who",
+                                    'extraClass' => 'late-deduction-field', 'attrs' => ['title' => 'Auto-calculated; override here if needed']])</td>
+
+                                <td class="text-end fw-bold text-dark net-pay">{{ number_format($line->net_payable, 2) }}</td>
+
+                                <td>
+                                    @if($paid)
+                                        <span class="text-muted">{{ $line->remarks ?? '—' }}</span>
+                                        <input type="hidden" name="lines[{{ $i }}][remarks]" value="{{ $line->remarks }}">
+                                    @else
+                                        <input type="text" name="lines[{{ $i }}][remarks]" class="form-control" value="{{ $line->remarks }}" placeholder="Optional" aria-label="Remarks for {{ $who }}">
+                                    @endif
+                                </td>
+                            </tr>
+                            @endforeach
+
+                            <tr class="ts-sheet-total fw-semibold">
+                                <td class="ts-sheet-pin text-dark">Grand total</td>
+                                <td colspan="13"></td>
+                                <td class="text-end fw-bolder text-dark fs-14" id="grandTotal">{{ number_format($salaryRun->total_net_payable, 2) }}</td>
+                                <td></td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+
+                @if($canEdit)
+                <div class="card-footer d-flex align-items-center justify-content-between py-2">
+                    <span class="fs-12 text-muted">Net pay updates as you type; nothing is saved until you click Save.</span>
+                    <button type="submit" class="btn btn-sm btn-primary">
+                        <i class="feather-save me-1"></i>Save Changes
+                    </button>
+                </div>
+                @endif
+            </form>
         </div>
     </div>
 </div>
@@ -533,132 +320,154 @@
     var headerTotal = document.getElementById('headerTotal');
     var grandTotal  = document.getElementById('grandTotal');
     var modalTotal  = document.getElementById('modalTotal');
+    var num = function (el) { return el ? (parseFloat(el.value) || 0) : 0; };
+    var money = function (n) { return n.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }); };
+    var parseMoney = function (s) { return parseFloat(String(s).replace(/,/g, '')) || 0; };
 
     function calcLateDeduction(row) {
         var hoursInput = row.querySelector('[data-field="late_hours"]');
         if (!hoursInput) return;
-        var basic       = parseFloat(row.querySelector('[data-field="basic_salary"]')?.value) || 0;
-        var workDays    = parseFloat(hoursInput.dataset.workingDays) || 26;
-        var lateHours   = parseFloat(hoursInput.value)                               || 0;
-        var lateMins    = parseFloat(row.querySelector('[data-field="late_minutes"]')?.value) || 0;
-        var totalHours  = lateHours + (lateMins / 60);
-        var hourlyRate  = (basic / workDays) / 8;
-        var calculated  = Math.round(totalHours * hourlyRate * 100) / 100;
-        var lateField   = row.querySelector('.late-deduction-field');
+        var basic      = num(row.querySelector('[data-field="basic_salary"]'));
+        var workDays   = parseFloat(hoursInput.dataset.workingDays) || 26;
+        var totalHours = num(hoursInput) + num(row.querySelector('[data-field="late_minutes"]')) / 60;
+        var calculated = Math.round(totalHours * (basic / workDays / 8) * 100) / 100;
+        var lateField  = row.querySelector('.late-deduction-field');
         if (lateField) lateField.value = calculated.toFixed(2);
     }
 
     function recalcRow(row) {
-        var basic       = parseFloat(row.querySelector('[data-field="basic_salary"]')?.value)            || 0;
-        var bonus       = parseFloat(row.querySelector('[data-field="bonus"]')?.value)                   || 0;
-        var allowances  = parseFloat(row.querySelector('.allowances-hidden-total')?.value || row.querySelector('[data-field="allowances"]')?.value) || 0;
-        var deduction   = parseFloat(row.querySelector('[data-field="deduction"]')?.value)               || 0;
-        var advance     = parseFloat(row.querySelector('[data-field="advance"]')?.value)                 || 0;
-        var leaveDeduct = parseFloat(row.querySelector('[data-field="leave_deduction_amount"]')?.value)  || 0;
-        var loanDeduct  = parseFloat(row.querySelector('[data-field="loan_deduction"]')?.value)          || 0;
-        var lateDeduct  = parseFloat(row.querySelector('[data-field="late_deduction"]')?.value)          || 0;
-        return (basic + bonus + allowances) - (deduction + advance + leaveDeduct + loanDeduct + lateDeduct);
+        var f = function (name) { return num(row.querySelector('[data-field="' + name + '"]')); };
+        var allowances = num(row.querySelector('.allowances-hidden-total') || row.querySelector('[data-field="allowances"]'));
+        return (f('basic_salary') + f('bonus') + allowances)
+             - (f('deduction') + f('advance') + f('leave_deduction_amount') + f('loan_deduction') + f('late_deduction'));
+    }
+
+    function refreshRow(row) {
+        var netEl = row.querySelector('.net-pay');
+        if (netEl) netEl.textContent = money(recalcRow(row));
+        syncTotals();
     }
 
     function syncTotals() {
         var total = 0;
-        document.querySelectorAll('.net-pay').forEach(function (cell) {
-            total += parseFloat(cell.textContent) || 0;
-        });
-        var formatted = total.toFixed(2);
+        document.querySelectorAll('.net-pay').forEach(function (cell) { total += parseMoney(cell.textContent); });
+        var formatted = money(total);
         if (grandTotal)  grandTotal.textContent  = formatted;
-        if (headerTotal) headerTotal.textContent  = formatted;
-        if (modalTotal)  modalTotal.textContent   = formatted;
+        if (headerTotal) headerTotal.textContent = formatted;
+        if (modalTotal)  modalTotal.textContent  = formatted;
     }
 
     document.querySelectorAll('.line-field').forEach(function (input) {
         input.addEventListener('input', function () {
-            var row   = this.closest('tr');
-            var field = this.dataset.field;
-            if (field === 'late_hours' || field === 'late_minutes') {
+            var row = this.closest('tr');
+            if (this.dataset.field === 'late_hours' || this.dataset.field === 'late_minutes' || this.dataset.field === 'basic_salary') {
                 calcLateDeduction(row);
             }
-            var net = recalcRow(row);
-            row.querySelector('.net-pay').textContent = net.toFixed(2);
-            syncTotals();
+            refreshRow(row);
         });
     });
 
-    // ── Allowance breakdown row management ───────────────────────────────────
+    // ── Allowance breakdown rows ─────────────────────────────────────────────
     function syncAllowanceTotal(lineIdx) {
         var total = 0;
-        document.querySelectorAll('.allowance-amount[data-line="' + lineIdx + '"]').forEach(function (inp) {
-            total += parseFloat(inp.value) || 0;
-        });
-        var hiddenTotal = document.querySelector('.allowances-hidden-total[data-line="' + lineIdx + '"]');
-        var displayTotal = document.querySelector('.line-allowances-total[data-line="' + lineIdx + '"]');
-        if (hiddenTotal) hiddenTotal.value = total.toFixed(2);
-        if (displayTotal) displayTotal.textContent = total.toFixed(2);
-
-        // Trigger net-pay recalc
-        var anyInput = document.querySelector('.allowances-hidden-total[data-line="' + lineIdx + '"]');
-        if (anyInput) {
-            var row = anyInput.closest('tr');
-            if (row) {
-                var net = recalcRow(row);
-                var netEl = row.querySelector('.net-pay');
-                if (netEl) netEl.textContent = net.toFixed(2);
-                syncTotals();
-            }
-        }
+        document.querySelectorAll('.allowance-amount[data-line="' + lineIdx + '"]').forEach(function (inp) { total += num(inp); });
+        var hidden  = document.querySelector('.allowances-hidden-total[data-line="' + lineIdx + '"]');
+        var display = document.querySelector('.line-allowances-total[data-line="' + lineIdx + '"]');
+        if (hidden)  hidden.value = total.toFixed(2);
+        if (display) display.textContent = money(total);
+        if (hidden && hidden.closest('tr')) refreshRow(hidden.closest('tr'));
     }
 
     document.addEventListener('input', function (e) {
-        if (e.target.classList.contains('allowance-amount')) {
-            syncAllowanceTotal(e.target.dataset.line);
-        }
+        if (e.target.classList.contains('allowance-amount')) syncAllowanceTotal(e.target.dataset.line);
     });
 
     document.addEventListener('click', function (e) {
-        // Add allowance row
         var addBtn = e.target.closest('.add-allowance-row');
         if (addBtn) {
-            var lineIdx  = addBtn.dataset.line;
-            var types    = JSON.parse(addBtn.dataset.types || '[]');
+            var lineIdx   = addBtn.dataset.line;
+            var types     = JSON.parse(addBtn.dataset.types || '[]');
             var container = document.getElementById('allowance-rows-' + lineIdx);
-            var rowCount  = container.querySelectorAll('.allowance-row').length;
-            var opts = '<option value="">— Type —</option>' +
-                types.map(function (t) { return '<option value="' + t.id + '">' + t.name + '</option>'; }).join('');
-            var html = '<div class="d-flex gap-1 mb-1 allowance-row">' +
-                '<select name="lines[' + lineIdx + '][line_allowances][' + rowCount + '][allowance_type_id]" class="form-select" style="min-width:150px;">' + opts + '</select>' +
-                '<input type="number" step="0.01" min="0" name="lines[' + lineIdx + '][line_allowances][' + rowCount + '][amount]" class="form-control allowance-amount text-end" value="0" style="min-width:120px;" data-line="' + lineIdx + '">' +
-                '<button type="button" class="btn btn-xs btn-light remove-allowance-row" title="Remove">×</button>' +
-                '</div>';
-            container.insertAdjacentHTML('beforeend', html);
+            // Next free index (rows can be removed, so the count alone may collide)
+            var next = 0;
+            container.querySelectorAll('select').forEach(function (s) {
+                var m = s.name.match(/\[line_allowances\]\[(\d+)\]/);
+                if (m) next = Math.max(next, parseInt(m[1], 10) + 1);
+            });
+            var row = document.createElement('div');
+            row.className = 'd-flex gap-1 mb-1 allowance-row';
+            var select = document.createElement('select');
+            select.name = 'lines[' + lineIdx + '][line_allowances][' + next + '][allowance_type_id]';
+            select.className = 'form-select';
+            select.setAttribute('data-native', '');
+            select.setAttribute('aria-label', 'Allowance type');
+            select.style.minWidth = '120px';
+            select.add(new Option('— Type —', ''));
+            types.forEach(function (t) { select.add(new Option(t.name, t.id)); });
+            var amount = document.createElement('input');
+            amount.type = 'number'; amount.step = '0.01'; amount.min = '0'; amount.value = '0';
+            amount.name = 'lines[' + lineIdx + '][line_allowances][' + next + '][amount]';
+            amount.className = 'form-control allowance-amount text-end';
+            amount.style.width = '84px';
+            amount.dataset.line = lineIdx;
+            amount.setAttribute('aria-label', 'Allowance amount');
+            var remove = document.createElement('button');
+            remove.type = 'button';
+            remove.className = 'btn btn-xs btn-light remove-allowance-row px-2';
+            remove.title = 'Remove';
+            remove.setAttribute('aria-label', 'Remove allowance');
+            remove.textContent = '×';
+            row.append(select, amount, remove);
+            container.appendChild(row);
+            select.focus();
         }
 
-        // Remove allowance row
         var removeBtn = e.target.closest('.remove-allowance-row');
         if (removeBtn) {
-            var row = removeBtn.closest('.allowance-row');
-            var container = row.closest('[id^="allowance-rows-"]');
-            var lineIdx = container ? container.id.replace('allowance-rows-', '') : null;
-            if (container && container.querySelectorAll('.allowance-row').length > 1) {
-                row.remove();
+            var aRow = removeBtn.closest('.allowance-row');
+            var box  = aRow.closest('[id^="allowance-rows-"]');
+            var idx  = box ? box.id.replace('allowance-rows-', '') : null;
+            if (box && box.querySelectorAll('.allowance-row').length > 1) {
+                aRow.remove();
             } else {
-                row.querySelectorAll('input[type="number"]').forEach(function (i) { i.value = '0'; });
+                aRow.querySelectorAll('input[type="number"]').forEach(function (i) { i.value = '0'; });
+                aRow.querySelectorAll('select').forEach(function (s) { s.value = ''; });
             }
-            if (lineIdx) syncAllowanceTotal(lineIdx);
+            if (idx) syncAllowanceTotal(idx);
         }
     });
 
-    // Init Bootstrap popovers (used by the Late Arrival help icon)
-    document.querySelectorAll('[data-bs-toggle="popover"]').forEach(function (el) {
-        new bootstrap.Popover(el);
-    });
+    // An allowance amount needs a type (the server drops untyped rows). Check before posting,
+    // so a refused save doesn't reload the page and lose the unsaved edits.
+    var linesForm = document.getElementById('linesForm');
+    if (linesForm) {
+        linesForm.addEventListener('submit', function (e) {
+            var firstBad = null;
+            linesForm.querySelectorAll('.allowance-row').forEach(function (aRow) {
+                var select = aRow.querySelector('select');
+                var bad = select && !select.value && num(aRow.querySelector('.allowance-amount')) > 0;
+                if (select) select.classList.toggle('is-invalid', !!bad);
+                if (bad && !firstBad) firstBad = select;
+            });
+            if (firstBad) {
+                e.preventDefault();
+                firstBad.focus();
+                alert('Choose a type for every allowance with an amount, or set its amount to 0. The rows are marked in red.');
+            }
+        });
+        linesForm.addEventListener('change', function (e) {
+            if (e.target.matches('.allowance-row select') && e.target.value) e.target.classList.remove('is-invalid');
+        });
+    }
 
-    // Keep modal amount up to date when it opens (reflects any unsaved live edits)
+    // Bootstrap popover for the late-arrival help icon
+    document.querySelectorAll('[data-bs-toggle="popover"]').forEach(function (el) { new bootstrap.Popover(el); });
+
+    // The pay modal shows the live (possibly unsaved) total
     var payModalEl = document.getElementById('payModal');
     if (payModalEl) {
         payModalEl.addEventListener('show.bs.modal', function () {
-            if (modalTotal && headerTotal) {
-                modalTotal.textContent = headerTotal.textContent;
-            }
+            if (modalTotal && headerTotal) modalTotal.textContent = headerTotal.textContent;
         });
     }
 })();
