@@ -8,10 +8,10 @@
     <!--! BEGIN: Apps Init !-->
     <script src="{{ asset('assets/js/common-init.min.js') }}"></script>
     <!-- Sidebar groups, mobile menu keyboard/focus handling (docs/DESIGN.md §4) -->
-    <script src="{{ asset('assets/js/sidebar-nav.js') }}"></script>
+    <script src="{{ asset('assets/js/sidebar-nav.js') }}?v={{ @filemtime(public_path('assets/js/sidebar-nav.js')) }}"></script>
     <!-- Searchable selects: must load before page scripts so `new TomSelect()` gets the app defaults -->
     <script src="{{ asset('assets/vendor/tom-select/tom-select.complete.min.js') }}"></script>
-    <script src="{{ asset('assets/js/searchable-select.js') }}"></script>
+    <script src="{{ asset('assets/js/searchable-select.js') }}?v={{ @filemtime(public_path('assets/js/searchable-select.js')) }}"></script>
     @stack('scripts')
     <!--! END: Apps Init !-->
     <!--! BEGIN: Theme Customizer !-->

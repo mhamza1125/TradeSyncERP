@@ -39,7 +39,7 @@
     </style>
     <!--! END: Searchable selects -->
     <!--! Brand layer: design tokens + components (docs/DESIGN.md). Must load last. -->
-    <link rel="stylesheet" type="text/css" href="{{ asset('assets/css/brand.css') }}" />
+    <link rel="stylesheet" type="text/css" href="{{ asset('assets/css/brand.css') }}?v={{ @filemtime(public_path('assets/css/brand.css')) }}" />
     @stack('styles')
 </head>
 

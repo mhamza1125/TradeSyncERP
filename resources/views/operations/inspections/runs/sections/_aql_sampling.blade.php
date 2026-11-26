@@ -315,7 +315,7 @@
 {{-- ══════════════════════════════════════════════════════════════════════
      AQL Section JavaScript — ISO 2859-1 reference data + distribution
      ══════════════════════════════════════════════════════════════════════ --}}
-<script src="{{ asset('assets/js/aql-plan.js') }}"></script>
+<script src="{{ asset('assets/js/aql-plan.js') }}?v={{ @filemtime(public_path('assets/js/aql-plan.js')) }}"></script>
 <script>
 (function() {
     'use strict';
