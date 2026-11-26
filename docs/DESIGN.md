@@ -170,6 +170,16 @@ The theme's dark rules re-colour some utilities with higher-specificity `!import
 - defect table with photo thumbnails (each photo is still embedded once);
 - restyled section blocks and the final decision card.
 
+**Client report layout (2026-11-26):** `exports/inspection-run-pdf.blade.php` with partials in `exports/inspection-report/` and its data in `App\Services\Inspection\InspectionReportService` (section results, empty detection, photo grouping, key findings, defect totals by quantity). Order:
+1. Executive summary: title, facts (client, factory, order ref, type, date, location, inspectors, scope), the overall result with its meaning, the cover photo, KPI tiles, and a result summary per inspection area. Areas with no data in any article are named on one "Not yet recorded" line.
+2. Articles inspected (when there is more than one) and **Key findings** (every defect and failed checkpoint, most serious first).
+3. One chapter per article (run): header card with photo and result, then numbered sections (`1.1`, `1.2`, …) with a client-facing result chip (PASS / FAIL / IN PROGRESS / RECORDED; workflow status is not printed). Empty sections are left out and named once at the end. Unchecked checklist rows are named on one "Not checked" line.
+4. Final Inspection Decision with its meaning, the inspector's assessments, remarks, sign-off and the scope disclaimer.
+
+The report flows with **no forced page breaks**; only blocks that must stay whole (article header, table rows, photo rows, the final decision) avoid splitting. Brand tints (`#E1F4FC` bands, `#F1F8FC` cells, tinted table headers, zebra rows) give structure without dark fills. While any run is unfinished, the running header reads "Preliminary Inspection Report" and the cover carries a PRELIMINARY chip with the finished count (no watermark). Photos are fitted into fixed frames without distortion.
+
+**dompdf width rule:** in a `table-layout: fixed` table, give **every** column a width (a column without one is squeezed). Layout bands with one flexible column use `table-layout: auto`.
+
 **Other templates:** the other 32 PDFs still use `_pdf-head` + `_pdf-company-header` + `_pdf-company-footer` (Stage 2).
 
 ## 6. Vendor CSS: the one-time token substitution
