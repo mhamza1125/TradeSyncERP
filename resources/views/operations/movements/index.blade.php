@@ -106,32 +106,20 @@
                                                     <i class="feather feather-eye"></i>
                                                 </a>
                                                 @endcan
-                                                <div class="dropdown">
-                                                    <a href="javascript:void(0)" class="avatar-text avatar-md" data-bs-toggle="dropdown" data-bs-offset="0,21">
-                                                        <i class="feather feather-more-horizontal"></i>
-                                                    </a>
-                                                    <ul class="dropdown-menu">
-                                                        @can('sample-movements.edit')
-                                                        <li>
-                                                            <a class="dropdown-item" href="{{ route('movements.edit', $m) }}">
-                                                                <i class="feather feather-edit-3 me-3"></i><span>Update Return</span>
-                                                            </a>
-                                                        </li>
-                                                        @endcan
-                                                        @can('sample-movements.delete')
-                                                        <li class="dropdown-divider"></li>
-                                                        <li>
-                                                            <form action="{{ route('movements.destroy', $m) }}" method="POST"
-                                                                  onsubmit="return confirm('Delete this movement record?')">
-                                                                @csrf @method('DELETE')
-                                                                <button class="dropdown-item text-danger" type="submit">
-                                                                    <i class="feather feather-trash-2 me-3"></i><span>Delete</span>
-                                                                </button>
-                                                            </form>
-                                                        </li>
-                                                        @endcan
-                                                    </ul>
-                                                </div>
+                                                @can('sample-movements.edit')
+                                                <a class="avatar-text avatar-md" href="{{ route('movements.edit', $m) }}" data-bs-toggle="tooltip" title="Update Return" aria-label="Update Return">
+                                                    <i class="feather feather-edit-3" aria-hidden="true"></i>
+                                                </a>
+                                                @endcan
+                                                @can('sample-movements.delete')
+                                                <form class="d-inline-flex" action="{{ route('movements.destroy', $m) }}" method="POST"
+                                                      onsubmit="return confirm('Delete this movement record?')">
+                                                    @csrf @method('DELETE')
+                                                    <button class="avatar-text avatar-md p-0 text-danger" type="submit" data-bs-toggle="tooltip" title="Delete" aria-label="Delete">
+                                                        <i class="feather feather-trash-2" aria-hidden="true"></i>
+                                                    </button>
+                                                </form>
+                                                @endcan
                                             </div>
                                         </td>
                                     </tr>

@@ -120,23 +120,14 @@
                                                 </a>
                                                 @endcan
                                                 @can('expenses.delete')
-                                                <div class="dropdown">
-                                                    <a href="javascript:void(0)" class="avatar-text avatar-md" data-bs-toggle="dropdown" data-bs-offset="0,21">
-                                                        <i class="feather feather-more-horizontal"></i>
-                                                    </a>
-                                                    <ul class="dropdown-menu">
-                                                        <li>
-                                                            <form action="{{ route('expenses.destroy', $expense) }}" method="POST"
-                                                                  onsubmit="var r = prompt('Reason for voiding (kept in the record and activity log):'); if (!r || !r.trim()) return false; this.querySelector('[name=void_reason]').value = r; return true;">
-                                                                @csrf @method('DELETE')
-                                <input type="hidden" name="void_reason" value="">
-                                                                <button class="dropdown-item text-danger" type="submit">
-                                                                    <i class="feather feather-trash-2 me-3"></i><span>Void</span>
-                                                                </button>
-                                                            </form>
-                                                        </li>
-                                                    </ul>
-                                                </div>
+                                                <form class="d-inline-flex" action="{{ route('expenses.destroy', $expense) }}" method="POST"
+                                                      onsubmit="var r = prompt('Reason for voiding (kept in the record and activity log):'); if (!r || !r.trim()) return false; this.querySelector('[name=void_reason]').value = r; return true;">
+                                                    @csrf @method('DELETE')
+                                                <input type="hidden" name="void_reason" value="">
+                                                    <button class="avatar-text avatar-md p-0 text-danger" type="submit" data-bs-toggle="tooltip" title="Void" aria-label="Void">
+                                                        <i class="feather feather-trash-2" aria-hidden="true"></i>
+                                                    </button>
+                                                </form>
                                                 @endcan
                                             </div>
                                         </td>

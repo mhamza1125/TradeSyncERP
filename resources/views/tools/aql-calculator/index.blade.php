@@ -118,39 +118,25 @@
                                                     <i class="feather feather-eye"></i>
                                                 </a>
                                                 @endcan
-                                                <div class="dropdown">
-                                                    <a href="javascript:void(0)" class="avatar-text avatar-md" data-bs-toggle="dropdown" data-bs-offset="0,21">
-                                                        <i class="feather feather-more-horizontal"></i>
-                                                    </a>
-                                                    <ul class="dropdown-menu">
-                                                        @can('aql-calculator.edit')
-                                                        <li>
-                                                            <a class="dropdown-item" href="{{ route('tools.aql-calculator.edit', $calc) }}">
-                                                                <i class="feather feather-edit-3 me-3"></i><span>Edit</span>
-                                                            </a>
-                                                        </li>
-                                                        @endcan
-                                                        @can('aql-calculator.index')
-                                                        <li>
-                                                            <a class="dropdown-item" href="{{ route('tools.aql-calculator.export-pdf', $calc) }}" target="_blank">
-                                                                <i class="feather feather-download me-3"></i><span>Export PDF</span>
-                                                            </a>
-                                                        </li>
-                                                        @endcan
-                                                        @can('aql-calculator.delete')
-                                                        <li class="dropdown-divider"></li>
-                                                        <li>
-                                                            <form action="{{ route('tools.aql-calculator.destroy', $calc) }}" method="POST"
-                                                                    onsubmit="return confirm('Delete this AQL calculation? This cannot be undone.')">
-                                                                @csrf @method('DELETE')
-                                                                <button class="dropdown-item text-danger" type="submit">
-                                                                    <i class="feather feather-trash-2 me-3"></i><span>Delete</span>
-                                                                </button>
-                                                            </form>
-                                                        </li>
-                                                        @endcan
-                                                    </ul>
-                                                </div>
+                                                @can('aql-calculator.edit')
+                                                <a class="avatar-text avatar-md" href="{{ route('tools.aql-calculator.edit', $calc) }}" data-bs-toggle="tooltip" title="Edit" aria-label="Edit">
+                                                    <i class="feather feather-edit-3" aria-hidden="true"></i>
+                                                </a>
+                                                @endcan
+                                                @can('aql-calculator.index')
+                                                <a class="avatar-text avatar-md" href="{{ route('tools.aql-calculator.export-pdf', $calc) }}" target="_blank" data-bs-toggle="tooltip" title="Export PDF" aria-label="Export PDF">
+                                                    <i class="feather feather-download" aria-hidden="true"></i>
+                                                </a>
+                                                @endcan
+                                                @can('aql-calculator.delete')
+                                                <form class="d-inline-flex" action="{{ route('tools.aql-calculator.destroy', $calc) }}" method="POST"
+                                                        onsubmit="return confirm('Delete this AQL calculation? This cannot be undone.')">
+                                                    @csrf @method('DELETE')
+                                                    <button class="avatar-text avatar-md p-0 text-danger" type="submit" data-bs-toggle="tooltip" title="Delete" aria-label="Delete">
+                                                        <i class="feather feather-trash-2" aria-hidden="true"></i>
+                                                    </button>
+                                                </form>
+                                                @endcan
                                             </div>
                                         </td>
                                     </tr>

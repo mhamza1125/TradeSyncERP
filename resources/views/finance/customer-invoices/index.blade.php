@@ -152,43 +152,20 @@
                                         </a>
                                         @endif
                                         @endcan
-                                        <div class="dropdown">
-                                            <a href="javascript:void(0)" class="avatar-text avatar-md" data-bs-toggle="dropdown" data-bs-offset="0,21">
-                                                <i class="feather feather-more-horizontal"></i>
-                                            </a>
-                                            <ul class="dropdown-menu">
-                                                @can('customer-payments.create')
-                                                @if(!in_array($invoice->status, ['Paid','Cancelled']) && $invoice->amount_due > 0)
-                                                <li>
-                                                    <a class="dropdown-item text-success"
-                                                       href="{{ route('customer-payments.create', ['from_invoice' => $invoice->id]) }}">
-                                                        <i class="feather feather-dollar-sign me-3"></i><span>Receive Payment</span>
-                                                    </a>
-                                                </li>
-                                                <li class="dropdown-divider"></li>
-                                                @endif
-                                                @endcan
-                                                @can('customer-invoices.edit')
-                                                <li>
-                                                    <a class="dropdown-item" href="{{ route('customer-invoices.edit', $invoice) }}">
-                                                        <i class="feather feather-edit-3 me-3"></i><span>Edit</span>
-                                                    </a>
-                                                </li>
-                                                @endcan
-                                                @can('customer-invoices.delete')
-                                                <li class="dropdown-divider"></li>
-                                                <li>
-                                                    <form action="{{ route('customer-invoices.destroy', $invoice) }}" method="POST"
-                                                          onsubmit="return confirm('Delete this invoice?')">
-                                                        @csrf @method('DELETE')
-                                                        <button class="dropdown-item text-danger" type="submit">
-                                                            <i class="feather feather-trash-2 me-3"></i><span>Delete</span>
-                                                        </button>
-                                                    </form>
-                                                </li>
-                                                @endcan
-                                            </ul>
-                                        </div>
+                                        @can('customer-invoices.edit')
+                                        <a class="avatar-text avatar-md" href="{{ route('customer-invoices.edit', $invoice) }}" data-bs-toggle="tooltip" title="Edit" aria-label="Edit">
+                                            <i class="feather feather-edit-3" aria-hidden="true"></i>
+                                        </a>
+                                        @endcan
+                                        @can('customer-invoices.delete')
+                                        <form class="d-inline-flex" action="{{ route('customer-invoices.destroy', $invoice) }}" method="POST"
+                                              onsubmit="return confirm('Delete this invoice?')">
+                                            @csrf @method('DELETE')
+                                            <button class="avatar-text avatar-md p-0 text-danger" type="submit" data-bs-toggle="tooltip" title="Delete" aria-label="Delete">
+                                                <i class="feather feather-trash-2" aria-hidden="true"></i>
+                                            </button>
+                                        </form>
+                                        @endcan
                                     </div>
                                 </td>
                             </tr>

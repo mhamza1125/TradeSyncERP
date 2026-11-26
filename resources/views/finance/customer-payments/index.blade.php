@@ -130,33 +130,21 @@
                                                 </a>
                                                 @endcan
                                                 @canany(['customer-payments.edit', 'customer-payments.delete'])
-                                                <div class="dropdown">
-                                                    <a href="javascript:void(0)" class="avatar-text avatar-md" data-bs-toggle="dropdown" data-bs-offset="0,21" data-bs-strategy="fixed">
-                                                        <i class="feather feather-more-horizontal"></i>
-                                                    </a>
-                                                    <ul class="dropdown-menu">
-                                                        @can('customer-payments.edit')
-                                                        <li>
-                                                            <a href="{{ route('customer-payments.edit', $payment) }}" class="dropdown-item">
-                                                                <i class="feather feather-edit-3 me-3"></i><span>Edit</span>
-                                                            </a>
-                                                        </li>
-                                                        @endcan
-                                                        @can('customer-payments.delete')
-                                                        <li class="dropdown-divider"></li>
-                                                        <li>
-                                                            <form action="{{ route('customer-payments.destroy', $payment) }}" method="POST"
-                                                                  onsubmit="var r = prompt('Reason for voiding (kept in the record and activity log):'); if (!r || !r.trim()) return false; this.querySelector('[name=void_reason]').value = r; return true;">
-                                                                @csrf @method('DELETE')
-                                <input type="hidden" name="void_reason" value="">
-                                                                <button class="dropdown-item text-danger" type="submit">
-                                                                    <i class="feather feather-trash-2 me-3"></i><span>Void</span>
-                                                                </button>
-                                                            </form>
-                                                        </li>
-                                                        @endcan
-                                                    </ul>
-                                                </div>
+                                                @can('customer-payments.edit')
+                                                <a class="avatar-text avatar-md" href="{{ route('customer-payments.edit', $payment) }}" data-bs-toggle="tooltip" title="Edit" aria-label="Edit">
+                                                    <i class="feather feather-edit-3" aria-hidden="true"></i>
+                                                </a>
+                                                @endcan
+                                                @can('customer-payments.delete')
+                                                <form class="d-inline-flex" action="{{ route('customer-payments.destroy', $payment) }}" method="POST"
+                                                      onsubmit="var r = prompt('Reason for voiding (kept in the record and activity log):'); if (!r || !r.trim()) return false; this.querySelector('[name=void_reason]').value = r; return true;">
+                                                    @csrf @method('DELETE')
+                                                <input type="hidden" name="void_reason" value="">
+                                                    <button class="avatar-text avatar-md p-0 text-danger" type="submit" data-bs-toggle="tooltip" title="Void" aria-label="Void">
+                                                        <i class="feather feather-trash-2" aria-hidden="true"></i>
+                                                    </button>
+                                                </form>
+                                                @endcan
                                                 @endcanany
                                             </div>
                                         </td>

@@ -131,32 +131,20 @@
                                         <a href="{{ route('inspections.show', $ins) }}" class="avatar-text avatar-md" data-bs-toggle="tooltip" title="View" aria-label="View {{ $ins->report_number }}">
                                             <i class="feather feather-eye" aria-hidden="true"></i>
                                         </a>
-                                        <div class="dropdown">
-                                            <a href="javascript:void(0)" class="avatar-text avatar-md" data-bs-toggle="dropdown" data-bs-offset="0,21" role="button" aria-label="More actions for {{ $ins->report_number }}" aria-haspopup="true" aria-expanded="false">
-                                                <i class="feather feather-more-horizontal" aria-hidden="true"></i>
-                                            </a>
-                                            <ul class="dropdown-menu">
-                                                @can('inspections.edit')
-                                                <li>
-                                                    <a class="dropdown-item" href="{{ route('inspections.edit', $ins) }}">
-                                                        <i class="feather feather-edit-3 me-3"></i><span>Edit</span>
-                                                    </a>
-                                                </li>
-                                                @endcan
-                                                @can('inspections.delete')
-                                                <li class="dropdown-divider"></li>
-                                                <li>
-                                                    <form action="{{ route('inspections.destroy', $ins) }}" method="POST"
-                                                          onsubmit="return confirm('Delete inspection {{ $ins->report_number }}?')">
-                                                        @csrf @method('DELETE')
-                                                        <button class="dropdown-item text-danger" type="submit">
-                                                            <i class="feather feather-trash-2 me-3"></i><span>Delete</span>
-                                                        </button>
-                                                    </form>
-                                                </li>
-                                                @endcan
-                                            </ul>
-                                        </div>
+                                        @can('inspections.edit')
+                                        <a class="avatar-text avatar-md" href="{{ route('inspections.edit', $ins) }}" data-bs-toggle="tooltip" title="Edit" aria-label="Edit">
+                                            <i class="feather feather-edit-3" aria-hidden="true"></i>
+                                        </a>
+                                        @endcan
+                                        @can('inspections.delete')
+                                        <form class="d-inline-flex" action="{{ route('inspections.destroy', $ins) }}" method="POST"
+                                              onsubmit="return confirm('Delete inspection {{ $ins->report_number }}?')">
+                                            @csrf @method('DELETE')
+                                            <button class="avatar-text avatar-md p-0 text-danger" type="submit" data-bs-toggle="tooltip" title="Delete" aria-label="Delete">
+                                                <i class="feather feather-trash-2" aria-hidden="true"></i>
+                                            </button>
+                                        </form>
+                                        @endcan
                                     </div>
                                 </td>
                             </tr>

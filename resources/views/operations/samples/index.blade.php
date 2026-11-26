@@ -128,32 +128,20 @@
                                                     <i class="feather feather-eye"></i>
                                                 </a>
                                                 @endcan
-                                                <div class="dropdown">
-                                                    <a href="javascript:void(0)" class="avatar-text avatar-md" data-bs-toggle="dropdown" data-bs-offset="0,21">
-                                                        <i class="feather feather-more-horizontal"></i>
-                                                    </a>
-                                                    <ul class="dropdown-menu">
-                                                        @can('samples.edit')
-                                                        <li>
-                                                            <a class="dropdown-item" href="{{ route('samples.edit', $sample) }}">
-                                                                <i class="feather feather-edit-3 me-3"></i><span>Edit</span>
-                                                            </a>
-                                                        </li>
-                                                        @endcan
-                                                        @can('samples.delete')
-                                                        <li class="dropdown-divider"></li>
-                                                        <li>
-                                                            <form action="{{ route('samples.destroy', $sample) }}" method="POST"
-                                                                  onsubmit="return confirm('Delete this sample?')">
-                                                                @csrf @method('DELETE')
-                                                                <button class="dropdown-item text-danger" type="submit">
-                                                                    <i class="feather feather-trash-2 me-3"></i><span>Delete</span>
-                                                                </button>
-                                                            </form>
-                                                        </li>
-                                                        @endcan
-                                                    </ul>
-                                                </div>
+                                                @can('samples.edit')
+                                                <a class="avatar-text avatar-md" href="{{ route('samples.edit', $sample) }}" data-bs-toggle="tooltip" title="Edit" aria-label="Edit">
+                                                    <i class="feather feather-edit-3" aria-hidden="true"></i>
+                                                </a>
+                                                @endcan
+                                                @can('samples.delete')
+                                                <form class="d-inline-flex" action="{{ route('samples.destroy', $sample) }}" method="POST"
+                                                      onsubmit="return confirm('Delete this sample?')">
+                                                    @csrf @method('DELETE')
+                                                    <button class="avatar-text avatar-md p-0 text-danger" type="submit" data-bs-toggle="tooltip" title="Delete" aria-label="Delete">
+                                                        <i class="feather feather-trash-2" aria-hidden="true"></i>
+                                                    </button>
+                                                </form>
+                                                @endcan
                                             </div>
                                         </td>
                                     </tr>

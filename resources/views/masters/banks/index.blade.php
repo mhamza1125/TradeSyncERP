@@ -112,32 +112,20 @@
                                                     <i class="feather feather-eye"></i>
                                                 </a>
                                                 @endcan
-                                                <div class="dropdown">
-                                                    <a href="javascript:void(0)" class="avatar-text avatar-md" data-bs-toggle="dropdown" data-bs-offset="0,21">
-                                                        <i class="feather feather-more-horizontal"></i>
-                                                    </a>
-                                                    <ul class="dropdown-menu">
-                                                        @can('banks.edit')
-                                                        <li>
-                                                            <a class="dropdown-item" href="{{ route('masters.banks.edit', $bank) }}">
-                                                                <i class="feather feather-edit-3 me-3"></i><span>Edit</span>
-                                                            </a>
-                                                        </li>
-                                                        @endcan
-                                                        @can('banks.delete')
-                                                        <li class="dropdown-divider"></li>
-                                                        <li>
-                                                            <form action="{{ route('masters.banks.destroy', $bank) }}" method="POST"
-                                                                  onsubmit="return confirm('Deactivate this bank?')">
-                                                                @csrf @method('DELETE')
-                                                                <button class="dropdown-item text-danger" type="submit">
-                                                                    <i class="feather feather-trash-2 me-3"></i><span>Deactivate</span>
-                                                                </button>
-                                                            </form>
-                                                        </li>
-                                                        @endcan
-                                                    </ul>
-                                                </div>
+                                                @can('banks.edit')
+                                                <a class="avatar-text avatar-md" href="{{ route('masters.banks.edit', $bank) }}" data-bs-toggle="tooltip" title="Edit" aria-label="Edit">
+                                                    <i class="feather feather-edit-3" aria-hidden="true"></i>
+                                                </a>
+                                                @endcan
+                                                @can('banks.delete')
+                                                <form class="d-inline-flex" action="{{ route('masters.banks.destroy', $bank) }}" method="POST"
+                                                      onsubmit="return confirm('Deactivate this bank?')">
+                                                    @csrf @method('DELETE')
+                                                    <button class="avatar-text avatar-md p-0 text-danger" type="submit" data-bs-toggle="tooltip" title="Deactivate" aria-label="Deactivate">
+                                                        <i class="feather feather-trash-2" aria-hidden="true"></i>
+                                                    </button>
+                                                </form>
+                                                @endcan
                                             </div>
                                         </td>
                                     </tr>
