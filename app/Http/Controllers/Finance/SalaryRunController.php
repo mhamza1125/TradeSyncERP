@@ -22,6 +22,7 @@ class SalaryRunController extends Controller
         $this->middleware('permission:salary.create')->only(['create', 'store']);
         $this->middleware('permission:salary.edit')->only(['edit', 'update', 'updateLines']);
         $this->middleware('permission:salary.pay')->only('pay');
+        $this->middleware('permission:salary.delete')->only('destroy');
     }
 
     public function index()
@@ -220,6 +221,32 @@ class SalaryRunController extends Controller
             ->setOption('defaultFont', 'DejaVu Sans');
 
         return $pdf->stream("SalaryRun-{$salaryRun->month}.pdf");
+    }
+
+    /**
+     * Only a Draft run can be deleted: it has no transaction yet, so nothing in the cash
+     * book changes. A paid run is a financial record and is never deleted (docs/FINANCE_RULES.md).
+     * Lines and their allowances go with it (cascadeOnDelete).
+     */
+    public function destroy(SalaryRun $salaryRun)
+    {
+        $deleted = DB::transaction(function () use ($salaryRun) {
+            // Re-read under a lock so a run being paid at the same moment can't be deleted.
+            $run = SalaryRun::whereKey($salaryRun->id)->lockForUpdate()->firstOrFail();
+            if ($run->isPaid() || $run->transaction_id) {
+                return false;
+            }
+            $run->delete();
+
+            return true;
+        });
+
+        if (! $deleted) {
+            return back()->with('error', "A paid salary run can't be deleted: it is part of the cash book.");
+        }
+
+        return redirect()->route('salary.index')
+            ->with('success', "Draft salary run for {$salaryRun->month} deleted.");
     }
 
     public function pay(Request $request, SalaryRun $salaryRun)

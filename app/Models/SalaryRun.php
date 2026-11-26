@@ -24,7 +24,7 @@ class SalaryRun extends Model
     ];
 
     protected $casts = [
-        'payment_date'      => 'date',
+        'payment_date' => 'date',
         'total_net_payable' => 'decimal:2',
     ];
 
@@ -54,6 +54,16 @@ class SalaryRun extends Model
     public function lines()
     {
         return $this->hasMany(SalaryRunLine::class);
+    }
+
+    protected static function booted(): void
+    {
+        // A paid run is a financial record: it is never deleted (docs/FINANCE_RULES.md).
+        static::deleting(function (SalaryRun $run) {
+            if ($run->isPaid() || $run->transaction_id) {
+                throw new \RuntimeException("A paid salary run can't be deleted.");
+            }
+        });
     }
 
     public function isPaid(): bool

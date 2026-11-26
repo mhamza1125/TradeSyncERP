@@ -34,6 +34,17 @@
                     </button>
                     @endif
                     @endcan
+                    @can('salary.delete')
+                    @if(!$salaryRun->isPaid())
+                    <form action="{{ route('salary.destroy', $salaryRun) }}" method="POST" class="d-inline-flex"
+                          onsubmit="return confirm('Delete the draft salary run for {{ $salaryRun->month }}? Its lines are deleted too.')">
+                        @csrf @method('DELETE')
+                        <button type="submit" class="btn btn-light-brand text-danger">
+                            <i class="feather-trash-2 me-2"></i>Delete
+                        </button>
+                    </form>
+                    @endif
+                    @endcan
                 </div>
             </div>
         </div>

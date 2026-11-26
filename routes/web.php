@@ -166,7 +166,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('salary/export-pdf', [SalaryRunController::class, 'exportListPdf'])->name('salary.export-list-pdf');
     Route::get('salary/{salaryRun}/export-pdf', [SalaryRunController::class, 'exportPdf'])->name('salary.export-pdf');
     Route::resource('salary', SalaryRunController::class)->parameters(['salary' => 'salaryRun'])
-        ->only(['index', 'create', 'store', 'show', 'edit', 'update']);
+        ->only(['index', 'create', 'store', 'show', 'edit', 'update', 'destroy']);
     Route::put('salary/{salaryRun}/lines', [SalaryRunController::class, 'updateLines'])->name('salary.lines.update');
     Route::post('salary/{salaryRun}/pay', [SalaryRunController::class, 'pay'])->name('salary.pay');
 

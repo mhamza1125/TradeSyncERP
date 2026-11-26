@@ -92,6 +92,15 @@
                                                     <i class="feather feather-edit-3" aria-hidden="true"></i>
                                                 </a>
                                                 @endcan
+                                                @can('salary.delete')
+                                                <form class="d-inline-flex" action="{{ route('salary.destroy', $run) }}" method="POST"
+                                                      onsubmit="return confirm('Delete the draft salary run for {{ $run->month }}? Its lines are deleted too.')">
+                                                    @csrf @method('DELETE')
+                                                    <button class="avatar-text avatar-md p-0 text-danger" type="submit" data-bs-toggle="tooltip" title="Delete" aria-label="Delete">
+                                                        <i class="feather feather-trash-2" aria-hidden="true"></i>
+                                                    </button>
+                                                </form>
+                                                @endcan
                                                 @endif
                                             </div>
                                         </td>
